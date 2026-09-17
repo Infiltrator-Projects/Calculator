@@ -7,3 +7,4 @@
 - Added a desktop calculation-history window with clear-history support.
 - Added regression coverage for variable evaluation, session memory and history retention.
 - Kept the existing Standard and Scientific calculator behaviour intact.
+- Finalised the release regression test include and release verification path.
