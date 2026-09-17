@@ -6,43 +6,30 @@ Infiltrator Calc is a native desktop calculator for the Infiltrator software fam
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.3  
+**Current source version:** 0.1.4  
 **Language:** C++17 application/core with C-based GTK4 presentation APIs  
 **Shared foundation:** Infiltratr Common 1.17.0  
 **Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
 
-## Initial scope
+## Current capabilities
 
-The first implementation establishes:
+Infiltrator Calc has three explicitly switchable desktop modes using the MODE control:
 
-- a portable expression evaluator;
-- operator precedence and parentheses;
-- unary operators;
-- powers;
-- floating-point numeric literals;
-- explicit calculation errors;
-- a native GTK4 desktop interface;
-- keyboard-first expression entry;
-- Infiltrator graphite/silver visual styling;
-- MB Corpo font roles with normal desktop fallback; and
-- deterministic core regression tests.
+- Standard — arithmetic, percentages, powers, unary operations and memory;
+- Scientific — trigonometric, inverse trigonometric, logarithmic, exponential and related functions with degree/radian control; and
+- Programmer — binary, octal, decimal and hexadecimal integer arithmetic, bitwise operations, shifts, complement, 8/16/32/64-bit widths, and unsigned/signed display.
 
-The calculation engine must never execute expressions through a shell or external interpreter.
+The calculator also provides reusable variables, bounded calculation history and a shared calculation-session layer above the parser. Variables can be assigned directly with expressions such as `x=42` and reused in subsequent calculations.
 
-## Current state
-
-Infiltrator Calc now has a shared calculation-session layer above the parser. Variables can be assigned directly with expressions such as `x=42` and reused in subsequent calculations. Memory operations are owned by the session rather than the UI, and the session keeps a bounded calculation history that can be viewed and cleared from the desktop interface.
-
-The core evaluator accepts an explicit variable environment, while the session layer owns variable state, memory state and history. This keeps stateful behaviour reusable by future calculator modes and engineering tools without embedding it in GTK callbacks.
+Features are considered complete only when implementation, tests and documented behaviour agree.
 
 ## Planned capability families
 
 The architecture is intended to grow into:
 
-- Standard, Scientific, Programmer and Engineering modes;
+- Engineering mode and specialised engineering calculators;
 - exact integer and wider numeric domains where useful;
-- calculation history;
 - mathematical and physical constants;
 - unit conversion;
 - ICT/network calculations;
@@ -52,7 +39,7 @@ The architecture is intended to grow into:
 - complex and arbitrary-precision mathematics where justified; and
 - Infiltrator-specific engineering calculators.
 
-Features are considered complete only when implementation, tests and documented behaviour agree.
+The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
 
 ## Shared Infiltrator design
 
@@ -90,10 +77,10 @@ On Debian-family systems the initial development dependencies are the standard C
 ```text
 src/
 ├── app/                 GTK desktop application
-├── core/                Portable calculation engine and session state
+├── core/                Portable calculation engine, session state and programmer engine
 └── infiltratr-common/   Exact shared Common gitlink
 
-tests/                   Core and session regression tests
+tests/                   Core, session and programmer regression tests
 docs/                    Maintained engineering/design documentation
 ```
 
