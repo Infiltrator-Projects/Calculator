@@ -26,12 +26,12 @@ target_include_directories(infiltrator-calc-core PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core"
 )
 
-target_compile_options(infiltrator-calc-core PRIVATE
-    -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
+target_link_libraries(infiltrator-calc-core PUBLIC
+    InfiltratrCommon::Portable
 )
 
-target_link_libraries(infiltrator-calc-core PRIVATE
-    InfiltratrCommon::Portable
+target_compile_options(infiltrator-calc-core PRIVATE
+    -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
 )
 
 add_executable(infiltrator-calc
@@ -47,7 +47,6 @@ target_compile_options(infiltrator-calc PRIVATE
     -Wall -Wextra -Wpedantic -Wshadow
 )
 
-enable_testing()
 add_executable(infiltrator-calc-test
     tests/test_calculator.cpp
 )
