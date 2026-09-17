@@ -2,8 +2,11 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 namespace infiltrator::calc {
+
+using Variables = std::unordered_map<std::string, double>;
 
 struct Result {
     bool ok = false;
@@ -12,5 +15,6 @@ struct Result {
 };
 
 Result evaluate(const std::string& expression);
+Result evaluate(const std::string& expression, const Variables& variables);
 
 } // namespace infiltrator::calc
