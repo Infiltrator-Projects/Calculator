@@ -24,6 +24,7 @@ int main(){
     expect_ok("1111 & 0101",ProgrammerBase::Binary,IntegerWidth::Bits8,5);
     expect_ok("1010 ^ 0110",ProgrammerBase::Binary,IntegerWidth::Bits8,12);
     expect_ok("1 << 4",ProgrammerBase::Binary,IntegerWidth::Bits8,16);
+    expect_ok("1 << 10",ProgrammerBase::Hexadecimal,IntegerWidth::Bits16,1024);
     expect_ok("64 >> 2",ProgrammerBase::Decimal,IntegerWidth::Bits8,16);
     expect_ok("~0",ProgrammerBase::Decimal,IntegerWidth::Bits8,255);
     expect_ok("0xff + 1",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0);
@@ -34,6 +35,7 @@ int main(){
     expect_ok("377",ProgrammerBase::Octal,IntegerWidth::Bits16,255);
     expect_error("1 / 0",ProgrammerBase::Decimal,IntegerWidth::Bits32);
     expect_error("1 << 64",ProgrammerBase::Decimal,IntegerWidth::Bits64);
+    expect_error("1 << 256",ProgrammerBase::Decimal,IntegerWidth::Bits8);
     expect_error("102",ProgrammerBase::Binary,IntegerWidth::Bits8);
     if(failures){std::cerr<<failures<<" programmer test(s) failed\n";return 1;}
     std::cout<<"programmer tests passed\n";
