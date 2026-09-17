@@ -105,15 +105,29 @@ private:
         return left & mask_for(width_);
     }
 
+    std::uint64_t parse_shift_amount() {
+        // Shift counts are conventional decimal quantities, independent of
+        // the currently selected input base. Evaluate them at full width so
+        // a large count cannot wrap through the selected 8/16/32-bit mask.
+        const auto saved_base = base_;
+        const auto saved_width = width_;
+        base_ = ProgrammerBase::Decimal;
+        width_ = IntegerWidth::Bits64;
+        const auto amount = parse_additive();
+        base_ = saved_base;
+        width_ = saved_width;
+        return amount;
+    }
+
     std::uint64_t parse_shift() {
         auto left = parse_additive();
         while (error_.empty()) {
             if (consume_pair('<', '<')) {
-                const auto amount = parse_additive();
+                const auto amount = parse_shift_amount();
                 if (amount >= 64) { error_ = "shift count out of range"; return 0; }
                 left = (left << static_cast<unsigned>(amount)) & mask_for(width_);
             } else if (consume_pair('>', '>')) {
-                const auto amount = parse_additive();
+                const auto amount = parse_shift_amount();
                 if (amount >= 64) { error_ = "shift count out of range"; return 0; }
                 left = left >> static_cast<unsigned>(amount);
             } else break;
