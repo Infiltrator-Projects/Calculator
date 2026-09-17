@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source and Common dependency
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            debhelper-compat \
+            dpkg-dev \
+            g++ \
+            libgtk-4-dev \
+            pkg-config
+
+      - name: Verify release version
+        id: version
+        shell: bash
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          test -n "$version"
+          test "$version" = "$(dpkg-parsechangelog -S Version)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Infiltrator Calc version: $version"
+
+      - name: Build and test
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-ci -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-ci --parallel
+          ctest --test-dir build-ci --output-on-failure
+
+      - name: Build Debian package
+        run: |
+          set -euo pipefail
+          chmod +x debian/rules
+          dpkg-buildpackage -us -uc -b
+          mkdir -p dist
+          cp ../infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb dist/
+          dpkg-deb --info dist/infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb
+          sha256sum dist/infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb > dist/SHA256SUMS.txt
+
+      - name: Upload Debian package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: infiltrator-calc-${{ steps.version.outputs.version }}-amd64-deb
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "v${VERSION}" \
+            "dist/infiltrator-calc_${VERSION}_amd64.deb" \
+            "dist/SHA256SUMS.txt" \
+            --title "Infiltrator Calc ${VERSION}" \
+            --generate-notes
