@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../src/core/session.hpp"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <string>
