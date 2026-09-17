@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.2) unstable; urgency=medium
+
+  * Complete the Standard calculator control set with percent, sign, square, square root and reciprocal operations.
+  * Add calculator memory controls and cursor-aware keypad entry with backspace.
+  * Correct conventional unary-minus and exponent precedence.
+  * Add release-safe regression tests covering percent, powers, errors and scientific notation.
+  * Improve long-result display handling and keyboard-focused operation.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 05:30:00 +1000
+
 infiltrator-calc (0.1.1) unstable; urgency=medium
 
   * Rebuild the GTK interface around the Infiltrator graphite/silver design contract.
