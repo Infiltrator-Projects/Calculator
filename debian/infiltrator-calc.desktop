@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Infiltrator Calc
+Comment=Native calculator for the Infiltrator software family
+Exec=infiltrator-calc
+Icon=infiltrator-calc
+Terminal=false
+Categories=Utility;Calculator;GTK;
+StartupNotify=true
