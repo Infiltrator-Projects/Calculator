@@ -1,0 +1,16 @@
+Source: infiltrator-calc
+Section: utils
+Priority: optional
+Maintainer: Shannon Smith <infiltratr@yandex.com>
+Build-Depends: debhelper-compat (= 13), cmake, g++, libgtk-4-dev, pkg-config
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/Infiltrator-Projects/Infiltrator-Calc
+
+Package: infiltrator-calc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: native desktop calculator for the Infiltrator software family
+ Infiltrator Calc is a native GTK4 desktop calculator with a portable
+ calculation core. It is intended as a first-party desktop component of the
+ future Infiltrator Mint environment.
