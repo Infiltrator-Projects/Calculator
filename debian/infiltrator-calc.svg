@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Infiltrator Calc</title>
+  <desc id="desc">Magenta calculator icon with a white mathematical symbol</desc>
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#d63ad6"/>
+  <rect x="28" y="24" width="72" height="80" rx="10" fill="#fff" opacity=".96"/>
+  <rect x="38" y="34" width="52" height="16" rx="4" fill="#3b2b3b"/>
+  <g fill="#d63ad6">
+    <rect x="38" y="58" width="12" height="12" rx="3"/>
+    <rect x="58" y="58" width="12" height="12" rx="3"/>
+    <rect x="78" y="58" width="12" height="12" rx="3"/>
+    <rect x="38" y="77" width="12" height="12" rx="3"/>
+    <rect x="58" y="77" width="12" height="12" rx="3"/>
+    <rect x="78" y="77" width="12" height="12" rx="3"/>
+    <rect x="38" y="96" width="32" height="6" rx="3"/>
+    <rect x="78" y="96" width="12" height="6" rx="3"/>
+  </g>
+</svg>
