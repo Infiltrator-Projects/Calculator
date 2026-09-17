@@ -6,7 +6,7 @@ Infiltrator Calc is a native desktop calculator for the Infiltrator software fam
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.1  
+**Current source version:** 0.1.3  
 **Language:** C++17 application/core with C-based GTK4 presentation APIs  
 **Shared foundation:** Infiltratr Common 1.17.0  
 **Design contract:** Infiltrator Design v1  
@@ -30,13 +30,18 @@ The first implementation establishes:
 
 The calculation engine must never execute expressions through a shell or external interpreter.
 
+## Current state
+
+Infiltrator Calc now has a shared calculation-session layer above the parser. Variables can be assigned directly with expressions such as `x=42` and reused in subsequent calculations. Memory operations are owned by the session rather than the UI, and the session keeps a bounded calculation history that can be viewed and cleared from the desktop interface.
+
+The core evaluator accepts an explicit variable environment, while the session layer owns variable state, memory state and history. This keeps stateful behaviour reusable by future calculator modes and engineering tools without embedding it in GTK callbacks.
+
 ## Planned capability families
 
 The architecture is intended to grow into:
 
 - Standard, Scientific, Programmer and Engineering modes;
 - exact integer and wider numeric domains where useful;
-- variables, memory and reusable expressions;
 - calculation history;
 - mathematical and physical constants;
 - unit conversion;
@@ -85,10 +90,10 @@ On Debian-family systems the initial development dependencies are the standard C
 ```text
 src/
 ├── app/                 GTK desktop application
-├── core/                Portable calculation engine
+├── core/                Portable calculation engine and session state
 └── infiltratr-common/   Exact shared Common gitlink
 
-tests/                   Core regression tests
+tests/                   Core and session regression tests
 docs/                    Maintained engineering/design documentation
 ```
 
