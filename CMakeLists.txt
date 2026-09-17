@@ -20,6 +20,7 @@ add_subdirectory(src/infiltratr-common)
 
 add_library(infiltrator-calc-core STATIC
     src/core/calculator.cpp
+    src/core/session.cpp
 )
 
 target_include_directories(infiltrator-calc-core PUBLIC
