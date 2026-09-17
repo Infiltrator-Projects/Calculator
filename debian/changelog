@@ -1,3 +1,10 @@
+infiltrator-calc (0.1.5) unstable; urgency=medium
+
+  * Disambiguate Programmer width controls as W8, W16, W32 and W64 so numeric keypad input remains available.
+  * Preserve the Standard, Scientific and Programmer mode switch as one integrated calculator workflow.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 09:02:00 +1000
+
 infiltrator-calc (0.1.4) unstable; urgency=medium
 
   * Add Programmer mode with binary, octal, decimal and hexadecimal bases.
