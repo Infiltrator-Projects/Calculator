@@ -6,9 +6,10 @@ Infiltrator Calc is a native desktop calculator for the Infiltrator software fam
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.0  
+**Current source version:** 0.1.1  
 **Language:** C++17 application/core with C-based GTK4 presentation APIs  
 **Shared foundation:** Infiltratr Common 1.17.0  
+**Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
 
 ## Initial scope
@@ -23,7 +24,8 @@ The first implementation establishes:
 - explicit calculation errors;
 - a native GTK4 desktop interface;
 - keyboard-first expression entry;
-- MB Corpo font preference with normal desktop fallback; and
+- Infiltrator graphite/silver visual styling;
+- MB Corpo font roles with normal desktop fallback; and
 - deterministic core regression tests.
 
 The calculation engine must never execute expressions through a shell or external interpreter.
@@ -47,16 +49,22 @@ The architecture is intended to grow into:
 
 Features are considered complete only when implementation, tests and documented behaviour agree.
 
+## Shared Infiltrator design
+
+Infiltrator Calc uses Infiltratr Common as its reusable software foundation and follows the canonical Infiltrator Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
+
+The calculation core links against `InfiltratrCommon::Portable` from the pinned Common revision. The desktop UI consumes the same named typography roles and palette defined by the shared design contract rather than introducing a project-specific visual system.
+
 ## Typography
 
-Infiltrator Calc follows the established Infiltrator desktop typography policy. It prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent.
+Infiltrator Calc prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent.
 
-The project does **not** redistribute proprietary MB Corpo font binaries. The current UI names are:
+The project does **not** redistribute proprietary MB Corpo font binaries. The current UI roles are:
 
-- `MB Corpo S Title WEB` for normal interface text;
-- `MB Corpo A Title Cond WEB` for compact headings.
+- `MB Corpo S Title WEB` for normal interface text and controls;
+- `MB Corpo A Title Cond WEB` for product/display titles.
 
-This follows the existing Infiltrator desktop applications, which also use the installed MB Corpo family without packaging the proprietary binaries.
+This follows the established Infiltrator desktop applications.
 
 ## Build
 
@@ -86,9 +94,9 @@ docs/                    Maintained engineering/design documentation
 
 ## Release direction
 
-The project will use `main` as its working branch and will follow the Infiltrator release discipline: test the exact source commit, build from that commit, and publish immutable release identities.
+The project uses `main` as its working branch and follows the Infiltrator release discipline: test the exact source commit, build from that commit, and publish immutable release identities.
 
-The intended packaged form is a generic Debian package suitable for Infiltrator Repository and, ultimately, Infiltrator Mint.
+The packaged form is a generic Debian package suitable for Infiltrator Repository and, ultimately, Infiltrator Mint.
 
 ## Licence
 
