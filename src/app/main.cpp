@@ -7,7 +7,6 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <string_view>
 
 namespace {
 
@@ -230,7 +229,7 @@ void activate(GtkApplication* app, gpointer) {
     apply_css(window);
 
     GtkWidget* heading = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-    gtk_widget_set_margin_bottom(2, 0);
+    gtk_widget_set_margin_bottom(heading, 2);
     gtk_box_append(GTK_BOX(shell), heading);
 
     GtkWidget* title = gtk_label_new("Infiltrator Calc");
