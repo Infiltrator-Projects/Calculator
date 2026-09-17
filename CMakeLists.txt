@@ -21,6 +21,7 @@ add_subdirectory(src/infiltratr-common)
 add_library(infiltrator-calc-core STATIC
     src/core/calculator.cpp
     src/core/session.cpp
+    src/core/programmer.cpp
 )
 
 target_include_directories(infiltrator-calc-core PUBLIC
@@ -59,6 +60,12 @@ add_executable(infiltrator-calc-session-test
 )
 target_link_libraries(infiltrator-calc-session-test PRIVATE infiltrator-calc-core)
 add_test(NAME calculator-session COMMAND infiltrator-calc-session-test)
+
+add_executable(infiltrator-calc-programmer-test
+    tests/test_programmer.cpp
+)
+target_link_libraries(infiltrator-calc-programmer-test PRIVATE infiltrator-calc-core)
+add_test(NAME calculator-programmer COMMAND infiltrator-calc-programmer-test)
 
 install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
 install(FILES LICENSE DESTINATION share/doc/infiltrator-calc OPTIONAL)
