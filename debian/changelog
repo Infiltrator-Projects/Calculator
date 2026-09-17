@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.6) unstable; urgency=medium
+
+  * Redesign the calculator shell with larger controls, clearer visual hierarchy and stronger number/operator/action separation.
+  * Replace the cycling MODE control with an explicit Standard, Scientific and Programmer mode strip.
+  * Keep the interface aligned to the canonical Infiltrator graphite/silver palette, typography roles, radii and spacing.
+  * Build and test every release on both Linux and Windows.
+  * Publish a Linux amd64 Debian package plus Windows x64 executable and portable runtime archive from the same release source.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 09:45:00 +1000
+
 infiltrator-calc (0.1.5) unstable; urgency=medium
 
   * Disambiguate Programmer width controls as W8, W16, W32 and W64 so numeric keypad input remains available.
