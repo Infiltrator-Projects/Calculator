@@ -16,6 +16,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_subdirectory(src/infiltratr-common)
+
 add_library(infiltrator-calc-core STATIC
     src/core/calculator.cpp
 )
@@ -26,6 +28,10 @@ target_include_directories(infiltrator-calc-core PUBLIC
 
 target_compile_options(infiltrator-calc-core PRIVATE
     -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
+)
+
+target_link_libraries(infiltrator-calc-core PRIVATE
+    InfiltratrCommon::Portable
 )
 
 add_executable(infiltrator-calc
