@@ -9,9 +9,12 @@ permissions:
   contents: write
 
 jobs:
-  package:
+  linux:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout source and Common dependency
@@ -20,7 +23,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install build dependencies
+      - name: Install Linux build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -35,8 +38,6 @@ jobs:
       - name: Verify release version
         id: version
         shell: bash
-        env:
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < VERSION)"
@@ -45,49 +46,203 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Infiltrator Calc version: $version"
 
-      - name: Build and test
+      - name: Build and test on Linux
         run: |
           set -euo pipefail
-          cmake -S . -B build-ci -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-ci --parallel
-          ctest --test-dir build-ci --output-on-failure
+          cmake -S . -B build-linux \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DINFILTRATR_COMMON_BUILD_SHARED=OFF
+          cmake --build build-linux --parallel
+          ctest --test-dir build-linux --output-on-failure
 
       - name: Build Debian package
         run: |
           set -euo pipefail
           chmod +x debian/rules
           dpkg-buildpackage -us -uc -b
-          mkdir -p dist
-          cp ../infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb dist/
-          dpkg-deb --info dist/infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb
-          sha256sum dist/infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb > dist/SHA256SUMS.txt
+          mkdir -p dist/linux
+          cp ../infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb dist/linux/
+          dpkg-deb --info dist/linux/infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb
 
-      - name: Upload Debian package artifact
+      - name: Upload Linux package
         uses: actions/upload-artifact@v4
         with:
-          name: infiltrator-calc-${{ steps.version.outputs.version }}-amd64-deb
-          path: dist/*
+          name: infiltrator-calc-linux-amd64
+          path: dist/linux/*
           if-no-files-found: error
 
-      - name: Publish GitHub release
-        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
+  windows:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source and Common dependency
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up MSYS2 UCRT64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-gtk4
+            zip
+
+      - name: Build and test on Windows
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          test -n "$version"
+
+          cmake -S . -B build-windows -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DINFILTRATR_COMMON_BUILD_SHARED=OFF
+          cmake --build build-windows --parallel
+          ctest --test-dir build-windows --output-on-failure
+          test -f build-windows/infiltrator-calc.exe
+
+      - name: Build Windows executable and portable runtime
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          out="dist/windows"
+          runtime="$out/infiltrator-calc-${version}-windows-x64"
+          mkdir -p "$runtime"
+
+          cp build-windows/infiltrator-calc.exe \
+            "$out/infiltrator-calc_${version}_windows_x64.exe"
+          cp build-windows/infiltrator-calc.exe \
+            "$runtime/infiltrator-calc.exe"
+
+          # Copy the complete transitive UCRT64 DLL closure beside the EXE.
+          queue=("build-windows/infiltrator-calc.exe")
+          while (("${#queue[@]}" > 0)); do
+            file="${queue[0]}"
+            queue=("${queue[@]:1}")
+            while IFS= read -r dep; do
+              [[ "$dep" == /ucrt64/bin/* ]] || continue
+              base="$(basename "$dep")"
+              if [[ ! -f "$runtime/$base" ]]; then
+                cp "$dep" "$runtime/$base"
+                queue+=("$runtime/$base")
+              fi
+            done < <(ldd "$file" | awk '{for(i=1;i<=NF;i++) if ($i ~ /^\/ucrt64\/bin\//) print $i}')
+          done
+
+          # Preserve runtime data GTK/GLib may discover relative to the DLL prefix.
+          for rel in \
+            share/glib-2.0/schemas \
+            etc/fonts \
+            share/fontconfig \
+            share/icons/Adwaita \
+            share/icons/hicolor \
+            lib/gdk-pixbuf-2.0; do
+            if [[ -e "/ucrt64/$rel" ]]; then
+              mkdir -p "$runtime/$(dirname "$rel")"
+              cp -a "/ucrt64/$rel" "$runtime/$rel"
+            fi
+          done
+
+          cat > "$runtime/README-WINDOWS.txt" <<'EOF'
+          Infiltrator Calc for Windows x64
+
+          Run infiltrator-calc.exe from this folder.
+          The bundled DLL and runtime-data files are the native GTK/GLib
+          dependencies required by the Windows build.
+          EOF
+
+          (
+            cd "$out"
+            zip -qr "infiltrator-calc_${version}_windows_x64_portable.zip" \
+              "infiltrator-calc-${version}-windows-x64"
+          )
+
+          test -f "$out/infiltrator-calc_${version}_windows_x64.exe"
+          test -f "$out/infiltrator-calc_${version}_windows_x64_portable.zip"
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: infiltrator-calc-windows-x64
+          path: |
+            dist/windows/infiltrator-calc_*_windows_x64.exe
+            dist/windows/infiltrator-calc_*_windows_x64_portable.zip
+          if-no-files-found: error
+
+  publish:
+    needs: [linux, windows]
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download Linux package
+        uses: actions/download-artifact@v4
+        with:
+          name: infiltrator-calc-linux-amd64
+          path: dist/linux
+
+      - name: Download Windows package
+        uses: actions/download-artifact@v4
+        with:
+          name: infiltrator-calc-windows-x64
+          path: dist/windows
+
+      - name: Verify cross-platform release assets
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          set -euo pipefail
+          test -f "dist/linux/infiltrator-calc_${VERSION}_amd64.deb"
+          test -f "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe"
+          test -f "dist/windows/infiltrator-calc_${VERSION}_windows_x64_portable.zip"
+
+          sha256sum \
+            "dist/linux/infiltrator-calc_${VERSION}_amd64.deb" \
+            "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe" \
+            "dist/windows/infiltrator-calc_${VERSION}_windows_x64_portable.zip" \
+            > dist/SHA256SUMS.txt
+
+      - name: Publish immutable cross-platform GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.linux.outputs.version }}
         run: |
           set -euo pipefail
           gh release create "v${VERSION}" \
-            "dist/infiltrator-calc_${VERSION}_amd64.deb" \
+            "dist/linux/infiltrator-calc_${VERSION}_amd64.deb" \
+            "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe" \
+            "dist/windows/infiltrator-calc_${VERSION}_windows_x64_portable.zip" \
             "dist/SHA256SUMS.txt" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
             --title "Infiltrator Calc ${VERSION}" \
-            --generate-notes
+            --generate-notes \
+            --latest
 
+  apt-publication:
+    needs: [linux, windows, publish]
+    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
       - name: Refresh and verify Infiltrator APT repository
         env:
           DISPATCH_TOKEN: ${{ secrets.APT_REPOSITORY_DISPATCH_TOKEN }}
           RELEASE_SHA: ${{ github.sha }}
           APP_ID: infiltrator-calc
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.linux.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
