@@ -54,5 +54,11 @@ add_executable(infiltrator-calc-test
 target_link_libraries(infiltrator-calc-test PRIVATE infiltrator-calc-core)
 add_test(NAME calculator-core COMMAND infiltrator-calc-test)
 
+add_executable(infiltrator-calc-session-test
+    tests/test_session.cpp
+)
+target_link_libraries(infiltrator-calc-session-test PRIVATE infiltrator-calc-core)
+add_test(NAME calculator-session COMMAND infiltrator-calc-session-test)
+
 install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
 install(FILES LICENSE DESTINATION share/doc/infiltrator-calc OPTIONAL)
