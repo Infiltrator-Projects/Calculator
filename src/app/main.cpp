@@ -77,10 +77,10 @@ void programmer_mode_change(const char*l){
     else if(!g_strcmp0(l,"OCT")) programmer_base=infiltrator::calc::ProgrammerBase::Octal;
     else if(!g_strcmp0(l,"DEC")) programmer_base=infiltrator::calc::ProgrammerBase::Decimal;
     else if(!g_strcmp0(l,"HEX")) programmer_base=infiltrator::calc::ProgrammerBase::Hexadecimal;
-    else if(!g_strcmp0(l,"8")) programmer_width=infiltrator::calc::IntegerWidth::Bits8;
-    else if(!g_strcmp0(l,"16")) programmer_width=infiltrator::calc::IntegerWidth::Bits16;
-    else if(!g_strcmp0(l,"32")) programmer_width=infiltrator::calc::IntegerWidth::Bits32;
-    else if(!g_strcmp0(l,"64")) programmer_width=infiltrator::calc::IntegerWidth::Bits64;
+    else if(!g_strcmp0(l,"W8")) programmer_width=infiltrator::calc::IntegerWidth::Bits8;
+    else if(!g_strcmp0(l,"W16")) programmer_width=infiltrator::calc::IntegerWidth::Bits16;
+    else if(!g_strcmp0(l,"W32")) programmer_width=infiltrator::calc::IntegerWidth::Bits32;
+    else if(!g_strcmp0(l,"W64")) programmer_width=infiltrator::calc::IntegerWidth::Bits64;
     else if(!g_strcmp0(l,"U/S")) programmer_signed=!programmer_signed;
     else return;
     calculate_programmer();
@@ -91,7 +91,7 @@ void on_button_clicked(GtkButton*b,gpointer){const char*l=gtk_button_get_label(b
     if(!g_strcmp0(l,"MODE")){toggle_mode();return;}
     if(!g_strcmp0(l,"HIST")){show_history(nullptr,nullptr);return;}
     if(mode==Mode::Programmer){
-        if(!g_strcmp0(l,"BIN")||!g_strcmp0(l,"OCT")||!g_strcmp0(l,"DEC")||!g_strcmp0(l,"HEX")||!g_strcmp0(l,"8")||!g_strcmp0(l,"16")||!g_strcmp0(l,"32")||!g_strcmp0(l,"64")||!g_strcmp0(l,"U/S")){programmer_mode_change(l);return;}
+        if(!g_strcmp0(l,"BIN")||!g_strcmp0(l,"OCT")||!g_strcmp0(l,"DEC")||!g_strcmp0(l,"HEX")||!g_strcmp0(l,"W8")||!g_strcmp0(l,"W16")||!g_strcmp0(l,"W32")||!g_strcmp0(l,"W64")||!g_strcmp0(l,"U/S")){programmer_mode_change(l);return;}
         if(!g_strcmp0(l,"=")){calculate_programmer();return;}
         if(!g_strcmp0(l,"AC")){clear_calculation();return;}
         if(!g_strcmp0(l,"⌫")){backspace();return;}
@@ -120,7 +120,7 @@ void activate(GtkApplication*a,gpointer){GtkWidget*w=gtk_application_window_new(
 GtkWidget*d=gtk_box_new(GTK_ORIENTATION_VERTICAL,7);gtk_widget_add_css_class(d,"display");gtk_box_append(GTK_BOX(shell),d);expression_entry=gtk_entry_new();gtk_entry_set_placeholder_text(GTK_ENTRY(expression_entry),"Enter expression or assign variable, e.g. x=42");gtk_widget_add_css_class(expression_entry,"expression");gtk_entry_set_alignment(GTK_ENTRY(expression_entry),1);g_signal_connect(expression_entry,"activate",G_CALLBACK(on_activate),nullptr);gtk_box_append(GTK_BOX(d),expression_entry);result_label=gtk_label_new("0");gtk_widget_add_css_class(result_label,"result");gtk_widget_set_halign(result_label,GTK_ALIGN_END);gtk_label_set_ellipsize(GTK_LABEL(result_label),PANGO_ELLIPSIZE_START);gtk_box_append(GTK_BOX(d),result_label);status_label=gtk_label_new("READY");gtk_widget_add_css_class(status_label,"status");gtk_widget_set_halign(status_label,GTK_ALIGN_END);gtk_box_append(GTK_BOX(d),status_label);
 standard_grid=new_grid();gtk_box_append(GTK_BOX(shell),standard_grid);const char*stdkeys[][4]={{"MC","MR","M+","M-"},{"C","⌫","%","/"},{"1/x","x²","√","^"},{"7","8","9","*"},{"4","5","6","-"},{"1","2","3","+"},{"±","0",".","="},{"(",")","%","="}};fill_grid(standard_grid,stdkeys,8);
 scientific_grid=new_grid();gtk_box_append(GTK_BOX(shell),scientific_grid);const char*scikeys[][4]={{"DEG","π","e","C"},{"sin","cos","tan","⌫"},{"asin","acos","atan","^"},{"ln","log","exp","x!"},{"√","∛","abs","%"},{"7","8","9","/"},{"4","5","6","*"},{"1","2","3","-"},{"(","0",")","+"},{"±",".","1/x","="}};fill_grid(scientific_grid,scikeys,10);gtk_widget_set_visible(scientific_grid,FALSE);
-programmer_grid=new_grid();gtk_box_append(GTK_BOX(shell),programmer_grid);const char*progkeys[][4]={{"BIN","OCT","DEC","HEX"},{"8","16","32","64"},{"U/S","~","&","|"},{"^","<<",">>","AC"},{"(",")","/","*"},{"7","8","9","-"},{"4","5","6","+"},{"1","2","3","="},{"0","A","B","⌫"},{"C","D","E","F"}};fill_grid(programmer_grid,progkeys,10);gtk_widget_set_visible(programmer_grid,FALSE);
+programmer_grid=new_grid();gtk_box_append(GTK_BOX(shell),programmer_grid);const char*progkeys[][4]={{"BIN","OCT","DEC","HEX"},{"W8","W16","W32","W64"},{"U/S","~","&","|"},{"^","<<",">>","AC"},{"(",")","/","*"},{"7","8","9","-"},{"4","5","6","+"},{"1","2","3","="},{"0","A","B","⌫"},{"C","D","E","F"}};fill_grid(programmer_grid,progkeys,10);gtk_widget_set_visible(programmer_grid,FALSE);
 GtkWidget*f=gtk_label_new("Standard · Scientific · Programmer · variables · memory · history · Keyboard ready");gtk_widget_add_css_class(f,"footer");gtk_widget_set_halign(f,GTK_ALIGN_START);gtk_box_append(GTK_BOX(shell),f);gtk_window_present(GTK_WINDOW(w));gtk_widget_grab_focus(expression_entry);}
 }
 int main(int argc,char**argv){GtkApplication*a=gtk_application_new("net.ssmith.infiltrator.calc",G_APPLICATION_DEFAULT_FLAGS);g_signal_connect(a,"activate",G_CALLBACK(activate),nullptr);int s=g_application_run(G_APPLICATION(a),argc,argv);if(css_provider)g_object_unref(css_provider);g_object_unref(a);return s;}
