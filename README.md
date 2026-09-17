@@ -6,7 +6,7 @@ Infiltrator Calc is a native desktop calculator for the Infiltrator software fam
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.4  
+**Current source version:** 0.1.5  
 **Language:** C++17 application/core with C-based GTK4 presentation APIs  
 **Shared foundation:** Infiltratr Common 1.17.0  
 **Design contract:** Infiltrator Design v1  
@@ -18,7 +18,7 @@ Infiltrator Calc has three explicitly switchable desktop modes using the MODE co
 
 - Standard — arithmetic, percentages, powers, unary operations and memory;
 - Scientific — trigonometric, inverse trigonometric, logarithmic, exponential and related functions with degree/radian control; and
-- Programmer — binary, octal, decimal and hexadecimal integer arithmetic, bitwise operations, shifts, complement, 8/16/32/64-bit widths, and unsigned/signed display.
+- Programmer — binary, octal, decimal and hexadecimal integer arithmetic, bitwise operations, shifts, complement, 8/16/32/64-bit widths, and unsigned/signed display. Width controls are explicitly labelled W8, W16, W32 and W64 so they do not conflict with numeric keypad entry.
 
 The calculator also provides reusable variables, bounded calculation history and a shared calculation-session layer above the parser. Variables can be assigned directly with expressions such as `x=42` and reused in subsequent calculations.
 
