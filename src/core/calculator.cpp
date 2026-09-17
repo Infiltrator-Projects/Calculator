@@ -15,7 +15,8 @@ constexpr double kE = 2.718281828459045235360287471352662498;
 
 class Parser {
 public:
-    explicit Parser(std::string_view input) : input_(input) {}
+    Parser(std::string_view input, const Variables& variables)
+        : input_(input), variables_(variables) {}
 
     Result run() {
         skip_space();
@@ -30,6 +31,7 @@ public:
 
 private:
     std::string_view input_;
+    const Variables& variables_;
     std::size_t position_ = 0;
     std::string error_;
 
@@ -105,7 +107,7 @@ private:
         skip_space();
         const std::size_t start = position_;
         while (position_ < input_.size() &&
-               (std::isalpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) ++position_;
+               (std::isalnum(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) ++position_;
         return std::string(input_.substr(start, position_ - start));
     }
 
@@ -147,15 +149,20 @@ private:
             return value;
         }
 
-        if (position_ < input_.size() && std::isalpha(static_cast<unsigned char>(input_[position_]))) {
+        if (position_ < input_.size() &&
+            (std::isalpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) {
             const std::string name = parse_identifier();
             if (name == "pi") return kPi;
             if (name == "e") return kE;
-            if (!consume('(')) { error_ = "function requires parentheses"; return 0.0; }
-            const double argument = parse_expression();
-            if (!consume(')') && error_.empty()) error_ = "missing closing parenthesis";
-            if (!error_.empty()) return 0.0;
-            return apply_function(name, argument);
+            if (consume('(')) {
+                const double argument = parse_expression();
+                if (!consume(')') && error_.empty()) error_ = "missing closing parenthesis";
+                if (!error_.empty()) return 0.0;
+                return apply_function(name, argument);
+            }
+            const auto it = variables_.find(name);
+            if (it == variables_.end()) { error_ = "unknown variable"; return 0.0; }
+            return it->second;
         }
 
         const char* begin = input_.data() + position_;
@@ -170,6 +177,13 @@ private:
 
 } // namespace
 
-Result evaluate(const std::string& expression) { return Parser(expression).run(); }
+Result evaluate(const std::string& expression) {
+    static const Variables empty_variables;
+    return Parser(expression, empty_variables).run();
+}
+
+Result evaluate(const std::string& expression, const Variables& variables) {
+    return Parser(expression, variables).run();
+}
 
 } // namespace infiltrator::calc
