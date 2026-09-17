@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.4) unstable; urgency=medium
+
+  * Add Programmer mode with binary, octal, decimal and hexadecimal bases.
+  * Add 8, 16, 32 and 64-bit integer widths with unsigned/signed display.
+  * Add integer bitwise, shift, arithmetic and complement operations.
+  * Replace the two-state mode toggle with Standard, Scientific and Programmer modes.
+  * Add Programmer-mode regression tests and keep the shared Common-based core architecture.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 08:58:00 +1000
+
 infiltrator-calc (0.1.2) unstable; urgency=medium
 
   * Complete the Standard calculator control set with percent, sign, square, square root and reciprocal operations.
