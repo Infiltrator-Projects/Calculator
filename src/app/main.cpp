@@ -21,15 +21,9 @@ bool font_family_available(const char*w){PangoFontMap*m=PANGO_FONT_MAP(pango_cai
 const char*ui_font(){return font_family_available(kUiFont)?kUiFont:"Sans";}
 const char*brand_font(){return font_family_available(kBrandFont)?kBrandFont:ui_font();}
 void status(const char*t,bool fault=false){gtk_label_set_text(GTK_LABEL(status_label),t);if(fault)gtk_widget_add_css_class(status_label,"fault");else gtk_widget_remove_css_class(status_label,"fault");}
+void apply_css(GtkWidget*);
 
-bool current_value(double&v){
-    const char*t=gtk_editable_get_text(GTK_EDITABLE(expression_entry));
-    auto r=session.evaluate(t?t:"");
-    if(!r.ok){gtk_label_set_text(GTK_LABEL(result_label),("Error: "+r.error).c_str());status("CALCULATION ERROR",true);return false;}
-    v=r.value;
-    return true;
-}
-
+bool current_value(double&v){const char*t=gtk_editable_get_text(GTK_EDITABLE(expression_entry));auto r=session.evaluate(t?t:"");if(!r.ok){gtk_label_set_text(GTK_LABEL(result_label),("Error: "+r.error).c_str());status("CALCULATION ERROR",true);return false;}v=r.value;return true;}
 void set_expression(const std::string&s){gtk_editable_set_text(GTK_EDITABLE(expression_entry),s.c_str());gtk_editable_set_position(GTK_EDITABLE(expression_entry),-1);gtk_widget_grab_focus(expression_entry);}
 void calculate(){double v;if(!current_value(v))return;gtk_label_set_text(GTK_LABEL(result_label),format_value(v).c_str());status("READY");}
 void clear_calculation(){set_expression("");gtk_label_set_text(GTK_LABEL(result_label),"0");status("READY");}
@@ -37,24 +31,15 @@ void insert_text(const char*t){int p=gtk_editable_get_position(GTK_EDITABLE(expr
 void backspace(){int p=gtk_editable_get_position(GTK_EDITABLE(expression_entry));if(p>0)gtk_editable_delete_text(GTK_EDITABLE(expression_entry),p-1,p);gtk_widget_grab_focus(expression_entry);}
 
 void show_history(GtkWidget*,gpointer){
-    GtkWidget*w=gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(w),"Calculation History");
-    gtk_window_set_default_size(GTK_WINDOW(w),520,460);
-    GtkWidget*root=gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
-    gtk_widget_add_css_class(root,"shell");
-    gtk_window_set_child(GTK_WINDOW(w),root);
-    GtkWidget*title=gtk_label_new("Calculation History");gtk_widget_add_css_class(title,"brand-title");gtk_box_append(GTK_BOX(root),title);
-    GtkWidget*scroll=gtk_scrolled_window_new();gtk_widget_set_vexpand(scroll,TRUE);gtk_box_append(GTK_BOX(root),scroll);
-    GtkWidget*list=gtk_list_box_new();gtk_list_box_set_selection_mode(GTK_LIST_BOX(list),GTK_SELECTION_NONE);gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll),list);
-    for(auto it=session.history().rbegin();it!=session.history().rend();++it){
-        std::string text=it->input+"\n"+(it->result.ok?format_value(it->result.value):("Error: "+it->result.error));
-        GtkWidget*row=gtk_label_new(text.c_str());gtk_label_set_xalign(GTK_LABEL(row),0.0F);gtk_widget_add_css_class(row,"history-row");gtk_list_box_append(GTK_LIST_BOX(list),row);
-    }
+    GtkWidget*w=gtk_window_new(); gtk_window_set_title(GTK_WINDOW(w),"Calculation History"); gtk_window_set_default_size(GTK_WINDOW(w),520,460);
+    GtkWidget*root=gtk_box_new(GTK_ORIENTATION_VERTICAL,10); gtk_widget_add_css_class(root,"shell"); gtk_window_set_child(GTK_WINDOW(w),root);
+    GtkWidget*title=gtk_label_new("Calculation History"); gtk_widget_add_css_class(title,"brand-title"); gtk_box_append(GTK_BOX(root),title);
+    GtkWidget*scroll=gtk_scrolled_window_new(); gtk_widget_set_vexpand(scroll,TRUE); gtk_box_append(GTK_BOX(root),scroll);
+    GtkWidget*list=gtk_list_box_new(); gtk_list_box_set_selection_mode(GTK_LIST_BOX(list),GTK_SELECTION_NONE); gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll),list);
+    for(auto it=session.history().rbegin();it!=session.history().rend();++it){std::string text=it->input+"\n"+(it->result.ok?format_value(it->result.value):("Error: "+it->result.error));GtkWidget*row=gtk_label_new(text.c_str());gtk_label_set_xalign(GTK_LABEL(row),0.0F);gtk_widget_add_css_class(row,"history-row");gtk_list_box_append(GTK_LIST_BOX(list),row);}
     GtkWidget*clear=gtk_button_new_with_label("Clear History");gtk_widget_add_css_class(clear,"operation");
-    g_signal_connect_swapped(clear,"clicked",G_CALLBACK(+[](GtkWindow*window){session.clear_history();gtk_window_destroy(window);}),w);
-    gtk_box_append(GTK_BOX(root),clear);
-    apply_css(w);
-    gtk_window_present(GTK_WINDOW(w));
+    g_signal_connect_swapped(clear,"clicked",G_CALLBACK(+[](GtkWindow*window){session.clear_history();gtk_window_destroy(window);}),w); gtk_box_append(GTK_BOX(root),clear);
+    apply_css(w); gtk_window_present(GTK_WINDOW(w));
 }
 
 void unary_transform(const char*op){double v;if(!current_value(v))return;if(!g_strcmp0(op,"±"))v=-v;else if(!g_strcmp0(op,"x²"))v*=v;else if(!g_strcmp0(op,"√")){if(v<0){status("DOMAIN ERROR",true);return;}v=std::sqrt(v);}else if(!g_strcmp0(op,"1/x")){if(v==0){status("DIVISION BY ZERO",true);return;}v=1.0/v;}set_expression(format_value(v));gtk_label_set_text(GTK_LABEL(result_label),format_value(v).c_str());status("READY");}
