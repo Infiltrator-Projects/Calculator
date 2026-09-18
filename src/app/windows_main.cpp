@@ -51,6 +51,10 @@ constexpr COLORREF kNeutralAccent = RGB(190, 199, 207);
 constexpr COLORREF kWarning = RGB(209, 158, 71);
 constexpr COLORREF kFault = RGB(201, 107, 107);
 constexpr COLORREF kOperation = RGB(32, 37, 43);
+constexpr COLORREF kCardHover = RGB(34, 39, 45);
+constexpr COLORREF kSurfaceHover = RGB(23, 27, 32);
+constexpr COLORREF kOperationHover = RGB(43, 49, 55);
+constexpr COLORREF kEqualsHover = RGB(238, 241, 243);
 
 enum class Mode { Standard = 0, Scientific = 1, Programmer = 2 };
 enum class ButtonKind { Number, Operation, Utility, Clear, Equals, Mode, Toolbar };
@@ -67,6 +71,7 @@ HWND g_footer = nullptr;
 HWND g_mode_buttons[3] = {nullptr, nullptr, nullptr};
 HWND g_history_window = nullptr;
 HWND g_history_edit = nullptr;
+HWND g_hover_button = nullptr;
 
 std::vector<HWND> g_standard_buttons;
 std::vector<HWND> g_scientific_buttons;
@@ -607,6 +612,11 @@ bool is_number_label(const std::wstring& label) {
            ch == L'.';
 }
 
+bool is_memory_label(const std::wstring& label) {
+    return label == L"MC" || label == L"MR" ||
+           label == L"M+" || label == L"M−";
+}
+
 ButtonKind button_kind(int id, const std::wstring& label) {
     if (id == kIdHistory) return ButtonKind::Toolbar;
     if (id == kIdModeStandard || id == kIdModeScientific ||
@@ -650,6 +660,7 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
     const bool selected = is_selected_button(id, label);
     const bool pressed = (item->itemState & ODS_SELECTED) != 0U;
     const bool disabled = (item->itemState & ODS_DISABLED) != 0U;
+    const bool hovered = item->hwndItem == g_hover_button;
 
     COLORREF fill = kCard;
     COLORREF text = kTitle;
@@ -665,9 +676,15 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
         text = kButtonBackground;
         break;
     case ButtonKind::Utility:
-        fill = selected ? kSelection : kSurface;
-        text = selected ? kTitle : kMuted;
-        border = selected ? kNeutralAccent : kBorder;
+        if (is_memory_label(label)) {
+            fill = kBackground;
+            text = kMuted;
+            border = kBackground;
+        } else {
+            fill = selected ? kSelection : kSurface;
+            text = selected ? kTitle : kMuted;
+            border = selected ? kNeutralAccent : kBorder;
+        }
         break;
     case ButtonKind::Clear:
         fill = kCard;
@@ -689,6 +706,30 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
         text = kMuted;
         border = kBorder;
         break;
+    }
+
+    if (hovered && !disabled && !pressed) {
+        switch (kind) {
+        case ButtonKind::Number:
+        case ButtonKind::Clear:
+            fill = kCardHover;
+            break;
+        case ButtonKind::Operation:
+            fill = kOperationHover;
+            break;
+        case ButtonKind::Utility:
+            if (!selected) fill = kSurfaceHover;
+            break;
+        case ButtonKind::Equals:
+            fill = kEqualsHover;
+            break;
+        case ButtonKind::Mode:
+            if (!selected) fill = kSurfaceHover;
+            break;
+        case ButtonKind::Toolbar:
+            fill = kSurfaceHover;
+            break;
+        }
     }
 
     if (pressed && kind != ButtonKind::Equals && !selected) {
@@ -737,6 +778,40 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
     return TRUE;
 }
 
+LRESULT CALLBACK button_subclass_proc(HWND window, UINT message,
+                                      WPARAM wparam, LPARAM lparam,
+                                      UINT_PTR subclass_id, DWORD_PTR) {
+    switch (message) {
+    case WM_MOUSEMOVE:
+        if (g_hover_button != window) {
+            HWND previous = g_hover_button;
+            g_hover_button = window;
+            if (previous != nullptr) {
+                RedrawWindow(previous, nullptr, nullptr,
+                             RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+            }
+            TRACKMOUSEEVENT tracking{sizeof(TRACKMOUSEEVENT), TME_LEAVE,
+                                     window, HOVER_DEFAULT};
+            TrackMouseEvent(&tracking);
+            RedrawWindow(window, nullptr, nullptr,
+                         RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+        }
+        break;
+    case WM_MOUSELEAVE:
+        if (g_hover_button == window) g_hover_button = nullptr;
+        RedrawWindow(window, nullptr, nullptr,
+                     RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+        break;
+    case WM_NCDESTROY:
+        if (g_hover_button == window) g_hover_button = nullptr;
+        RemoveWindowSubclass(window, button_subclass_proc, subclass_id);
+        break;
+    default:
+        break;
+    }
+    return DefSubclassProc(window, message, wparam, lparam);
+}
+
 HWND create_button(HWND parent, int id, const wchar_t* label, HFONT font) {
     HWND button = CreateWindowExW(
         0, L"BUTTON", label,
@@ -746,6 +821,7 @@ HWND create_button(HWND parent, int id, const wchar_t* label, HFONT font) {
         g_instance, nullptr);
     apply_font(button, font);
     apply_dark_control_theme(button);
+    SetWindowSubclass(button, button_subclass_proc, 1, 0);
     return button;
 }
 
@@ -807,25 +883,53 @@ void update_mode_ui() {
     SetFocus(g_expression);
 }
 
-void layout_grid(const std::vector<HWND>& buttons, int rows,
-                 int left, int top, int width, int height) {
-    if (buttons.empty() || rows <= 0) return;
+void layout_grid_range(const std::vector<HWND>& buttons,
+                       std::size_t start_index, int rows,
+                       int left, int top, int width, int height) {
+    if (start_index >= buttons.size() || rows <= 0) return;
 
     const int gap = sx(g_main, 6);
     const int columns = 4;
-    const int button_width = std::max(sx(g_main, 48),
+    const int button_width = std::max(sx(g_main, 46),
                                       (width - gap * (columns - 1)) / columns);
-    const int button_height = std::max(sx(g_main, 30),
+    const int button_height = std::max(sx(g_main, 22),
                                        (height - gap * (rows - 1)) / rows);
+    const std::size_t count = std::min(
+        buttons.size() - start_index,
+        static_cast<std::size_t>(rows * columns));
 
-    for (std::size_t index = 0; index < buttons.size(); ++index) {
+    for (std::size_t index = 0; index < count; ++index) {
         const int row = static_cast<int>(index) / columns;
         const int column = static_cast<int>(index) % columns;
-        MoveWindow(buttons[index],
+        MoveWindow(buttons[start_index + index],
                    left + column * (button_width + gap),
                    top + row * (button_height + gap),
                    button_width, button_height, TRUE);
     }
+}
+
+void layout_grid(const std::vector<HWND>& buttons, int rows,
+                 int left, int top, int width, int height) {
+    layout_grid_range(buttons, 0, rows, left, top, width, height);
+}
+
+void layout_standard_grid(int left, int top, int width, int height) {
+    if (g_standard_buttons.size() < 28U) return;
+
+    const int memory_height = sx(g_main, 24);
+    const int memory_gap = sx(g_main, 2);
+    const int memory_width = width / 4;
+
+    for (int i = 0; i < 4; ++i) {
+        const int x = left + i * memory_width;
+        const int w = (i == 3) ? (left + width - x) : memory_width;
+        MoveWindow(g_standard_buttons[static_cast<std::size_t>(i)],
+                   x, top, w, memory_height, TRUE);
+    }
+
+    layout_grid_range(g_standard_buttons, 4, 6,
+                      left, top + memory_height + memory_gap,
+                      width, std::max(0, height - memory_height - memory_gap));
 }
 
 void layout_main(HWND window) {
@@ -881,14 +985,12 @@ void layout_main(HWND window) {
 
     const int grid_bottom = height - margin;
     const int grid_height = std::max(sx(window, 300), grid_bottom - y);
-    const int rows = g_mode == Mode::Standard ? 7 : 10;
-
     if (g_mode == Mode::Standard) {
-        layout_grid(g_standard_buttons, rows, margin, y, content_width, grid_height);
+        layout_standard_grid(margin, y, content_width, grid_height);
     } else if (g_mode == Mode::Scientific) {
-        layout_grid(g_scientific_buttons, rows, margin, y, content_width, grid_height);
+        layout_grid(g_scientific_buttons, 10, margin, y, content_width, grid_height);
     } else {
-        layout_grid(g_programmer_buttons, rows, margin, y, content_width, grid_height);
+        layout_grid(g_programmer_buttons, 10, margin, y, content_width, grid_height);
     }
 
     ShowWindow(g_footer, SW_HIDE);
@@ -959,7 +1061,7 @@ void create_controls(HWND window) {
 
     const wchar_t* standard_keys[] = {
         L"MC", L"MR", L"M+", L"M−",
-        L"C", L"⌫", L"%", L"÷",
+        L"%", L"C", L"⌫", L"÷",
         L"1/x", L"x²", L"√", L"^",
         L"7", L"8", L"9", L"×",
         L"4", L"5", L"6", L"−",
@@ -1095,8 +1197,8 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
 
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
-        info->ptMinTrackSize.x = sx(window, 340);
-        info->ptMinTrackSize.y = sx(window, 560);
+        info->ptMinTrackSize.x = sx(window, 320);
+        info->ptMinTrackSize.y = sx(window, 520);
         return 0;
     }
 
@@ -1254,7 +1356,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         return 1;
     }
 
-    RECT desired{0, 0, 380, 650};
+    RECT desired{0, 0, 360, 610};
     AdjustWindowRectEx(&desired, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     g_main = CreateWindowExW(
