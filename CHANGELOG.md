@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.12
+
+- Reworked the native Windows layout to a compact Windows-calculator density with a 380×650 default client area, smaller header/mode chrome, a tighter display and 6px keypad gaps.
+- Fixed owner-drawn mode and programmer selection repainting so changing Standard, Scientific, Programmer, base and width controls clears the previous visual selection immediately.
+- Added an explicit Segoe UI fallback when the MB Corpo design-contract faces are not installed, avoiding uncontrolled Windows font substitution.
+- Fixed rounded owner-drawn button corner artefacts by painting the control background before the rounded surface.
+- Removed the redundant Windows subtitle/footer chrome from the visible calculator surface.
+- Strengthened Windows CI to launch the EXE, verify compact geometry, switch all three modes, confirm the correct visible keypad counts and validate the title font family.
+
 ## 0.1.11
 
 - Fixed native Windows keypad creation by binding the main window handle during `WM_CREATE` before constructing child key controls.
