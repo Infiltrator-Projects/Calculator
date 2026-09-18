@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../src/ui/calculator_ui_contract.hpp"
+#include "../src/ui/calculator_theme.hpp"
 
 #include <cassert>
 #include <string_view>
@@ -35,6 +36,17 @@ int main() {
     static_assert(!regular.dock_history);
     static_assert(wide.layout_class == LayoutClass::Wide);
     static_assert(wide.dock_history);
+
+    static_assert(kNightPalette.background == 0x050608);
+    static_assert(kNightPalette.panel == 0x101318);
+    static_assert(kDayPalette.background == 0xF4F5F7);
+    static_assert(kDayPalette.panel == 0xFFFFFF);
+    static_assert(theme_mode_name(ThemeMode::System) == "System");
+    static_assert(theme_mode_name(ThemeMode::Day) == "Day");
+    static_assert(theme_mode_name(ThemeMode::Night) == "Night");
+    static_assert(next_theme_mode(ThemeMode::System) == ThemeMode::Day);
+    static_assert(next_theme_mode(ThemeMode::Day) == ThemeMode::Night);
+    static_assert(next_theme_mode(ThemeMode::Night) == ThemeMode::System);
 
     assert(mode_name(Mode::Standard) == "Standard");
     assert(mode_name(Mode::Scientific) == "Scientific");
