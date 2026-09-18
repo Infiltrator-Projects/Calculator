@@ -45,15 +45,29 @@ Result Session::evaluate(const std::string& input) {
         variables_[*assignment] = result.value;
     }
 
-    history_.push_back({input, result});
-    while (history_.size() > history_limit_) history_.pop_front();
+    record_history(input, result);
     return result;
 }
 
-void Session::memory_clear() { memory_ = 0.0; }
-void Session::memory_add(double value) { memory_ += value; }
-void Session::memory_subtract(double value) { memory_ -= value; }
+void Session::record_history(std::string input, Result result) {
+    history_.push_back({std::move(input), std::move(result)});
+    while (history_.size() > history_limit_) history_.pop_front();
+}
+
+void Session::memory_clear() {
+    memory_ = 0.0;
+    memory_set_ = false;
+}
+void Session::memory_add(double value) {
+    memory_ += value;
+    memory_set_ = true;
+}
+void Session::memory_subtract(double value) {
+    memory_ -= value;
+    memory_set_ = true;
+}
 double Session::memory_recall() const noexcept { return memory_; }
+bool Session::memory_empty() const noexcept { return !memory_set_; }
 
 void Session::set_variable(std::string name, double value) {
     if (valid_identifier(name)) variables_[std::move(name)] = value;
