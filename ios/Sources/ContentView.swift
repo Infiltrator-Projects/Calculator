@@ -11,26 +11,102 @@ private extension Color {
     }
 }
 
-private enum InfiltratorPalette {
-    static let background = Color(hex: 0x050608)
-    static let panel = Color(hex: 0x101318)
-    static let card = Color(hex: 0x171B20)
-    static let surface = Color(hex: 0x0D1014)
-    static let input = Color(hex: 0x0E1115)
-    static let border = Color(hex: 0x353A40)
-    static let text = Color(hex: 0xE8ECEF)
-    static let title = Color(hex: 0xEEF1F3)
-    static let muted = Color(hex: 0xAEB6BD)
-    static let subtle = Color(hex: 0x899198)
-    static let primary = Color(hex: 0xD7DDE2)
-    static let primaryText = Color(hex: 0x111418)
-    static let selected = Color(hex: 0x2B3137)
-    static let warning = Color(hex: 0xD19E47)
-    static let fault = Color(hex: 0xC96B6B)
+private enum ThemePreference: String, CaseIterable, Identifiable {
+    case system
+    case day
+    case night
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return "Follow System"
+        case .day: return "Day"
+        case .night: return "Night"
+        }
+    }
+
+    var preferredScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .day: return .light
+        case .night: return .dark
+        }
+    }
+}
+
+private struct InfiltratorPalette {
+    let background: Color
+    let panel: Color
+    let card: Color
+    let surface: Color
+    let input: Color
+    let border: Color
+    let text: Color
+    let title: Color
+    let muted: Color
+    let subtle: Color
+    let primary: Color
+    let primaryText: Color
+    let selected: Color
+    let warning: Color
+    let fault: Color
+
+    static let night = InfiltratorPalette(
+        background: Color(hex: 0x050608),
+        panel: Color(hex: 0x101318),
+        card: Color(hex: 0x171B20),
+        surface: Color(hex: 0x0D1014),
+        input: Color(hex: 0x0E1115),
+        border: Color(hex: 0x353A40),
+        text: Color(hex: 0xE8ECEF),
+        title: Color(hex: 0xEEF1F3),
+        muted: Color(hex: 0xAEB6BD),
+        subtle: Color(hex: 0x899198),
+        primary: Color(hex: 0xD7DDE2),
+        primaryText: Color(hex: 0x111418),
+        selected: Color(hex: 0x2B3137),
+        warning: Color(hex: 0xD19E47),
+        fault: Color(hex: 0xC96B6B)
+    )
+
+    static let day = InfiltratorPalette(
+        background: Color(hex: 0xF4F5F7),
+        panel: Color(hex: 0xFFFFFF),
+        card: Color(hex: 0xF8F9FA),
+        surface: Color(hex: 0xECEFF2),
+        input: Color(hex: 0xFFFFFF),
+        border: Color(hex: 0xC7CDD3),
+        text: Color(hex: 0x20252B),
+        title: Color(hex: 0x111418),
+        muted: Color(hex: 0x59636C),
+        subtle: Color(hex: 0x737D86),
+        primary: Color(hex: 0x20252B),
+        primaryText: Color(hex: 0xFFFFFF),
+        selected: Color(hex: 0xDDE2E7),
+        warning: Color(hex: 0x9A6500),
+        fault: Color(hex: 0xB54848)
+    )
 }
 
 struct ContentView: View {
     @StateObject private var model = CalculatorModel()
+    @Environment(\.colorScheme) private var systemColorScheme
+    @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
+
+    private var themePreference: ThemePreference {
+        get { ThemePreference(rawValue: themePreferenceRaw) ?? .system }
+        nonmutating set { themePreferenceRaw = newValue.rawValue }
+    }
+
+    private var palette: InfiltratorPalette {
+        switch themePreference {
+        case .day: return .day
+        case .night: return .night
+        case .system:
+            return systemColorScheme == .dark ? .night : .day
+        }
+    }
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 10),
@@ -39,7 +115,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            InfiltratorPalette.background.ignoresSafeArea()
+            palette.background.ignoresSafeArea()
 
             VStack(spacing: 14) {
                 header
@@ -50,7 +126,7 @@ struct ContentView: View {
             }
             .padding(20)
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(themePreference.preferredScheme)
         .sheet(isPresented: $model.showingHistory) {
             HistoryView(model: model)
         }
@@ -61,15 +137,32 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Infiltrator Calc")
                     .font(.system(size: 29, weight: .regular))
-                    .foregroundStyle(InfiltratorPalette.title)
+                    .foregroundStyle(palette.title)
 
                 Text("PRECISION CALCULATOR")
                     .font(.system(size: 9, weight: .bold))
                     .tracking(1.2)
-                    .foregroundStyle(InfiltratorPalette.subtle)
+                    .foregroundStyle(palette.subtle)
             }
 
             Spacer()
+
+            Menu {
+                Picker("Theme", selection: Binding(
+                    get: { themePreference },
+                    set: { themePreference = $0 }
+                )) {
+                    ForEach(ThemePreference.allCases) { preference in
+                        Text(preference.label).tag(preference)
+                    }
+                }
+            } label: {
+                Image(systemName: "circle.lefthalf.filled")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 42, height: 38)
+            }
+            .buttonStyle(InfiltratorToolbarButtonStyle(palette: palette))
+            .accessibilityLabel("Theme")
 
             Button {
                 model.showingHistory = true
@@ -78,7 +171,7 @@ struct ContentView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .frame(width: 42, height: 38)
             }
-            .buttonStyle(InfiltratorToolbarButtonStyle())
+            .buttonStyle(InfiltratorToolbarButtonStyle(palette: palette))
             .accessibilityLabel("Calculation history")
         }
     }
@@ -94,15 +187,15 @@ struct ContentView: View {
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(
                     model.mode == mode
-                        ? InfiltratorPalette.primaryText
-                        : InfiltratorPalette.subtle
+                        ? palette.primaryText
+                        : palette.subtle
                 )
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(
                             model.mode == mode
-                                ? InfiltratorPalette.primary
+                                ? palette.primary
                                 : Color.clear
                         )
                 )
@@ -111,10 +204,10 @@ struct ContentView: View {
         .padding(5)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(InfiltratorPalette.surface)
+                .fill(palette.surface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(InfiltratorPalette.border, lineWidth: 1)
+                        .stroke(palette.border, lineWidth: 1)
                 )
         )
     }
@@ -129,22 +222,22 @@ struct ContentView: View {
             .autocorrectionDisabled()
             .multilineTextAlignment(.trailing)
             .font(.system(size: 15))
-            .foregroundStyle(InfiltratorPalette.muted)
+            .foregroundStyle(palette.muted)
             .padding(.horizontal, 12)
             .frame(minHeight: 42)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(InfiltratorPalette.input)
+                    .fill(palette.input)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(InfiltratorPalette.border, lineWidth: 1)
+                            .stroke(palette.border, lineWidth: 1)
                     )
             )
             .onSubmit { model.calculate() }
 
             Text(model.display)
                 .font(.system(size: 46, weight: .regular, design: .rounded))
-                .foregroundStyle(InfiltratorPalette.title)
+                .foregroundStyle(palette.title)
                 .lineLimit(1)
                 .minimumScaleFactor(0.42)
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -155,8 +248,8 @@ struct ContentView: View {
                 .tracking(0.9)
                 .foregroundStyle(
                     model.display == "Error"
-                        ? InfiltratorPalette.fault
-                        : InfiltratorPalette.subtle
+                        ? palette.fault
+                        : palette.subtle
                 )
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -165,10 +258,10 @@ struct ContentView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(InfiltratorPalette.panel)
+                .fill(palette.panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(InfiltratorPalette.border, lineWidth: 1)
+                        .stroke(palette.border, lineWidth: 1)
                 )
         )
     }
@@ -181,7 +274,8 @@ struct ContentView: View {
                         CalculatorKey(
                             title: model.visibleTitle(key),
                             selected: model.keyIsSelected(key),
-                            enabled: model.keyIsEnabled(key)
+                            enabled: model.keyIsEnabled(key),
+                            palette: palette
                         ) {
                             model.press(key)
                         }
@@ -195,7 +289,7 @@ struct ContentView: View {
     private var footer: some View {
         Text("Keyboard ready · Variables, memory and history retained")
             .font(.system(size: 9))
-            .foregroundStyle(InfiltratorPalette.subtle)
+            .foregroundStyle(palette.subtle)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -204,6 +298,7 @@ private struct CalculatorKey: View {
     let title: String
     let selected: Bool
     let enabled: Bool
+    let palette: InfiltratorPalette
     let action: () -> Void
 
     private var kind: KeyKind {
@@ -245,29 +340,29 @@ private struct CalculatorKey: View {
     }
 
     private var background: Color {
-        if selected { return InfiltratorPalette.selected }
+        if selected { return palette.selected }
         switch kind {
-        case .number: return InfiltratorPalette.card
+        case .number: return palette.card
         case .operation: return Color(hex: 0x20252B)
-        case .utility: return InfiltratorPalette.surface
-        case .clear: return InfiltratorPalette.card
-        case .equals: return InfiltratorPalette.primary
+        case .utility: return palette.surface
+        case .clear: return palette.card
+        case .equals: return palette.primary
         }
     }
 
     private var foreground: Color {
         switch kind {
-        case .clear: return InfiltratorPalette.warning
-        case .equals: return InfiltratorPalette.primaryText
-        case .utility: return selected ? InfiltratorPalette.title : InfiltratorPalette.muted
-        case .number, .operation: return InfiltratorPalette.text
+        case .clear: return palette.warning
+        case .equals: return palette.primaryText
+        case .utility: return selected ? palette.title : palette.muted
+        case .number, .operation: return palette.text
         }
     }
 
     private var border: Color {
         if selected { return Color(hex: 0xBEC7CF) }
-        if kind == .equals { return InfiltratorPalette.primary }
-        return InfiltratorPalette.border
+        if kind == .equals { return palette.primary }
+        return palette.border
     }
 
     private enum KeyKind {
@@ -280,19 +375,21 @@ private struct CalculatorKey: View {
 }
 
 private struct InfiltratorToolbarButtonStyle: ButtonStyle {
+    let palette: InfiltratorPalette
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(InfiltratorPalette.muted)
+            .foregroundStyle(palette.muted)
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(
                         configuration.isPressed
-                            ? InfiltratorPalette.card
-                            : InfiltratorPalette.surface
+                            ? palette.card
+                            : palette.surface
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(InfiltratorPalette.border, lineWidth: 1)
+                            .stroke(palette.border, lineWidth: 1)
                     )
             )
     }
@@ -301,21 +398,35 @@ private struct InfiltratorToolbarButtonStyle: ButtonStyle {
 private struct HistoryView: View {
     @ObservedObject var model: CalculatorModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var systemColorScheme
+    @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
     @State private var history = ""
+
+    private var themePreference: ThemePreference {
+        ThemePreference(rawValue: themePreferenceRaw) ?? .system
+    }
+
+    private var palette: InfiltratorPalette {
+        switch themePreference {
+        case .day: return .day
+        case .night: return .night
+        case .system: return systemColorScheme == .dark ? .night : .day
+        }
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                InfiltratorPalette.background.ignoresSafeArea()
+                palette.background.ignoresSafeArea()
 
                 ScrollView {
                     Text(history)
                         .font(.system(size: 15, design: .monospaced))
-                        .foregroundStyle(InfiltratorPalette.text)
+                        .foregroundStyle(palette.text)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(18)
                 }
-                .background(InfiltratorPalette.panel)
+                .background(palette.panel)
             }
             .navigationTitle("Calculation History")
             .toolbar {
@@ -324,7 +435,7 @@ private struct HistoryView: View {
                         model.clearHistory()
                         history = model.historyText()
                     }
-                    .foregroundStyle(InfiltratorPalette.warning)
+                    .foregroundStyle(palette.warning)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -332,7 +443,7 @@ private struct HistoryView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(themePreference.preferredScheme)
         .onAppear { history = model.historyText() }
     }
 }
