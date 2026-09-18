@@ -115,3 +115,10 @@ add_executable(infiltrator-calc-programmer-test
 )
 target_link_libraries(infiltrator-calc-programmer-test PRIVATE infiltrator-calc-core)
 add_test(NAME calculator-programmer COMMAND infiltrator-calc-programmer-test)
+
+add_executable(infiltrator-calc-ui-contract-test
+    tests/test_ui_contract.cpp
+)
+target_link_libraries(infiltrator-calc-ui-contract-test PRIVATE infiltrator-calc-core)
+add_test(NAME calculator-ui-contract COMMAND infiltrator-calc-ui-contract-test)
+
