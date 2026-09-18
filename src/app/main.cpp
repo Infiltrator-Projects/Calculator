@@ -727,6 +727,7 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* subtitle = gtk_label_new("PRECISION DESKTOP CALCULATOR");
     gtk_widget_add_css_class(subtitle, "brand-subtitle");
     gtk_widget_set_halign(subtitle, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(title_stack), subtitle);
     gtk_widget_set_visible(subtitle, FALSE);
 
     GtkWidget* history = toolbar_button("History");
@@ -768,7 +769,8 @@ void activate(GtkApplication* app, gpointer) {
 
     GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_append(GTK_BOX(standard_panel), memory_strip);
-    for (const char* label : {"MC", "MR", "M+", "M−"}) {
+    const char* memory_keys[] = {"MC", "MR", "M+", "M−"};
+    for (const char* label : memory_keys) {
         GtkWidget* button = calc_button(label);
         gtk_widget_set_hexpand(button, TRUE);
         gtk_box_append(GTK_BOX(memory_strip), button);
@@ -822,6 +824,7 @@ void activate(GtkApplication* app, gpointer) {
         gtk_label_new("Keyboard ready · Variables, memory and history retained");
     gtk_widget_add_css_class(footer, "footer");
     gtk_widget_set_halign(footer, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(shell), footer);
     gtk_widget_set_visible(footer, FALSE);
 
     gtk_widget_set_visible(scientific_grid, FALSE);
