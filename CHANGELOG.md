@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.9
+
+- Advanced the Common gitlink to the immutable Infiltratr Common 1.18.1 release commit.
+- Updated the CMake dependency guard and documentation to require Common 1.18.1.
+- Rebuilt Linux, Windows and iPhone release artifacts against the same Common 1.18.1 foundation.
+
+
 ## 0.1.8
 
 - Pinned the Common gitlink to the immutable Infiltratr Common 1.18.0 release commit.

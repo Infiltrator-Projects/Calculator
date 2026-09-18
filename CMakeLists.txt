@@ -18,8 +18,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/VERSION" INFILTRATR_COMMON_VERSION)
 string(STRIP "${INFILTRATR_COMMON_VERSION}" INFILTRATR_COMMON_VERSION)
-if(NOT INFILTRATR_COMMON_VERSION STREQUAL "1.18.0")
-    message(FATAL_ERROR "Infiltrator Calc requires Infiltratr Common 1.18.0; found ${INFILTRATR_COMMON_VERSION}")
+if(NOT INFILTRATR_COMMON_VERSION STREQUAL "1.18.1")
+    message(FATAL_ERROR "Infiltrator Calc requires Infiltratr Common 1.18.1; found ${INFILTRATR_COMMON_VERSION}")
 endif()
 
 add_subdirectory(src/infiltratr-common)

@@ -1,3 +1,11 @@
+infiltrator-calc (0.1.9) unstable; urgency=medium
+
+  * Advance the shared foundation to the immutable Infiltratr Common 1.18.1 release.
+  * Keep the Common version guard and exact gitlink aligned across Linux, Windows and iPhone builds.
+  * Rebuild all published platform artifacts against Common 1.18.1.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 11:20:00 +1000
+
 infiltrator-calc (0.1.8) unstable; urgency=medium
 
   * Pin the shared foundation to the immutable Infiltratr Common 1.18.0 release.

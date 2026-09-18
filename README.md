@@ -6,9 +6,9 @@ Infiltrator Calc is a native cross-platform calculator for the Infiltrator softw
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.8  
+**Current source version:** 0.1.9  
 **Language:** C++17 shared calculation core, GTK4 desktop shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Infiltratr Common 1.18.0  
+**Shared foundation:** Infiltratr Common 1.18.1  
 **Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
 
@@ -59,7 +59,7 @@ A release is published only after Linux, Windows and iOS builds and the shared-c
 
 Infiltrator Calc uses Infiltratr Common as its reusable software foundation and follows the canonical Infiltrator Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
-The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.18.0 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.18.0`, so a stale or mismatched submodule fails configuration instead of silently building. The desktop UI consumes the same named typography roles and palette defined by the shared design contract rather than introducing a project-specific visual system.
+The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.18.1 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.18.1`, so a stale or mismatched submodule fails configuration instead of silently building. The desktop UI consumes the same named typography roles and palette defined by the shared design contract rather than introducing a project-specific visual system.
 
 ## Typography
 
