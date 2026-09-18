@@ -23,12 +23,17 @@ struct ViewState {
 };
 
 struct DispatchResult {
+    // Cursor position the platform shell should restore after dispatch.
     std::size_t cursor = 0;
     bool expression_changed = false;
 };
 
+// Authoritative desktop interaction state machine. GTK and Win32 render
+// ViewState and dispatch Command values; platform shells must not reproduce
+// calculator state transitions or command semantics independently.
 class Controller {
 public:
+    // Sentinel meaning "operate at the current end of the expression".
     static constexpr std::size_t kEnd = static_cast<std::size_t>(-1);
 
     const ViewState& state() const noexcept { return state_; }

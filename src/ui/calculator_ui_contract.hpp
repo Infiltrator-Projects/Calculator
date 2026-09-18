@@ -95,6 +95,9 @@ struct ButtonSpec {
     Command command;
 };
 
+// Logical desktop layout units shared by GTK and Win32. GTK consumes them
+// through its native layout system; Win32 applies DPI scaling when mapping
+// them to physical coordinates.
 struct DesktopMetrics {
     int default_width;
     int default_height;

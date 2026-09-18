@@ -14,7 +14,9 @@ struct Result {
     std::string error;
 };
 
-// Canonical locale-independent Calculator display formatting shared by every shell.
+// UI display contract for the real-number domain. Uses locale-independent
+// general notation with 15 significant digits so every platform presents the
+// same binary64 result.
 std::string format_value(double value);
 
 Result evaluate(const std::string& expression);

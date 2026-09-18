@@ -16,10 +16,15 @@ struct ProgrammerResult {
     std::string error;
 };
 
+// Evaluate a fixed-width bit-pattern expression. Arithmetic intentionally
+// wraps by masking to the selected width; overflow is part of Programmer-mode
+// semantics, not an error condition. Numeric literals use the selected radix.
 ProgrammerResult evaluate_programmer(const std::string& expression,
                                      ProgrammerBase base,
                                      IntegerWidth width);
 
+// signed_display changes interpretation of the final masked bit pattern for
+// presentation only. It does not alter evaluation or the stored uint64_t value.
 std::string format_programmer(std::uint64_t value,
                               ProgrammerBase base,
                               IntegerWidth width,

@@ -17,16 +17,24 @@ struct HistoryEntry {
     Result result;
 };
 
+// Process-local calculator state shared across evaluations. Session owns
+// variables, memory-set state and bounded history; it delegates all mathematical
+// semantics to the calculation engines.
 class Session {
 public:
     explicit Session(std::size_t history_limit = 100);
 
+    // Supports direct assignment as name=expression. The identifier must begin
+    // with an alphabetic character or '_' and '=' immediately follows the name.
+    // Every evaluation, including an error, is recorded in bounded history.
     Result evaluate(const std::string& input);
 
     void memory_clear();
     void memory_add(double value);
     void memory_subtract(double value);
     double memory_recall() const noexcept;
+
+    // Distinguishes "never set/cleared" from a legitimate stored numeric zero.
     bool memory_empty() const noexcept;
 
     void record_history(std::string input, Result result);

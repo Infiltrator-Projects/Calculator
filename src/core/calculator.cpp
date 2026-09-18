@@ -26,6 +26,11 @@ bool ascii_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
+// Calculator must identify where a numeric token ends because Common's
+// infiltratr_parse_double() deliberately validates a complete string. Keep
+// token-boundary recognition local, then delegate locale-independent binary64
+// conversion to Common so parsing policy is shared without exporting the
+// calculator expression grammar.
 DecimalTokenStatus parse_decimal_token(std::string_view input,
                                        std::size_t& position,
                                        bool allow_sign,
@@ -78,6 +83,16 @@ DecimalTokenStatus parse_decimal_token(std::string_view input,
     return DecimalTokenStatus::Ok;
 }
 
+// Scientific/expression grammar (highest-level production first):
+// expression -> term {(+|-) term}
+// term       -> unary {(*|/) unary}
+// unary      -> (+|-) unary | power
+// power      -> postfix [^ unary]
+// postfix    -> primary {%|!}
+//
+// Parsing the right side of '^' as unary makes exponentiation right-associative
+// and gives exponentiation higher precedence than a leading sign: -2^2 is
+// -(2^2), while 2^-2 remains valid.
 class Parser {
 public:
     Parser(std::string_view input, const Variables& variables)
@@ -245,6 +260,11 @@ private:
     }
 };
 
+// Standard mode intentionally models a desktop calculator rather than the
+// Scientific grammar: binary operations are committed left-to-right as entered,
+// and a percentage operand is interpreted in the context of the pending
+// operator. Keeping this separate prevents mode-specific exceptions from
+// contaminating the mathematical expression parser.
 class ImmediateParser {
 public:
     explicit ImmediateParser(std::string_view input) : input_(input) {}
