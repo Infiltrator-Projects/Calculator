@@ -37,14 +37,14 @@ finished merely because they work in the common case: edge conditions,
 numerical behaviour, accessibility, failure modes and regression protection are
 part of the feature.
 
-The same principle applies across the Infiltrator family: start from the
+The same principle applies across the wider software family: start from the
 problem, study what is known now, preserve proven ideas that still deserve to
 survive, replace assumptions that no longer do, and prove the result in real
 use.
 
 ## Appearance
 
-Calc supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.2. Platform code owns only theme detection, persistence and native rendering.
+Calculator supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.2. Platform code owns only theme detection, persistence and native rendering.
 
 ## Current capabilities
 
@@ -124,8 +124,9 @@ On Debian-family systems the initial development dependencies are the standard C
 
 ```text
 src/
-├── app/                 GTK desktop application
-├── core/                Portable calculation engine, session state and programmer engine
+├── app/                 Native GTK/Linux and Win32/Windows platform shells
+├── core/                Portable calculation engine, session state and Programmer engine
+├── ui/                  Shared desktop UI contract, controller and theme adapter
 └── infiltratr-common/   Exact shared Common gitlink
 
 ios/
@@ -133,8 +134,8 @@ ios/
 ├── Bridge/              Objective-C++ bridge into the shared C++ core
 └── project.yml          Reproducible XcodeGen project definition
 
-tests/                   Core, session and programmer regression tests
-docs/                    Maintained engineering/design documentation
+tests/                   Core, session, UI-contract and cross-platform regression tests
+docs/                    Maintained architecture, design and implementation documentation
 ```
 
 ## Release direction

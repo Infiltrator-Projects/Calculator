@@ -1,5 +1,8 @@
-# Infiltrator Calc 0.1.0
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+# Calculator 0.1.0 — Historical Release Note
 
-Initial packaged release of Infiltrator Calc.
+> Historical snapshot: this file describes the initial 0.1.0 release and is not current architecture or capability documentation.
 
-This release establishes the native GTK4 application shell, portable expression evaluator, regression tests, Infiltratr Common 1.17.0 dependency pin and Debian package publication path.
+Initial packaged release of the project, then named Infiltrator Calc.
+
+It established the portable calculation-core direction and the first Linux desktop package. For current architecture, implementation semantics and capability status, see `ARCHITECTURE.md`, `IMPLEMENTATION.md` and `ROADMAP.md`.
