@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.7) unstable; urgency=medium
+
+  * Add a native SwiftUI iPhone interface over the same portable C++ calculation engine.
+  * Add an Objective-C++ bridge for Standard, Scientific and Programmer calculations, memory, variables and history.
+  * Build and test the shared calculation core on macOS with the GTK desktop target disabled.
+  * Build both iOS Simulator and unsigned iPhone-device application bundles in CI.
+  * Require Linux, Windows and iOS builds to succeed before publishing the release assets.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 10:00:00 +1000
+
 infiltrator-calc (0.1.6) unstable; urgency=medium
 
   * Redesign the calculator shell with larger controls, clearer visual hierarchy and stronger number/operator/action separation.
