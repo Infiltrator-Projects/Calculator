@@ -5,6 +5,9 @@ infiltrator-calc (0.1.10) unstable; urgency=medium
   * Remove the GTK/GLib portable runtime archive from Windows release assets.
   * Reject Windows builds that import GTK/GLib, GCC, libstdc++, winpthread or VC redistributable DLLs.
   * Keep the Linux GTK4 and iPhone SwiftUI shells on Infiltratr Common 1.18.1.
+  * Restore a compact Linux GTK desktop density so the complete keypad fits normal work areas.
+  * Reduce Linux keypad height/spacing and disable vertical row stretching so the equals key remains visible.
+  * Add a CI regression guard for the Linux desktop size contract.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 11:40:00 +1000
 

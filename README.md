@@ -41,7 +41,7 @@ The architecture is intended to grow into:
 
 The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
 
-The Linux, Windows and iPhone shells all use the shared Infiltrator Design v1 metrics deliberately: larger consistent controls, 10 px control spacing, layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action. Windows uses native Win32 controls over the shared C++ core instead of carrying GTK/GLib onto Windows. The iPhone interface is native SwiftUI and uses Apple's system-font fallback rather than bundling proprietary MB Corpo fonts.
+The Linux, Windows and iPhone shells share the Infiltrator Design v1 visual language without forcing identical physical sizing. Linux uses a compact desktop density so every calculator row, including `=`, remains visible on normal 768–800 px work areas; Windows uses native Win32 controls over the shared C++ core; and iPhone keeps larger native touch targets. All three retain layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action.
 
 ## Release platforms
 

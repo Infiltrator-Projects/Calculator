@@ -46,6 +46,9 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Infiltrator Calc version: $version"
 
+      - name: Verify compact Linux desktop layout
+        run: python3 tests/test_desktop_layout.py
+
       - name: Build and test on Linux
         run: |
           set -euo pipefail

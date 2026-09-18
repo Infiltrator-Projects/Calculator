@@ -7,6 +7,8 @@
 - Removed the GTK/GLib portable-runtime ZIP from Windows releases; the Windows x64 EXE is now the complete application.
 - Added a release gate that inspects Windows imports and rejects GTK/GLib, GCC, libstdc++, winpthread or Visual C++ redistributable dependencies.
 - Kept Linux on GTK4 and iPhone on SwiftUI while preserving Infiltratr Common 1.18.1 as the shared foundation.
+- Restored compact Linux desktop sizing: 440×690 default window, 34px keypad minimum height, 5px row spacing, and no vertical keypad expansion.
+- Added a Linux layout regression guard so the bottom row and equals key cannot silently be pushed off-screen again.
 
 ## 0.1.9
 
