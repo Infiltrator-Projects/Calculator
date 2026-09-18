@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.17
+
+- Added persistent **System / Day / Night** appearance modes across Linux GTK, native Windows and iPhone.
+- System mode follows the host platform's current appearance; Day and Night use explicit Infiltrator palettes.
+- Moved semantic theme ownership to Infiltratr Common 1.19.1 instead of maintaining Calc-private colour truth.
+- Native Windows now follows the Windows app-theme preference, reacts to setting changes and persists the explicit override.
+- Linux follows GTK theme changes in System mode; iPhone follows SwiftUI ColorScheme and persists the selected override.
+- Extended parity/runtime guards so desktop shells and iPhone cannot silently lose the shared theme contract.
+
 ## 0.1.16
 
 - Added shared responsive desktop visual states: compact, regular and wide layouts now come from the same Calc UI contract on GTK and Win32.
