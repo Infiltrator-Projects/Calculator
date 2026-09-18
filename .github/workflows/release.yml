@@ -237,12 +237,31 @@ jobs:
               return $count
             }
 
+            $theme = Get-ButtonByText 'System'
             $standard = Get-ButtonByText 'Standard'
             $scientific = Get-ButtonByText 'Scientific'
             $programmer = Get-ButtonByText 'Programmer'
-            if ($standard -eq [IntPtr]::Zero -or $scientific -eq [IntPtr]::Zero -or $programmer -eq [IntPtr]::Zero) {
-              throw 'Windows mode buttons were not found'
+            if ($theme -eq [IntPtr]::Zero -or $standard -eq [IntPtr]::Zero -or
+                $scientific -eq [IntPtr]::Zero -or $programmer -eq [IntPtr]::Zero) {
+              throw 'Windows theme/mode buttons were not found'
             }
+
+            [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 80
+            $themeText = [System.Text.StringBuilder]::new(64)
+            [void][CalcSmoke]::GetWindowText($theme, $themeText, $themeText.Capacity)
+            if ($themeText.ToString() -ne 'Day') {
+              throw "Windows theme cycle failed: System did not advance to Day (got '$($themeText.ToString())')"
+            }
+            [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 80
+            [void]$themeText.Clear()
+            [void][CalcSmoke]::GetWindowText($theme, $themeText, $themeText.Capacity)
+            if ($themeText.ToString() -ne 'Night') {
+              throw "Windows theme cycle failed: Day did not advance to Night (got '$($themeText.ToString())')"
+            }
+            [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 80
 
             $initialVisible = Get-VisibleButtonCount
             [void][CalcSmoke]::SendMessage($scientific, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -255,8 +274,8 @@ jobs:
             Start-Sleep -Milliseconds 100
             $standardVisible = Get-VisibleButtonCount
 
-            if ($initialVisible -ne 32 -or $scientificVisible -ne 44 -or
-                $programmerVisible -ne 44 -or $standardVisible -ne 32) {
+            if ($initialVisible -ne 33 -or $scientificVisible -ne 45 -or
+                $programmerVisible -ne 45 -or $standardVisible -ne 33) {
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 
@@ -326,7 +345,7 @@ jobs:
               throw "Unexpected Windows title font fallback: $($font.lfFaceName)"
             }
 
-            Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, compact memory strip, mode switching and 3+3 functional path correct, title font $($font.lfFaceName)."
+            Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, theme cycling, compact memory strip, mode switching and 3+3 functional path correct, title font $($font.lfFaceName)."
           }
           finally {
             if ($null -ne $process -and -not $process.HasExited) {
