@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace {
 
@@ -14,6 +16,7 @@ using infiltrator::calc::ui::ButtonRole;
 using infiltrator::calc::ui::ButtonSpec;
 using infiltrator::calc::ui::Command;
 using infiltrator::calc::ui::Controller;
+using infiltrator::calc::ui::LayoutClass;
 using infiltrator::calc::ui::Mode;
 
 GtkWidget* expression_entry = nullptr;
@@ -27,7 +30,14 @@ GtkWidget* programmer_base_buttons[4] = {nullptr, nullptr, nullptr, nullptr};
 GtkWidget* programmer_width_buttons[4] = {nullptr, nullptr, nullptr, nullptr};
 GtkWidget* programmer_signed_button = nullptr;
 GtkWidget* degrees_button = nullptr;
+GtkWidget* history_button = nullptr;
+GtkWidget* history_dock = nullptr;
+GtkWidget* history_text = nullptr;
+GtkWidget* calculator_column = nullptr;
 GtkCssProvider* css_provider = nullptr;
+
+std::vector<std::pair<GtkWidget*, Command>> command_buttons;
+LayoutClass last_layout_class = LayoutClass::Regular;
 
 Controller controller;
 
@@ -38,6 +48,34 @@ std::string format_value(double value) {
     std::ostringstream out;
     out << std::setprecision(15) << value;
     return out.str();
+}
+
+std::string history_text_value() {
+    if (controller.session().history().empty()) {
+        return "No calculations yet.";
+    }
+
+    std::string text;
+    std::size_t shown = 0;
+    for (auto it = controller.session().history().rbegin();
+         it != controller.session().history().rend() && shown < 50U;
+         ++it, ++shown) {
+        text += it->input;
+        text += "\n  = ";
+        text += it->result.ok
+                    ? format_value(it->result.value)
+                    : ("Error: " + it->result.error);
+        text += "\n\n";
+    }
+    return text;
+}
+
+void refresh_history_dock() {
+    if (!history_text) return;
+    GtkTextBuffer* buffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(history_text));
+    const std::string text = history_text_value();
+    gtk_text_buffer_set_text(buffer, text.c_str(), -1);
 }
 
 bool font_family_available(const char* wanted) {
@@ -139,6 +177,13 @@ void render_state(std::size_t cursor = Controller::kEnd) {
             GTK_BUTTON(degrees_button),
             state.degrees ? "DEG" : "RAD");
     }
+
+    for (const auto& [button, command] : command_buttons) {
+        gtk_widget_set_sensitive(
+            button, controller.command_enabled(command));
+    }
+
+    refresh_history_dock();
 }
 
 void show_history(GtkWidget*, gpointer) {
@@ -184,6 +229,7 @@ void show_history(GtkWidget*, gpointer) {
         clear, "clicked",
         G_CALLBACK(+[](GtkWindow* history_window) {
             controller.clear_history();
+            refresh_history_dock();
             gtk_window_destroy(history_window);
         }),
         window);
@@ -270,6 +316,7 @@ GtkWidget* calc_button(const ButtonSpec& spec) {
     gtk_widget_set_hexpand(button, TRUE);
     gtk_widget_set_vexpand(button, FALSE);
     remember_programmer_button(spec.command, button);
+    command_buttons.emplace_back(button, spec.command);
     return button;
 }
 
@@ -312,6 +359,41 @@ void fill_grid(GtkWidget* grid, const ButtonSpec* specs, std::size_t count) {
     }
 }
 
+void update_responsive_layout(GtkWidget* window) {
+    if (!calculator_column || !history_dock || !history_button) return;
+
+    const int width = gtk_widget_get_width(window);
+    const int height = gtk_widget_get_height(window);
+    if (width <= 0 || height <= 0) return;
+
+    const auto layout =
+        infiltrator::calc::ui::responsive_layout(width, height);
+    last_layout_class = layout.layout_class;
+
+    gtk_widget_set_visible(history_dock, layout.dock_history);
+    gtk_widget_set_visible(history_button, !layout.dock_history);
+
+    if (layout.compact_controls) {
+        gtk_widget_add_css_class(calculator_column, "compact");
+    } else {
+        gtk_widget_remove_css_class(calculator_column, "compact");
+    }
+}
+
+gboolean responsive_tick(
+    GtkWidget* widget, GdkFrameClock*, gpointer) {
+    const int width = gtk_widget_get_width(widget);
+    const int height = gtk_widget_get_height(widget);
+    if (width <= 0 || height <= 0) return G_SOURCE_CONTINUE;
+
+    const auto layout =
+        infiltrator::calc::ui::responsive_layout(width, height);
+    if (layout.layout_class != last_layout_class) {
+        update_responsive_layout(widget);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
 void apply_css(GtkWidget* window) {
     const std::string ui = ui_font();
     const std::string brand = brand_font();
@@ -321,9 +403,9 @@ void apply_css(GtkWidget* window) {
         "*{font-family:\"" + ui + "\";font-weight:400}"
         "window,.shell{background:#050608;color:#E8ECEF}"
         ".shell{padding:" + std::to_string(metrics.shell_padding) + "px}"
+        ".calculator-column{background:#050608}"
         ".header{margin-bottom:0}"
         ".brand-title{font-family:\"" + brand + "\";font-size:20px;color:#EEF1F3}"
-        ".brand-subtitle{font-size:9px;font-weight:700;letter-spacing:.10em;color:#899198}"
         ".toolbar-button{background:#0D1014;color:#AEB6BD;border:1px solid #353A40;"
             "border-radius:8px;min-height:28px;padding:0 10px;font-weight:700}"
         ".toolbar-button:hover{background:#171B20;color:#EEF1F3;border-color:#6A737C}"
@@ -341,6 +423,7 @@ void apply_css(GtkWidget* window) {
         ".status.fault{color:#C96B6B}"
         ".calc-button{border:1px solid #353A40;border-radius:8px;min-height:" +
             std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0}"
+        ".calc-button:disabled{opacity:.38}"
         ".calc-button.number{background:#171B20;color:#EEF1F3}"
         ".calc-button.number:hover{background:#22272D;border-color:#6A737C}"
         ".calc-button.operation{background:#20252B;color:#D7DDE2}"
@@ -355,8 +438,14 @@ void apply_css(GtkWidget* window) {
         ".calc-button.clear:hover{background:#22272D;border-color:#D19E47}"
         ".calc-button.equals{background:#D7DDE2;color:#111418;border-color:#D7DDE2;font-size:16px}"
         ".calc-button.equals:hover{background:#EEF1F3;border-color:#EEF1F3}"
+        ".history-dock{background:#101318;border:1px solid #353A40;border-radius:9px;padding:8px}"
+        ".history-text{background:#101318;color:#D7DDE2;font-size:12px}"
         ".history-list{background:#101318;border:1px solid #353A40;border-radius:10px}"
-        ".history-row{padding:10px;border-bottom:1px solid #353A40;color:#D7DDE2;font-size:12px}";
+        ".history-row{padding:10px;border-bottom:1px solid #353A40;color:#D7DDE2;font-size:12px}"
+        ".compact .brand-title{font-size:17px}"
+        ".compact .display{padding:7px}"
+        ".compact .calc-button{min-height:28px;font-size:12px}"
+        ".compact .mode-tab{min-height:25px}";
 
     css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css_provider, css.c_str(), -1);
@@ -374,15 +463,21 @@ void activate(GtkApplication* app, gpointer) {
     gtk_window_set_default_size(
         GTK_WINDOW(window), metrics.default_width, metrics.default_height);
 
-    GtkWidget* shell =
-        gtk_box_new(GTK_ORIENTATION_VERTICAL, metrics.section_gap);
+    GtkWidget* shell = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, metrics.section_gap);
     gtk_widget_add_css_class(shell, "shell");
     gtk_window_set_child(GTK_WINDOW(window), shell);
     apply_css(window);
 
+    calculator_column =
+        gtk_box_new(GTK_ORIENTATION_VERTICAL, metrics.section_gap);
+    gtk_widget_add_css_class(calculator_column, "calculator-column");
+    gtk_widget_set_hexpand(calculator_column, TRUE);
+    gtk_widget_set_vexpand(calculator_column, TRUE);
+    gtk_box_append(GTK_BOX(shell), calculator_column);
+
     GtkWidget* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(header, "header");
-    gtk_box_append(GTK_BOX(shell), header);
+    gtk_box_append(GTK_BOX(calculator_column), header);
 
     GtkWidget* title = gtk_label_new("Infiltrator Calc");
     gtk_widget_add_css_class(title, "brand-title");
@@ -390,19 +485,19 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_set_hexpand(title, TRUE);
     gtk_box_append(GTK_BOX(header), title);
 
-    GtkWidget* history = toolbar_button("History");
-    gtk_box_append(GTK_BOX(header), history);
+    history_button = toolbar_button("History");
+    gtk_box_append(GTK_BOX(header), history_button);
 
     GtkWidget* mode_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
     gtk_widget_add_css_class(mode_strip, "mode-strip");
-    gtk_box_append(GTK_BOX(shell), mode_strip);
+    gtk_box_append(GTK_BOX(calculator_column), mode_strip);
     gtk_box_append(GTK_BOX(mode_strip), mode_button(Mode::Standard));
     gtk_box_append(GTK_BOX(mode_strip), mode_button(Mode::Scientific));
     gtk_box_append(GTK_BOX(mode_strip), mode_button(Mode::Programmer));
 
     GtkWidget* display = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_add_css_class(display, "display");
-    gtk_box_append(GTK_BOX(shell), display);
+    gtk_box_append(GTK_BOX(calculator_column), display);
 
     expression_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(expression_entry), "Expression");
@@ -424,7 +519,7 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(display), status_label);
 
     standard_panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-    gtk_box_append(GTK_BOX(shell), standard_panel);
+    gtk_box_append(GTK_BOX(calculator_column), standard_panel);
 
     GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_append(GTK_BOX(standard_panel), memory_strip);
@@ -440,22 +535,38 @@ void activate(GtkApplication* app, gpointer) {
         infiltrator::calc::ui::kStandardKeypad.size());
 
     scientific_grid = new_grid();
-    gtk_box_append(GTK_BOX(shell), scientific_grid);
+    gtk_box_append(GTK_BOX(calculator_column), scientific_grid);
     fill_grid(
         scientific_grid,
         infiltrator::calc::ui::kScientificKeypad.data(),
         infiltrator::calc::ui::kScientificKeypad.size());
 
     programmer_grid = new_grid();
-    gtk_box_append(GTK_BOX(shell), programmer_grid);
+    gtk_box_append(GTK_BOX(calculator_column), programmer_grid);
     fill_grid(
         programmer_grid,
         infiltrator::calc::ui::kProgrammerKeypad.data(),
         infiltrator::calc::ui::kProgrammerKeypad.size());
 
+    history_dock = gtk_scrolled_window_new();
+    gtk_widget_add_css_class(history_dock, "history-dock");
+    gtk_widget_set_size_request(history_dock, metrics.history_min_width, -1);
+    gtk_widget_set_vexpand(history_dock, TRUE);
+    gtk_box_append(GTK_BOX(shell), history_dock);
+
+    history_text = gtk_text_view_new();
+    gtk_widget_add_css_class(history_text, "history-text");
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(history_text), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(history_text), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(history_text), GTK_WRAP_WORD_CHAR);
+    gtk_scrolled_window_set_child(
+        GTK_SCROLLED_WINDOW(history_dock), history_text);
+
     render_state();
 
     gtk_window_present(GTK_WINDOW(window));
+    update_responsive_layout(window);
+    gtk_widget_add_tick_callback(window, responsive_tick, nullptr, nullptr);
     gtk_widget_grab_focus(expression_entry);
 }
 
