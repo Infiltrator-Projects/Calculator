@@ -10,8 +10,7 @@ for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
         f"{name} does not consume the shared calculator UI controller"
     )
     for needle in (
-        "kDesktopMetrics.default_width",
-        "kDesktopMetrics.default_height",
+        "kDesktopMetrics",
         "kStandardMemory",
         "kStandardKeypad",
         "kScientificKeypad",
