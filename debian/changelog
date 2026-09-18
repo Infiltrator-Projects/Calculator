@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.15) unstable; urgency=medium
+
+  * Add a canonical cross-platform calculator UI contract for layout, roles and commands.
+  * Add a platform-neutral UI controller for calculator mode and interaction state.
+  * Route GTK and Win32 through the same shared controller.
+  * Remove platform-local keypad definitions and duplicate calculator state machines.
+  * Add contract, controller and parity regression tests.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 13:42:00 +1000
+
 infiltrator-calc (0.1.14) unstable; urgency=medium
 
   * Bring the Linux GTK shell up to the compact Windows interaction hierarchy.
