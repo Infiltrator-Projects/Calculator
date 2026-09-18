@@ -1,3 +1,11 @@
+infiltrator-calc (0.1.18) unstable; urgency=medium
+
+  * Advance the shared foundation to Infiltratr Common 1.19.2.
+  * Keep Linux, Windows and iPhone on the same immutable Common revision.
+  * Rebuild the cross-platform release after the repository publication fix.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 19:26:00 +1000
+
 infiltrator-calc (0.1.17) unstable; urgency=medium
 
   * Add persistent System, Day and Night themes on Linux, Windows and iPhone.

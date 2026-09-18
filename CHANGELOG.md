@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.18
+
+- Advanced the exact shared dependency to Infiltratr Common 1.19.2.
+- Rebuilt Linux, Windows and iPhone from the same immutable Common revision.
+- Republished through the repaired central APT path so the release and updater state agree.
+
+
 ## 0.1.17
 
 - Added persistent **System / Day / Night** appearance modes across Linux GTK, native Windows and iPhone.
