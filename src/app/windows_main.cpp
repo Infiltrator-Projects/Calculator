@@ -73,6 +73,7 @@ HWND g_footer = nullptr;
 HWND g_mode_buttons[3] = {nullptr, nullptr, nullptr};
 HWND g_history_window = nullptr;
 HWND g_history_edit = nullptr;
+HWND g_history_dock = nullptr;
 HWND g_hover_button = nullptr;
 
 std::vector<HWND> g_standard_buttons;
@@ -259,6 +260,7 @@ void sync_controller_expression() {
 }
 
 void show_grid(std::vector<HWND>& buttons, bool visible);
+void refresh_history();
 void redraw_button(HWND button);
 void redraw_active_grid();
 void redraw_mode_buttons();
@@ -295,6 +297,20 @@ void render_state(std::size_t cursor = Controller::kEnd) {
         }
     }
 
+    for (const auto& buttons :
+         {&g_standard_buttons, &g_scientific_buttons, &g_programmer_buttons}) {
+        for (HWND button : *buttons) {
+            const int id = GetDlgCtrlID(button);
+            const auto it = g_key_specs.find(id);
+            if (it != g_key_specs.end() && it->second != nullptr) {
+                EnableWindow(
+                    button,
+                    g_controller.command_enabled(it->second->command) ? TRUE : FALSE);
+            }
+        }
+    }
+
+    refresh_history();
     redraw_mode_buttons();
     redraw_active_grid();
     InvalidateRect(g_status, nullptr, TRUE);
@@ -341,9 +357,12 @@ std::wstring history_text() {
 }
 
 void refresh_history() {
+    const std::wstring text = history_text();
     if (g_history_edit != nullptr) {
-        const std::wstring text = history_text();
         SetWindowTextW(g_history_edit, text.c_str());
+    }
+    if (g_history_dock != nullptr) {
+        SetWindowTextW(g_history_dock, text.c_str());
     }
 }
 
@@ -695,62 +714,117 @@ void layout_main(HWND window) {
     RECT client{};
     GetClientRect(window, &client);
 
-    const int margin = sx(window, 14);
-    const int gap = sx(window, 6);
+    const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
     const int width = client.right - client.left;
     const int height = client.bottom - client.top;
-    const int content_width = std::max(0, width - margin * 2);
+    const auto responsive =
+        infiltrator::calc::ui::responsive_layout(width, height);
 
+    const int margin = sx(window, metrics.shell_padding);
+    const int gap = sx(window, metrics.section_gap);
+    const int calc_left = margin;
+    int calc_right = width - margin;
+
+    if (responsive.dock_history) {
+        const int history_min = sx(window, metrics.history_min_width);
+        const int calculator_min = sx(window, metrics.default_width);
+        const int available = std::max(
+            history_min,
+            width - margin * 2 - gap - calculator_min);
+        const int history_width = std::max(
+            history_min,
+            std::min(width / 3, available));
+
+        calc_right = width - margin - gap - history_width;
+        MoveWindow(
+            g_history_dock,
+            calc_right + gap, margin,
+            history_width, std::max(0, height - margin * 2), TRUE);
+        ShowWindow(g_history_dock, SW_SHOW);
+        ShowWindow(g_history_button, SW_HIDE);
+    } else {
+        ShowWindow(g_history_dock, SW_HIDE);
+        ShowWindow(g_history_button, SW_SHOW);
+    }
+
+    const int content_width = std::max(0, calc_right - calc_left);
     int y = margin;
 
     const int history_width = sx(window, 76);
     const int history_height = sx(window, 30);
-    MoveWindow(g_title, margin, y,
-               std::max(0, content_width - history_width - gap),
-               sx(window, 30), TRUE);
+    const int title_right = responsive.dock_history
+        ? calc_right
+        : calc_right - history_width - gap;
+
+    MoveWindow(
+        g_title, calc_left, y,
+        std::max(0, title_right - calc_left), sx(window, 30), TRUE);
     ShowWindow(g_subtitle, SW_HIDE);
-    MoveWindow(g_history_button,
-               width - margin - history_width, y,
-               history_width, history_height, TRUE);
 
-    y += sx(window, 38);
+    if (!responsive.dock_history) {
+        MoveWindow(
+            g_history_button,
+            calc_right - history_width, y,
+            history_width, history_height, TRUE);
+    }
 
-    g_mode_rect = RECT{margin, y, width - margin, y + sx(window, 38)};
+    y += sx(window, responsive.compact_controls ? 34 : 38);
+
+    g_mode_rect = RECT{
+        calc_left, y, calc_right,
+        y + sx(window, responsive.compact_controls ? 34 : 38)};
     const int mode_padding = sx(window, 3);
     const int mode_gap = sx(window, 3);
     const int mode_width =
         (content_width - mode_padding * 2 - mode_gap * 2) / 3;
+    const int mode_height = sx(
+        window, responsive.compact_controls ? 28 : 32);
     for (int i = 0; i < 3; ++i) {
-        MoveWindow(g_mode_buttons[i],
-                   margin + mode_padding + i * (mode_width + mode_gap),
-                   y + mode_padding, mode_width, sx(window, 32), TRUE);
+        MoveWindow(
+            g_mode_buttons[i],
+            calc_left + mode_padding + i * (mode_width + mode_gap),
+            y + mode_padding, mode_width, mode_height, TRUE);
     }
 
-    y += sx(window, 46);
+    y += sx(window, responsive.compact_controls ? 40 : 46);
 
-    g_display_rect = RECT{margin, y, width - margin, y + sx(window, 104)};
-    const int display_padding = sx(window, 12);
-    MoveWindow(g_expression,
-               margin + display_padding, y + sx(window, 8),
-               content_width - display_padding * 2, sx(window, 24), TRUE);
-    MoveWindow(g_result,
-               margin + display_padding, y + sx(window, 32),
-               content_width - display_padding * 2, sx(window, 46), TRUE);
-    MoveWindow(g_status,
-               margin + display_padding, y + sx(window, 80),
-               content_width - display_padding * 2, sx(window, 16), TRUE);
+    const int display_height = sx(
+        window, responsive.compact_controls ? 92 : metrics.display_height);
+    g_display_rect = RECT{
+        calc_left, y, calc_right, y + display_height};
+    const int display_padding = sx(window, responsive.compact_controls ? 9 : 12);
+    MoveWindow(
+        g_expression,
+        calc_left + display_padding, y + sx(window, 7),
+        content_width - display_padding * 2, sx(window, 24), TRUE);
+    MoveWindow(
+        g_result,
+        calc_left + display_padding, y + sx(window, 30),
+        content_width - display_padding * 2,
+        sx(window, responsive.compact_controls ? 38 : 46), TRUE);
+    MoveWindow(
+        g_status,
+        calc_left + display_padding,
+        y + display_height - sx(window, 22),
+        content_width - display_padding * 2, sx(window, 16), TRUE);
 
-    y += sx(window, 112);
+    y += display_height + sx(window, 8);
 
     const int grid_bottom = height - margin;
-    const int grid_height = std::max(sx(window, 300), grid_bottom - y);
+    const int minimum_grid = sx(window, responsive.compact_controls ? 260 : 300);
+    const int grid_height = std::max(minimum_grid, grid_bottom - y);
     const Mode active_mode = g_controller.state().mode;
     if (active_mode == Mode::Standard) {
-        layout_standard_grid(margin, y, content_width, grid_height);
+        layout_standard_grid(
+            calc_left, y, content_width, grid_height);
     } else if (active_mode == Mode::Scientific) {
-        layout_grid(g_scientific_buttons, 10, margin, y, content_width, grid_height);
+        layout_grid(
+            g_scientific_buttons, 10,
+            calc_left, y, content_width, grid_height);
     } else {
-        layout_grid(g_programmer_buttons, 10, margin, y, content_width, grid_height);
+        layout_grid(
+            g_programmer_buttons, 10,
+            calc_left, y, content_width, grid_height);
     }
 
     ShowWindow(g_footer, SW_HIDE);
@@ -810,12 +884,19 @@ void create_controls(HWND window) {
         WS_CHILD | SS_LEFT | SS_NOPREFIX,
         0, 0, 0, 0, window, nullptr, g_instance, nullptr);
 
+    g_history_dock = CreateWindowExW(
+        0, L"EDIT", L"",
+        WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
+        0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+    apply_dark_control_theme(g_history_dock);
+
     apply_font(g_title, g_title_font);
     apply_font(g_subtitle, g_small_font);
     apply_font(g_expression, g_ui_font);
     apply_font(g_result, g_result_font);
     apply_font(g_status, g_small_font);
     apply_font(g_footer, g_small_font);
+    apply_font(g_history_dock, g_ui_font);
 
     g_old_edit_proc = reinterpret_cast<WNDPROC>(
         SetWindowLongPtrW(g_expression, GWLP_WNDPROC,
@@ -1007,7 +1088,12 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
 
     case WM_CTLCOLOREDIT: {
         HDC dc = reinterpret_cast<HDC>(wparam);
+        HWND control = reinterpret_cast<HWND>(lparam);
         SetTextColor(dc, kMuted);
+        if (control == g_history_dock) {
+            SetBkColor(dc, kPanel);
+            return reinterpret_cast<LRESULT>(g_panel_brush);
+        }
         SetBkColor(dc, kInput);
         return reinterpret_cast<LRESULT>(g_input_brush);
     }
