@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.21
+
+- Rewrote architecture, design and implementation documentation around the current cross-platform system rather than the initial prototype.
+- Documented dependency direction, calculation-domain boundaries, Common ownership, numerical trade-offs, error propagation and release verification.
+- Brought the roadmap into factual alignment with implemented Standard, Scientific and Programmer capabilities.
+- Added focused source-contract comments for parser semantics, deterministic decimal conversion, fixed-width Programmer arithmetic, session state and desktop UI ownership.
+- Reworked the calculator-core test source into readable behavioural groups without changing test semantics.
+- Marked the 0.1.0 release note explicitly as historical and corrected remaining README structure/naming drift.
+
 ## 0.1.20
 
 - Deepened Common 1.19.2 integration without moving Calculator-specific semantics into the shared library.

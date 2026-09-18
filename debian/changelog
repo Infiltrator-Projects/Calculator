@@ -1,3 +1,12 @@
+infiltrator-calc (0.1.21) unstable; urgency=medium
+
+  * Bring architecture, design and implementation documentation up to the current cross-platform system.
+  * Document numerical, ownership and platform-boundary contracts.
+  * Align the roadmap with implemented Calculator capabilities.
+  * Add focused source-contract comments and improve core-test readability.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 21:18:00 +1000
+
 infiltrator-calc (0.1.20) unstable; urgency=medium
 
   * Deepen Common 1.19.2 integration across Linux, Windows and iPhone.
