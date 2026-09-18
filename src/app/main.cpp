@@ -594,7 +594,7 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
-    gtk_window_set_title(GTK_WINDOW(window), "Infiltrator Calc");
+    gtk_window_set_title(GTK_WINDOW(window), "Calculator");
     gtk_window_set_default_size(
         GTK_WINDOW(window), metrics.default_width, metrics.default_height);
 
@@ -614,7 +614,7 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_add_css_class(header, "header");
     gtk_box_append(GTK_BOX(calculator_column), header);
 
-    GtkWidget* title = gtk_label_new("Infiltrator Calc");
+    GtkWidget* title = gtk_label_new("Calculator");
     gtk_widget_add_css_class(title, "brand-title");
     gtk_widget_set_halign(title, GTK_ALIGN_START);
     gtk_widget_set_hexpand(title, TRUE);

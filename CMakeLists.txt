@@ -25,7 +25,7 @@ endif()
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/VERSION" INFILTRATR_COMMON_VERSION)
 string(STRIP "${INFILTRATR_COMMON_VERSION}" INFILTRATR_COMMON_VERSION)
 if(NOT INFILTRATR_COMMON_VERSION STREQUAL "1.19.2")
-    message(FATAL_ERROR "Infiltrator Calc requires Infiltratr Common 1.19.2; found ${INFILTRATR_COMMON_VERSION}")
+    message(FATAL_ERROR "Calculator requires Common 1.19.2; found ${INFILTRATR_COMMON_VERSION}")
 endif()
 
 add_subdirectory(src/infiltratr-common)

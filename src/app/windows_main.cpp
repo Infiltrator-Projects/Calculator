@@ -971,7 +971,7 @@ void apply_theme(bool persist) {
 }
 
 void create_controls(HWND window) {
-    g_title = CreateWindowExW(0, L"STATIC", L"Infiltrator Calc",
+    g_title = CreateWindowExW(0, L"STATIC", L"Calculator",
                               WS_CHILD | WS_VISIBLE | SS_LEFT,
                               0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_subtitle = CreateWindowExW(0, L"STATIC", L"PRECISION DESKTOP CALCULATOR",
@@ -1355,7 +1355,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     AdjustWindowRectEx(&desired, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     g_main = CreateWindowExW(
-        0, kMainClass, L"Infiltrator Calc",
+        0, kMainClass, L"Calculator",
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         CW_USEDEFAULT, CW_USEDEFAULT,
         desired.right - desired.left, desired.bottom - desired.top,

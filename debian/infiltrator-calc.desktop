@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=Infiltrator Calc
-Comment=Native calculator for the Infiltrator software family
+Name=Calculator
+Comment=Native cross-platform calculator
 Exec=infiltrator-calc
 Icon=infiltrator-calc
 Terminal=false

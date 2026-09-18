@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.19
+
+- Renamed the user-facing application to **Calculator**.
+- Preserved the existing `infiltrator-calc` package, executable and configuration identifiers for upgrade compatibility.
+- Updated Linux, Windows and iPhone display names without changing calculator behaviour.
+
+
 ## 0.1.18
 
 - Advanced the exact shared dependency to Infiltratr Common 1.19.2.

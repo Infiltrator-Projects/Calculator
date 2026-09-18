@@ -1,20 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# Infiltrator Calc
+# Calculator
 
-Infiltrator Calc is a native cross-platform calculator for the Infiltrator software family, with first-class Linux, Windows and iPhone interfaces.
+Calculator is a native cross-platform calculator for the software family, with first-class Linux, Windows and iPhone interfaces.
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
 **Current source version:** 0.1.17  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Infiltratr Common 1.19.1  
-**Design contract:** Infiltrator Design v1  
+**Shared foundation:** Common 1.19.1  
+**Design contract:** shared Design v1  
 **Licence:** GPL-3.0-or-later
 
 ## Engineering ethos
 
-Infiltrator Calc is a first-principles engineering project. The question is not
+Calculator is a first-principles engineering project. The question is not
 simply how to reproduce an existing calculator, but what a calculator should be
 when it is designed today with the strongest available mathematics, numerical
 methods, human-interface research, platform capabilities and software
@@ -44,11 +44,11 @@ use.
 
 ## Appearance
 
-Calc supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Infiltratr Common 1.19.1. Platform code owns only theme detection, persistence and native rendering.
+Calc supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.1. Platform code owns only theme detection, persistence and native rendering.
 
 ## Current capabilities
 
-Infiltrator Calc has three explicitly switchable modes presented as a visible mode strip on desktop and iPhone, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
+Calculator has three explicitly switchable modes presented as a visible mode strip on desktop and iPhone, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
 
 - Standard — traditional desktop-calculator immediate arithmetic, contextual percentages, powers, unary operations and memory;
 - Scientific — expression/order-of-operations evaluation, trigonometric, inverse trigonometric, logarithmic, exponential and related functions with degree/radian control; and
@@ -71,11 +71,11 @@ The architecture is intended to grow into:
 - date/time and epoch calculations;
 - statistics, graphing and equation solving;
 - complex and arbitrary-precision mathematics where justified; and
-- Infiltrator-specific engineering calculators.
+- Project-specific engineering calculators.
 
 The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
 
-The Linux and Windows desktop shells consume the same Calc-owned UI contract and controller: the same modes, button order, commands, desktop sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. Compact, regular and wide desktop states are shared; wide layouts dock calculation history beside the keypad. Platform code owns only toolkit mechanics such as widgets, HWND/GDI rendering, DPI and native window integration. iPhone keeps native SwiftUI touch sizing while sharing the calculation core and Infiltrator Design v1 visual language.
+The Linux and Windows desktop shells consume the same Calc-owned UI contract and controller: the same modes, button order, commands, desktop sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. Compact, regular and wide desktop states are shared; wide layouts dock calculation history beside the keypad. Platform code owns only toolkit mechanics such as widgets, HWND/GDI rendering, DPI and native window integration. iPhone keeps native SwiftUI touch sizing while sharing the calculation core and shared Design v1 visual language.
 
 ## Release platforms
 
@@ -89,15 +89,15 @@ A signed installable `.ipa` requires an Apple signing identity and provisioning 
 
 A release is published only after Linux, Windows and iOS builds and the shared-core tests succeed.
 
-## Shared Infiltrator design
+## Shared design
 
-Infiltrator Calc uses Infiltratr Common as its reusable software foundation and follows the canonical Infiltrator Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
+Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
 The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.18.1 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.18.1`, so a stale or mismatched submodule fails configuration instead of silently building. The desktop UI consumes the same named typography roles and palette defined by the shared design contract rather than introducing a project-specific visual system.
 
 ## Typography
 
-Infiltrator Calc prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent. The native Windows shell explicitly uses Segoe UI when the preferred MB Corpo faces are unavailable, matching the Windows fallback defined by the shared design contract.
+Calculator prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent. The native Windows shell explicitly uses Segoe UI when the preferred MB Corpo faces are unavailable, matching the Windows fallback defined by the shared design contract.
 
 The project does **not** redistribute proprietary MB Corpo font binaries. The current UI roles are:
 
@@ -108,7 +108,7 @@ This follows the established Infiltrator desktop applications.
 
 ## Build
 
-Clone recursively so the exact Infiltratr Common revision is available:
+Clone recursively so the exact Common revision is available:
 
 ```bash
 git clone --recurse-submodules https://github.com/Infiltrator-Projects/Infiltrator-Calc.git
@@ -147,4 +147,4 @@ The packaged form is a generic Debian package suitable for Infiltrator Repositor
 
 Copyright © 2026 Shannon Smith.
 
-Infiltrator Calc is licensed under the GNU General Public License version 3 or, at your option, any later version (`GPL-3.0-or-later`).
+Calculator is licensed under the GNU General Public License version 3 or, at your option, any later version (`GPL-3.0-or-later`).

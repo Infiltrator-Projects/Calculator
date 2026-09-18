@@ -44,7 +44,7 @@ jobs:
           test -n "$version"
           test "$version" = "$(dpkg-parsechangelog -S Version)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Infiltrator Calc version: $version"
+          echo "Calculator version: $version"
 
       - name: Verify compact Linux desktop layout
         run: python3 tests/test_desktop_layout.py
@@ -327,7 +327,7 @@ jobs:
               $text = [System.Text.StringBuilder]::new(128)
               [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
               [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
-              if ($name.ToString() -ieq 'Static' -and $text.ToString() -ceq 'Infiltrator Calc') {
+              if ($name.ToString() -ieq 'Static' -and $text.ToString() -ceq 'Calculator') {
                 $title = $hwnd
                 break
               }
@@ -549,7 +549,7 @@ jobs:
             "dist/SHA256SUMS.txt" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "Infiltrator Calc ${VERSION}" \
+            --title "Calculator ${VERSION}" \
             --generate-notes \
             --latest
 

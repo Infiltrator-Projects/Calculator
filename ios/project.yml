@@ -29,9 +29,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.ssmith.infiltrator.calc
-        PRODUCT_NAME: Infiltrator Calc
+        PRODUCT_NAME: Calculator
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Infiltrator Calc
+        INFOPLIST_KEY_CFBundleDisplayName: Calculator
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         TARGETED_DEVICE_FAMILY: "1"
