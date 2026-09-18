@@ -80,6 +80,7 @@ if(INFILTRATOR_CALC_BUILD_DESKTOP)
             user32
             gdi32
             comctl32
+            advapi32
         )
         if(MSVC)
             target_compile_options(infiltrator-calc PRIVATE /W4 /utf-8)
