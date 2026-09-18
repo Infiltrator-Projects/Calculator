@@ -1,0 +1,44 @@
+name: InfiltratorCalcIOS
+
+options:
+  bundleIdPrefix: net.ssmith.infiltrator
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CLANG_CXX_LANGUAGE_STANDARD: "c++17"
+    CLANG_CXX_LIBRARY: "libc++"
+    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.1.7"
+
+targets:
+  InfiltratorCalcIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Bridge
+      - path: ../src/core/calculator.cpp
+      - path: ../src/core/calculator.hpp
+      - path: ../src/core/session.cpp
+      - path: ../src/core/session.hpp
+      - path: ../src/core/programmer.cpp
+      - path: ../src/core/programmer.hpp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.ssmith.infiltrator.calc
+        PRODUCT_NAME: Infiltrator Calc
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Infiltrator Calc
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/InfiltratorCalc-Bridging-Header.h"
+        HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/../src/core"
+        CODE_SIGN_STYLE: Automatic
+    scheme:
+      gatherCoverageData: false
