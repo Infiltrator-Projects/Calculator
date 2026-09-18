@@ -4,11 +4,10 @@
 #include "../../src/core/programmer.hpp"
 #include "../../src/core/session.hpp"
 
+#include <infiltratr/design.h>
+
 #include <cmath>
 #include <cstdint>
-#include <iomanip>
-#include <memory>
-#include <sstream>
 #include <string>
 
 namespace {
@@ -25,11 +24,7 @@ NSDictionary *numeric_result(bool ok, double value, const std::string& error) {
     return @{
         @"ok": @(ok),
         @"value": @(value),
-        @"display": ok ? to_ns([&] {
-            std::ostringstream out;
-            out << std::setprecision(15) << value;
-            return out.str();
-        }()) : @"0",
+        @"display": ok ? to_ns(infiltrator::calc::format_value(value)) : @"0",
         @"error": to_ns(error)
     };
 }
@@ -59,6 +54,37 @@ IntegerWidth integer_width(NSInteger width) {
 @end
 
 @implementation ICCalculatorBridge
+
++ (NSDictionary<NSString *, NSNumber *> *)themePaletteForDark:(BOOL)dark {
+    const InfiltratrThemePalette *palette = infiltratr_theme_resolve(
+        dark ? INFILTRATR_THEME_NIGHT : INFILTRATR_THEME_DAY, dark);
+    return @{
+        @"background": @(palette->background_rgb),
+        @"panel": @(palette->panel_rgb),
+        @"card": @(palette->card_rgb),
+        @"surface": @(palette->surface_rgb),
+        @"input": @(palette->input_rgb),
+        @"border": @(palette->border_rgb),
+        @"text": @(palette->text_rgb),
+        @"title": @(palette->title_rgb),
+        @"muted": @(palette->muted_rgb),
+        @"subtle": @(palette->subtle_rgb),
+        @"buttonBackground": @(palette->button_background_rgb),
+        @"buttonForeground": @(palette->button_foreground_rgb),
+        @"selectionBackground": @(palette->selection_background_rgb),
+        @"selectionForeground": @(palette->selection_foreground_rgb),
+        @"neutralAccent": @(palette->neutral_accent_rgb),
+        @"success": @(palette->success_rgb),
+        @"warning": @(palette->warning_rgb),
+        @"fault": @(palette->fault_rgb),
+        @"info": @(palette->info_rgb),
+        @"operation": @(palette->operation_rgb),
+        @"cardHover": @(palette->card_hover_rgb),
+        @"surfaceHover": @(palette->surface_hover_rgb),
+        @"operationHover": @(palette->operation_hover_rgb),
+        @"equalsHover": @(palette->equals_hover_rgb)
+    };
+}
 
 - (instancetype)init {
     self = [super init];
@@ -190,25 +216,31 @@ IntegerWidth integer_width(NSInteger width) {
     return [self session]->memory_recall();
 }
 
+- (NSString *)formatValue:(double)value {
+    return to_ns(infiltrator::calc::format_value(value));
+}
+
 - (NSString *)historyText {
     const auto& history = [self session]->history();
     if (history.empty()) return @"No calculations yet.";
 
-    std::ostringstream out;
+    std::string out;
     bool first = true;
     for (auto it = history.rbegin(); it != history.rend(); ++it) {
-        if (!first) out << "\n\n";
+        if (!first) out += "\n\n";
         first = false;
 
-        out << it->input << "\n";
+        out += it->input;
+        out += "\n";
         if (it->result.ok) {
-            out << std::setprecision(15) << it->result.value;
+            out += infiltrator::calc::format_value(it->result.value);
         } else {
-            out << "Error: " << it->result.error;
+            out += "Error: ";
+            out += it->result.error;
         }
     }
 
-    return to_ns(out.str());
+    return to_ns(out);
 }
 
 - (void)clearHistory {

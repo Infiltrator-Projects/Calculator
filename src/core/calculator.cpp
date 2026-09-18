@@ -1,17 +1,82 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "calculator.hpp"
 
+#include <infiltratr/core.h>
+
 #include <cctype>
+#include <charconv>
 #include <cmath>
-#include <cstdlib>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace infiltrator::calc {
 namespace {
 
 constexpr double kPi = 3.141592653589793238462643383279502884;
 constexpr double kE = 2.718281828459045235360287471352662498;
+
+enum class DecimalTokenStatus {
+    None,
+    Invalid,
+    Ok
+};
+
+bool ascii_digit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+DecimalTokenStatus parse_decimal_token(std::string_view input,
+                                       std::size_t& position,
+                                       bool allow_sign,
+                                       double& value) {
+    const std::size_t start = position;
+    std::size_t cursor = position;
+
+    if (allow_sign && cursor < input.size() &&
+        (input[cursor] == '+' || input[cursor] == '-')) {
+        ++cursor;
+    }
+
+    bool saw_digit = false;
+    while (cursor < input.size() && ascii_digit(input[cursor])) {
+        saw_digit = true;
+        ++cursor;
+    }
+
+    if (cursor < input.size() && input[cursor] == '.') {
+        ++cursor;
+        while (cursor < input.size() && ascii_digit(input[cursor])) {
+            saw_digit = true;
+            ++cursor;
+        }
+    }
+
+    if (!saw_digit) return DecimalTokenStatus::None;
+
+    if (cursor < input.size() &&
+        (input[cursor] == 'e' || input[cursor] == 'E')) {
+        ++cursor;
+        if (cursor < input.size() &&
+            (input[cursor] == '+' || input[cursor] == '-')) {
+            ++cursor;
+        }
+
+        const std::size_t exponent_start = cursor;
+        while (cursor < input.size() && ascii_digit(input[cursor])) ++cursor;
+        if (cursor == exponent_start) return DecimalTokenStatus::Invalid;
+    }
+
+    const std::string token(input.substr(start, cursor - start));
+    double parsed = 0.0;
+    if (!infiltratr_parse_double(token.c_str(), &parsed)) {
+        return DecimalTokenStatus::Invalid;
+    }
+
+    position = cursor;
+    value = parsed;
+    return DecimalTokenStatus::Ok;
+}
 
 class Parser {
 public:
@@ -165,12 +230,17 @@ private:
             return it->second;
         }
 
-        const char* begin = input_.data() + position_;
-        char* end = nullptr;
-        const double value = std::strtod(begin, &end);
-        if (end == begin) { error_ = "expected a number"; return 0.0; }
-        position_ += static_cast<std::size_t>(end - begin);
-        if (!std::isfinite(value)) error_ = "invalid number";
+        double value = 0.0;
+        const DecimalTokenStatus status =
+            parse_decimal_token(input_, position_, false, value);
+        if (status == DecimalTokenStatus::None) {
+            error_ = "expected a number";
+            return 0.0;
+        }
+        if (status == DecimalTokenStatus::Invalid) {
+            error_ = "invalid number";
+            return 0.0;
+        }
         return value;
     }
 };
@@ -252,16 +322,14 @@ private:
             return 0.0;
         }
 
-        const char* begin = input_.data() + position_;
-        char* end = nullptr;
-        const double value = std::strtod(begin, &end);
-        if (end == begin) {
+        double value = 0.0;
+        const DecimalTokenStatus status =
+            parse_decimal_token(input_, position_, true, value);
+        if (status == DecimalTokenStatus::None) {
             error_ = "unsupported immediate expression";
             return 0.0;
         }
-
-        position_ += static_cast<std::size_t>(end - begin);
-        if (!std::isfinite(value)) {
+        if (status == DecimalTokenStatus::Invalid) {
             error_ = "invalid number";
             return 0.0;
         }
@@ -274,6 +342,15 @@ private:
 };
 
 } // namespace
+
+std::string format_value(double value) {
+    char buffer[64] = {};
+    const auto converted = std::to_chars(
+        buffer, buffer + sizeof(buffer),
+        value, std::chars_format::general, 15);
+    if (converted.ec != std::errc{}) return "0";
+    return std::string(buffer, converted.ptr);
+}
 
 Result evaluate(const std::string& expression) {
     static const Variables empty_variables;

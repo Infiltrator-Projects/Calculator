@@ -5,6 +5,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface ICCalculatorBridge : NSObject
 
++ (NSDictionary<NSString *, NSNumber *> *)themePaletteForDark:(BOOL)dark
+    NS_SWIFT_NAME(themePalette(dark:));
+
 - (NSDictionary *)evaluate:(NSString *)expression;
 - (NSDictionary *)applyUnary:(NSString *)operation
                   expression:(NSString *)expression;
@@ -21,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)memoryAdd:(double)value;
 - (void)memorySubtract:(double)value;
 - (double)memoryRecall;
+- (NSString *)formatValue:(double)value NS_SWIFT_NAME(format(value:));
 
 - (NSString *)historyText;
 - (void)clearHistory;

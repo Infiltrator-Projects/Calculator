@@ -14,6 +14,9 @@ struct Result {
     std::string error;
 };
 
+// Canonical locale-independent Calculator display formatting shared by every shell.
+std::string format_value(double value);
+
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);
 

@@ -9,6 +9,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+    CLANG_C_LANGUAGE_STANDARD: "c11"
     CLANG_CXX_LANGUAGE_STANDARD: "c++17"
     CLANG_CXX_LIBRARY: "libc++"
     CURRENT_PROJECT_VERSION: "1"
@@ -26,6 +27,16 @@ targets:
       - path: ../src/core/session.hpp
       - path: ../src/core/programmer.cpp
       - path: ../src/core/programmer.hpp
+      - path: ../src/infiltratr-common/src/core.c
+      - path: ../src/infiltratr-common/src/arithmetic.c
+      - path: ../src/infiltratr-common/src/config.c
+      - path: ../src/infiltratr-common/src/token.c
+      - path: ../src/infiltratr-common/src/timing.c
+      - path: ../src/infiltratr-common/src/format.c
+      - path: ../src/infiltratr-common/src/quantity.c
+      - path: ../src/infiltratr-common/src/graphics.c
+      - path: ../src/infiltratr-common/src/escape.c
+      - path: ../src/infiltratr-common/src/design.c
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.ssmith.infiltrator.calc
@@ -38,6 +49,7 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/InfiltratorCalc-Bridging-Header.h"
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../src/core"
+          - "$(SRCROOT)/../src/infiltratr-common/include"
         CODE_SIGN_STYLE: Automatic
     scheme:
       gatherCoverageData: false

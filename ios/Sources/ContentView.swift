@@ -61,59 +61,39 @@ private struct InfiltratorPalette {
     let operationHover: Color
     let equalsHover: Color
 
-    static let night = InfiltratorPalette(
-        background: Color(hex: 0x050608),
-        panel: Color(hex: 0x101318),
-        card: Color(hex: 0x171B20),
-        surface: Color(hex: 0x0D1014),
-        input: Color(hex: 0x0E1115),
-        border: Color(hex: 0x353A40),
-        text: Color(hex: 0xE8ECEF),
-        title: Color(hex: 0xEEF1F3),
-        muted: Color(hex: 0xAEB6BD),
-        subtle: Color(hex: 0x899198),
-        primary: Color(hex: 0xD7DDE2),
-        primaryText: Color(hex: 0x111418),
-        selected: Color(hex: 0x2B3137),
-        selectedText: Color(hex: 0xEEF1F3),
-        neutralAccent: Color(hex: 0xBEC7CF),
-        success: Color(hex: 0x63AB7C),
-        warning: Color(hex: 0xD19E47),
-        fault: Color(hex: 0xC96B6B),
-        info: Color(hex: 0x7FA7C9),
-        operation: Color(hex: 0x20252B),
-        cardHover: Color(hex: 0x22272D),
-        surfaceHover: Color(hex: 0x171B20),
-        operationHover: Color(hex: 0x2B3137),
-        equalsHover: Color(hex: 0xEEF1F3)
-    )
+    init(dark: Bool) {
+        let common = ICCalculatorBridge.themePalette(dark: dark)
 
-    static let day = InfiltratorPalette(
-        background: Color(hex: 0xF4F5F7),
-        panel: Color(hex: 0xFFFFFF),
-        card: Color(hex: 0xF8F9FA),
-        surface: Color(hex: 0xECEFF2),
-        input: Color(hex: 0xFFFFFF),
-        border: Color(hex: 0xC7CDD3),
-        text: Color(hex: 0x20252B),
-        title: Color(hex: 0x111418),
-        muted: Color(hex: 0x59636C),
-        subtle: Color(hex: 0x737D86),
-        primary: Color(hex: 0x20252B),
-        primaryText: Color(hex: 0xFFFFFF),
-        selected: Color(hex: 0xDDE2E7),
-        selectedText: Color(hex: 0x111418),
-        neutralAccent: Color(hex: 0x6F7881),
-        success: Color(hex: 0x3A8A58),
-        warning: Color(hex: 0x9A6500),
-        fault: Color(hex: 0xB54848),
-        info: Color(hex: 0x467AA3),
-        operation: Color(hex: 0xE8ECEF),
-        cardHover: Color(hex: 0xEEF1F3),
-        surfaceHover: Color(hex: 0xF1F3F5),
-        operationHover: Color(hex: 0xDDE2E7),
-        equalsHover: Color(hex: 0x343B42)
-    )
+        func colour(_ key: String) -> Color {
+            Color(hex: common[key]?.uint32Value ?? 0)
+        }
+
+        background = colour("background")
+        panel = colour("panel")
+        card = colour("card")
+        surface = colour("surface")
+        input = colour("input")
+        border = colour("border")
+        text = colour("text")
+        title = colour("title")
+        muted = colour("muted")
+        subtle = colour("subtle")
+        primary = colour("buttonBackground")
+        primaryText = colour("buttonForeground")
+        selected = colour("selectionBackground")
+        selectedText = colour("selectionForeground")
+        neutralAccent = colour("neutralAccent")
+        success = colour("success")
+        warning = colour("warning")
+        fault = colour("fault")
+        info = colour("info")
+        operation = colour("operation")
+        cardHover = colour("cardHover")
+        surfaceHover = colour("surfaceHover")
+        operationHover = colour("operationHover")
+        equalsHover = colour("equalsHover")
+    }
+
 }
 
 struct ContentView: View {
@@ -128,10 +108,10 @@ struct ContentView: View {
 
     private var palette: InfiltratorPalette {
         switch themePreference {
-        case .day: return .day
-        case .night: return .night
+        case .day: return InfiltratorPalette(dark: false)
+        case .night: return InfiltratorPalette(dark: true)
         case .system:
-            return systemColorScheme == .dark ? .night : .day
+            return InfiltratorPalette(dark: systemColorScheme == .dark)
         }
     }
 
@@ -162,7 +142,7 @@ struct ContentView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 1) {
-                Text("Infiltrator Calc")
+                Text("Calculator")
                     .font(.system(size: 29, weight: .regular))
                     .foregroundStyle(palette.title)
 
@@ -435,9 +415,9 @@ private struct HistoryView: View {
 
     private var palette: InfiltratorPalette {
         switch themePreference {
-        case .day: return .day
-        case .night: return .night
-        case .system: return systemColorScheme == .dark ? .night : .day
+        case .day: return InfiltratorPalette(dark: false)
+        case .night: return InfiltratorPalette(dark: true)
+        case .system: return InfiltratorPalette(dark: systemColorScheme == .dark)
         }
     }
 

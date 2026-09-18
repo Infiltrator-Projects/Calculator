@@ -331,6 +331,6 @@ final class CalculatorModel: ObservableObject {
     }
 
     private func format(_ value: Double) -> String {
-        String(format: "%.15g", value)
+        bridge.format(value: value)
     }
 }
