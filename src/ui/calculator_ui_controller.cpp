@@ -2,6 +2,7 @@
 #include "calculator_ui_controller.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -371,6 +372,7 @@ bool Controller::command_enabled(Command command) const {
         return !state_.expression.empty();
     case Command::Equals:
         return expression_has_value();
+    case Command::Percent:
     case Command::Reciprocal:
     case Command::Square:
     case Command::SquareRoot:
