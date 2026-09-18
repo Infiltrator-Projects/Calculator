@@ -49,10 +49,17 @@ private struct InfiltratorPalette {
     let primary: Color
     let primaryText: Color
     let selected: Color
+    let selectedText: Color
+    let neutralAccent: Color
+    let success: Color
     let warning: Color
     let fault: Color
+    let info: Color
     let operation: Color
-    let neutralAccent: Color
+    let cardHover: Color
+    let surfaceHover: Color
+    let operationHover: Color
+    let equalsHover: Color
 
     static let night = InfiltratorPalette(
         background: Color(hex: 0x050608),
@@ -68,10 +75,17 @@ private struct InfiltratorPalette {
         primary: Color(hex: 0xD7DDE2),
         primaryText: Color(hex: 0x111418),
         selected: Color(hex: 0x2B3137),
+        selectedText: Color(hex: 0xEEF1F3),
+        neutralAccent: Color(hex: 0xBEC7CF),
+        success: Color(hex: 0x63AB7C),
         warning: Color(hex: 0xD19E47),
         fault: Color(hex: 0xC96B6B),
+        info: Color(hex: 0x7FA7C9),
         operation: Color(hex: 0x20252B),
-        neutralAccent: Color(hex: 0xBEC7CF)
+        cardHover: Color(hex: 0x22272D),
+        surfaceHover: Color(hex: 0x171B20),
+        operationHover: Color(hex: 0x2B3137),
+        equalsHover: Color(hex: 0xEEF1F3)
     )
 
     static let day = InfiltratorPalette(
@@ -88,10 +102,17 @@ private struct InfiltratorPalette {
         primary: Color(hex: 0x20252B),
         primaryText: Color(hex: 0xFFFFFF),
         selected: Color(hex: 0xDDE2E7),
+        selectedText: Color(hex: 0x111418),
+        neutralAccent: Color(hex: 0x6F7881),
+        success: Color(hex: 0x3A8A58),
         warning: Color(hex: 0x9A6500),
         fault: Color(hex: 0xB54848),
+        info: Color(hex: 0x467AA3),
         operation: Color(hex: 0xE8ECEF),
-        neutralAccent: Color(hex: 0x6F7881)
+        cardHover: Color(hex: 0xEEF1F3),
+        surfaceHover: Color(hex: 0xF1F3F5),
+        operationHover: Color(hex: 0xDDE2E7),
+        equalsHover: Color(hex: 0x343B42)
     )
 }
 
