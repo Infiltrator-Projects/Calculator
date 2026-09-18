@@ -234,9 +234,9 @@ void recreate_theme_brushes() {
     if (g_background_brush != nullptr) DeleteObject(g_background_brush);
     if (g_panel_brush != nullptr) DeleteObject(g_panel_brush);
     if (g_input_brush != nullptr) DeleteObject(g_input_brush);
-    g_theme_mode = load_theme_mode();
-    resolve_theme();
-    recreate_theme_brushes();
+    g_background_brush = CreateSolidBrush(kBackground);
+    g_panel_brush = CreateSolidBrush(kPanel);
+    g_input_brush = CreateSolidBrush(kInput);
 }
 
 bool font_family_available(const wchar_t* family) {
@@ -1332,7 +1332,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     main_class.hInstance = instance;
     main_class.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
     main_class.hIcon = LoadIconW(nullptr, MAKEINTRESOURCEW(32512));
-    main_class.hbrBackground = g_background_brush;
+    // Background painting is handled by the window procedures so the brush
+    // can be recreated safely when the user switches theme at runtime.
+    main_class.hbrBackground = nullptr;
     main_class.lpszClassName = kMainClass;
     main_class.hIconSm = main_class.hIcon;
 
