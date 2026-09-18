@@ -48,8 +48,6 @@ for needle in (
 ):
     assert needle in contract, f"shared UI contract is incomplete: {needle}"
 
-print("Cross-platform desktop UI parity contract passed.")
-
 for forbidden_state in (
     "infiltrator::calc::Session session",
     "infiltrator::calc::Session g_session",
@@ -68,3 +66,5 @@ for forbidden_state in (
     assert forbidden_state not in windows, (
         f"Windows Win32 reintroduced platform-owned calculator state: {forbidden_state}"
     )
+
+print("Cross-platform desktop UI parity contract passed.")
