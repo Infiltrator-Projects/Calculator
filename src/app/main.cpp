@@ -44,6 +44,7 @@ GtkCssProvider* css_provider = nullptr;
 
 std::vector<std::pair<GtkWidget*, Command>> command_buttons;
 LayoutClass last_layout_class = LayoutClass::Regular;
+bool responsive_layout_initialized = false;
 
 Controller controller;
 ThemeMode theme_mode = ThemeMode::System;
@@ -442,6 +443,7 @@ void update_responsive_layout(GtkWidget* window) {
     const auto layout =
         calculator::ui::responsive_layout(width, height);
     last_layout_class = layout.layout_class;
+    responsive_layout_initialized = true;
 
     gtk_widget_set_visible(history_dock, layout.dock_history);
     gtk_widget_set_visible(history_button, !layout.dock_history);
@@ -461,7 +463,8 @@ gboolean responsive_tick(
 
     const auto layout =
         calculator::ui::responsive_layout(width, height);
-    if (layout.layout_class != last_layout_class) {
+    if (!responsive_layout_initialized ||
+        layout.layout_class != last_layout_class) {
         update_responsive_layout(widget);
     }
     return G_SOURCE_CONTINUE;
@@ -687,6 +690,7 @@ void activate(GtkApplication* app, gpointer) {
 
     history_dock = gtk_scrolled_window_new();
     gtk_widget_add_css_class(history_dock, "history-dock");
+    gtk_widget_set_visible(history_dock, FALSE);
     gtk_widget_set_size_request(history_dock, metrics.history_min_width, -1);
     gtk_widget_set_vexpand(history_dock, TRUE);
     gtk_box_append(GTK_BOX(shell), history_dock);

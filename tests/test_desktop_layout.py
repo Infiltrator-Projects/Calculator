@@ -78,6 +78,16 @@ for forbidden_state in (
     )
 
 for needle in (
+    "bool responsive_layout_initialized = false;",
+    "responsive_layout_initialized = true;",
+    "if (!responsive_layout_initialized ||",
+    "gtk_widget_set_visible(history_dock, FALSE);",
+):
+    assert needle in linux, (
+        f"Linux GTK history dock initialization regression: {needle}"
+    )
+
+for needle in (
     "#include <infiltratr/design.h>",
     "INFILTRATR_THEME_SYSTEM",
     "INFILTRATR_THEME_DAY",
