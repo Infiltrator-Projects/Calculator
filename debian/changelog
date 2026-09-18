@@ -1,3 +1,11 @@
+infiltrator-calc (0.1.11) unstable; urgency=medium
+
+  * Fix native Windows keypad creation during WM_CREATE so calculator keys are visible.
+  * Add a Windows startup smoke test that verifies the complete child button set is created.
+  * Retain standalone Win32/MSVC packaging and the compact Linux desktop layout.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 11:58:00 +1000
+
 infiltrator-calc (0.1.10) unstable; urgency=medium
 
   * Replace the Windows GTK/MSYS2 shell with a native Win32 interface over the shared C++ core.
