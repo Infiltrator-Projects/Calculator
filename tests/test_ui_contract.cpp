@@ -20,6 +20,21 @@ int main() {
     static_assert(kDesktopMetrics.grid_gap_y == 5);
     static_assert(kDesktopMetrics.key_min_height == 32);
     static_assert(kDesktopMetrics.memory_height == 24);
+    static_assert(kDesktopMetrics.wide_threshold == 720);
+    static_assert(kDesktopMetrics.compact_width_threshold == 340);
+    static_assert(kDesktopMetrics.compact_height_threshold == 560);
+    static_assert(kDesktopMetrics.history_min_width == 240);
+
+    constexpr auto compact = responsive_layout(320, 520);
+    constexpr auto regular = responsive_layout(360, 610);
+    constexpr auto wide = responsive_layout(900, 610);
+    static_assert(compact.layout_class == LayoutClass::Compact);
+    static_assert(compact.compact_controls);
+    static_assert(!compact.dock_history);
+    static_assert(regular.layout_class == LayoutClass::Regular);
+    static_assert(!regular.dock_history);
+    static_assert(wide.layout_class == LayoutClass::Wide);
+    static_assert(wide.dock_history);
 
     assert(mode_name(Mode::Standard) == "Standard");
     assert(mode_name(Mode::Scientific) == "Scientific");
