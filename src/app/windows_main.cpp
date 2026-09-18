@@ -155,6 +155,40 @@ int sx(HWND window, int logical) {
     return MulDiv(logical, window_dpi(window), 96);
 }
 
+bool font_family_available(const wchar_t* family) {
+    if (family == nullptr || *family == L'\0') return false;
+
+    HDC dc = GetDC(nullptr);
+    if (dc == nullptr) return false;
+
+    LOGFONTW query{};
+    query.lfCharSet = DEFAULT_CHARSET;
+    wcsncpy_s(query.lfFaceName, family, _TRUNCATE);
+
+    bool found = false;
+    auto callback = [](const LOGFONTW*, const TEXTMETRICW*, DWORD, LPARAM data) -> int {
+        *reinterpret_cast<bool*>(data) = true;
+        return 0;
+    };
+    EnumFontFamiliesExW(dc, &query,
+                        reinterpret_cast<FONTENUMPROCW>(callback),
+                        reinterpret_cast<LPARAM>(&found), 0);
+    ReleaseDC(nullptr, dc);
+    return found;
+}
+
+const wchar_t* ui_font_family() {
+    return font_family_available(L"MB Corpo S Title WEB")
+        ? L"MB Corpo S Title WEB"
+        : L"Segoe UI";
+}
+
+const wchar_t* brand_font_family() {
+    return font_family_available(L"MB Corpo A Title Cond WEB")
+        ? L"MB Corpo A Title Cond WEB"
+        : L"Segoe UI";
+}
+
 HFONT make_font(HWND window, int point_size, int weight, const wchar_t* family) {
     HDC dc = GetDC(window);
     const int dpi = dc != nullptr ? GetDeviceCaps(dc, LOGPIXELSY) : 96;
@@ -667,6 +701,11 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
     }
 
     RECT rect = item->rcItem;
+    HBRUSH corner_brush = CreateSolidBrush(
+        kind == ButtonKind::Mode ? kSurface : kBackground);
+    FillRect(item->hDC, &rect, corner_brush);
+    DeleteObject(corner_brush);
+
     HBRUSH brush = CreateSolidBrush(fill);
     HPEN pen = CreatePen(PS_SOLID, sx(g_main, 1), border);
     HGDIOBJ old_brush = SelectObject(item->hDC, brush);
@@ -728,6 +767,27 @@ void show_grid(std::vector<HWND>& buttons, bool visible) {
     }
 }
 
+void redraw_button(HWND button) {
+    if (button != nullptr) {
+        RedrawWindow(button, nullptr, nullptr,
+                     RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
+    }
+}
+
+void redraw_buttons(const std::vector<HWND>& buttons) {
+    for (HWND button : buttons) redraw_button(button);
+}
+
+void redraw_active_grid() {
+    if (g_mode == Mode::Standard) redraw_buttons(g_standard_buttons);
+    else if (g_mode == Mode::Scientific) redraw_buttons(g_scientific_buttons);
+    else redraw_buttons(g_programmer_buttons);
+}
+
+void redraw_mode_buttons() {
+    for (HWND button : g_mode_buttons) redraw_button(button);
+}
+
 void update_mode_ui() {
     show_grid(g_standard_buttons, g_mode == Mode::Standard);
     show_grid(g_scientific_buttons, g_mode == Mode::Scientific);
@@ -742,6 +802,8 @@ void update_mode_ui() {
         set_status(L"READY");
     }
 
+    redraw_mode_buttons();
+    redraw_active_grid();
     InvalidateRect(g_main, nullptr, TRUE);
     SetFocus(g_expression);
 }
@@ -750,11 +812,11 @@ void layout_grid(const std::vector<HWND>& buttons, int rows,
                  int left, int top, int width, int height) {
     if (buttons.empty() || rows <= 0) return;
 
-    const int gap = sx(g_main, 10);
+    const int gap = sx(g_main, 6);
     const int columns = 4;
-    const int button_width = std::max(sx(g_main, 54),
+    const int button_width = std::max(sx(g_main, 48),
                                       (width - gap * (columns - 1)) / columns);
-    const int button_height = std::max(sx(g_main, 34),
+    const int button_height = std::max(sx(g_main, 30),
                                        (height - gap * (rows - 1)) / rows);
 
     for (std::size_t index = 0; index < buttons.size(); ++index) {
@@ -771,54 +833,55 @@ void layout_main(HWND window) {
     RECT client{};
     GetClientRect(window, &client);
 
-    const int margin = sx(window, 20);
-    const int gap = sx(window, 10);
+    const int margin = sx(window, 14);
+    const int gap = sx(window, 6);
     const int width = client.right - client.left;
     const int height = client.bottom - client.top;
     const int content_width = std::max(0, width - margin * 2);
 
     int y = margin;
-    const int header_height = sx(window, 58);
-    const int history_width = sx(window, 96);
 
-    MoveWindow(g_title, margin, y, std::max(0, content_width - history_width - gap),
-               sx(window, 34), TRUE);
-    MoveWindow(g_subtitle, margin, y + sx(window, 34),
+    const int history_width = sx(window, 76);
+    const int history_height = sx(window, 30);
+    MoveWindow(g_title, margin, y,
                std::max(0, content_width - history_width - gap),
-               sx(window, 18), TRUE);
+               sx(window, 30), TRUE);
+    ShowWindow(g_subtitle, SW_HIDE);
     MoveWindow(g_history_button,
-               width - margin - history_width, y + sx(window, 8),
-               history_width, sx(window, 38), TRUE);
+               width - margin - history_width, y,
+               history_width, history_height, TRUE);
 
-    y += header_height + sx(window, 8);
+    y += sx(window, 38);
 
-    g_mode_rect = RECT{margin, y, width - margin, y + sx(window, 48)};
-    const int mode_padding = sx(window, 5);
-    const int mode_gap = sx(window, 5);
+    g_mode_rect = RECT{margin, y, width - margin, y + sx(window, 38)};
+    const int mode_padding = sx(window, 3);
+    const int mode_gap = sx(window, 3);
     const int mode_width =
         (content_width - mode_padding * 2 - mode_gap * 2) / 3;
     for (int i = 0; i < 3; ++i) {
         MoveWindow(g_mode_buttons[i],
                    margin + mode_padding + i * (mode_width + mode_gap),
-                   y + mode_padding, mode_width, sx(window, 38), TRUE);
+                   y + mode_padding, mode_width, sx(window, 32), TRUE);
     }
 
-    y += sx(window, 62);
+    y += sx(window, 46);
 
-    g_display_rect = RECT{margin, y, width - margin, y + sx(window, 146)};
-    const int display_padding = sx(window, 16);
-    MoveWindow(g_expression, margin + display_padding, y + display_padding,
-               content_width - display_padding * 2, sx(window, 36), TRUE);
-    MoveWindow(g_result, margin + display_padding, y + sx(window, 58),
-               content_width - display_padding * 2, sx(window, 54), TRUE);
-    MoveWindow(g_status, margin + display_padding, y + sx(window, 116),
-               content_width - display_padding * 2, sx(window, 18), TRUE);
+    g_display_rect = RECT{margin, y, width - margin, y + sx(window, 104)};
+    const int display_padding = sx(window, 12);
+    MoveWindow(g_expression,
+               margin + display_padding, y + sx(window, 8),
+               content_width - display_padding * 2, sx(window, 24), TRUE);
+    MoveWindow(g_result,
+               margin + display_padding, y + sx(window, 32),
+               content_width - display_padding * 2, sx(window, 46), TRUE);
+    MoveWindow(g_status,
+               margin + display_padding, y + sx(window, 80),
+               content_width - display_padding * 2, sx(window, 16), TRUE);
 
-    y += sx(window, 160);
+    y += sx(window, 112);
 
-    const int footer_height = sx(window, 18);
-    const int footer_y = height - margin - footer_height;
-    const int grid_height = std::max(sx(window, 260), footer_y - y - sx(window, 8));
+    const int grid_bottom = height - margin;
+    const int grid_height = std::max(sx(window, 300), grid_bottom - y);
     const int rows = g_mode == Mode::Standard ? 7 : 10;
 
     if (g_mode == Mode::Standard) {
@@ -829,7 +892,7 @@ void layout_main(HWND window) {
         layout_grid(g_programmer_buttons, rows, margin, y, content_width, grid_height);
     }
 
-    MoveWindow(g_footer, margin, footer_y, content_width, footer_height, TRUE);
+    ShowWindow(g_footer, SW_HIDE);
 }
 
 void draw_panel(HDC dc, const RECT& rect, COLORREF fill, COLORREF border,
@@ -851,7 +914,7 @@ void create_controls(HWND window) {
                               WS_CHILD | WS_VISIBLE | SS_LEFT,
                               0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_subtitle = CreateWindowExW(0, L"STATIC", L"PRECISION DESKTOP CALCULATOR",
-                                 WS_CHILD | WS_VISIBLE | SS_LEFT,
+                                 WS_CHILD | SS_LEFT,
                                  0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_history_button = create_button(window, kIdHistory, L"History", g_ui_bold_font);
 
@@ -874,7 +937,7 @@ void create_controls(HWND window) {
     g_footer = CreateWindowExW(
         0, L"STATIC",
         L"Keyboard ready · Variables, memory and history retained",
-        WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX,
+        WS_CHILD | SS_LEFT | SS_NOPREFIX,
         0, 0, 0, 0, window, nullptr, g_instance, nullptr);
 
     apply_font(g_title, g_title_font);
@@ -1033,8 +1096,8 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
 
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
-        info->ptMinTrackSize.x = sx(window, 420);
-        info->ptMinTrackSize.y = sx(window, 700);
+        info->ptMinTrackSize.x = sx(window, 340);
+        info->ptMinTrackSize.y = sx(window, 560);
         return 0;
     }
 
@@ -1066,6 +1129,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         const auto found = g_key_labels.find(id);
         if (found != g_key_labels.end()) {
             handle_key(found->second);
+            redraw_active_grid();
             InvalidateRect(window, nullptr, FALSE);
             return 0;
         }
@@ -1162,11 +1226,13 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     g_panel_brush = CreateSolidBrush(kPanel);
     g_input_brush = CreateSolidBrush(kInput);
 
-    g_ui_font = make_font(nullptr, 11, FW_NORMAL, L"MB Corpo S Title WEB");
-    g_ui_bold_font = make_font(nullptr, 11, FW_BOLD, L"MB Corpo S Title WEB");
-    g_title_font = make_font(nullptr, 24, FW_NORMAL, L"MB Corpo A Title Cond WEB");
-    g_result_font = make_font(nullptr, 34, FW_NORMAL, L"MB Corpo A Title Cond WEB");
-    g_small_font = make_font(nullptr, 9, FW_BOLD, L"MB Corpo S Title WEB");
+    const wchar_t* ui_family = ui_font_family();
+    const wchar_t* brand_family = brand_font_family();
+    g_ui_font = make_font(nullptr, 10, FW_NORMAL, ui_family);
+    g_ui_bold_font = make_font(nullptr, 10, FW_SEMIBOLD, ui_family);
+    g_title_font = make_font(nullptr, 18, FW_NORMAL, brand_family);
+    g_result_font = make_font(nullptr, 32, FW_NORMAL, brand_family);
+    g_small_font = make_font(nullptr, 8, FW_SEMIBOLD, ui_family);
 
     WNDCLASSEXW main_class{};
     main_class.cbSize = sizeof(main_class);
@@ -1189,7 +1255,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         return 1;
     }
 
-    RECT desired{0, 0, 500, 850};
+    RECT desired{0, 0, 380, 650};
     AdjustWindowRectEx(&desired, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     g_main = CreateWindowExW(
