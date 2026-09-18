@@ -2,19 +2,19 @@
 
 # Infiltrator Calc
 
-Infiltrator Calc is a native desktop calculator for the Infiltrator software family and the future Infiltrator Mint desktop.
+Infiltrator Calc is a native cross-platform calculator for the Infiltrator software family, with first-class Linux, Windows and iPhone interfaces.
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.6  
-**Language:** C++17 application/core with C-based GTK4 presentation APIs  
+**Current source version:** 0.1.7  
+**Language:** C++17 shared calculation core, GTK4 desktop shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Infiltratr Common 1.17.0  
 **Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
 
 ## Current capabilities
 
-Infiltrator Calc has three explicitly switchable desktop modes presented as a visible mode strip, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
+Infiltrator Calc has three explicitly switchable modes presented as a visible mode strip on desktop and iPhone, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
 
 - Standard — arithmetic, percentages, powers, unary operations and memory;
 - Scientific — trigonometric, inverse trigonometric, logarithmic, exponential and related functions with degree/radian control; and
@@ -41,16 +41,19 @@ The architecture is intended to grow into:
 
 The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
 
-The desktop shell now uses the shared Infiltrator Design v1 metrics more deliberately: larger consistent controls, 10 px control spacing, layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action. The aim is a purpose-built Infiltrator interface rather than a generic GTK keypad.
+The desktop and iPhone shells both use the shared Infiltrator Design v1 metrics deliberately: larger consistent controls, 10 px control spacing, layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action. The iPhone interface is native SwiftUI and uses Apple's system-font fallback rather than bundling proprietary MB Corpo fonts.
 
 ## Release platforms
 
-Desktop releases are cross-platform by default. The same release source is built and tested on both supported desktop targets:
+Releases are multi-platform by default. The same versioned source is built and tested across all three targets:
 
 - Linux x64: `infiltrator-calc_<version>_amd64.deb`;
-- Windows x64: `infiltrator-calc_<version>_windows_x64.exe` plus a portable ZIP containing the GTK/GLib runtime required beside the executable.
+- Windows x64: `infiltrator-calc_<version>_windows_x64.exe` plus a portable ZIP containing the GTK/GLib runtime required beside the executable;
+- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI publishes an iOS Simulator bundle and an unsigned device bundle for build verification.
 
-A release is published only after both platform builds and their tests succeed.
+A signed installable `.ipa` requires an Apple signing identity and provisioning profile. Those credentials are deliberately not stored in the repository. Once signing is configured, the same Xcode target is ready to archive and export as an `.ipa`.
+
+A release is published only after Linux, Windows and iOS builds and the shared-core tests succeed.
 
 ## Shared Infiltrator design
 
@@ -90,6 +93,11 @@ src/
 ├── app/                 GTK desktop application
 ├── core/                Portable calculation engine, session state and programmer engine
 └── infiltratr-common/   Exact shared Common gitlink
+
+ios/
+├── Sources/             Native SwiftUI iPhone application
+├── Bridge/              Objective-C++ bridge into the shared C++ core
+└── project.yml          Reproducible XcodeGen project definition
 
 tests/                   Core, session and programmer regression tests
 docs/                    Maintained engineering/design documentation
