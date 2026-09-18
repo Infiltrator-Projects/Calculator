@@ -16,7 +16,7 @@ void fail(const std::string& message) {
 }
 
 void expect_value(const char* expression, double expected) {
-    const auto result = infiltrator::calc::evaluate(expression);
+    const auto result = calculator::evaluate(expression);
     if (!result.ok) {
         fail(std::string(expression) + " -> " + result.error);
         return;
@@ -29,14 +29,14 @@ void expect_value(const char* expression, double expected) {
 }
 
 void expect_error(const char* expression) {
-    const auto result = infiltrator::calc::evaluate(expression);
+    const auto result = calculator::evaluate(expression);
     if (result.ok || result.error.empty()) {
         fail(std::string(expression) + " should fail");
     }
 }
 
 void expect_immediate(const char* expression, double expected) {
-    const auto result = infiltrator::calc::evaluate_immediate(expression);
+    const auto result = calculator::evaluate_immediate(expression);
     if (!result.ok) {
         fail(std::string("immediate ") + expression + " -> " + result.error);
         return;
@@ -118,7 +118,7 @@ int main() {
     expect_error("madeup(1)");
 
     // All graphical shells consume the same display-formatting contract.
-    if (infiltrator::calc::format_value(1.0 / 3.0) !=
+    if (calculator::format_value(1.0 / 3.0) !=
         "0.333333333333333") {
         fail("shared value formatter wrong output");
     }

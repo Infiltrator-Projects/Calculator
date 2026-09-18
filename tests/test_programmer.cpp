@@ -6,19 +6,19 @@
 static int failures = 0;
 static void fail(const std::string& message){std::cerr << "FAIL: " << message << '\n'; ++failures;}
 static void expect(std::uint64_t actual,std::uint64_t expected,const char* label){if(actual!=expected)fail(std::string(label)+" wrong value");}
-static void expect_ok(const char* expression,infiltrator::calc::ProgrammerBase base,infiltrator::calc::IntegerWidth width,std::uint64_t expected){
-    const auto r=infiltrator::calc::evaluate_programmer(expression,base,width);
+static void expect_ok(const char* expression,calculator::ProgrammerBase base,calculator::IntegerWidth width,std::uint64_t expected){
+    const auto r=calculator::evaluate_programmer(expression,base,width);
     if(!r.ok){fail(std::string(expression)+" -> "+r.error);return;}
     expect(r.value,expected,expression);
 }
-static void expect_error(const char* expression,infiltrator::calc::ProgrammerBase base,infiltrator::calc::IntegerWidth width){
-    const auto r=infiltrator::calc::evaluate_programmer(expression,base,width);
+static void expect_error(const char* expression,calculator::ProgrammerBase base,calculator::IntegerWidth width){
+    const auto r=calculator::evaluate_programmer(expression,base,width);
     if(r.ok||r.error.empty())fail(std::string(expression)+" should fail");
 }
 
 int main(){
-    using infiltrator::calc::IntegerWidth;
-    using infiltrator::calc::ProgrammerBase;
+    using calculator::IntegerWidth;
+    using calculator::ProgrammerBase;
     expect_ok("1010",ProgrammerBase::Binary,IntegerWidth::Bits8,10);
     expect_ok("1010 | 0101",ProgrammerBase::Binary,IntegerWidth::Bits8,15);
     expect_ok("1111 & 0101",ProgrammerBase::Binary,IntegerWidth::Bits8,5);

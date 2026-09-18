@@ -7,17 +7,17 @@
 
 static int failures = 0;
 static void fail(const std::string& message){std::cerr << "FAIL: " << message << '\n';++failures;}
-static void expect_value(const infiltrator::calc::Result& r,double expected,const char* label){
+static void expect_value(const calculator::Result& r,double expected,const char* label){
     if(!r.ok){fail(std::string(label)+" -> "+r.error);return;}
     if(std::abs(r.value-expected)>1e-12*std::max(1.0,std::abs(expected)))fail(std::string(label)+" wrong value");
 }
 
 int main(){
-    infiltrator::calc::Variables variables{{"width",1920.0},{"height",1080.0}};
-    expect_value(infiltrator::calc::evaluate("width * height",variables),2073600.0,"variables");
-    expect_value(infiltrator::calc::evaluate("sqrt(width^2 + height^2)",variables),std::sqrt(1920.0*1920.0+1080.0*1080.0),"variable expression");
+    calculator::Variables variables{{"width",1920.0},{"height",1080.0}};
+    expect_value(calculator::evaluate("width * height",variables),2073600.0,"variables");
+    expect_value(calculator::evaluate("sqrt(width^2 + height^2)",variables),std::sqrt(1920.0*1920.0+1080.0*1080.0),"variable expression");
 
-    infiltrator::calc::Session session(3);
+    calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");
 

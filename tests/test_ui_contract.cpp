@@ -5,7 +5,7 @@
 #include <cassert>
 #include <string_view>
 
-using namespace infiltrator::calc::ui;
+using namespace calculator::ui;
 
 int main() {
     static_assert(kStandardMemory.size() == 4);

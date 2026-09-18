@@ -5,7 +5,7 @@
 #include <cmath>
 #include <string>
 
-using namespace infiltrator::calc::ui;
+using namespace calculator::ui;
 
 int main() {
     Controller controller;
@@ -80,7 +80,7 @@ int main() {
     assert(!controller.command_enabled(Command::HexA));
     controller.dispatch(Command::BaseHex);
     assert(controller.state().programmer_base ==
-           infiltrator::calc::ProgrammerBase::Hexadecimal);
+           calculator::ProgrammerBase::Hexadecimal);
     assert(controller.command_enabled(Command::Digit9));
     assert(controller.command_enabled(Command::HexA));
     controller.set_expression("F+1");
