@@ -6,8 +6,8 @@ Infiltrator Calc is a native cross-platform calculator for the Infiltrator softw
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.9  
-**Language:** C++17 shared calculation core, GTK4 desktop shell, SwiftUI iPhone shell with Objective-C++ bridge  
+**Current source version:** 0.1.10  
+**Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Infiltratr Common 1.18.1  
 **Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
@@ -41,14 +41,14 @@ The architecture is intended to grow into:
 
 The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
 
-The desktop and iPhone shells both use the shared Infiltrator Design v1 metrics deliberately: larger consistent controls, 10 px control spacing, layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action. The iPhone interface is native SwiftUI and uses Apple's system-font fallback rather than bundling proprietary MB Corpo fonts.
+The Linux, Windows and iPhone shells all use the shared Infiltrator Design v1 metrics deliberately: larger consistent controls, 10 px control spacing, layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action. Windows uses native Win32 controls over the shared C++ core instead of carrying GTK/GLib onto Windows. The iPhone interface is native SwiftUI and uses Apple's system-font fallback rather than bundling proprietary MB Corpo fonts.
 
 ## Release platforms
 
 Releases are multi-platform by default. The same versioned source is built and tested across all three targets:
 
 - Linux x64: `infiltrator-calc_<version>_amd64.deb`;
-- Windows x64: `infiltrator-calc_<version>_windows_x64.exe` plus a portable ZIP containing the GTK/GLib runtime required beside the executable;
+- Windows x64: `infiltrator-calc_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
 - iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI publishes an iOS Simulator bundle and an unsigned device bundle for build verification.
 
 A signed installable `.ipa` requires an Apple signing identity and provisioning profile. Those credentials are deliberately not stored in the repository. Once signing is configured, the same Xcode target is ready to archive and export as an `.ipa`.
@@ -63,7 +63,7 @@ The calculation core links against `InfiltratrCommon::Portable` from the exact r
 
 ## Typography
 
-Infiltrator Calc prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent.
+Infiltrator Calc prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent. The native Windows shell relies on Windows font substitution with Segoe UI as the platform fallback defined by the shared design contract.
 
 The project does **not** redistribute proprietary MB Corpo font binaries. The current UI roles are:
 
@@ -84,7 +84,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config.
+On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
 
 ## Project structure
 
