@@ -17,6 +17,7 @@ namespace {
 GtkWidget* expression_entry = nullptr;
 GtkWidget* result_label = nullptr;
 GtkWidget* status_label = nullptr;
+GtkWidget* standard_panel = nullptr;
 GtkWidget* standard_grid = nullptr;
 GtkWidget* scientific_grid = nullptr;
 GtkWidget* programmer_grid = nullptr;
@@ -355,7 +356,7 @@ void scientific_transform(const char* name) {
 }
 
 void update_mode_ui() {
-    gtk_widget_set_visible(standard_grid, mode == Mode::Standard);
+    gtk_widget_set_visible(standard_panel, mode == Mode::Standard);
     gtk_widget_set_visible(scientific_grid, mode == Mode::Scientific);
     gtk_widget_set_visible(programmer_grid, mode == Mode::Programmer);
 
@@ -588,6 +589,12 @@ GtkWidget* calc_button(const char* text) {
     GtkWidget* button = gtk_button_new_with_label(text);
     gtk_widget_add_css_class(button, "calc-button");
     gtk_widget_add_css_class(button, button_class(text));
+    if (g_strcmp0(text, "MC") == 0 ||
+        g_strcmp0(text, "MR") == 0 ||
+        g_strcmp0(text, "M+") == 0 ||
+        g_strcmp0(text, "M−") == 0) {
+        gtk_widget_add_css_class(button, "memory-button");
+    }
     g_signal_connect(button, "clicked", G_CALLBACK(on_button_clicked), nullptr);
     gtk_widget_set_hexpand(button, TRUE);
     gtk_widget_set_vexpand(button, FALSE);
@@ -647,40 +654,44 @@ void apply_css(GtkWidget* window) {
     const std::string css =
         "*{font-family:\"" + ui + "\";font-weight:400}"
         "window,.shell{background:#050608;color:#E8ECEF}"
-        ".shell{padding:14px}"
-        ".header{margin-bottom:2px}"
-        ".brand-title{font-family:\"" + brand + "\";font-size:24px;color:#EEF1F3}"
-        ".brand-subtitle{font-size:10px;font-weight:700;letter-spacing:.12em;color:#899198}"
+        ".shell{padding:10px}"
+        ".header{margin-bottom:0}"
+        ".brand-title{font-family:\"" + brand + "\";font-size:20px;color:#EEF1F3}"
+        ".brand-subtitle{font-size:9px;font-weight:700;letter-spacing:.10em;color:#899198}"
         ".toolbar-button{background:#0D1014;color:#AEB6BD;border:1px solid #353A40;"
-            "border-radius:9px;min-height:30px;padding:0 10px;font-weight:700}"
+            "border-radius:8px;min-height:28px;padding:0 10px;font-weight:700}"
         ".toolbar-button:hover{background:#171B20;color:#EEF1F3;border-color:#6A737C}"
-        ".mode-strip{background:#0D1014;border:1px solid #353A40;border-radius:10px;padding:4px}"
-        ".mode-tab{background:transparent;color:#899198;border:0;border-radius:8px;"
-            "min-height:30px;font-size:11px;font-weight:700}"
+        ".mode-strip{background:#0D1014;border:1px solid #353A40;border-radius:9px;padding:3px}"
+        ".mode-tab{background:transparent;color:#899198;border:0;border-radius:7px;"
+            "min-height:28px;font-size:10px;font-weight:700;padding:0 8px}"
         ".mode-tab:hover{background:#171B20;color:#D7DDE2}"
         ".mode-tab.selected{background:#D7DDE2;color:#111418}"
-        ".display{background:#101318;border:1px solid #353A40;border-radius:10px;padding:12px}"
-        ".expression{background:#0E1115;color:#AEB6BD;border:1px solid #353A40;"
-            "border-radius:9px;padding:7px 10px;min-height:24px;font-size:14px}"
-        ".result{font-family:\"" + brand + "\";font-size:38px;color:#EEF1F3;padding-top:6px}"
-        ".status{font-size:10px;font-weight:700;letter-spacing:.09em;color:#899198}"
+        ".display{background:#101318;border:1px solid #353A40;border-radius:9px;padding:10px}"
+        ".expression{background:#0E1115;color:#AEB6BD;border:0;border-radius:7px;"
+            "padding:4px 8px;min-height:20px;font-size:12px;outline:none;box-shadow:none}"
+        ".expression:focus{border:0;outline:none;box-shadow:none}"
+        ".result{font-family:\"" + brand + "\";font-size:34px;color:#EEF1F3;padding-top:2px}"
+        ".status{font-size:9px;font-weight:700;letter-spacing:.08em;color:#899198}"
         ".status.fault{color:#C96B6B}"
-        ".calc-button{border:1px solid #353A40;border-radius:9px;min-height:34px;"
-            "font-size:14px;font-weight:700}"
+        ".calc-button{border:1px solid #353A40;border-radius:8px;min-height:32px;"
+            "font-size:13px;font-weight:700;padding:0}"
         ".calc-button.number{background:#171B20;color:#EEF1F3}"
         ".calc-button.number:hover{background:#22272D;border-color:#6A737C}"
         ".calc-button.operation{background:#20252B;color:#D7DDE2}"
         ".calc-button.operation:hover{background:#2B3137;border-color:#6A737C}"
-        ".calc-button.utility{background:#0D1014;color:#AEB6BD;font-size:12px}"
+        ".calc-button.utility{background:#0D1014;color:#AEB6BD;font-size:11px}"
         ".calc-button.utility:hover{background:#171B20;color:#EEF1F3;border-color:#6A737C}"
         ".calc-button.utility.selected{background:#2B3137;color:#EEF1F3;border-color:#BEC7CF}"
+        ".calc-button.memory-button{background:transparent;color:#AEB6BD;border-color:transparent;"
+            "border-radius:5px;min-height:22px;font-size:10px}"
+        ".calc-button.memory-button:hover{background:#171B20;color:#EEF1F3;border-color:transparent}"
         ".calc-button.clear{background:#171B20;color:#D19E47}"
         ".calc-button.clear:hover{background:#22272D;border-color:#D19E47}"
-        ".calc-button.equals{background:#D7DDE2;color:#111418;border-color:#D7DDE2;font-size:18px}"
+        ".calc-button.equals{background:#D7DDE2;color:#111418;border-color:#D7DDE2;font-size:16px}"
         ".calc-button.equals:hover{background:#EEF1F3;border-color:#EEF1F3}"
-        ".history-list{background:#101318;border:1px solid #353A40;border-radius:12px}"
-        ".history-row{padding:12px;border-bottom:1px solid #353A40;color:#D7DDE2;font-size:13px}"
-        ".footer{color:#899198;font-size:10px;padding-top:2px}";
+        ".history-list{background:#101318;border:1px solid #353A40;border-radius:10px}"
+        ".history-row{padding:10px;border-bottom:1px solid #353A40;color:#D7DDE2;font-size:12px}"
+        ".footer{color:#899198;font-size:9px;padding-top:0}";
 
     css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(css_provider, css.c_str(), -1);
@@ -693,14 +704,14 @@ void apply_css(GtkWidget* window) {
 void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Infiltrator Calc");
-    gtk_window_set_default_size(GTK_WINDOW(window), 440, 690);
+    gtk_window_set_default_size(GTK_WINDOW(window), 380, 620);
 
-    GtkWidget* shell = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    GtkWidget* shell = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_widget_add_css_class(shell, "shell");
     gtk_window_set_child(GTK_WINDOW(window), shell);
     apply_css(window);
 
-    GtkWidget* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(header, "header");
     gtk_box_append(GTK_BOX(shell), header);
 
@@ -716,26 +727,26 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* subtitle = gtk_label_new("PRECISION DESKTOP CALCULATOR");
     gtk_widget_add_css_class(subtitle, "brand-subtitle");
     gtk_widget_set_halign(subtitle, GTK_ALIGN_START);
-    gtk_box_append(GTK_BOX(title_stack), subtitle);
+    gtk_widget_set_visible(subtitle, FALSE);
 
     GtkWidget* history = toolbar_button("History");
     gtk_box_append(GTK_BOX(header), history);
 
-    GtkWidget* mode_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    GtkWidget* mode_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
     gtk_widget_add_css_class(mode_strip, "mode-strip");
     gtk_box_append(GTK_BOX(shell), mode_strip);
     gtk_box_append(GTK_BOX(mode_strip), mode_button("Standard", Mode::Standard));
     gtk_box_append(GTK_BOX(mode_strip), mode_button("Scientific", Mode::Scientific));
     gtk_box_append(GTK_BOX(mode_strip), mode_button("Programmer", Mode::Programmer));
 
-    GtkWidget* display = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    GtkWidget* display = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_add_css_class(display, "display");
     gtk_box_append(GTK_BOX(shell), display);
 
     expression_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(
         GTK_ENTRY(expression_entry),
-        "Enter an expression or variable assignment");
+        "Expression");
     gtk_widget_add_css_class(expression_entry, "expression");
     gtk_entry_set_alignment(GTK_ENTRY(expression_entry), 1);
     g_signal_connect(expression_entry, "activate", G_CALLBACK(on_activate), nullptr);
@@ -752,18 +763,28 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_set_halign(status_label, GTK_ALIGN_END);
     gtk_box_append(GTK_BOX(display), status_label);
 
+    standard_panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_box_append(GTK_BOX(shell), standard_panel);
+
+    GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_append(GTK_BOX(standard_panel), memory_strip);
+    for (const char* label : {"MC", "MR", "M+", "M−"}) {
+        GtkWidget* button = calc_button(label);
+        gtk_widget_set_hexpand(button, TRUE);
+        gtk_box_append(GTK_BOX(memory_strip), button);
+    }
+
     standard_grid = new_grid();
-    gtk_box_append(GTK_BOX(shell), standard_grid);
+    gtk_box_append(GTK_BOX(standard_panel), standard_grid);
     const char* standard_keys[][4] = {
-        {"MC", "MR", "M+", "M−"},
-        {"C", "⌫", "%", "÷"},
+        {"%", "C", "⌫", "÷"},
         {"1/x", "x²", "√", "^"},
         {"7", "8", "9", "×"},
         {"4", "5", "6", "−"},
         {"1", "2", "3", "+"},
         {"±", "0", ".", "="}
     };
-    fill_grid(standard_grid, standard_keys, 7);
+    fill_grid(standard_grid, standard_keys, 6);
 
     scientific_grid = new_grid();
     gtk_box_append(GTK_BOX(shell), scientific_grid);
@@ -801,7 +822,7 @@ void activate(GtkApplication* app, gpointer) {
         gtk_label_new("Keyboard ready · Variables, memory and history retained");
     gtk_widget_add_css_class(footer, "footer");
     gtk_widget_set_halign(footer, GTK_ALIGN_START);
-    gtk_box_append(GTK_BOX(shell), footer);
+    gtk_widget_set_visible(footer, FALSE);
 
     gtk_widget_set_visible(scientific_grid, FALSE);
     gtk_widget_set_visible(programmer_grid, FALSE);
