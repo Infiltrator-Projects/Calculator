@@ -962,8 +962,8 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
         const int margin = sx(window, 16);
         const int button_height = sx(window, 38);
         MoveWindow(g_history_edit, margin, margin,
-                   std::max(0, client.right - margin * 2),
-                   std::max(0, client.bottom - margin * 3 - button_height),
+                   std::max(0, static_cast<int>(client.right) - margin * 2),
+                   std::max(0, static_cast<int>(client.bottom) - margin * 3 - button_height),
                    TRUE);
         HWND clear = GetDlgItem(window, kIdHistoryClear);
         MoveWindow(clear, margin,
