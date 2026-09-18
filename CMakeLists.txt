@@ -16,6 +16,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Windows releases use the native Win32 shell and the static MSVC runtime.
+# This keeps the published EXE independent of GTK/GLib and VC redistributables.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/VERSION" INFILTRATR_COMMON_VERSION)
 string(STRIP "${INFILTRATR_COMMON_VERSION}" INFILTRATR_COMMON_VERSION)
 if(NOT INFILTRATR_COMMON_VERSION STREQUAL "1.18.1")
@@ -45,22 +51,47 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
 endif()
 
 if(INFILTRATOR_CALC_BUILD_DESKTOP)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
-
-    add_executable(infiltrator-calc
-        src/app/main.cpp
-    )
-
-    target_link_libraries(infiltrator-calc PRIVATE
-        infiltrator-calc-core
-        PkgConfig::GTK4
-    )
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        target_compile_options(infiltrator-calc PRIVATE
-            -Wall -Wextra -Wpedantic -Wshadow
+    if(WIN32)
+        # Windows has a native shell so the release executable has no GTK/GLib
+        # runtime closure and depends only on Windows system components.
+        add_executable(infiltrator-calc WIN32
+            src/app/windows_main.cpp
         )
+        target_link_libraries(infiltrator-calc PRIVATE
+            infiltrator-calc-core
+            user32
+            gdi32
+            comctl32
+        )
+        if(MSVC)
+            target_compile_options(infiltrator-calc PRIVATE /W4 /utf-8)
+        elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(infiltrator-calc PRIVATE
+                -Wall -Wextra -Wpedantic -Wshadow
+            )
+            target_link_options(infiltrator-calc PRIVATE
+                -static-libgcc
+                -static-libstdc++
+            )
+        endif()
+    else()
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
+
+        add_executable(infiltrator-calc
+            src/app/main.cpp
+        )
+
+        target_link_libraries(infiltrator-calc PRIVATE
+            infiltrator-calc-core
+            PkgConfig::GTK4
+        )
+
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+            target_compile_options(infiltrator-calc PRIVATE
+                -Wall -Wextra -Wpedantic -Wshadow
+            )
+        endif()
     endif()
 
     install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
