@@ -165,6 +165,9 @@ jobs:
               [DllImport("user32.dll")]
               public static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
 
+              [DllImport("user32.dll")]
+              public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
               [DllImport("gdi32.dll", CharSet = CharSet.Unicode)]
               public static extern int GetObject(IntPtr handle, int size, out LOGFONT logfont);
           }
@@ -203,12 +206,22 @@ jobs:
             }
             $clientWidth = $client.Right - $client.Left
             $clientHeight = $client.Bottom - $client.Top
-            if ($clientWidth -gt 400 -or $clientHeight -gt 670) {
+            if ($clientWidth -gt 380 -or $clientHeight -gt 630) {
               throw "Windows calculator default client area regressed to ${clientWidth}x${clientHeight}"
             }
 
             function Get-ButtonByText([string]$label) {
               foreach ($hwnd in $buttons) {
+                $text = [System.Text.StringBuilder]::new(64)
+                [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
+                if ($text.ToString() -ceq $label) { return $hwnd }
+              }
+              return [IntPtr]::Zero
+            }
+
+            function Get-VisibleButtonByText([string]$label) {
+              foreach ($hwnd in $buttons) {
+                if (-not [CalcSmoke]::IsWindowVisible($hwnd)) { continue }
                 $text = [System.Text.StringBuilder]::new(64)
                 [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
                 if ($text.ToString() -ceq $label) { return $hwnd }
@@ -247,6 +260,48 @@ jobs:
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 
+            $memoryButton = Get-VisibleButtonByText 'MC'
+            $percentButton = Get-VisibleButtonByText '%'
+            if ($memoryButton -eq [IntPtr]::Zero -or $percentButton -eq [IntPtr]::Zero) {
+              throw 'Windows standard memory/operator controls were not found'
+            }
+            $memoryRect = New-Object RECT
+            $percentRect = New-Object RECT
+            [void][CalcSmoke]::GetWindowRect($memoryButton, [ref]$memoryRect)
+            [void][CalcSmoke]::GetWindowRect($percentButton, [ref]$percentRect)
+            if ($memoryRect.Top -ge $percentRect.Top -or
+                ($percentRect.Top - $memoryRect.Bottom) -gt 8) {
+              throw "Windows standard memory strip is not compactly separated above the keypad"
+            }
+
+            $three = Get-VisibleButtonByText '3'
+            $plus = Get-VisibleButtonByText '+'
+            $equals = Get-VisibleButtonByText '='
+            if ($three -eq [IntPtr]::Zero -or $plus -eq [IntPtr]::Zero -or $equals -eq [IntPtr]::Zero) {
+              throw 'Windows standard arithmetic buttons were not found'
+            }
+            [void][CalcSmoke]::SendMessage($three, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            [void][CalcSmoke]::SendMessage($plus, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            [void][CalcSmoke]::SendMessage($three, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            [void][CalcSmoke]::SendMessage($equals, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 100
+
+            $sixVisible = $false
+            foreach ($hwnd in $children) {
+              if (-not [CalcSmoke]::IsWindowVisible($hwnd)) { continue }
+              $name = [System.Text.StringBuilder]::new(64)
+              $text = [System.Text.StringBuilder]::new(128)
+              [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
+              [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
+              if ($name.ToString() -ieq 'Static' -and $text.ToString() -ceq '6') {
+                $sixVisible = $true
+                break
+              }
+            }
+            if (-not $sixVisible) {
+              throw 'Windows UI arithmetic smoke test failed: 3 + 3 did not display 6'
+            }
+
             $title = [IntPtr]::Zero
             foreach ($hwnd in $children) {
               $name = [System.Text.StringBuilder]::new(64)
@@ -271,7 +326,7 @@ jobs:
               throw "Unexpected Windows title font fallback: $($font.lfFaceName)"
             }
 
-            Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, mode switching correct, title font $($font.lfFaceName)."
+            Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, compact memory strip, mode switching and 3+3 functional path correct, title font $($font.lfFaceName)."
           }
           finally {
             if ($null -ne $process -and -not $process.HasExited) {
