@@ -9,6 +9,8 @@ namespace infiltrator::calc::ui {
 
 enum class Mode { Standard = 0, Scientific = 1, Programmer = 2 };
 
+enum class LayoutClass { Compact = 0, Regular = 1, Wide = 2 };
+
 enum class ButtonRole {
     Number,
     Operation,
@@ -106,6 +108,16 @@ struct DesktopMetrics {
     int memory_height;
     int mode_height;
     int display_height;
+    int wide_threshold;
+    int compact_width_threshold;
+    int compact_height_threshold;
+    int history_min_width;
+};
+
+struct ResponsiveLayout {
+    LayoutClass layout_class;
+    bool dock_history;
+    bool compact_controls;
 };
 
 inline constexpr DesktopMetrics kDesktopMetrics{
@@ -114,8 +126,20 @@ inline constexpr DesktopMetrics kDesktopMetrics{
     10, 6,
     6, 5,
     32, 24,
-    38, 104
+    38, 104,
+    720, 340, 560, 240
 };
+
+inline constexpr ResponsiveLayout responsive_layout(int width, int height) {
+    if (width >= kDesktopMetrics.wide_threshold) {
+        return {LayoutClass::Wide, true, false};
+    }
+    if (width <= kDesktopMetrics.compact_width_threshold ||
+        height <= kDesktopMetrics.compact_height_threshold) {
+        return {LayoutClass::Compact, false, true};
+    }
+    return {LayoutClass::Regular, false, false};
+}
 
 inline constexpr std::array<ButtonSpec, 4> kStandardMemory{{
     {"MC", ButtonRole::Utility, Command::MemoryClear},
