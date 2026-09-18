@@ -22,8 +22,8 @@
 
 namespace {
 
-constexpr wchar_t kMainClass[] = L"InfiltratorCalcWindow";
-constexpr wchar_t kHistoryClass[] = L"InfiltratorCalcHistoryWindow";
+constexpr wchar_t kMainClass[] = L"CalculatorWindow";
+constexpr wchar_t kHistoryClass[] = L"CalculatorHistoryWindow";
 
 constexpr int kIdHistory = 1001;
 constexpr int kIdTheme = 1002;
@@ -33,8 +33,8 @@ constexpr int kIdModeProgrammer = 1012;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 
-using infiltrator::calc::ui::ThemeMode;
-using infiltrator::calc::ui::ThemePalette;
+using calculator::ui::ThemeMode;
+using calculator::ui::ThemePalette;
 
 ThemeMode g_theme_mode = ThemeMode::System;
 ThemePalette g_theme_palette{};
@@ -69,11 +69,11 @@ COLORREF to_colorref(std::uint32_t rgb) {
 #define kOperationHover to_colorref(g_theme_palette.operation_hover_rgb)
 #define kEqualsHover to_colorref(g_theme_palette.equals_hover_rgb)
 
-using infiltrator::calc::ui::ButtonRole;
-using infiltrator::calc::ui::ButtonSpec;
-using infiltrator::calc::ui::Command;
-using infiltrator::calc::ui::Controller;
-using infiltrator::calc::ui::Mode;
+using calculator::ui::ButtonRole;
+using calculator::ui::ButtonSpec;
+using calculator::ui::Command;
+using calculator::ui::Controller;
+using calculator::ui::Mode;
 
 enum class ButtonKind { Number, Operation, Utility, Clear, Equals, Mode, Toolbar };
 
@@ -228,7 +228,7 @@ void resolve_theme() {
         g_theme_mode == ThemeMode::Night ||
         (g_theme_mode == ThemeMode::System && system_dark);
     g_theme_palette =
-        infiltrator::calc::ui::resolved_palette(g_theme_mode, system_dark);
+        calculator::ui::resolved_palette(g_theme_mode, system_dark);
 }
 
 void recreate_theme_brushes() {
@@ -327,7 +327,7 @@ void apply_control_theme(HWND control) {
 }
 
 std::wstring format_value(double value) {
-    return utf8_to_wide(infiltrator::calc::format_value(value));
+    return utf8_to_wide(calculator::format_value(value));
 }
 
 std::size_t expression_cursor() {
@@ -499,21 +499,21 @@ bool is_selected_button(int id, const ButtonSpec* spec) {
 
     switch (spec->command) {
     case Command::BaseBin:
-        return state.programmer_base == infiltrator::calc::ProgrammerBase::Binary;
+        return state.programmer_base == calculator::ProgrammerBase::Binary;
     case Command::BaseOct:
-        return state.programmer_base == infiltrator::calc::ProgrammerBase::Octal;
+        return state.programmer_base == calculator::ProgrammerBase::Octal;
     case Command::BaseDec:
-        return state.programmer_base == infiltrator::calc::ProgrammerBase::Decimal;
+        return state.programmer_base == calculator::ProgrammerBase::Decimal;
     case Command::BaseHex:
-        return state.programmer_base == infiltrator::calc::ProgrammerBase::Hexadecimal;
+        return state.programmer_base == calculator::ProgrammerBase::Hexadecimal;
     case Command::Width8:
-        return state.programmer_width == infiltrator::calc::IntegerWidth::Bits8;
+        return state.programmer_width == calculator::IntegerWidth::Bits8;
     case Command::Width16:
-        return state.programmer_width == infiltrator::calc::IntegerWidth::Bits16;
+        return state.programmer_width == calculator::IntegerWidth::Bits16;
     case Command::Width32:
-        return state.programmer_width == infiltrator::calc::IntegerWidth::Bits32;
+        return state.programmer_width == calculator::IntegerWidth::Bits32;
     case Command::Width64:
-        return state.programmer_width == infiltrator::calc::IntegerWidth::Bits64;
+        return state.programmer_width == calculator::IntegerWidth::Bits64;
     case Command::ToggleSigned:
         return state.programmer_signed;
     default:
@@ -750,7 +750,7 @@ void layout_grid_range(const std::vector<HWND>& buttons,
     if (start_index >= buttons.size() || rows <= 0) return;
 
     const int gap = sx(
-        g_main, infiltrator::calc::ui::kDesktopMetrics.grid_gap_x);
+        g_main, calculator::ui::kDesktopMetrics.grid_gap_x);
     const int columns = 4;
     const int button_width = std::max(sx(g_main, 46),
                                       (width - gap * (columns - 1)) / columns);
@@ -779,7 +779,7 @@ void layout_standard_grid(int left, int top, int width, int height) {
     if (g_standard_buttons.size() < 28U) return;
 
     const int memory_height = sx(
-        g_main, infiltrator::calc::ui::kDesktopMetrics.memory_height);
+        g_main, calculator::ui::kDesktopMetrics.memory_height);
     const int memory_gap = sx(g_main, 2);
     const int memory_width = width / 4;
 
@@ -799,14 +799,14 @@ void layout_main(HWND window) {
     RECT client{};
     GetClientRect(window, &client);
 
-    const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
+    const auto& metrics = calculator::ui::kDesktopMetrics;
     const int width = client.right - client.left;
     const int height = client.bottom - client.top;
     const int dpi = window_dpi(window);
     const int logical_width = MulDiv(width, 96, dpi);
     const int logical_height = MulDiv(height, 96, dpi);
     const auto responsive =
-        infiltrator::calc::ui::responsive_layout(
+        calculator::ui::responsive_layout(
             logical_width, logical_height);
 
     const int margin = sx(window, metrics.shell_padding);
@@ -960,7 +960,7 @@ void apply_theme(bool persist) {
 
     if (g_theme_button != nullptr) {
         const std::wstring label = utf8_to_wide(
-            std::string(infiltrator::calc::ui::theme_mode_name(g_theme_mode)));
+            std::string(calculator::ui::theme_mode_name(g_theme_mode)));
         SetWindowTextW(g_theme_button, label.c_str());
     }
 
@@ -980,11 +980,11 @@ void create_controls(HWND window) {
     g_history_button = create_button(window, kIdHistory, L"History", g_ui_bold_font);
 
     const std::wstring standard_mode =
-        utf8_to_wide(std::string(infiltrator::calc::ui::mode_name(Mode::Standard)));
+        utf8_to_wide(std::string(calculator::ui::mode_name(Mode::Standard)));
     const std::wstring scientific_mode =
-        utf8_to_wide(std::string(infiltrator::calc::ui::mode_name(Mode::Scientific)));
+        utf8_to_wide(std::string(calculator::ui::mode_name(Mode::Scientific)));
     const std::wstring programmer_mode =
-        utf8_to_wide(std::string(infiltrator::calc::ui::mode_name(Mode::Programmer)));
+        utf8_to_wide(std::string(calculator::ui::mode_name(Mode::Programmer)));
     g_mode_buttons[0] = create_button(
         window, kIdModeStandard, standard_mode.c_str(), g_ui_bold_font);
     g_mode_buttons[1] = create_button(
@@ -1039,16 +1039,16 @@ void create_controls(HWND window) {
 
     g_standard_buttons.clear();
     g_standard_buttons.reserve(
-        infiltrator::calc::ui::kStandardMemory.size() +
-        infiltrator::calc::ui::kStandardKeypad.size());
-    for (const ButtonSpec& spec : infiltrator::calc::ui::kStandardMemory) {
+        calculator::ui::kStandardMemory.size() +
+        calculator::ui::kStandardKeypad.size());
+    for (const ButtonSpec& spec : calculator::ui::kStandardMemory) {
         const int id = next_id++;
         const std::wstring label = utf8_to_wide(std::string(spec.label));
         g_key_specs.emplace(id, &spec);
         g_standard_buttons.push_back(
             create_button(g_main, id, label.c_str(), g_ui_bold_font));
     }
-    for (const ButtonSpec& spec : infiltrator::calc::ui::kStandardKeypad) {
+    for (const ButtonSpec& spec : calculator::ui::kStandardKeypad) {
         const int id = next_id++;
         const std::wstring label = utf8_to_wide(std::string(spec.label));
         g_key_specs.emplace(id, &spec);
@@ -1057,12 +1057,12 @@ void create_controls(HWND window) {
     }
 
     create_key_grid(
-        infiltrator::calc::ui::kScientificKeypad.data(),
-        infiltrator::calc::ui::kScientificKeypad.size(),
+        calculator::ui::kScientificKeypad.data(),
+        calculator::ui::kScientificKeypad.size(),
         g_scientific_buttons, next_id);
     create_key_grid(
-        infiltrator::calc::ui::kProgrammerKeypad.data(),
-        infiltrator::calc::ui::kProgrammerKeypad.size(),
+        calculator::ui::kProgrammerKeypad.data(),
+        calculator::ui::kProgrammerKeypad.size(),
         g_programmer_buttons, next_id);
 
     update_mode_ui();
@@ -1172,9 +1172,9 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
         info->ptMinTrackSize.x = sx(
-            window, infiltrator::calc::ui::kDesktopMetrics.minimum_width);
+            window, calculator::ui::kDesktopMetrics.minimum_width);
         info->ptMinTrackSize.y = sx(
-            window, infiltrator::calc::ui::kDesktopMetrics.minimum_height);
+            window, calculator::ui::kDesktopMetrics.minimum_height);
         return 0;
     }
 
@@ -1186,7 +1186,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         }
         if (id == kIdTheme) {
             g_theme_mode =
-                infiltrator::calc::ui::next_theme_mode(g_theme_mode);
+                calculator::ui::next_theme_mode(g_theme_mode);
             apply_theme(true);
             return 0;
         }
@@ -1349,8 +1349,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
 
     RECT desired{
         0, 0,
-        infiltrator::calc::ui::kDesktopMetrics.default_width,
-        infiltrator::calc::ui::kDesktopMetrics.default_height};
+        calculator::ui::kDesktopMetrics.default_width,
+        calculator::ui::kDesktopMetrics.default_height};
     AdjustWindowRectEx(&desired, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     g_main = CreateWindowExW(

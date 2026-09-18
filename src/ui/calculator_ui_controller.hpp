@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <string>
 
-namespace infiltrator::calc::ui {
+namespace calculator::ui {
 
 struct ViewState {
     Mode mode = Mode::Standard;
@@ -76,4 +76,4 @@ private:
     ViewState state_;
 };
 
-} // namespace infiltrator::calc::ui
+} // namespace calculator::ui

@@ -14,14 +14,14 @@
 
 namespace {
 
-using infiltrator::calc::ui::ButtonRole;
-using infiltrator::calc::ui::ButtonSpec;
-using infiltrator::calc::ui::Command;
-using infiltrator::calc::ui::Controller;
-using infiltrator::calc::ui::LayoutClass;
-using infiltrator::calc::ui::Mode;
-using infiltrator::calc::ui::ThemeMode;
-using infiltrator::calc::ui::ThemePalette;
+using calculator::ui::ButtonRole;
+using calculator::ui::ButtonSpec;
+using calculator::ui::Command;
+using calculator::ui::Controller;
+using calculator::ui::LayoutClass;
+using calculator::ui::Mode;
+using calculator::ui::ThemeMode;
+using calculator::ui::ThemePalette;
 
 GtkWidget* expression_entry = nullptr;
 GtkWidget* result_label = nullptr;
@@ -121,7 +121,7 @@ const ThemePalette& active_palette() {
     effective_dark_theme =
         theme_mode == ThemeMode::Night ||
         (theme_mode == ThemeMode::System && system_dark);
-    return infiltrator::calc::ui::resolved_palette(theme_mode, system_dark);
+    return calculator::ui::resolved_palette(theme_mode, system_dark);
 }
 
 std::string history_text_value() {
@@ -137,7 +137,7 @@ std::string history_text_value() {
         text += it->input;
         text += "\n  = ";
         text += it->result.ok
-                    ? infiltrator::calc::format_value(it->result.value)
+                    ? calculator::format_value(it->result.value)
                     : ("Error: " + it->result.error);
         text += "\n\n";
     }
@@ -221,29 +221,29 @@ void render_state(std::size_t cursor = Controller::kEnd) {
 
     apply_selected(
         programmer_base_buttons[0],
-        state.programmer_base == infiltrator::calc::ProgrammerBase::Binary);
+        state.programmer_base == calculator::ProgrammerBase::Binary);
     apply_selected(
         programmer_base_buttons[1],
-        state.programmer_base == infiltrator::calc::ProgrammerBase::Octal);
+        state.programmer_base == calculator::ProgrammerBase::Octal);
     apply_selected(
         programmer_base_buttons[2],
-        state.programmer_base == infiltrator::calc::ProgrammerBase::Decimal);
+        state.programmer_base == calculator::ProgrammerBase::Decimal);
     apply_selected(
         programmer_base_buttons[3],
-        state.programmer_base == infiltrator::calc::ProgrammerBase::Hexadecimal);
+        state.programmer_base == calculator::ProgrammerBase::Hexadecimal);
 
     apply_selected(
         programmer_width_buttons[0],
-        state.programmer_width == infiltrator::calc::IntegerWidth::Bits8);
+        state.programmer_width == calculator::IntegerWidth::Bits8);
     apply_selected(
         programmer_width_buttons[1],
-        state.programmer_width == infiltrator::calc::IntegerWidth::Bits16);
+        state.programmer_width == calculator::IntegerWidth::Bits16);
     apply_selected(
         programmer_width_buttons[2],
-        state.programmer_width == infiltrator::calc::IntegerWidth::Bits32);
+        state.programmer_width == calculator::IntegerWidth::Bits32);
     apply_selected(
         programmer_width_buttons[3],
-        state.programmer_width == infiltrator::calc::IntegerWidth::Bits64);
+        state.programmer_width == calculator::IntegerWidth::Bits64);
     apply_selected(programmer_signed_button, state.programmer_signed);
 
     if (degrees_button) {
@@ -288,7 +288,7 @@ void show_history(GtkWidget*, gpointer) {
         const std::string text =
             it->input + "\n" +
             (it->result.ok
-                 ? infiltrator::calc::format_value(it->result.value)
+                 ? calculator::format_value(it->result.value)
                  : ("Error: " + it->result.error));
 
         GtkWidget* row = gtk_label_new(text.c_str());
@@ -401,7 +401,7 @@ GtkWidget* toolbar_button(const char* text) {
 }
 
 GtkWidget* mode_button(Mode target) {
-    const std::string label(infiltrator::calc::ui::mode_name(target));
+    const std::string label(calculator::ui::mode_name(target));
     GtkWidget* button = gtk_button_new_with_label(label.c_str());
     gtk_widget_add_css_class(button, "mode-tab");
     gtk_widget_set_hexpand(button, TRUE);
@@ -415,9 +415,9 @@ GtkWidget* mode_button(Mode target) {
 GtkWidget* new_grid() {
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(
-        GTK_GRID(grid), infiltrator::calc::ui::kDesktopMetrics.grid_gap_y);
+        GTK_GRID(grid), calculator::ui::kDesktopMetrics.grid_gap_y);
     gtk_grid_set_column_spacing(
-        GTK_GRID(grid), infiltrator::calc::ui::kDesktopMetrics.grid_gap_x);
+        GTK_GRID(grid), calculator::ui::kDesktopMetrics.grid_gap_x);
     gtk_widget_set_vexpand(grid, FALSE);
     return grid;
 }
@@ -440,7 +440,7 @@ void update_responsive_layout(GtkWidget* window) {
     if (width <= 0 || height <= 0) return;
 
     const auto layout =
-        infiltrator::calc::ui::responsive_layout(width, height);
+        calculator::ui::responsive_layout(width, height);
     last_layout_class = layout.layout_class;
 
     gtk_widget_set_visible(history_dock, layout.dock_history);
@@ -460,7 +460,7 @@ gboolean responsive_tick(
     if (width <= 0 || height <= 0) return G_SOURCE_CONTINUE;
 
     const auto layout =
-        infiltrator::calc::ui::responsive_layout(width, height);
+        calculator::ui::responsive_layout(width, height);
     if (layout.layout_class != last_layout_class) {
         update_responsive_layout(widget);
     }
@@ -470,7 +470,7 @@ gboolean responsive_tick(
 void apply_css(GtkWidget* window) {
     const std::string ui = ui_font();
     const std::string brand = brand_font();
-    const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
+    const auto& metrics = calculator::ui::kDesktopMetrics;
     const ThemePalette& p = active_palette();
 
     const std::string background = hex_colour(p.background_rgb);
@@ -555,7 +555,7 @@ void apply_css(GtkWidget* window) {
 
     if (theme_button) {
         const std::string label(
-            infiltrator::calc::ui::theme_mode_name(theme_mode));
+            calculator::ui::theme_mode_name(theme_mode));
         gtk_button_set_label(GTK_BUTTON(theme_button), label.c_str());
         gtk_widget_set_tooltip_text(
             theme_button,
@@ -570,7 +570,7 @@ void apply_css(GtkWidget* window) {
 }
 
 void on_theme_clicked(GtkButton*, gpointer) {
-    theme_mode = infiltrator::calc::ui::next_theme_mode(theme_mode);
+    theme_mode = calculator::ui::next_theme_mode(theme_mode);
     save_theme_mode();
     if (main_window) apply_css(main_window);
 }
@@ -582,7 +582,7 @@ void on_system_theme_changed(GObject*, GParamSpec*, gpointer) {
 }
 
 void activate(GtkApplication* app, gpointer) {
-    const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
+    const auto& metrics = calculator::ui::kDesktopMetrics;
 
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
@@ -614,7 +614,7 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(header), title);
 
     const std::string initial_theme_label(
-        infiltrator::calc::ui::theme_mode_name(theme_mode));
+        calculator::ui::theme_mode_name(theme_mode));
     theme_button = toolbar_button(initial_theme_label.c_str());
     g_signal_connect(
         theme_button, "clicked", G_CALLBACK(on_theme_clicked), nullptr);
@@ -660,7 +660,7 @@ void activate(GtkApplication* app, gpointer) {
 
     GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_append(GTK_BOX(standard_panel), memory_strip);
-    for (const ButtonSpec& spec : infiltrator::calc::ui::kStandardMemory) {
+    for (const ButtonSpec& spec : calculator::ui::kStandardMemory) {
         gtk_box_append(GTK_BOX(memory_strip), calc_button(spec));
     }
 
@@ -668,22 +668,22 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(standard_panel), standard_grid);
     fill_grid(
         standard_grid,
-        infiltrator::calc::ui::kStandardKeypad.data(),
-        infiltrator::calc::ui::kStandardKeypad.size());
+        calculator::ui::kStandardKeypad.data(),
+        calculator::ui::kStandardKeypad.size());
 
     scientific_grid = new_grid();
     gtk_box_append(GTK_BOX(calculator_column), scientific_grid);
     fill_grid(
         scientific_grid,
-        infiltrator::calc::ui::kScientificKeypad.data(),
-        infiltrator::calc::ui::kScientificKeypad.size());
+        calculator::ui::kScientificKeypad.data(),
+        calculator::ui::kScientificKeypad.size());
 
     programmer_grid = new_grid();
     gtk_box_append(GTK_BOX(calculator_column), programmer_grid);
     fill_grid(
         programmer_grid,
-        infiltrator::calc::ui::kProgrammerKeypad.data(),
-        infiltrator::calc::ui::kProgrammerKeypad.size());
+        calculator::ui::kProgrammerKeypad.data(),
+        calculator::ui::kProgrammerKeypad.size());
 
     history_dock = gtk_scrolled_window_new();
     gtk_widget_add_css_class(history_dock, "history-dock");
