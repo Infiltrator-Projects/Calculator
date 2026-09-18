@@ -75,8 +75,6 @@ for forbidden_state in (
         f"Windows Win32 reintroduced platform-owned calculator state: {forbidden_state}"
     )
 
-print("Cross-platform desktop UI parity contract passed.")
-
 for needle in (
     "enum class ThemeMode { System = 0, Day = 1, Night = 2 }",
     "kNightPalette",
@@ -104,3 +102,5 @@ for needle in (
     ".preferredColorScheme(themePreference.preferredScheme)",
 ):
     assert needle in ios, f"iPhone theme support missing: {needle}"
+
+print("Cross-platform desktop UI parity contract passed.")
