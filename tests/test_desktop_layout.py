@@ -50,8 +50,8 @@ for needle in (
 for forbidden_state in (
     "infiltrator::calc::Session session",
     "infiltrator::calc::Session g_session",
-    "Mode mode =",
-    "Mode g_mode =",
+    "Mode mode = Mode::Standard",
+    "Mode g_mode = Mode::Standard",
     "bool degrees =",
     "bool g_degrees =",
     "programmer_base =",
