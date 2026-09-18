@@ -6,8 +6,8 @@ string(STRIP "${INFILTRATOR_CALC_VERSION}" INFILTRATOR_CALC_VERSION)
 project(InfiltratorCalc VERSION "${INFILTRATOR_CALC_VERSION}" LANGUAGES C CXX)
 
 include(CTest)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
+
+option(INFILTRATOR_CALC_BUILD_DESKTOP "Build the GTK desktop application" ON)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -32,22 +32,34 @@ target_link_libraries(infiltrator-calc-core PUBLIC
     InfiltratrCommon::Portable
 )
 
-target_compile_options(infiltrator-calc-core PRIVATE
-    -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    target_compile_options(infiltrator-calc-core PRIVATE
+        -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
+    )
+endif()
 
-add_executable(infiltrator-calc
-    src/app/main.cpp
-)
+if(INFILTRATOR_CALC_BUILD_DESKTOP)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
 
-target_link_libraries(infiltrator-calc PRIVATE
-    infiltrator-calc-core
-    PkgConfig::GTK4
-)
+    add_executable(infiltrator-calc
+        src/app/main.cpp
+    )
 
-target_compile_options(infiltrator-calc PRIVATE
-    -Wall -Wextra -Wpedantic -Wshadow
-)
+    target_link_libraries(infiltrator-calc PRIVATE
+        infiltrator-calc-core
+        PkgConfig::GTK4
+    )
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(infiltrator-calc PRIVATE
+            -Wall -Wextra -Wpedantic -Wshadow
+        )
+    endif()
+
+    install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
+    install(FILES LICENSE DESTINATION share/doc/infiltrator-calc OPTIONAL)
+endif()
 
 add_executable(infiltrator-calc-test
     tests/test_calculator.cpp
@@ -66,6 +78,3 @@ add_executable(infiltrator-calc-programmer-test
 )
 target_link_libraries(infiltrator-calc-programmer-test PRIVATE infiltrator-calc-core)
 add_test(NAME calculator-programmer COMMAND infiltrator-calc-programmer-test)
-
-install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
-install(FILES LICENSE DESTINATION share/doc/infiltrator-calc OPTIONAL)
