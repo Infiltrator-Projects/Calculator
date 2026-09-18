@@ -166,12 +166,11 @@ bool font_family_available(const wchar_t* family) {
     wcsncpy_s(query.lfFaceName, family, _TRUNCATE);
 
     bool found = false;
-    auto callback = [](const LOGFONTW*, const TEXTMETRICW*, DWORD, LPARAM data) -> int {
+    auto callback = +[](const LOGFONTW*, const TEXTMETRICW*, DWORD, LPARAM data) -> int {
         *reinterpret_cast<bool*>(data) = true;
         return 0;
     };
-    EnumFontFamiliesExW(dc, &query,
-                        reinterpret_cast<FONTENUMPROCW>(callback),
+    EnumFontFamiliesExW(dc, &query, callback,
                         reinterpret_cast<LPARAM>(&found), 0);
     ReleaseDC(nullptr, dc);
     return found;
