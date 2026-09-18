@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.16
+
+- Added shared responsive desktop visual states: compact, regular and wide layouts now come from the same Calc UI contract on GTK and Win32.
+- Added a wide desktop history presentation that docks history beside the calculator when enough horizontal space is available, while retaining the History popup at normal widths.
+- Added shared state-aware command enablement so impossible actions are disabled consistently on Linux and Windows, including empty memory actions, invalid Programmer digits and unavailable unary/equals operations.
+- Added Standard-mode immediate left-to-right arithmetic semantics with contextual percentage behaviour (for example, `2+3*4` -> `20` in Standard while Scientific remains order-of-operations, and `100+10%` -> `110`).
+- Added explicit memory-availability state to the shared Session so MC/MR enablement reflects whether memory has actually been set.
+- Added regression coverage for responsive breakpoints, Standard-vs-Scientific semantics, contextual percentages, Programmer radix enablement and memory availability.
+
 ## 0.1.15
 
 - Added a canonical cross-platform calculator UI contract that owns desktop metrics, mode names, button order, labels, roles and commands for Standard, Scientific and Programmer.
