@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.14
+
+- Brought the Linux GTK shell up to the denser Windows 0.1.13 interaction hierarchy while retaining native GTK implementation and the shared Infiltrator design language.
+- Reduced the Linux default window from 440×690 to 380×620 and tightened header, mode strip, display and keypad spacing.
+- Split Standard memory controls into a compact MC/MR/M+/M− strip above a six-row keypad, matching the improved Windows control hierarchy.
+- Removed visible subtitle/footer chrome from the main Linux calculator surface and softened the expression field so the display reads as one coherent panel.
+- Added explicit compact memory-strip styling and updated the Linux layout regression contract to prevent the older oversized layout returning.
+
 ## 0.1.13
 
 - Refined the native Windows Standard layout using the open-source Microsoft Calculator interaction model as a reference while retaining Infiltrator styling and the existing shared calculation core.
