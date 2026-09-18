@@ -74,7 +74,7 @@ jobs:
   windows:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout source and Common dependency
@@ -83,100 +83,74 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Set up MSYS2 UCRT64
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-pkgconf
-            mingw-w64-ucrt-x86_64-gtk4
-            zip
+      - name: Configure native Windows build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -Raw).Trim()
+          if ([string]::IsNullOrWhiteSpace($version)) { throw 'VERSION is empty' }
+
+          cmake -S . -B build-windows -A x64 `
+            -DINFILTRATR_COMMON_BUILD_SHARED=OFF
 
       - name: Build and test on Windows
-        shell: msys2 {0}
+        shell: pwsh
         run: |
-          set -euo pipefail
-          version="$(tr -d '[:space:]' < VERSION)"
-          test -n "$version"
+          $ErrorActionPreference = 'Stop'
+          cmake --build build-windows --config Release --parallel
+          ctest --test-dir build-windows -C Release --output-on-failure
 
-          cmake -S . -B build-windows -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DINFILTRATR_COMMON_BUILD_SHARED=OFF
-          cmake --build build-windows --parallel
-          ctest --test-dir build-windows --output-on-failure
-          test -f build-windows/infiltrator-calc.exe
+          $exe = 'build-windows/Release/infiltrator-calc.exe'
+          if (-not (Test-Path $exe)) { throw "Missing Windows executable: $exe" }
 
-      - name: Build Windows executable and portable runtime
-        shell: msys2 {0}
+      - name: Verify standalone Windows dependency boundary
+        shell: pwsh
         run: |
-          set -euo pipefail
-          version="$(tr -d '[:space:]' < VERSION)"
-          out="dist/windows"
-          runtime="$out/infiltrator-calc-${version}-windows-x64"
-          mkdir -p "$runtime"
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path 'build-windows/Release/infiltrator-calc.exe').Path
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) { throw 'vswhere.exe not found' }
 
-          cp build-windows/infiltrator-calc.exe \
-            "$out/infiltrator-calc_${version}_windows_x64.exe"
-          cp build-windows/infiltrator-calc.exe \
-            "$runtime/infiltrator-calc.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ([string]::IsNullOrWhiteSpace($vs)) { throw 'Visual Studio C++ tools not found' }
 
-          # Copy the complete transitive UCRT64 DLL closure beside the EXE.
-          queue=("build-windows/infiltrator-calc.exe")
-          while (("${#queue[@]}" > 0)); do
-            file="${queue[0]}"
-            queue=("${queue[@]:1}")
-            while IFS= read -r dep; do
-              [[ "$dep" == /ucrt64/bin/* ]] || continue
-              base="$(basename "$dep")"
-              if [[ ! -f "$runtime/$base" ]]; then
-                cp "$dep" "$runtime/$base"
-                queue+=("$runtime/$base")
-              fi
-            done < <(ldd "$file" | awk '{for(i=1;i<=NF;i++) if ($i ~ /^\/ucrt64\/bin\//) print $i}')
-          done
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if ($null -eq $dumpbin) { throw 'dumpbin.exe not found' }
 
-          # Preserve runtime data GTK/GLib may discover relative to the DLL prefix.
-          for rel in \
-            share/glib-2.0/schemas \
-            etc/fonts \
-            share/fontconfig \
-            share/icons/Adwaita \
-            share/icons/hicolor \
-            lib/gdk-pixbuf-2.0; do
-            if [[ -e "/ucrt64/$rel" ]]; then
-              mkdir -p "$runtime/$(dirname "$rel")"
-              cp -a "/ucrt64/$rel" "$runtime/$rel"
-            fi
-          done
+          $imports = (& $dumpbin.FullName /dependents $exe | Out-String)
+          $imports
 
-          cat > "$runtime/README-WINDOWS.txt" <<'EOF'
-          Infiltrator Calc for Windows x64
-
-          Run infiltrator-calc.exe from this folder.
-          The bundled DLL and runtime-data files are the native GTK/GLib
-          dependencies required by the Windows build.
-          EOF
-
-          (
-            cd "$out"
-            zip -qr "infiltrator-calc_${version}_windows_x64_portable.zip" \
-              "infiltrator-calc-${version}-windows-x64"
+          $forbidden = @(
+            'libgcc', 'libstdc++', 'libwinpthread',
+            'libgtk', 'libglib', 'libgobject', 'libgio',
+            'libpango', 'libcairo', 'libharfbuzz',
+            'libfontconfig', 'libfreetype',
+            'VCRUNTIME', 'MSVCP'
           )
+          foreach ($name in $forbidden) {
+            if ($imports -match [regex]::Escape($name)) {
+              throw "Standalone Windows boundary violated by dependency: $name"
+            }
+          }
 
-          test -f "$out/infiltrator-calc_${version}_windows_x64.exe"
-          test -f "$out/infiltrator-calc_${version}_windows_x64_portable.zip"
+      - name: Package standalone Windows executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -Raw).Trim()
+          New-Item -ItemType Directory -Force -Path 'dist/windows' | Out-Null
+          Copy-Item 'build-windows/Release/infiltrator-calc.exe' "dist/windows/infiltrator-calc_${version}_windows_x64.exe"
+          if (-not (Test-Path "dist/windows/infiltrator-calc_${version}_windows_x64.exe")) {
+            throw 'Windows release executable was not packaged'
+          }
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
           name: infiltrator-calc-windows-x64
-          path: |
-            dist/windows/infiltrator-calc_*_windows_x64.exe
-            dist/windows/infiltrator-calc_*_windows_x64_portable.zip
+          path: dist/windows/infiltrator-calc_*_windows_x64.exe
           if-no-files-found: error
 
 
@@ -301,14 +275,12 @@ jobs:
           set -euo pipefail
           test -f "dist/linux/infiltrator-calc_${VERSION}_amd64.deb"
           test -f "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe"
-          test -f "dist/windows/infiltrator-calc_${VERSION}_windows_x64_portable.zip"
           test -f "dist/ios/infiltrator-calc_${VERSION}_ios-simulator.zip"
           test -f "dist/ios/infiltrator-calc_${VERSION}_ios-device-unsigned.zip"
 
           sha256sum \
             "dist/linux/infiltrator-calc_${VERSION}_amd64.deb" \
             "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe" \
-            "dist/windows/infiltrator-calc_${VERSION}_windows_x64_portable.zip" \
             "dist/ios/infiltrator-calc_${VERSION}_ios-simulator.zip" \
             "dist/ios/infiltrator-calc_${VERSION}_ios-device-unsigned.zip" \
             > dist/SHA256SUMS.txt
@@ -322,7 +294,6 @@ jobs:
           gh release create "v${VERSION}" \
             "dist/linux/infiltrator-calc_${VERSION}_amd64.deb" \
             "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe" \
-            "dist/windows/infiltrator-calc_${VERSION}_windows_x64_portable.zip" \
             "dist/ios/infiltrator-calc_${VERSION}_ios-simulator.zip" \
             "dist/ios/infiltrator-calc_${VERSION}_ios-device-unsigned.zip" \
             "dist/SHA256SUMS.txt" \
