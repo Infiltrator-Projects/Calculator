@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.13) unstable; urgency=medium
+
+  * Refine the native Windows Standard layout using Microsoft Calculator UX patterns as a reference.
+  * Split memory controls into a compact strip above a six-row Standard keypad.
+  * Add hover feedback to owner-drawn Windows controls.
+  * Reduce the Windows default client area to 360x610 with responsive resizing.
+  * Add Windows runtime regression checks for layout geometry and the 3 + 3 = 6 UI path.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 13:12:00 +1000
+
 infiltrator-calc (0.1.12) unstable; urgency=medium
 
   * Rework the native Windows shell to a compact calculator density.
