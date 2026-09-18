@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../core/programmer.hpp"
 #include "../core/session.hpp"
+#include "../ui/calculator_ui_contract.hpp"
 
 #include <gtk/gtk.h>
 #include <pango/pangocairo.h>
@@ -34,7 +35,11 @@ constexpr const char* kUiFont = "MB Corpo S Title WEB";
 constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";
 constexpr double kPi = 3.14159265358979323846;
 
-enum class Mode { Standard = 0, Scientific = 1, Programmer = 2 };
+using infiltrator::calc::ui::ButtonRole;
+using infiltrator::calc::ui::ButtonSpec;
+using infiltrator::calc::ui::Command;
+using infiltrator::calc::ui::Mode;
+
 Mode mode = Mode::Standard;
 
 infiltrator::calc::ProgrammerBase programmer_base =
@@ -388,26 +393,36 @@ void on_mode_clicked(GtkButton*, gpointer data) {
     update_mode_ui();
 }
 
-void programmer_mode_change(const char* label) {
-    if (g_strcmp0(label, "BIN") == 0) {
+void programmer_mode_change(Command command) {
+    switch (command) {
+    case Command::BaseBin:
         programmer_base = infiltrator::calc::ProgrammerBase::Binary;
-    } else if (g_strcmp0(label, "OCT") == 0) {
+        break;
+    case Command::BaseOct:
         programmer_base = infiltrator::calc::ProgrammerBase::Octal;
-    } else if (g_strcmp0(label, "DEC") == 0) {
+        break;
+    case Command::BaseDec:
         programmer_base = infiltrator::calc::ProgrammerBase::Decimal;
-    } else if (g_strcmp0(label, "HEX") == 0) {
+        break;
+    case Command::BaseHex:
         programmer_base = infiltrator::calc::ProgrammerBase::Hexadecimal;
-    } else if (g_strcmp0(label, "W8") == 0) {
+        break;
+    case Command::Width8:
         programmer_width = infiltrator::calc::IntegerWidth::Bits8;
-    } else if (g_strcmp0(label, "W16") == 0) {
+        break;
+    case Command::Width16:
         programmer_width = infiltrator::calc::IntegerWidth::Bits16;
-    } else if (g_strcmp0(label, "W32") == 0) {
+        break;
+    case Command::Width32:
         programmer_width = infiltrator::calc::IntegerWidth::Bits32;
-    } else if (g_strcmp0(label, "W64") == 0) {
+        break;
+    case Command::Width64:
         programmer_width = infiltrator::calc::IntegerWidth::Bits64;
-    } else if (g_strcmp0(label, "U/S") == 0) {
+        break;
+    case Command::ToggleSigned:
         programmer_signed = !programmer_signed;
-    } else {
+        break;
+    default:
         return;
     }
 
@@ -423,179 +438,142 @@ void programmer_mode_change(const char* label) {
     }
 }
 
-const char* insertion_for_label(const char* label) {
-    if (g_strcmp0(label, "×") == 0) return "*";
-    if (g_strcmp0(label, "÷") == 0) return "/";
-    if (g_strcmp0(label, "−") == 0) return "-";
-    return label;
-}
-
 void on_activate(GtkEntry*) {
     calculate();
 }
 
-void on_button_clicked(GtkButton* button, gpointer) {
-    const char* label = gtk_button_get_label(button);
-    if (!label) return;
+void on_button_clicked(GtkButton* button, gpointer data) {
+    const auto* spec = static_cast<const ButtonSpec*>(data);
+    if (spec == nullptr) return;
 
-    if (g_strcmp0(label, "History") == 0) {
-        show_history(nullptr, nullptr);
-        return;
-    }
+    const Command command = spec->command;
+    const std::string label(spec->label);
 
     if (mode == Mode::Programmer) {
-        if (g_strcmp0(label, "BIN") == 0 ||
-            g_strcmp0(label, "OCT") == 0 ||
-            g_strcmp0(label, "DEC") == 0 ||
-            g_strcmp0(label, "HEX") == 0 ||
-            g_strcmp0(label, "W8") == 0 ||
-            g_strcmp0(label, "W16") == 0 ||
-            g_strcmp0(label, "W32") == 0 ||
-            g_strcmp0(label, "W64") == 0 ||
-            g_strcmp0(label, "U/S") == 0) {
-            programmer_mode_change(label);
+        if (infiltrator::calc::ui::is_programmer_selector(command)) {
+            programmer_mode_change(command);
             return;
         }
-
-        if (g_strcmp0(label, "=") == 0) {
+        if (command == Command::Equals) {
             calculate_programmer();
             return;
         }
-        if (g_strcmp0(label, "AC") == 0) {
+        if (command == Command::AllClear) {
             clear_calculation();
             return;
         }
-        if (g_strcmp0(label, "⌫") == 0) {
+        if (command == Command::Backspace) {
             backspace();
             return;
         }
 
-        insert_text(insertion_for_label(label));
+        const std::string_view insertion =
+            infiltrator::calc::ui::insertion_text(command);
+        if (!insertion.empty()) {
+            insert_text(std::string(insertion).c_str());
+        }
         return;
     }
 
-    if (g_strcmp0(label, "DEG") == 0 || g_strcmp0(label, "RAD") == 0) {
+    switch (command) {
+    case Command::ToggleDegrees:
         degrees = !degrees;
         gtk_button_set_label(button, degrees ? "DEG" : "RAD");
         status(degrees ? "SCIENTIFIC · DEGREES" : "SCIENTIFIC · RADIANS");
         return;
-    }
-    if (g_strcmp0(label, "=") == 0) {
+    case Command::Equals:
         calculate();
         return;
-    }
-    if (g_strcmp0(label, "C") == 0) {
+    case Command::Clear:
         clear_calculation();
         return;
-    }
-    if (g_strcmp0(label, "⌫") == 0) {
+    case Command::Backspace:
         backspace();
         return;
-    }
-    if (g_strcmp0(label, "±") == 0 ||
-        g_strcmp0(label, "x²") == 0 ||
-        g_strcmp0(label, "√") == 0 ||
-        g_strcmp0(label, "1/x") == 0) {
-        unary_transform(label);
+    case Command::Negate:
+    case Command::Square:
+    case Command::SquareRoot:
+    case Command::Reciprocal:
+        unary_transform(label.c_str());
         return;
-    }
-    if (g_strcmp0(label, "MC") == 0) {
+    case Command::MemoryClear:
         session.memory_clear();
         status("MEMORY CLEARED");
         return;
-    }
-    if (g_strcmp0(label, "MR") == 0) {
+    case Command::MemoryRecall:
         insert_text(format_value(session.memory_recall()).c_str());
         status("MEMORY RECALL");
         return;
-    }
-    if (g_strcmp0(label, "M+") == 0 || g_strcmp0(label, "M−") == 0) {
+    case Command::MemoryAdd:
+    case Command::MemorySubtract: {
         double value = 0.0;
         if (current_value(value)) {
-            if (g_strcmp0(label, "M+") == 0) session.memory_add(value);
+            if (command == Command::MemoryAdd) session.memory_add(value);
             else session.memory_subtract(value);
             status("MEMORY UPDATED");
         }
         return;
     }
-    if (g_strcmp0(label, "sin") == 0 ||
-        g_strcmp0(label, "cos") == 0 ||
-        g_strcmp0(label, "tan") == 0 ||
-        g_strcmp0(label, "asin") == 0 ||
-        g_strcmp0(label, "acos") == 0 ||
-        g_strcmp0(label, "atan") == 0 ||
-        g_strcmp0(label, "ln") == 0 ||
-        g_strcmp0(label, "log") == 0 ||
-        g_strcmp0(label, "exp") == 0 ||
-        g_strcmp0(label, "abs") == 0) {
-        scientific_transform(label);
+    case Command::Sin:
+    case Command::Cos:
+    case Command::Tan:
+    case Command::Asin:
+    case Command::Acos:
+    case Command::Atan:
+    case Command::Ln:
+    case Command::Log10:
+    case Command::Exp:
+    case Command::Abs:
+        scientific_transform(label.c_str());
         return;
-    }
-    if (g_strcmp0(label, "π") == 0) {
+    case Command::Pi:
         insert_text("pi");
         return;
-    }
-    if (g_strcmp0(label, "e") == 0) {
+    case Command::Euler:
         insert_text("e");
         return;
-    }
-    if (g_strcmp0(label, "x!") == 0) {
+    case Command::Factorial:
         insert_text("!");
         return;
-    }
-    if (g_strcmp0(label, "∛") == 0) {
+    case Command::CubeRoot:
         insert_function("cbrt");
         return;
+    default:
+        break;
     }
 
-    insert_text(insertion_for_label(label));
+    const std::string_view insertion =
+        infiltrator::calc::ui::insertion_text(command);
+    if (!insertion.empty()) {
+        insert_text(std::string(insertion).c_str());
+    }
 }
 
-bool is_number_key(const char* label) {
-    return label &&
-           std::strlen(label) == 1 &&
-           ((label[0] >= '0' && label[0] <= '9') ||
-            (label[0] >= 'A' && label[0] <= 'F') ||
-            label[0] == '.');
-}
-
-const char* button_class(const char* label) {
-    if (g_strcmp0(label, "=") == 0) return "equals";
-    if (g_strcmp0(label, "C") == 0 ||
-        g_strcmp0(label, "AC") == 0 ||
-        g_strcmp0(label, "⌫") == 0) return "clear";
-
-    if (g_strcmp0(label, "MC") == 0 ||
-        g_strcmp0(label, "MR") == 0 ||
-        g_strcmp0(label, "M+") == 0 ||
-        g_strcmp0(label, "M−") == 0 ||
-        g_strcmp0(label, "DEG") == 0 ||
-        g_strcmp0(label, "RAD") == 0 ||
-        g_strcmp0(label, "BIN") == 0 ||
-        g_strcmp0(label, "OCT") == 0 ||
-        g_strcmp0(label, "DEC") == 0 ||
-        g_strcmp0(label, "HEX") == 0 ||
-        g_strcmp0(label, "W8") == 0 ||
-        g_strcmp0(label, "W16") == 0 ||
-        g_strcmp0(label, "W32") == 0 ||
-        g_strcmp0(label, "W64") == 0 ||
-        g_strcmp0(label, "U/S") == 0) return "utility";
-
-    if (is_number_key(label)) return "number";
+const char* button_class(ButtonRole role) {
+    switch (role) {
+    case ButtonRole::Number: return "number";
+    case ButtonRole::Operation: return "operation";
+    case ButtonRole::Utility: return "utility";
+    case ButtonRole::Clear: return "clear";
+    case ButtonRole::Equals: return "equals";
+    }
     return "operation";
 }
 
-GtkWidget* calc_button(const char* text) {
-    GtkWidget* button = gtk_button_new_with_label(text);
+GtkWidget* calc_button(const ButtonSpec& spec) {
+    const std::string label(spec.label);
+    GtkWidget* button = gtk_button_new_with_label(label.c_str());
     gtk_widget_add_css_class(button, "calc-button");
-    gtk_widget_add_css_class(button, button_class(text));
-    if (g_strcmp0(text, "MC") == 0 ||
-        g_strcmp0(text, "MR") == 0 ||
-        g_strcmp0(text, "M+") == 0 ||
-        g_strcmp0(text, "M−") == 0) {
+    gtk_widget_add_css_class(button, button_class(spec.role));
+    if (spec.command == Command::MemoryClear ||
+        spec.command == Command::MemoryRecall ||
+        spec.command == Command::MemoryAdd ||
+        spec.command == Command::MemorySubtract) {
         gtk_widget_add_css_class(button, "memory-button");
     }
-    g_signal_connect(button, "clicked", G_CALLBACK(on_button_clicked), nullptr);
+    g_signal_connect(
+        button, "clicked", G_CALLBACK(on_button_clicked),
+        const_cast<ButtonSpec*>(&spec));
     gtk_widget_set_hexpand(button, TRUE);
     gtk_widget_set_vexpand(button, FALSE);
     return button;
@@ -604,12 +582,13 @@ GtkWidget* calc_button(const char* text) {
 GtkWidget* toolbar_button(const char* text) {
     GtkWidget* button = gtk_button_new_with_label(text);
     gtk_widget_add_css_class(button, "toolbar-button");
-    g_signal_connect(button, "clicked", G_CALLBACK(on_button_clicked), nullptr);
+    g_signal_connect(button, "clicked", G_CALLBACK(show_history), nullptr);
     return button;
 }
 
-GtkWidget* mode_button(const char* text, Mode target) {
-    GtkWidget* button = gtk_button_new_with_label(text);
+GtkWidget* mode_button(Mode target) {
+    const std::string label(infiltrator::calc::ui::mode_name(target));
+    GtkWidget* button = gtk_button_new_with_label(label.c_str());
     gtk_widget_add_css_class(button, "mode-tab");
     gtk_widget_set_hexpand(button, TRUE);
     g_signal_connect(
@@ -621,29 +600,36 @@ GtkWidget* mode_button(const char* text, Mode target) {
 
 GtkWidget* new_grid() {
     GtkWidget* grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
+    gtk_grid_set_row_spacing(
+        GTK_GRID(grid), infiltrator::calc::ui::kDesktopMetrics.grid_gap_y);
+    gtk_grid_set_column_spacing(
+        GTK_GRID(grid), infiltrator::calc::ui::kDesktopMetrics.grid_gap_x);
     gtk_widget_set_vexpand(grid, FALSE);
     return grid;
 }
 
-void fill_grid(GtkWidget* grid, const char* labels[][4], guint rows) {
-    for (guint row = 0; row < rows; ++row) {
-        for (guint column = 0; column < 4; ++column) {
-            GtkWidget* button = calc_button(labels[row][column]);
-            gtk_grid_attach(GTK_GRID(grid), button, column, row, 1, 1);
+void remember_programmer_button(Command command, GtkWidget* button) {
+    switch (command) {
+    case Command::BaseBin: programmer_base_buttons[0] = button; break;
+    case Command::BaseOct: programmer_base_buttons[1] = button; break;
+    case Command::BaseDec: programmer_base_buttons[2] = button; break;
+    case Command::BaseHex: programmer_base_buttons[3] = button; break;
+    case Command::Width8: programmer_width_buttons[0] = button; break;
+    case Command::Width16: programmer_width_buttons[1] = button; break;
+    case Command::Width32: programmer_width_buttons[2] = button; break;
+    case Command::Width64: programmer_width_buttons[3] = button; break;
+    case Command::ToggleSigned: programmer_signed_button = button; break;
+    default: break;
+    }
+}
 
-            const char* label = labels[row][column];
-            if (g_strcmp0(label, "BIN") == 0) programmer_base_buttons[0] = button;
-            else if (g_strcmp0(label, "OCT") == 0) programmer_base_buttons[1] = button;
-            else if (g_strcmp0(label, "DEC") == 0) programmer_base_buttons[2] = button;
-            else if (g_strcmp0(label, "HEX") == 0) programmer_base_buttons[3] = button;
-            else if (g_strcmp0(label, "W8") == 0) programmer_width_buttons[0] = button;
-            else if (g_strcmp0(label, "W16") == 0) programmer_width_buttons[1] = button;
-            else if (g_strcmp0(label, "W32") == 0) programmer_width_buttons[2] = button;
-            else if (g_strcmp0(label, "W64") == 0) programmer_width_buttons[3] = button;
-            else if (g_strcmp0(label, "U/S") == 0) programmer_signed_button = button;
-        }
+void fill_grid(GtkWidget* grid, const ButtonSpec* specs, std::size_t count) {
+    for (std::size_t index = 0; index < count; ++index) {
+        const int row = static_cast<int>(index / 4U);
+        const int column = static_cast<int>(index % 4U);
+        GtkWidget* button = calc_button(specs[index]);
+        gtk_grid_attach(GTK_GRID(grid), button, column, row, 1, 1);
+        remember_programmer_button(specs[index].command, button);
     }
 }
 
@@ -704,9 +690,14 @@ void apply_css(GtkWidget* window) {
 void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Infiltrator Calc");
-    gtk_window_set_default_size(GTK_WINDOW(window), 380, 620);
+    gtk_window_set_default_size(
+        GTK_WINDOW(window),
+        infiltrator::calc::ui::kDesktopMetrics.default_width,
+        infiltrator::calc::ui::kDesktopMetrics.default_height);
 
-    GtkWidget* shell = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    GtkWidget* shell = gtk_box_new(
+        GTK_ORIENTATION_VERTICAL,
+        infiltrator::calc::ui::kDesktopMetrics.section_gap);
     gtk_widget_add_css_class(shell, "shell");
     gtk_window_set_child(GTK_WINDOW(window), shell);
     apply_css(window);
@@ -736,9 +727,9 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* mode_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
     gtk_widget_add_css_class(mode_strip, "mode-strip");
     gtk_box_append(GTK_BOX(shell), mode_strip);
-    gtk_box_append(GTK_BOX(mode_strip), mode_button("Standard", Mode::Standard));
-    gtk_box_append(GTK_BOX(mode_strip), mode_button("Scientific", Mode::Scientific));
-    gtk_box_append(GTK_BOX(mode_strip), mode_button("Programmer", Mode::Programmer));
+    gtk_box_append(GTK_BOX(mode_strip), mode_button(Mode::Standard));
+    gtk_box_append(GTK_BOX(mode_strip), mode_button(Mode::Scientific));
+    gtk_box_append(GTK_BOX(mode_strip), mode_button(Mode::Programmer));
 
     GtkWidget* display = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_add_css_class(display, "display");
@@ -769,56 +760,32 @@ void activate(GtkApplication* app, gpointer) {
 
     GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_append(GTK_BOX(standard_panel), memory_strip);
-    const char* memory_keys[] = {"MC", "MR", "M+", "M−"};
-    for (const char* label : memory_keys) {
-        GtkWidget* button = calc_button(label);
+    for (const ButtonSpec& spec : infiltrator::calc::ui::kStandardMemory) {
+        GtkWidget* button = calc_button(spec);
         gtk_widget_set_hexpand(button, TRUE);
         gtk_box_append(GTK_BOX(memory_strip), button);
     }
 
     standard_grid = new_grid();
     gtk_box_append(GTK_BOX(standard_panel), standard_grid);
-    const char* standard_keys[][4] = {
-        {"%", "C", "⌫", "÷"},
-        {"1/x", "x²", "√", "^"},
-        {"7", "8", "9", "×"},
-        {"4", "5", "6", "−"},
-        {"1", "2", "3", "+"},
-        {"±", "0", ".", "="}
-    };
-    fill_grid(standard_grid, standard_keys, 6);
+    fill_grid(
+        standard_grid,
+        infiltrator::calc::ui::kStandardKeypad.data(),
+        infiltrator::calc::ui::kStandardKeypad.size());
 
     scientific_grid = new_grid();
     gtk_box_append(GTK_BOX(shell), scientific_grid);
-    const char* scientific_keys[][4] = {
-        {"DEG", "π", "e", "C"},
-        {"sin", "cos", "tan", "⌫"},
-        {"asin", "acos", "atan", "^"},
-        {"ln", "log", "exp", "x!"},
-        {"√", "∛", "abs", "%"},
-        {"7", "8", "9", "÷"},
-        {"4", "5", "6", "×"},
-        {"1", "2", "3", "−"},
-        {"(", "0", ")", "+"},
-        {"±", ".", "1/x", "="}
-    };
-    fill_grid(scientific_grid, scientific_keys, 10);
+    fill_grid(
+        scientific_grid,
+        infiltrator::calc::ui::kScientificKeypad.data(),
+        infiltrator::calc::ui::kScientificKeypad.size());
 
     programmer_grid = new_grid();
     gtk_box_append(GTK_BOX(shell), programmer_grid);
-    const char* programmer_keys[][4] = {
-        {"BIN", "OCT", "DEC", "HEX"},
-        {"W8", "W16", "W32", "W64"},
-        {"U/S", "~", "&", "|"},
-        {"^", "<<", ">>", "AC"},
-        {"(", ")", "÷", "×"},
-        {"7", "8", "9", "−"},
-        {"4", "5", "6", "+"},
-        {"1", "2", "3", "="},
-        {"0", "A", "B", "⌫"},
-        {"C", "D", "E", "F"}
-    };
-    fill_grid(programmer_grid, programmer_keys, 10);
+    fill_grid(
+        programmer_grid,
+        infiltrator::calc::ui::kProgrammerKeypad.data(),
+        infiltrator::calc::ui::kProgrammerKeypad.size());
 
     GtkWidget* footer =
         gtk_label_new("Keyboard ready · Variables, memory and history retained");
