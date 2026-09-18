@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10
+
+- Replaced the Windows GTK/MSYS2 shell with a native Win32 interface over the existing shared C++ calculator core.
+- Switched Windows CI to Visual Studio/MSVC and the static MSVC runtime so the published EXE does not require GCC runtime DLLs.
+- Removed the GTK/GLib portable-runtime ZIP from Windows releases; the Windows x64 EXE is now the complete application.
+- Added a release gate that inspects Windows imports and rejects GTK/GLib, GCC, libstdc++, winpthread or Visual C++ redistributable dependencies.
+- Kept Linux on GTK4 and iPhone on SwiftUI while preserving Infiltratr Common 1.18.1 as the shared foundation.
+
 ## 0.1.9
 
 - Advanced the Common gitlink to the immutable Infiltratr Common 1.18.1 release commit.
