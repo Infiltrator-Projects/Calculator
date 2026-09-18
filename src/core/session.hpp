@@ -27,6 +27,9 @@ public:
     void memory_add(double value);
     void memory_subtract(double value);
     double memory_recall() const noexcept;
+    bool memory_empty() const noexcept;
+
+    void record_history(std::string input, Result result);
 
     void set_variable(std::string name, double value);
     std::optional<double> variable(const std::string& name) const;
@@ -38,6 +41,7 @@ public:
 private:
     std::size_t history_limit_;
     double memory_ = 0.0;
+    bool memory_set_ = false;
     Variables variables_;
     std::deque<HistoryEntry> history_;
 };
