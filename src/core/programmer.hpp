@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-namespace infiltrator::calc {
+namespace calculator {
 
 enum class ProgrammerBase { Binary, Octal, Decimal, Hexadecimal };
 
@@ -30,4 +30,4 @@ std::string format_programmer(std::uint64_t value,
                               IntegerWidth width,
                               bool signed_display);
 
-} // namespace infiltrator::calc
+} // namespace calculator

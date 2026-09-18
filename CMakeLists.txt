@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 cmake_minimum_required(VERSION 3.20)
 
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" INFILTRATOR_CALC_VERSION)
-string(STRIP "${INFILTRATOR_CALC_VERSION}" INFILTRATOR_CALC_VERSION)
-project(InfiltratorCalc VERSION "${INFILTRATOR_CALC_VERSION}" LANGUAGES C CXX)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" CALCULATOR_VERSION)
+string(STRIP "${CALCULATOR_VERSION}" CALCULATOR_VERSION)
+project(Calculator VERSION "${CALCULATOR_VERSION}" LANGUAGES C CXX)
 
 include(CTest)
 
-option(INFILTRATOR_CALC_BUILD_DESKTOP "Build the GTK desktop application" ON)
+option(CALCULATOR_BUILD_DESKTOP "Build the GTK desktop application" ON)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -30,45 +30,45 @@ endif()
 
 add_subdirectory(src/infiltratr-common)
 
-add_library(infiltrator-calc-core STATIC
+add_library(calculator-core STATIC
     src/core/calculator.cpp
     src/core/session.cpp
     src/core/programmer.cpp
 )
 
-target_include_directories(infiltrator-calc-core PUBLIC
+target_include_directories(calculator-core PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src/core"
 )
 
-target_link_libraries(infiltrator-calc-core PUBLIC
+target_link_libraries(calculator-core PUBLIC
     InfiltratrCommon::Portable
 )
 
-add_library(infiltrator-calc-ui STATIC
+add_library(calculator-ui STATIC
     src/ui/calculator_ui_controller.cpp
 )
 
-target_include_directories(infiltrator-calc-ui PUBLIC
+target_include_directories(calculator-ui PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src/ui"
 )
 
-target_link_libraries(infiltrator-calc-ui PUBLIC
-    infiltrator-calc-core
+target_link_libraries(calculator-ui PUBLIC
+    calculator-core
 )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-    target_compile_options(infiltrator-calc-ui PRIVATE
+    target_compile_options(calculator-ui PRIVATE
         -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
     )
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-    target_compile_options(infiltrator-calc-core PRIVATE
+    target_compile_options(calculator-core PRIVATE
         -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
     )
 endif()
 
-if(INFILTRATOR_CALC_BUILD_DESKTOP)
+if(CALCULATOR_BUILD_DESKTOP)
     if(WIN32)
         # Windows has a native shell so the release executable has no GTK/GLib
         # runtime closure and depends only on Windows system components.
@@ -76,7 +76,7 @@ if(INFILTRATOR_CALC_BUILD_DESKTOP)
             src/app/windows_main.cpp
         )
         target_link_libraries(infiltrator-calc PRIVATE
-            infiltrator-calc-ui
+            calculator-ui
             user32
             gdi32
             comctl32
@@ -102,7 +102,7 @@ if(INFILTRATOR_CALC_BUILD_DESKTOP)
         )
 
         target_link_libraries(infiltrator-calc PRIVATE
-            infiltrator-calc-ui
+            calculator-ui
             PkgConfig::GTK4
         )
 
@@ -117,33 +117,33 @@ if(INFILTRATOR_CALC_BUILD_DESKTOP)
     install(FILES LICENSE DESTINATION share/doc/infiltrator-calc OPTIONAL)
 endif()
 
-add_executable(infiltrator-calc-test
+add_executable(calculator-test
     tests/test_calculator.cpp
 )
-target_link_libraries(infiltrator-calc-test PRIVATE infiltrator-calc-core)
-add_test(NAME calculator-core COMMAND infiltrator-calc-test)
+target_link_libraries(calculator-test PRIVATE calculator-core)
+add_test(NAME calculator-core COMMAND calculator-test)
 
-add_executable(infiltrator-calc-session-test
+add_executable(calculator-session-test
     tests/test_session.cpp
 )
-target_link_libraries(infiltrator-calc-session-test PRIVATE infiltrator-calc-core)
-add_test(NAME calculator-session COMMAND infiltrator-calc-session-test)
+target_link_libraries(calculator-session-test PRIVATE calculator-core)
+add_test(NAME calculator-session COMMAND calculator-session-test)
 
-add_executable(infiltrator-calc-programmer-test
+add_executable(calculator-programmer-test
     tests/test_programmer.cpp
 )
-target_link_libraries(infiltrator-calc-programmer-test PRIVATE infiltrator-calc-core)
-add_test(NAME calculator-programmer COMMAND infiltrator-calc-programmer-test)
+target_link_libraries(calculator-programmer-test PRIVATE calculator-core)
+add_test(NAME calculator-programmer COMMAND calculator-programmer-test)
 
-add_executable(infiltrator-calc-ui-contract-test
+add_executable(calculator-ui-contract-test
     tests/test_ui_contract.cpp
 )
-target_link_libraries(infiltrator-calc-ui-contract-test PRIVATE infiltrator-calc-ui)
-add_test(NAME calculator-ui-contract COMMAND infiltrator-calc-ui-contract-test)
+target_link_libraries(calculator-ui-contract-test PRIVATE calculator-ui)
+add_test(NAME calculator-ui-contract COMMAND calculator-ui-contract-test)
 
-add_executable(infiltrator-calc-ui-controller-test
+add_executable(calculator-ui-controller-test
     tests/test_ui_controller.cpp
 )
-target_link_libraries(infiltrator-calc-ui-controller-test PRIVATE infiltrator-calc-ui)
-add_test(NAME calculator-ui-controller COMMAND infiltrator-calc-ui-controller-test)
+target_link_libraries(calculator-ui-controller-test PRIVATE calculator-ui)
+add_test(NAME calculator-ui-controller COMMAND calculator-ui-controller-test)
 

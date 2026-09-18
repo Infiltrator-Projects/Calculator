@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace infiltrator::calc {
+namespace calculator {
 
 using Variables = std::unordered_map<std::string, double>;
 
@@ -27,4 +27,4 @@ Result evaluate(const std::string& expression, const Variables& variables);
 // (100 + 10% -> 110, 100 * 10% -> 10).
 Result evaluate_immediate(const std::string& expression);
 
-} // namespace infiltrator::calc
+} // namespace calculator

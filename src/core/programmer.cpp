@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string_view>
 
-namespace infiltrator::calc {
+namespace calculator {
 namespace {
 
 std::uint64_t mask_for(IntegerWidth width) {
@@ -237,4 +237,4 @@ std::string format_programmer(std::uint64_t value,
     return out.str();
 }
 
-} // namespace infiltrator::calc
+} // namespace calculator
