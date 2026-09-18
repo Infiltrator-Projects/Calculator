@@ -17,4 +17,9 @@ struct Result {
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);
 
+// Standard calculator semantics: apply binary operations from left to right.
+// Contextual percentages follow conventional desktop-calculator behaviour
+// (100 + 10% -> 110, 100 * 10% -> 10).
+Result evaluate_immediate(const std::string& expression);
+
 } // namespace infiltrator::calc
