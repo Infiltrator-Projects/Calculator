@@ -9,6 +9,7 @@
 #include <commctrl.h>
 
 #include "../ui/calculator_ui_controller.hpp"
+#include "../ui/calculator_theme.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -25,33 +26,48 @@ constexpr wchar_t kMainClass[] = L"InfiltratorCalcWindow";
 constexpr wchar_t kHistoryClass[] = L"InfiltratorCalcHistoryWindow";
 
 constexpr int kIdHistory = 1001;
+constexpr int kIdTheme = 1002;
 constexpr int kIdModeStandard = 1010;
 constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 
-constexpr COLORREF kBackground = RGB(5, 6, 8);
-constexpr COLORREF kPanel = RGB(16, 19, 24);
-constexpr COLORREF kCard = RGB(23, 27, 32);
-constexpr COLORREF kSurface = RGB(13, 16, 20);
-constexpr COLORREF kInput = RGB(14, 17, 21);
-constexpr COLORREF kBorder = RGB(53, 58, 64);
-constexpr COLORREF kText = RGB(232, 236, 239);
-constexpr COLORREF kTitle = RGB(238, 241, 243);
-constexpr COLORREF kMuted = RGB(174, 182, 189);
-constexpr COLORREF kSubtle = RGB(137, 145, 152);
-constexpr COLORREF kButtonBackground = RGB(215, 221, 226);
-constexpr COLORREF kButtonForeground = RGB(17, 20, 24);
-constexpr COLORREF kSelection = RGB(43, 49, 55);
-constexpr COLORREF kNeutralAccent = RGB(190, 199, 207);
-constexpr COLORREF kWarning = RGB(209, 158, 71);
-constexpr COLORREF kFault = RGB(201, 107, 107);
-constexpr COLORREF kOperation = RGB(32, 37, 43);
-constexpr COLORREF kCardHover = RGB(34, 39, 45);
-constexpr COLORREF kSurfaceHover = RGB(23, 27, 32);
-constexpr COLORREF kOperationHover = RGB(43, 49, 55);
-constexpr COLORREF kEqualsHover = RGB(238, 241, 243);
+using infiltrator::calc::ui::ThemeMode;
+using infiltrator::calc::ui::ThemePalette;
+
+ThemeMode g_theme_mode = ThemeMode::System;
+ThemePalette g_theme_palette = infiltrator::calc::ui::kNightPalette;
+bool g_effective_dark_theme = true;
+
+COLORREF to_colorref(std::uint32_t rgb) {
+    return RGB(
+        static_cast<BYTE>((rgb >> 16U) & 0xFFU),
+        static_cast<BYTE>((rgb >> 8U) & 0xFFU),
+        static_cast<BYTE>(rgb & 0xFFU));
+}
+
+#define kBackground to_colorref(g_theme_palette.background)
+#define kPanel to_colorref(g_theme_palette.panel)
+#define kCard to_colorref(g_theme_palette.card)
+#define kSurface to_colorref(g_theme_palette.surface)
+#define kInput to_colorref(g_theme_palette.input)
+#define kBorder to_colorref(g_theme_palette.border)
+#define kText to_colorref(g_theme_palette.text)
+#define kTitle to_colorref(g_theme_palette.title)
+#define kMuted to_colorref(g_theme_palette.muted)
+#define kSubtle to_colorref(g_theme_palette.subtle)
+#define kButtonBackground to_colorref(g_theme_palette.button_background)
+#define kButtonForeground to_colorref(g_theme_palette.button_foreground)
+#define kSelection to_colorref(g_theme_palette.selection_background)
+#define kNeutralAccent to_colorref(g_theme_palette.neutral_accent)
+#define kWarning to_colorref(g_theme_palette.warning)
+#define kFault to_colorref(g_theme_palette.fault)
+#define kOperation to_colorref(g_theme_palette.operation)
+#define kCardHover to_colorref(g_theme_palette.card_hover)
+#define kSurfaceHover to_colorref(g_theme_palette.surface_hover)
+#define kOperationHover to_colorref(g_theme_palette.operation_hover)
+#define kEqualsHover to_colorref(g_theme_palette.equals_hover)
 
 using infiltrator::calc::ui::ButtonRole;
 using infiltrator::calc::ui::ButtonSpec;
@@ -66,6 +82,7 @@ HWND g_main = nullptr;
 HWND g_title = nullptr;
 HWND g_subtitle = nullptr;
 HWND g_history_button = nullptr;
+HWND g_theme_button = nullptr;
 HWND g_expression = nullptr;
 HWND g_result = nullptr;
 HWND g_status = nullptr;
@@ -156,6 +173,72 @@ int sx(HWND window, int logical) {
     return MulDiv(logical, window_dpi(window), 96);
 }
 
+bool system_prefers_dark() {
+    DWORD value = 1;
+    DWORD size = sizeof(value);
+    const LSTATUS status = RegGetValueW(
+        HKEY_CURRENT_USER,
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        L"AppsUseLightTheme",
+        RRF_RT_REG_DWORD,
+        nullptr,
+        &value,
+        &size);
+    return status == ERROR_SUCCESS ? value == 0 : true;
+}
+
+ThemeMode load_theme_mode() {
+    DWORD value = 0;
+    DWORD size = sizeof(value);
+    const LSTATUS status = RegGetValueW(
+        HKEY_CURRENT_USER,
+        L"Software\\Infiltrator\\Calc",
+        L"ThemeMode",
+        RRF_RT_REG_DWORD,
+        nullptr,
+        &value,
+        &size);
+    if (status != ERROR_SUCCESS) return ThemeMode::System;
+    if (value == 1) return ThemeMode::Day;
+    if (value == 2) return ThemeMode::Night;
+    return ThemeMode::System;
+}
+
+void save_theme_mode() {
+    HKEY key = nullptr;
+    if (RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            L"Software\\Infiltrator\\Calc",
+            0, nullptr, 0, KEY_SET_VALUE,
+            nullptr, &key, nullptr) != ERROR_SUCCESS) {
+        return;
+    }
+    DWORD value = 0;
+    if (g_theme_mode == ThemeMode::Day) value = 1;
+    else if (g_theme_mode == ThemeMode::Night) value = 2;
+    (void)RegSetValueExW(
+        key, L"ThemeMode", 0, REG_DWORD,
+        reinterpret_cast<const BYTE*>(&value), sizeof(value));
+    RegCloseKey(key);
+}
+
+void resolve_theme() {
+    g_effective_dark_theme =
+        g_theme_mode == ThemeMode::Night ||
+        (g_theme_mode == ThemeMode::System && system_prefers_dark());
+    g_theme_palette =
+        infiltrator::calc::ui::resolved_palette(g_effective_dark_theme);
+}
+
+void recreate_theme_brushes() {
+    if (g_background_brush != nullptr) DeleteObject(g_background_brush);
+    if (g_panel_brush != nullptr) DeleteObject(g_panel_brush);
+    if (g_input_brush != nullptr) DeleteObject(g_input_brush);
+    g_theme_mode = load_theme_mode();
+    resolve_theme();
+    recreate_theme_brushes();
+}
+
 bool font_family_available(const wchar_t* family) {
     if (family == nullptr || *family == L'\0') return false;
 
@@ -207,7 +290,7 @@ void apply_font(HWND control, HFONT font) {
     }
 }
 
-void apply_dark_nonclient(HWND window) {
+void apply_nonclient_theme(HWND window) {
     using DwmSetWindowAttributeFn = HRESULT(WINAPI*)(HWND, DWORD, LPCVOID, DWORD);
     HMODULE module = LoadLibraryW(L"dwmapi.dll");
     if (module == nullptr) return;
@@ -215,7 +298,7 @@ void apply_dark_nonclient(HWND window) {
     auto set_attribute = reinterpret_cast<DwmSetWindowAttributeFn>(
         GetProcAddress(module, "DwmSetWindowAttribute"));
     if (set_attribute != nullptr) {
-        BOOL dark = TRUE;
+        BOOL dark = g_effective_dark_theme ? TRUE : FALSE;
         COLORREF caption = kBackground;
         COLORREF text = kTitle;
         COLORREF border = kNeutralAccent;
@@ -227,14 +310,17 @@ void apply_dark_nonclient(HWND window) {
     FreeLibrary(module);
 }
 
-void apply_dark_control_theme(HWND control) {
+void apply_control_theme(HWND control) {
     using SetWindowThemeFn = HRESULT(WINAPI*)(HWND, LPCWSTR, LPCWSTR);
     HMODULE module = LoadLibraryW(L"uxtheme.dll");
     if (module == nullptr) return;
     auto set_theme = reinterpret_cast<SetWindowThemeFn>(
         GetProcAddress(module, "SetWindowTheme"));
     if (set_theme != nullptr) {
-        (void)set_theme(control, L"DarkMode_Explorer", nullptr);
+        (void)set_theme(
+            control,
+            g_effective_dark_theme ? L"DarkMode_Explorer" : L"Explorer",
+            nullptr);
     }
     FreeLibrary(module);
 }
@@ -382,7 +468,7 @@ void show_history() {
 }
 
 ButtonKind button_kind(int id, const ButtonSpec* spec) {
-    if (id == kIdHistory) return ButtonKind::Toolbar;
+    if (id == kIdHistory || id == kIdTheme) return ButtonKind::Toolbar;
     if (id == kIdModeStandard || id == kIdModeScientific ||
         id == kIdModeProgrammer) return ButtonKind::Mode;
     if (spec == nullptr) return ButtonKind::Operation;
@@ -608,7 +694,7 @@ HWND create_button(HWND parent, int id, const wchar_t* label, HFONT font) {
         reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)),
         g_instance, nullptr);
     apply_font(button, font);
-    apply_dark_control_theme(button);
+    apply_control_theme(button);
     SetWindowSubclass(button, button_subclass_proc, 1, 0);
     return button;
 }
@@ -754,22 +840,29 @@ void layout_main(HWND window) {
     const int content_width = std::max(0, calc_right - calc_left);
     int y = margin;
 
-    const int history_width = sx(window, 76);
-    const int history_height = sx(window, 30);
-    const int title_right = responsive.dock_history
-        ? calc_right
-        : calc_right - history_width - gap;
+    const int toolbar_width = sx(window, 76);
+    const int toolbar_height = sx(window, 30);
+    const int toolbar_count = responsive.dock_history ? 1 : 2;
+    const int title_right =
+        calc_right - toolbar_count * toolbar_width -
+        (toolbar_count > 0 ? toolbar_count * gap : 0);
 
     MoveWindow(
         g_title, calc_left, y,
         std::max(0, title_right - calc_left), sx(window, 30), TRUE);
     ShowWindow(g_subtitle, SW_HIDE);
 
+    MoveWindow(
+        g_theme_button,
+        calc_right - toolbar_count * toolbar_width -
+            (toolbar_count - 1) * gap,
+        y, toolbar_width, toolbar_height, TRUE);
+
     if (!responsive.dock_history) {
         MoveWindow(
             g_history_button,
-            calc_right - history_width, y,
-            history_width, history_height, TRUE);
+            calc_right - toolbar_width, y,
+            toolbar_width, toolbar_height, TRUE);
     }
 
     y += sx(window, responsive.compact_controls ? 34 : 38);
@@ -848,6 +941,35 @@ void draw_panel(HDC dc, const RECT& rect, COLORREF fill, COLORREF border,
     DeleteObject(pen);
 }
 
+void apply_theme_to_window(HWND window) {
+    if (window == nullptr || !IsWindow(window)) return;
+    apply_nonclient_theme(window);
+    EnumChildWindows(
+        window,
+        +[](HWND child, LPARAM) -> BOOL {
+            apply_control_theme(child);
+            InvalidateRect(child, nullptr, TRUE);
+            return TRUE;
+        },
+        0);
+    InvalidateRect(window, nullptr, TRUE);
+}
+
+void apply_theme(bool persist) {
+    resolve_theme();
+    recreate_theme_brushes();
+
+    if (g_theme_button != nullptr) {
+        const std::wstring label = utf8_to_wide(
+            std::string(infiltrator::calc::ui::theme_mode_name(g_theme_mode)));
+        SetWindowTextW(g_theme_button, label.c_str());
+    }
+
+    apply_theme_to_window(g_main);
+    apply_theme_to_window(g_history_window);
+    if (persist) save_theme_mode();
+}
+
 void create_controls(HWND window) {
     g_title = CreateWindowExW(0, L"STATIC", L"Infiltrator Calc",
                               WS_CHILD | WS_VISIBLE | SS_LEFT,
@@ -855,6 +977,7 @@ void create_controls(HWND window) {
     g_subtitle = CreateWindowExW(0, L"STATIC", L"PRECISION DESKTOP CALCULATOR",
                                  WS_CHILD | SS_LEFT,
                                  0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+    g_theme_button = create_button(window, kIdTheme, L"System", g_ui_bold_font);
     g_history_button = create_button(window, kIdHistory, L"History", g_ui_bold_font);
 
     const std::wstring standard_mode =
@@ -874,7 +997,7 @@ void create_controls(HWND window) {
         0, L"EDIT", L"",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_RIGHT | ES_AUTOHSCROLL,
         0, 0, 0, 0, window, nullptr, g_instance, nullptr);
-    apply_dark_control_theme(g_expression);
+    apply_control_theme(g_expression);
 
     g_result = CreateWindowExW(0, L"STATIC", L"0",
                                WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_NOPREFIX,
@@ -892,7 +1015,7 @@ void create_controls(HWND window) {
         0, L"EDIT", L"",
         WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL,
         0, 0, 0, 0, window, nullptr, g_instance, nullptr);
-    apply_dark_control_theme(g_history_dock);
+    apply_control_theme(g_history_dock);
 
     apply_font(g_title, g_title_font);
     apply_font(g_subtitle, g_small_font);
@@ -950,13 +1073,13 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
                               WPARAM wparam, LPARAM lparam) {
     switch (message) {
     case WM_CREATE: {
-        apply_dark_nonclient(window);
+        apply_nonclient_theme(window);
         g_history_edit = CreateWindowExW(
             0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE |
                 ES_READONLY | ES_AUTOVSCROLL,
             0, 0, 0, 0, window, nullptr, g_instance, nullptr);
-        apply_dark_control_theme(g_history_edit);
+        apply_control_theme(g_history_edit);
         apply_font(g_history_edit, g_ui_font);
 
         HWND clear = create_button(window, kIdHistoryClear, L"Clear History",
@@ -1031,8 +1154,15 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         // child controls are created; the keypad factory uses g_main as its
         // parent.
         g_main = window;
-        apply_dark_nonclient(window);
+        apply_nonclient_theme(window);
         create_controls(window);
+        apply_theme(false);
+        return 0;
+
+    case WM_SETTINGCHANGE:
+        if (g_theme_mode == ThemeMode::System) {
+            apply_theme(false);
+        }
         return 0;
 
     case WM_SIZE:
@@ -1053,6 +1183,12 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         const int id = LOWORD(wparam);
         if (id == kIdHistory) {
             show_history();
+            return 0;
+        }
+        if (id == kIdTheme) {
+            g_theme_mode =
+                infiltrator::calc::ui::next_theme_mode(g_theme_mode);
+            apply_theme(true);
             return 0;
         }
         if (id == kIdModeStandard) {
