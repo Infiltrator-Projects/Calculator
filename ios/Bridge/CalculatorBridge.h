@@ -3,7 +3,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface ICCalculatorBridge : NSObject
+@interface CalculatorBridge : NSObject
 
 + (NSDictionary<NSString *, NSNumber *> *)themePaletteForDark:(BOOL)dark
     NS_SWIFT_NAME(themePalette(dark:));

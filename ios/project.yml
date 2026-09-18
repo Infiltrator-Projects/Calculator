@@ -1,4 +1,4 @@
-name: InfiltratorCalcIOS
+name: Calculator
 
 options:
   bundleIdPrefix: net.ssmith.infiltrator
@@ -15,7 +15,7 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  InfiltratorCalcIOS:
+  Calculator:
     type: application
     platform: iOS
     sources:
@@ -46,7 +46,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         TARGETED_DEVICE_FAMILY: "1"
-        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/InfiltratorCalc-Bridging-Header.h"
+        SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/Calculator-Bridging-Header.h"
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../src/core"
           - "$(SRCROOT)/../src/infiltratr-common/include"

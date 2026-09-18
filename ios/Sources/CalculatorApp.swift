@@ -2,7 +2,7 @@
 import SwiftUI
 
 @main
-struct InfiltratorCalcApp: App {
+struct CalculatorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
