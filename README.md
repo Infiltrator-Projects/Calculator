@@ -6,9 +6,9 @@ Infiltrator Calc is a native cross-platform calculator for the Infiltrator softw
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
-**Current source version:** 0.1.16  
+**Current source version:** 0.1.17  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Infiltratr Common 1.18.1  
+**Shared foundation:** Infiltratr Common 1.19.1  
 **Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
 
@@ -41,6 +41,10 @@ The same principle applies across the Infiltrator family: start from the
 problem, study what is known now, preserve proven ideas that still deserve to
 survive, replace assumptions that no longer do, and prove the result in real
 use.
+
+## Appearance
+
+Calc supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Infiltratr Common 1.19.1. Platform code owns only theme detection, persistence and native rendering.
 
 ## Current capabilities
 
