@@ -455,10 +455,7 @@ jobs:
           test -n "$app"
           test -d "$app"
 
-          mkdir -p dist/ios
-          ditto -c -k --sequesterRsrc --keepParent \
-            "$app" \
-            "dist/ios/calculator_${version}_ios-simulator.zip"
+          echo "iOS Simulator build verified: $app"
 
       - name: Build unsigned iPhone device app
         run: |
@@ -480,6 +477,7 @@ jobs:
           test -n "$app"
           test -d "$app"
 
+          mkdir -p dist/ios
           ditto -c -k --sequesterRsrc --keepParent \
             "$app" \
             "dist/ios/calculator_${version}_ios-device-unsigned.zip"
@@ -488,9 +486,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: calculator-ios
-          path: |
-            dist/ios/calculator_*_ios-simulator.zip
-            dist/ios/calculator_*_ios-device-unsigned.zip
+          path: dist/ios/calculator_*_ios-device-unsigned.zip
           if-no-files-found: error
 
   publish:
@@ -525,13 +521,11 @@ jobs:
           set -euo pipefail
           test -f "dist/linux/calculator_${VERSION}_amd64.deb"
           test -f "dist/windows/calculator_${VERSION}_windows_x64.exe"
-          test -f "dist/ios/calculator_${VERSION}_ios-simulator.zip"
           test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip"
 
           sha256sum \
             "dist/linux/calculator_${VERSION}_amd64.deb" \
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
-            "dist/ios/calculator_${VERSION}_ios-simulator.zip" \
             "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
             > dist/SHA256SUMS.txt
 
@@ -544,7 +538,6 @@ jobs:
           gh release create "v${VERSION}" \
             "dist/linux/calculator_${VERSION}_amd64.deb" \
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
-            "dist/ios/calculator_${VERSION}_ios-simulator.zip" \
             "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
             "dist/SHA256SUMS.txt" \
             --repo "$GITHUB_REPOSITORY" \
