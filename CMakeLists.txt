@@ -44,6 +44,24 @@ target_link_libraries(infiltrator-calc-core PUBLIC
     InfiltratrCommon::Portable
 )
 
+add_library(infiltrator-calc-ui STATIC
+    src/ui/calculator_ui_controller.cpp
+)
+
+target_include_directories(infiltrator-calc-ui PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ui"
+)
+
+target_link_libraries(infiltrator-calc-ui PUBLIC
+    infiltrator-calc-core
+)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    target_compile_options(infiltrator-calc-ui PRIVATE
+        -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
+    )
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     target_compile_options(infiltrator-calc-core PRIVATE
         -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
@@ -58,7 +76,7 @@ if(INFILTRATOR_CALC_BUILD_DESKTOP)
             src/app/windows_main.cpp
         )
         target_link_libraries(infiltrator-calc PRIVATE
-            infiltrator-calc-core
+            infiltrator-calc-ui
             user32
             gdi32
             comctl32
@@ -83,7 +101,7 @@ if(INFILTRATOR_CALC_BUILD_DESKTOP)
         )
 
         target_link_libraries(infiltrator-calc PRIVATE
-            infiltrator-calc-core
+            infiltrator-calc-ui
             PkgConfig::GTK4
         )
 
@@ -119,6 +137,6 @@ add_test(NAME calculator-programmer COMMAND infiltrator-calc-programmer-test)
 add_executable(infiltrator-calc-ui-contract-test
     tests/test_ui_contract.cpp
 )
-target_link_libraries(infiltrator-calc-ui-contract-test PRIVATE infiltrator-calc-core)
+target_link_libraries(infiltrator-calc-ui-contract-test PRIVATE infiltrator-calc-ui)
 add_test(NAME calculator-ui-contract COMMAND infiltrator-calc-ui-contract-test)
 
