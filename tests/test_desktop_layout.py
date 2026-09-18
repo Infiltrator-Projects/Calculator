@@ -4,6 +4,8 @@ from pathlib import Path
 linux = Path("src/app/main.cpp").read_text(encoding="utf-8")
 windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
+theme = Path("src/ui/calculator_theme.hpp").read_text(encoding="utf-8")
+ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
     assert '../ui/calculator_ui_controller.hpp' in source, (
@@ -74,3 +76,31 @@ for forbidden_state in (
     )
 
 print("Cross-platform desktop UI parity contract passed.")
+
+for needle in (
+    "enum class ThemeMode { System = 0, Day = 1, Night = 2 }",
+    "kNightPalette",
+    "kDayPalette",
+    "next_theme_mode",
+):
+    assert needle in theme, f"shared theme contract missing: {needle}"
+
+for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
+    for needle in (
+        'calculator_theme.hpp',
+        'ThemeMode::System',
+        'ThemeMode::Day',
+        'ThemeMode::Night',
+        'next_theme_mode',
+    ):
+        assert needle in source, f"{name} theme support missing: {needle}"
+
+for needle in (
+    "ThemePreference",
+    "case system",
+    "case day",
+    "case night",
+    '@AppStorage("themePreference")',
+    ".preferredColorScheme(themePreference.preferredScheme)",
+):
+    assert needle in ios, f"iPhone theme support missing: {needle}"
