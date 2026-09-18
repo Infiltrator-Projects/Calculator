@@ -31,8 +31,6 @@ constexpr int kIdModeProgrammer = 1012;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 
-constexpr double kPi = 3.14159265358979323846;
-
 constexpr COLORREF kBackground = RGB(5, 6, 8);
 constexpr COLORREF kPanel = RGB(16, 19, 24);
 constexpr COLORREF kCard = RGB(23, 27, 32);
@@ -260,6 +258,7 @@ void sync_controller_expression() {
     g_controller.set_expression(wide_to_utf8(window_text(g_expression)));
 }
 
+void show_grid(std::vector<HWND>& buttons, bool visible);
 void redraw_button(HWND button);
 void redraw_active_grid();
 void redraw_mode_buttons();
@@ -626,8 +625,9 @@ void redraw_buttons(const std::vector<HWND>& buttons) {
 }
 
 void redraw_active_grid() {
-    if (g_mode == Mode::Standard) redraw_buttons(g_standard_buttons);
-    else if (g_mode == Mode::Scientific) redraw_buttons(g_scientific_buttons);
+    const Mode mode = g_controller.state().mode;
+    if (mode == Mode::Standard) redraw_buttons(g_standard_buttons);
+    else if (mode == Mode::Scientific) redraw_buttons(g_scientific_buttons);
     else redraw_buttons(g_programmer_buttons);
 }
 
