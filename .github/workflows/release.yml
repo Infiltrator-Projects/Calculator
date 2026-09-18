@@ -424,7 +424,7 @@ jobs:
           set -euo pipefail
           cmake -S . -B build-macos \
             -DCMAKE_BUILD_TYPE=Release \
-            -DINFILTRATOR_CALC_BUILD_DESKTOP=OFF \
+            -DCALCULATOR_BUILD_DESKTOP=OFF \
             -DINFILTRATR_COMMON_BUILD_SHARED=OFF
           cmake --build build-macos --parallel
           ctest --test-dir build-macos --output-on-failure
@@ -441,8 +441,8 @@ jobs:
           )
 
           xcodebuild \
-            -project ios/InfiltratorCalcIOS.xcodeproj \
-            -scheme InfiltratorCalcIOS \
+            -project ios/Calculator.xcodeproj \
+            -scheme Calculator \
             -configuration Release \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
@@ -466,8 +466,8 @@ jobs:
           version="$(tr -d '[:space:]' < VERSION)"
 
           xcodebuild \
-            -project ios/InfiltratorCalcIOS.xcodeproj \
-            -scheme InfiltratorCalcIOS \
+            -project ios/Calculator.xcodeproj \
+            -scheme Calculator \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \

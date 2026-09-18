@@ -78,7 +78,7 @@ The shared metrics are logical desktop units. GTK consumes them through its layo
 
 ### iPhone
 
-The iPhone interface is native SwiftUI. `ios/Bridge/InfiltratorCalcBridge.mm` is the language boundary between Swift and the shared C++ core.
+The iPhone interface is native SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary between Swift and the shared C++ core.
 
 The iPhone does not use the desktop UI controller because desktop layout/cursor mechanics are not an appropriate abstraction for a touch-native SwiftUI interface. It does, however, reuse the calculation/session/programmer engines and obtains the canonical Common Day/Night palette through the bridge. Swift owns only the platform interaction adaptation and System appearance resolution.
 

@@ -6,7 +6,7 @@ windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 theme = Path("src/ui/calculator_theme.hpp").read_text(encoding="utf-8")
 ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
-ios_bridge = Path("ios/Bridge/InfiltratorCalcBridge.mm").read_text(encoding="utf-8")
+ios_bridge = Path("ios/Bridge/CalculatorBridge.mm").read_text(encoding="utf-8")
 ios_project = Path("ios/project.yml").read_text(encoding="utf-8")
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
@@ -57,8 +57,8 @@ for needle in (
     assert needle in contract, f"shared UI contract is incomplete: {needle}"
 
 for forbidden_state in (
-    "infiltrator::calc::Session session",
-    "infiltrator::calc::Session g_session",
+    "calculator::Session session",
+    "calculator::Session g_session",
     "Mode mode = Mode::Standard",
     "Mode g_mode = Mode::Standard",
     "bool degrees = true",
@@ -85,7 +85,7 @@ for needle in (
     "infiltratr_theme_resolve",
     "infiltratr_theme_mode_next",
 ):
-    assert needle in theme, f"Calc Common theme adapter missing: {needle}"
+    assert needle in theme, f"Calculator Common theme adapter missing: {needle}"
 
 for forbidden in (
     "0x050608",
@@ -121,9 +121,9 @@ for needle in (
 # semantic Day/Night values must come from Common through the Objective-C++
 # bridge rather than being mirrored in Swift.
 for needle in (
-    "ICCalculatorBridge.themePalette(dark: dark)",
-    "InfiltratorPalette(dark: false)",
-    "InfiltratorPalette(dark: true)",
+    "CalculatorBridge.themePalette(dark: dark)",
+    "CalculatorPalette(dark: false)",
+    "CalculatorPalette(dark: true)",
 ):
     assert needle in ios, f"iPhone does not consume Common theme data: {needle}"
 
