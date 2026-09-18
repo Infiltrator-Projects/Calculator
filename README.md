@@ -6,7 +6,7 @@ Infiltrator Calc is a native cross-platform calculator for the Infiltrator softw
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
 
-**Current source version:** 0.1.11  
+**Current source version:** 0.1.12  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Infiltratr Common 1.18.1  
 **Design contract:** Infiltrator Design v1  
