@@ -37,7 +37,7 @@ using infiltrator::calc::ui::ThemeMode;
 using infiltrator::calc::ui::ThemePalette;
 
 ThemeMode g_theme_mode = ThemeMode::System;
-ThemePalette g_theme_palette = infiltrator::calc::ui::kNightPalette;
+ThemePalette g_theme_palette{};
 bool g_effective_dark_theme = true;
 
 COLORREF to_colorref(std::uint32_t rgb) {

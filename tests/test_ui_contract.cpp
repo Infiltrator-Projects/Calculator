@@ -37,16 +37,18 @@ int main() {
     static_assert(wide.layout_class == LayoutClass::Wide);
     static_assert(wide.dock_history);
 
-    static_assert(kNightPalette.background == 0x050608);
-    static_assert(kNightPalette.panel == 0x101318);
-    static_assert(kDayPalette.background == 0xF4F5F7);
-    static_assert(kDayPalette.panel == 0xFFFFFF);
-    static_assert(theme_mode_name(ThemeMode::System) == "System");
-    static_assert(theme_mode_name(ThemeMode::Day) == "Day");
-    static_assert(theme_mode_name(ThemeMode::Night) == "Night");
-    static_assert(next_theme_mode(ThemeMode::System) == ThemeMode::Day);
-    static_assert(next_theme_mode(ThemeMode::Day) == ThemeMode::Night);
-    static_assert(next_theme_mode(ThemeMode::Night) == ThemeMode::System);
+    const auto& night = resolved_palette(true);
+    const auto& day = resolved_palette(false);
+    assert(night.background == 0x050608);
+    assert(night.panel == 0x101318);
+    assert(day.background == 0xF4F5F7);
+    assert(day.panel == 0xFFFFFF);
+    assert(theme_mode_name(ThemeMode::System) == "System");
+    assert(theme_mode_name(ThemeMode::Day) == "Day");
+    assert(theme_mode_name(ThemeMode::Night) == "Night");
+    assert(next_theme_mode(ThemeMode::System) == ThemeMode::Day);
+    assert(next_theme_mode(ThemeMode::Day) == ThemeMode::Night);
+    assert(next_theme_mode(ThemeMode::Night) == ThemeMode::System);
 
     assert(mode_name(Mode::Standard) == "Standard");
     assert(mode_name(Mode::Scientific) == "Scientific");

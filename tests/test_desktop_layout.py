@@ -5,6 +5,7 @@ linux = Path("src/app/main.cpp").read_text(encoding="utf-8")
 windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 theme = Path("src/ui/calculator_theme.hpp").read_text(encoding="utf-8")
+common_design = Path("src/infiltratr-common/design/infiltrator-design-v1.json").read_text(encoding="utf-8")
 ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
@@ -76,12 +77,24 @@ for forbidden_state in (
     )
 
 for needle in (
-    "enum class ThemeMode { System = 0, Day = 1, Night = 2 }",
+    "#include <infiltratr/design.h>",
+    "INFILTRATR_THEME_SYSTEM",
+    "INFILTRATR_THEME_DAY",
+    "INFILTRATR_THEME_NIGHT",
+    "infiltratr_theme_resolve",
+    "infiltratr_theme_mode_next",
+):
+    assert needle in theme, f"Calc Common theme adapter missing: {needle}"
+
+for forbidden in (
+    "0x050608",
+    "0xF4F5F7",
     "kNightPalette",
     "kDayPalette",
-    "next_theme_mode",
 ):
-    assert needle in theme, f"shared theme contract missing: {needle}"
+    assert forbidden not in theme, (
+        f"Calc reintroduced private canonical theme values: {forbidden}"
+    )
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
     for needle in (
@@ -102,5 +115,18 @@ for needle in (
     ".preferredColorScheme(themePreference.preferredScheme)",
 ):
     assert needle in ios, f"iPhone theme support missing: {needle}"
+
+# SwiftUI cannot consume the C adapter directly in the current target, so its
+# mirrored palette is guarded against the pinned Common JSON source of truth.
+import json
+common = json.loads(common_design)
+for mode, symbol in (("night", "static let night"), ("day", "static let day")):
+    assert symbol in ios
+    palette = common["theme"]["palettes"][mode]
+    for value in palette.values():
+        hex_value = value.removeprefix("#").upper()
+        assert f"0x{hex_value}" in ios, (
+            f"iPhone {mode} palette drifted from Common: {value}"
+        )
 
 print("Cross-platform desktop UI parity contract passed.")
