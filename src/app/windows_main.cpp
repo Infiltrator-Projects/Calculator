@@ -717,8 +717,12 @@ void layout_main(HWND window) {
     const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
     const int width = client.right - client.left;
     const int height = client.bottom - client.top;
+    const int dpi = window_dpi(window);
+    const int logical_width = MulDiv(width, 96, dpi);
+    const int logical_height = MulDiv(height, 96, dpi);
     const auto responsive =
-        infiltrator::calc::ui::responsive_layout(width, height);
+        infiltrator::calc::ui::responsive_layout(
+            logical_width, logical_height);
 
     const int margin = sx(window, metrics.shell_padding);
     const int gap = sx(window, metrics.section_gap);
