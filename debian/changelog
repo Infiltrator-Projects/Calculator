@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.17) unstable; urgency=medium
+
+  * Add persistent System, Day and Night themes on Linux, Windows and iPhone.
+  * Keep System mode platform-authoritative rather than inventing a third palette.
+  * Consume canonical semantic Day/Night theme values from Infiltratr Common 1.19.1.
+  * Persist explicit theme overrides and react to host appearance changes.
+  * Extend cross-platform theme parity and Windows runtime smoke coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 16:52:00 +1000
+
 infiltrator-calc (0.1.16) unstable; urgency=medium
 
   * Add shared compact, regular and wide responsive desktop states.
