@@ -126,6 +126,11 @@ final class CalculatorModel: ObservableObject {
         bridge.clearHistory()
     }
 
+    func visibleTitle(_ key: String) -> String {
+        if key == "DEG" { return degrees ? "DEG" : "RAD" }
+        return key
+    }
+
     func keyIsSelected(_ key: String) -> Bool {
         switch key {
         case "DEG": return mode == .scientific && degrees
