@@ -5,8 +5,9 @@ linux = Path("src/app/main.cpp").read_text(encoding="utf-8")
 windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 theme = Path("src/ui/calculator_theme.hpp").read_text(encoding="utf-8")
-common_design = Path("src/infiltratr-common/design/infiltrator-design-v1.json").read_text(encoding="utf-8")
 ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
+ios_bridge = Path("ios/Bridge/InfiltratorCalcBridge.mm").read_text(encoding="utf-8")
+ios_project = Path("ios/project.yml").read_text(encoding="utf-8")
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
     assert '../ui/calculator_ui_controller.hpp' in source, (
@@ -116,17 +117,40 @@ for needle in (
 ):
     assert needle in ios, f"iPhone theme support missing: {needle}"
 
-# SwiftUI cannot consume the C adapter directly in the current target, so its
-# mirrored palette is guarded against the pinned Common JSON source of truth.
-import json
-common = json.loads(common_design)
-for mode, symbol in (("night", "static let night"), ("day", "static let day")):
-    assert symbol in ios
-    palette = common["theme"]["palettes"][mode]
-    for value in palette.values():
-        hex_value = value.removeprefix("#").upper()
-        assert f"0x{hex_value}" in ios, (
-            f"iPhone {mode} palette drifted from Common: {value}"
-        )
+# iPhone owns only SwiftUI adaptation and platform theme preference. The
+# semantic Day/Night values must come from Common through the Objective-C++
+# bridge rather than being mirrored in Swift.
+for needle in (
+    "ICCalculatorBridge.themePalette(dark: dark)",
+    "InfiltratorPalette(dark: false)",
+    "InfiltratorPalette(dark: true)",
+):
+    assert needle in ios, f"iPhone does not consume Common theme data: {needle}"
+
+for forbidden in (
+    "static let night",
+    "static let day",
+    "0x050608",
+    "0xF4F5F7",
+):
+    assert forbidden not in ios, (
+        f"iPhone reintroduced a private Common palette mirror: {forbidden}"
+    )
+
+for needle in (
+    "#include <infiltratr/design.h>",
+    "infiltratr_theme_resolve",
+    "background_rgb",
+    "button_background_rgb",
+    "equals_hover_rgb",
+):
+    assert needle in ios_bridge, f"iPhone Common theme bridge missing: {needle}"
+
+for needle in (
+    "../src/infiltratr-common/src/core.c",
+    "../src/infiltratr-common/src/design.c",
+    "../src/infiltratr-common/include",
+):
+    assert needle in ios_project, f"iPhone Common build integration missing: {needle}"
 
 print("Cross-platform desktop UI parity contract passed.")
