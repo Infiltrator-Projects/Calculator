@@ -1,3 +1,12 @@
+infiltrator-calc (0.1.22) unstable; urgency=medium
+
+  * Complete the internal product rename to Calculator.
+  * Rename CMake, C++, iOS and native Windows internal identities.
+  * Keep installed package, executable, configuration and bundle identifiers stable for upgrades.
+  * Remove stale former-name references from current package metadata and documentation.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 21:46:00 +1000
+
 infiltrator-calc (0.1.21) unstable; urgency=medium
 
   * Bring architecture, design and implementation documentation up to the current cross-platform system.

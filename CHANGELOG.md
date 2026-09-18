@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.22
+
+- Completed the internal product rename to Calculator while preserving only compatibility-sensitive installed identities.
+- Renamed the CMake project, internal libraries/tests and C++ namespace away from the former product name.
+- Renamed the iOS project, scheme, Swift app type, Objective-C++ bridge files/classes and Swift palette/style adapters to Calculator.
+- Renamed native Windows class identities and aligned regression/release workflows with the new internal names.
+- Removed stale former-name references from current Debian metadata and implementation documentation.
+- Documented the deliberate retention of the `infiltrator-calc` package/executable/configuration identity and existing iOS bundle identifier for upgrade continuity.
+
 ## 0.1.21
 
 - Rewrote architecture, design and implementation documentation around the current cross-platform system rather than the initial prototype.
