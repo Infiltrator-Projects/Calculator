@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
 #endif
@@ -1167,8 +1168,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     main_class.style = CS_HREDRAW | CS_VREDRAW;
     main_class.lpfnWndProc = main_proc;
     main_class.hInstance = instance;
-    main_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-    main_class.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    main_class.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
+    main_class.hIcon = LoadIconW(nullptr, MAKEINTRESOURCEW(32512));
     main_class.hbrBackground = g_background_brush;
     main_class.lpszClassName = kMainClass;
     main_class.hIconSm = main_class.hIcon;
