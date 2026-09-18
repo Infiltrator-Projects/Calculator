@@ -12,7 +12,6 @@ settings:
     CLANG_CXX_LANGUAGE_STANDARD: "c++17"
     CLANG_CXX_LIBRARY: "libc++"
     CURRENT_PROJECT_VERSION: "1"
-    MARKETING_VERSION: "0.1.7"
 
 targets:
   InfiltratorCalcIOS:
