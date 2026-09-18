@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8
+
+- Pinned the Common gitlink to the immutable Infiltratr Common 1.18.0 release commit.
+- Added a CMake guard that rejects stale or mismatched Common submodules.
+- Rebuilt all published platform artifacts against the same Common 1.18.0 foundation.
+
+
 ## 0.1.7
 
 - Added a native SwiftUI iPhone application using the same Standard, Scientific and Programmer model as the desktop shells.

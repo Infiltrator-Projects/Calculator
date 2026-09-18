@@ -1,3 +1,11 @@
+infiltrator-calc (0.1.8) unstable; urgency=medium
+
+  * Pin the shared foundation to the immutable Infiltratr Common 1.18.0 release.
+  * Fail CMake configuration if the Common submodule reports any other version.
+  * Rebuild Linux, Windows and iPhone release artifacts against the same Common revision.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 10:13:00 +1000
+
 infiltrator-calc (0.1.7) unstable; urgency=medium
 
   * Add a native SwiftUI iPhone interface over the same portable C++ calculation engine.
