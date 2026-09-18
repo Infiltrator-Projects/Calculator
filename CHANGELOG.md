@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.13
+
+- Refined the native Windows Standard layout using the open-source Microsoft Calculator interaction model as a reference while retaining Infiltrator styling and the existing shared calculation core.
+- Split the Standard memory controls into a compact strip above a six-row keypad, bringing the information density and control hierarchy closer to a polished Windows calculator.
+- Added native hover feedback to owner-drawn Windows controls and preserved rounded-button backgrounds cleanly.
+- Reduced the Windows default client area to 360×610 with a 320×520 minimum while keeping Scientific and Programmer grids responsive.
+- Expanded Windows runtime CI to verify the memory-strip geometry and exercise the actual 3 + 3 = 6 button path in addition to startup, mode switching, font fallback and dependency checks.
+
 ## 0.1.12
 
 - Reworked the native Windows layout to a compact Windows-calculator density with a 380×650 default client area, smaller header/mode chrome, a tighter display and 6px keypad gaps.
