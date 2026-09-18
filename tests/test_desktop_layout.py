@@ -52,12 +52,14 @@ for forbidden_state in (
     "infiltrator::calc::Session g_session",
     "Mode mode = Mode::Standard",
     "Mode g_mode = Mode::Standard",
-    "bool degrees =",
-    "bool g_degrees =",
-    "programmer_base =",
-    "g_programmer_base =",
-    "programmer_width =",
-    "g_programmer_width =",
+    "bool degrees = true",
+    "bool g_degrees = true",
+    "ProgrammerBase programmer_base",
+    "ProgrammerBase g_programmer_base",
+    "IntegerWidth programmer_width",
+    "IntegerWidth g_programmer_width",
+    "bool programmer_signed =",
+    "bool g_programmer_signed =",
 ):
     assert forbidden_state not in linux, (
         f"Linux GTK reintroduced platform-owned calculator state: {forbidden_state}"
