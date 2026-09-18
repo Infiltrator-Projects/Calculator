@@ -1,3 +1,11 @@
+infiltrator-calc (0.1.23) unstable; urgency=medium
+
+  * Fix GTK history dock visibility at normal startup size.
+  * Force the first valid responsive-layout initialization.
+  * Add regression coverage for the dock initialization contract.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 00:23:00 +1000
+
 infiltrator-calc (0.1.22) unstable; urgency=medium
 
   * Complete the internal product rename to Calculator.

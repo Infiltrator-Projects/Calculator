@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.23
+
+- Fixed the GTK history dock appearing beside the calculator at normal window size on startup.
+- History now starts hidden and the first valid responsive-layout pass is forced before the dock can be shown.
+- Added a regression check for GTK history-dock initialization.
+
 ## 0.1.22
 
 - Completed the internal product rename to Calculator while preserving only compatibility-sensitive installed identities.
