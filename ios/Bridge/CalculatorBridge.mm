@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#import "InfiltratorCalcBridge.h"
+#import "CalculatorBridge.h"
 
 #include "../../src/core/programmer.hpp"
 #include "../../src/core/session.hpp"
@@ -12,9 +12,9 @@
 
 namespace {
 
-using infiltrator::calc::IntegerWidth;
-using infiltrator::calc::ProgrammerBase;
-using infiltrator::calc::Session;
+using calculator::IntegerWidth;
+using calculator::ProgrammerBase;
+using calculator::Session;
 
 NSString *to_ns(const std::string& value) {
     return [NSString stringWithUTF8String:value.c_str()];
@@ -24,7 +24,7 @@ NSDictionary *numeric_result(bool ok, double value, const std::string& error) {
     return @{
         @"ok": @(ok),
         @"value": @(value),
-        @"display": ok ? to_ns(infiltrator::calc::format_value(value)) : @"0",
+        @"display": ok ? to_ns(calculator::format_value(value)) : @"0",
         @"error": to_ns(error)
     };
 }
@@ -49,11 +49,11 @@ IntegerWidth integer_width(NSInteger width) {
 
 } // namespace
 
-@interface ICCalculatorBridge ()
+@interface CalculatorBridge ()
 @property(nonatomic, assign) void *sessionHandle;
 @end
 
-@implementation ICCalculatorBridge
+@implementation CalculatorBridge
 
 + (NSDictionary<NSString *, NSNumber *> *)themePaletteForDark:(BOOL)dark {
     const InfiltratrThemePalette *palette = infiltratr_theme_resolve(
@@ -177,7 +177,7 @@ IntegerWidth integer_width(NSInteger width) {
                        signedDisplay:(BOOL)signedDisplay {
     const auto selectedBase = programmer_base(base);
     const auto selectedWidth = integer_width(width);
-    const auto result = infiltrator::calc::evaluate_programmer(
+    const auto result = calculator::evaluate_programmer(
         expression.UTF8String ?: "", selectedBase, selectedWidth);
 
     if (!result.ok) {
@@ -189,7 +189,7 @@ IntegerWidth integer_width(NSInteger width) {
         };
     }
 
-    const std::string formatted = infiltrator::calc::format_programmer(
+    const std::string formatted = calculator::format_programmer(
         result.value, selectedBase, selectedWidth, signedDisplay);
 
     return @{
@@ -217,7 +217,7 @@ IntegerWidth integer_width(NSInteger width) {
 }
 
 - (NSString *)formatValue:(double)value {
-    return to_ns(infiltrator::calc::format_value(value));
+    return to_ns(calculator::format_value(value));
 }
 
 - (NSString *)historyText {
@@ -233,7 +233,7 @@ IntegerWidth integer_width(NSInteger width) {
         out += it->input;
         out += "\n";
         if (it->result.ok) {
-            out += infiltrator::calc::format_value(it->result.value);
+            out += calculator::format_value(it->result.value);
         } else {
             out += "Error: ";
             out += it->result.error;

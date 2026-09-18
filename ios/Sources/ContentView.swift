@@ -35,7 +35,7 @@ private enum ThemePreference: String, CaseIterable, Identifiable {
     }
 }
 
-private struct InfiltratorPalette {
+private struct CalculatorPalette {
     let background: Color
     let panel: Color
     let card: Color
@@ -62,7 +62,7 @@ private struct InfiltratorPalette {
     let equalsHover: Color
 
     init(dark: Bool) {
-        let common = ICCalculatorBridge.themePalette(dark: dark)
+        let common = CalculatorBridge.themePalette(dark: dark)
 
         func colour(_ key: String) -> Color {
             Color(hex: common[key]?.uint32Value ?? 0)
@@ -106,12 +106,12 @@ struct ContentView: View {
         nonmutating set { themePreferenceRaw = newValue.rawValue }
     }
 
-    private var palette: InfiltratorPalette {
+    private var palette: CalculatorPalette {
         switch themePreference {
-        case .day: return InfiltratorPalette(dark: false)
-        case .night: return InfiltratorPalette(dark: true)
+        case .day: return CalculatorPalette(dark: false)
+        case .night: return CalculatorPalette(dark: true)
         case .system:
-            return InfiltratorPalette(dark: systemColorScheme == .dark)
+            return CalculatorPalette(dark: systemColorScheme == .dark)
         }
     }
 
@@ -168,7 +168,7 @@ struct ContentView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .frame(width: 42, height: 38)
             }
-            .buttonStyle(InfiltratorToolbarButtonStyle(palette: palette))
+            .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
             .accessibilityLabel("Theme")
 
             Button {
@@ -178,7 +178,7 @@ struct ContentView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .frame(width: 42, height: 38)
             }
-            .buttonStyle(InfiltratorToolbarButtonStyle(palette: palette))
+            .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
             .accessibilityLabel("Calculation history")
         }
     }
@@ -305,7 +305,7 @@ private struct CalculatorKey: View {
     let title: String
     let selected: Bool
     let enabled: Bool
-    let palette: InfiltratorPalette
+    let palette: CalculatorPalette
     let action: () -> Void
 
     private var kind: KeyKind {
@@ -381,8 +381,8 @@ private struct CalculatorKey: View {
     }
 }
 
-private struct InfiltratorToolbarButtonStyle: ButtonStyle {
-    let palette: InfiltratorPalette
+private struct CalculatorToolbarButtonStyle: ButtonStyle {
+    let palette: CalculatorPalette
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -413,11 +413,11 @@ private struct HistoryView: View {
         ThemePreference(rawValue: themePreferenceRaw) ?? .system
     }
 
-    private var palette: InfiltratorPalette {
+    private var palette: CalculatorPalette {
         switch themePreference {
-        case .day: return InfiltratorPalette(dark: false)
-        case .night: return InfiltratorPalette(dark: true)
-        case .system: return InfiltratorPalette(dark: systemColorScheme == .dark)
+        case .day: return CalculatorPalette(dark: false)
+        case .night: return CalculatorPalette(dark: true)
+        case .system: return CalculatorPalette(dark: systemColorScheme == .dark)
         }
     }
 

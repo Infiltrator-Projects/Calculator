@@ -22,7 +22,7 @@ final class CalculatorModel: ObservableObject {
     @Published var programmerSigned = false
     @Published var showingHistory = false
 
-    private let bridge = ICCalculatorBridge()
+    private let bridge = CalculatorBridge()
 
     let standardKeys = [
         ["MC", "MR", "M+", "M−"],
