@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace infiltrator::calc::ui {
+namespace calculator::ui {
 
 enum class Mode { Standard = 0, Scientific = 1, Programmer = 2 };
 
@@ -350,4 +350,4 @@ inline constexpr std::string_view insertion_text(Command command) {
     }
 }
 
-} // namespace infiltrator::calc::ui
+} // namespace calculator::ui

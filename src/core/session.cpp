@@ -4,7 +4,7 @@
 #include <cctype>
 #include <utility>
 
-namespace infiltrator::calc {
+namespace calculator {
 namespace {
 
 bool valid_identifier(const std::string& name) {
@@ -39,7 +39,7 @@ Session::Session(std::size_t history_limit) : history_limit_(history_limit) {
 Result Session::evaluate(const std::string& input) {
     std::string expression;
     const auto assignment = assignment_name(input, expression);
-    Result result = infiltrator::calc::evaluate(assignment ? expression : input, variables_);
+    Result result = calculator::evaluate(assignment ? expression : input, variables_);
 
     if (result.ok && assignment) {
         variables_[*assignment] = result.value;
@@ -83,4 +83,4 @@ const Variables& Session::variables() const noexcept { return variables_; }
 const std::deque<HistoryEntry>& Session::history() const noexcept { return history_; }
 void Session::clear_history() noexcept { history_.clear(); }
 
-} // namespace infiltrator::calc
+} // namespace calculator

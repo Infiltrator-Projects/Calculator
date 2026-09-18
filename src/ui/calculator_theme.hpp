@@ -5,7 +5,7 @@
 
 #include <string_view>
 
-namespace infiltrator::calc::ui {
+namespace calculator::ui {
 
 enum class ThemeMode {
     System = INFILTRATR_THEME_SYSTEM,
@@ -32,4 +32,4 @@ inline const ThemePalette& resolved_palette(ThemeMode mode,
         static_cast<InfiltratrThemeMode>(mode), system_is_dark);
 }
 
-} // namespace infiltrator::calc::ui
+} // namespace calculator::ui

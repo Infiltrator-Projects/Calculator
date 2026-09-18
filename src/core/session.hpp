@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace infiltrator::calc {
+namespace calculator {
 
 struct HistoryEntry {
     std::string input;
@@ -54,4 +54,4 @@ private:
     std::deque<HistoryEntry> history_;
 };
 
-} // namespace infiltrator::calc
+} // namespace calculator

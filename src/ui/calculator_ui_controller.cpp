@@ -7,7 +7,7 @@
 #include <sstream>
 #include <utility>
 
-namespace infiltrator::calc::ui {
+namespace calculator::ui {
 namespace {
 
 constexpr double kPi = 3.14159265358979323846;
@@ -69,11 +69,11 @@ bool Controller::current_value(double& value) {
     if (state_.mode == Mode::Standard) {
         result = evaluate_immediate(state_.expression);
         if (!result.ok) {
-            result = infiltrator::calc::evaluate(
+            result = calculator::evaluate(
                 state_.expression, session_.variables());
         }
     } else {
-        result = infiltrator::calc::evaluate(
+        result = calculator::evaluate(
             state_.expression, session_.variables());
     }
 
@@ -140,7 +140,7 @@ void Controller::calculate_standard() {
         return;
     }
 
-    state_.result = infiltrator::calc::format_value(result.value);
+    state_.result = calculator::format_value(result.value);
     set_status("READY");
 }
 
@@ -161,7 +161,7 @@ void Controller::calculate() {
         return;
     }
 
-    state_.result = infiltrator::calc::format_value(result.value);
+    state_.result = calculator::format_value(result.value);
     set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
                               : "SCIENTIFIC · RADIANS");
 }
@@ -209,7 +209,7 @@ void Controller::unary_transform(Command command) {
         return;
     }
 
-    state_.expression = infiltrator::calc::format_value(value);
+    state_.expression = calculator::format_value(value);
     state_.result = state_.expression;
     set_status("READY");
 }
@@ -254,7 +254,7 @@ void Controller::scientific_transform(Command command) {
         return;
     }
 
-    state_.expression = infiltrator::calc::format_value(value);
+    state_.expression = calculator::format_value(value);
     state_.result = state_.expression;
     set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
                               : "SCIENTIFIC · RADIANS");
@@ -305,7 +305,7 @@ void Controller::update_standard_preview() {
     if (preview.empty()) return;
     const Result result = evaluate_immediate(preview);
     if (result.ok) {
-        state_.result = infiltrator::calc::format_value(result.value);
+        state_.result = calculator::format_value(result.value);
         set_status("READY");
     }
 }
@@ -349,7 +349,7 @@ bool Controller::expression_has_value() const {
         if (result.ok) return true;
     }
 
-    return infiltrator::calc::evaluate(
+    return calculator::evaluate(
         state_.expression, session_.variables()).ok;
 }
 
@@ -476,7 +476,7 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         return {normalized_cursor(cursor), false};
     case Command::MemoryRecall:
         set_status("MEMORY RECALL");
-        return insert(infiltrator::calc::format_value(session_.memory_recall()), cursor);
+        return insert(calculator::format_value(session_.memory_recall()), cursor);
     case Command::MemoryAdd:
     case Command::MemorySubtract: {
         double value = 0.0;
@@ -528,4 +528,4 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
     return {normalized_cursor(cursor), false};
 }
 
-} // namespace infiltrator::calc::ui
+} // namespace calculator::ui
