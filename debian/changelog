@@ -1,3 +1,12 @@
+infiltrator-calc (0.1.20) unstable; urgency=medium
+
+  * Deepen Common 1.19.2 integration across Linux, Windows and iPhone.
+  * Use Common's deterministic decimal parser for calculator numeric tokens.
+  * Remove duplicated shared theme palettes and centralise value formatting.
+  * Complete the iPhone user-facing Calculator rename.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 20:25:00 +1000
+
 infiltrator-calc (0.1.19) unstable; urgency=medium
 
   * Rename the user-facing application to Calculator.

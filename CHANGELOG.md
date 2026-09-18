@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.20
+
+- Deepened Common 1.19.2 integration without moving Calculator-specific semantics into the shared library.
+- Replaced desktop palette mirroring with the Common theme structure and resolver directly.
+- Made the iPhone target compile the Common Portable source set and removed its duplicated hard-coded Day/Night palette.
+- Replaced locale-sensitive numeric token conversion with Common's deterministic decimal parser.
+- Centralised Calculator's 15-significant-digit display formatting across GTK, Win32 and iPhone.
+- Completed the iPhone user-facing rename to Calculator and updated stale Common/version documentation.
+
 ## 0.1.19
 
 - Renamed the user-facing application to **Calculator**.

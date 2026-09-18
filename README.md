@@ -6,9 +6,9 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
-**Current source version:** 0.1.17  
+**Current source version:** 0.1.20  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Common 1.19.1  
+**Shared foundation:** Common 1.19.2  
 **Design contract:** shared Design v1  
 **Licence:** GPL-3.0-or-later
 
@@ -44,7 +44,7 @@ use.
 
 ## Appearance
 
-Calc supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.1. Platform code owns only theme detection, persistence and native rendering.
+Calc supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.2. Platform code owns only theme detection, persistence and native rendering.
 
 ## Current capabilities
 
@@ -93,7 +93,7 @@ A release is published only after Linux, Windows and iOS builds and the shared-c
 
 Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
-The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.18.1 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.18.1`, so a stale or mismatched submodule fails configuration instead of silently building. The desktop UI consumes the same named typography roles and palette defined by the shared design contract rather than introducing a project-specific visual system.
+The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.2 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.19.2`, so a stale or mismatched submodule fails configuration instead of silently building. Linux and Windows consume the Common theme C API directly; the iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
 
 ## Typography
 
