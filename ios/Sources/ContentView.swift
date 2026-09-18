@@ -63,7 +63,7 @@ struct ContentView: View {
                     .font(.system(size: 29, weight: .regular))
                     .foregroundStyle(InfiltratorPalette.title)
 
-                Text("PRECISION DESKTOP CALCULATOR")
+                Text("PRECISION CALCULATOR")
                     .font(.system(size: 9, weight: .bold))
                     .tracking(1.2)
                     .foregroundStyle(InfiltratorPalette.subtle)
