@@ -22,6 +22,8 @@ std::string format_value(double value) {
 
 void Controller::set_expression(std::string expression) {
     state_.expression = std::move(expression);
+    state_.fault = false;
+    if (state_.mode == Mode::Standard) update_standard_preview();
 }
 
 void Controller::set_mode(Mode mode) {
@@ -53,6 +55,8 @@ std::size_t Controller::normalized_cursor(std::size_t cursor) const noexcept {
 DispatchResult Controller::insert(std::string_view text, std::size_t cursor) {
     const std::size_t position = normalized_cursor(cursor);
     state_.expression.insert(position, text.data(), text.size());
+    state_.fault = false;
+    if (state_.mode == Mode::Standard) update_standard_preview();
     return {position + text.size(), true};
 }
 
@@ -61,11 +65,24 @@ DispatchResult Controller::backspace(std::size_t cursor) {
     if (position == 0) return {0, false};
 
     state_.expression.erase(position - 1, 1);
+    state_.fault = false;
+    if (state_.mode == Mode::Standard) update_standard_preview();
     return {position - 1, true};
 }
 
 bool Controller::current_value(double& value) {
-    const Result result = session_.evaluate(state_.expression);
+    Result result;
+    if (state_.mode == Mode::Standard) {
+        result = evaluate_immediate(state_.expression);
+        if (!result.ok) {
+            result = infiltrator::calc::evaluate(
+                state_.expression, session_.variables());
+        }
+    } else {
+        result = infiltrator::calc::evaluate(
+            state_.expression, session_.variables());
+    }
+
     if (!result.ok) {
         state_.result = "Error: " + result.error;
         set_status("CALCULATION ERROR", true);
@@ -115,22 +132,44 @@ void Controller::calculate_programmer() {
     set_status(programmer_status_text());
 }
 
+void Controller::calculate_standard() {
+    Result result = evaluate_immediate(state_.expression);
+    if (result.ok) {
+        session_.record_history(state_.expression, result);
+    } else {
+        result = session_.evaluate(state_.expression);
+    }
+
+    if (!result.ok) {
+        state_.result = "Error: " + result.error;
+        set_status("CALCULATION ERROR", true);
+        return;
+    }
+
+    state_.result = format_value(result.value);
+    set_status("READY");
+}
+
 void Controller::calculate() {
     if (state_.mode == Mode::Programmer) {
         calculate_programmer();
         return;
     }
-
-    double value = 0.0;
-    if (!current_value(value)) return;
-
-    state_.result = format_value(value);
-    if (state_.mode == Mode::Scientific) {
-        set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
-                                  : "SCIENTIFIC · RADIANS");
-    } else {
-        set_status("READY");
+    if (state_.mode == Mode::Standard) {
+        calculate_standard();
+        return;
     }
+
+    const Result result = session_.evaluate(state_.expression);
+    if (!result.ok) {
+        state_.result = "Error: " + result.error;
+        set_status("CALCULATION ERROR", true);
+        return;
+    }
+
+    state_.result = format_value(result.value);
+    set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
+                              : "SCIENTIFIC · RADIANS");
 }
 
 void Controller::clear_calculation() {
@@ -248,7 +287,152 @@ void Controller::programmer_mode_change(Command command) {
     else set_status(programmer_status_text());
 }
 
+void Controller::update_standard_preview() {
+    if (state_.mode != Mode::Standard || state_.expression.empty()) return;
+
+    std::string preview = state_.expression;
+    while (!preview.empty() &&
+           std::isspace(static_cast<unsigned char>(preview.back()))) {
+        preview.pop_back();
+    }
+    if (preview.empty()) return;
+
+    const char last = preview.back();
+    if (last == '+' || last == '*' || last == '/' || last == '^') {
+        preview.pop_back();
+    } else if (last == '-' && preview.size() > 1U) {
+        const char previous = preview[preview.size() - 2U];
+        if (std::isdigit(static_cast<unsigned char>(previous)) ||
+            previous == '.' || previous == '%') {
+            preview.pop_back();
+        }
+    }
+
+    if (preview.empty()) return;
+    const Result result = evaluate_immediate(preview);
+    if (result.ok) {
+        state_.result = format_value(result.value);
+        set_status("READY");
+    }
+}
+
+bool Controller::current_number_has_decimal() const {
+    for (auto it = state_.expression.rbegin(); it != state_.expression.rend(); ++it) {
+        const char ch = *it;
+        if (ch == '.') return true;
+        if (!std::isdigit(static_cast<unsigned char>(ch))) break;
+    }
+    return false;
+}
+
+bool Controller::has_unmatched_open_parenthesis() const {
+    int depth = 0;
+    for (char ch : state_.expression) {
+        if (ch == '(') ++depth;
+        else if (ch == ')' && depth > 0) --depth;
+    }
+    return depth > 0;
+}
+
+bool Controller::expression_ends_with_binary_operator() const {
+    if (state_.expression.empty()) return false;
+    const char ch = state_.expression.back();
+    return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^' ||
+           ch == '&' || ch == '|';
+}
+
+bool Controller::expression_has_value() const {
+    if (state_.expression.empty()) return false;
+
+    if (state_.mode == Mode::Programmer) {
+        const ProgrammerResult result = evaluate_programmer(
+            state_.expression, state_.programmer_base, state_.programmer_width);
+        return result.ok;
+    }
+
+    if (state_.mode == Mode::Standard) {
+        Result result = evaluate_immediate(state_.expression);
+        if (result.ok) return true;
+    }
+
+    return infiltrator::calc::evaluate(
+        state_.expression, session_.variables()).ok;
+}
+
+bool Controller::command_enabled(Command command) const {
+    switch (command) {
+    case Command::MemoryClear:
+    case Command::MemoryRecall:
+        return !session_.memory_empty();
+    case Command::MemoryAdd:
+    case Command::MemorySubtract:
+        return expression_has_value();
+    case Command::Backspace:
+        return !state_.expression.empty();
+    case Command::Equals:
+        return expression_has_value();
+    case Command::Reciprocal:
+    case Command::Square:
+    case Command::SquareRoot:
+    case Command::Negate:
+    case Command::Sin:
+    case Command::Cos:
+    case Command::Tan:
+    case Command::Asin:
+    case Command::Acos:
+    case Command::Atan:
+    case Command::Ln:
+    case Command::Log10:
+    case Command::Exp:
+    case Command::Abs:
+    case Command::Factorial:
+        return expression_has_value();
+    case Command::DecimalPoint:
+        return state_.mode != Mode::Programmer && !current_number_has_decimal();
+    case Command::CloseParen:
+        return has_unmatched_open_parenthesis();
+    case Command::Digit2:
+    case Command::Digit3:
+    case Command::Digit4:
+    case Command::Digit5:
+    case Command::Digit6:
+    case Command::Digit7:
+        return state_.mode != Mode::Programmer ||
+               state_.programmer_base != ProgrammerBase::Binary;
+    case Command::Digit8:
+    case Command::Digit9:
+        return state_.mode != Mode::Programmer ||
+               state_.programmer_base == ProgrammerBase::Decimal ||
+               state_.programmer_base == ProgrammerBase::Hexadecimal;
+    case Command::HexA:
+    case Command::HexB:
+    case Command::HexC:
+    case Command::HexD:
+    case Command::HexE:
+    case Command::HexF:
+        return state_.mode == Mode::Programmer &&
+               state_.programmer_base == ProgrammerBase::Hexadecimal;
+    case Command::Divide:
+    case Command::Multiply:
+    case Command::Subtract:
+    case Command::Add:
+    case Command::Power:
+    case Command::BitAnd:
+    case Command::BitOr:
+    case Command::BitXor:
+    case Command::ShiftLeft:
+    case Command::ShiftRight:
+        return !state_.expression.empty();
+    default:
+        return true;
+    }
+}
+
 DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
+    if (!command_enabled(command)) {
+        return {normalized_cursor(cursor), false};
+    }
+
     if (state_.mode == Mode::Programmer) {
         if (is_programmer_selector(command)) {
             programmer_mode_change(command);
@@ -333,7 +517,19 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
     }
 
     const std::string_view text = insertion_text(command);
-    if (!text.empty()) return insert(text, cursor);
+    if (!text.empty()) {
+        if (state_.mode == Mode::Standard &&
+            (command == Command::Divide || command == Command::Multiply ||
+             command == Command::Subtract || command == Command::Add ||
+             command == Command::Power) &&
+            expression_ends_with_binary_operator() &&
+            normalized_cursor(cursor) == state_.expression.size()) {
+            state_.expression.back() = text.front();
+            update_standard_preview();
+            return {state_.expression.size(), true};
+        }
+        return insert(text, cursor);
+    }
     return {normalized_cursor(cursor), false};
 }
 
