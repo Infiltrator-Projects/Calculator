@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../ui/calculator_ui_controller.hpp"
+#include "../ui/calculator_theme.hpp"
 
 #include <gtk/gtk.h>
 #include <pango/pangocairo.h>
 
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -18,6 +22,8 @@ using infiltrator::calc::ui::Command;
 using infiltrator::calc::ui::Controller;
 using infiltrator::calc::ui::LayoutClass;
 using infiltrator::calc::ui::Mode;
+using infiltrator::calc::ui::ThemeMode;
+using infiltrator::calc::ui::ThemePalette;
 
 GtkWidget* expression_entry = nullptr;
 GtkWidget* result_label = nullptr;
@@ -31,6 +37,8 @@ GtkWidget* programmer_width_buttons[4] = {nullptr, nullptr, nullptr, nullptr};
 GtkWidget* programmer_signed_button = nullptr;
 GtkWidget* degrees_button = nullptr;
 GtkWidget* history_button = nullptr;
+GtkWidget* theme_button = nullptr;
+GtkWidget* main_window = nullptr;
 GtkWidget* history_dock = nullptr;
 GtkWidget* history_text = nullptr;
 GtkWidget* calculator_column = nullptr;
@@ -40,9 +48,82 @@ std::vector<std::pair<GtkWidget*, Command>> command_buttons;
 LayoutClass last_layout_class = LayoutClass::Regular;
 
 Controller controller;
+ThemeMode theme_mode = ThemeMode::System;
+bool effective_dark_theme = true;
 
 constexpr const char* kUiFont = "MB Corpo S Title WEB";
 constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";
+
+std::string hex_colour(std::uint32_t value) {
+    char buffer[8] = {};
+    std::snprintf(buffer, sizeof(buffer), "#%06X", value & 0xFFFFFFU);
+    return buffer;
+}
+
+bool system_prefers_dark() {
+    GtkSettings* settings = gtk_settings_get_default();
+    if (!settings) return false;
+
+    gboolean prefer_dark = FALSE;
+    gchar* theme_name = nullptr;
+    g_object_get(
+        settings,
+        "gtk-application-prefer-dark-theme", &prefer_dark,
+        "gtk-theme-name", &theme_name,
+        nullptr);
+
+    bool dark = prefer_dark != FALSE;
+    if (theme_name) {
+        std::string name(theme_name);
+        std::transform(
+            name.begin(), name.end(), name.begin(),
+            [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+        dark = dark || name.find("dark") != std::string::npos;
+        g_free(theme_name);
+    }
+    return dark;
+}
+
+ThemeMode load_theme_mode() {
+    gchar* path = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc", "theme", nullptr);
+    gchar* contents = nullptr;
+    gsize length = 0;
+    ThemeMode mode = ThemeMode::System;
+    if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
+        std::string value(contents, length);
+        while (!value.empty() &&
+               std::isspace(static_cast<unsigned char>(value.back()))) {
+            value.pop_back();
+        }
+        if (value == "day") mode = ThemeMode::Day;
+        else if (value == "night") mode = ThemeMode::Night;
+    }
+    g_free(contents);
+    g_free(path);
+    return mode;
+}
+
+void save_theme_mode() {
+    gchar* directory = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc", nullptr);
+    if (g_mkdir_with_parents(directory, 0700) == 0) {
+        gchar* path = g_build_filename(directory, "theme", nullptr);
+        const char* value = "system\n";
+        if (theme_mode == ThemeMode::Day) value = "day\n";
+        else if (theme_mode == ThemeMode::Night) value = "night\n";
+        (void)g_file_set_contents(path, value, -1, nullptr);
+        g_free(path);
+    }
+    g_free(directory);
+}
+
+const ThemePalette& active_palette() {
+    effective_dark_theme =
+        theme_mode == ThemeMode::Night ||
+        (theme_mode == ThemeMode::System && system_prefers_dark());
+    return infiltrator::calc::ui::resolved_palette(effective_dark_theme);
+}
 
 std::string format_value(double value) {
     std::ostringstream out;
@@ -323,7 +404,6 @@ GtkWidget* calc_button(const ButtonSpec& spec) {
 GtkWidget* toolbar_button(const char* text) {
     GtkWidget* button = gtk_button_new_with_label(text);
     gtk_widget_add_css_class(button, "toolbar-button");
-    g_signal_connect(button, "clicked", G_CALLBACK(show_history), nullptr);
     return button;
 }
 
@@ -398,67 +478,122 @@ void apply_css(GtkWidget* window) {
     const std::string ui = ui_font();
     const std::string brand = brand_font();
     const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
+    const ThemePalette& p = active_palette();
+
+    const std::string background = hex_colour(p.background);
+    const std::string panel = hex_colour(p.panel);
+    const std::string card = hex_colour(p.card);
+    const std::string surface = hex_colour(p.surface);
+    const std::string input = hex_colour(p.input);
+    const std::string border = hex_colour(p.border);
+    const std::string text = hex_colour(p.text);
+    const std::string title = hex_colour(p.title);
+    const std::string muted = hex_colour(p.muted);
+    const std::string subtle = hex_colour(p.subtle);
+    const std::string primary = hex_colour(p.button_background);
+    const std::string primary_text = hex_colour(p.button_foreground);
+    const std::string selected = hex_colour(p.selection_background);
+    const std::string selection_text = hex_colour(p.selection_foreground);
+    const std::string neutral = hex_colour(p.neutral_accent);
+    const std::string warning = hex_colour(p.warning);
+    const std::string fault = hex_colour(p.fault);
+    const std::string operation = hex_colour(p.operation);
+    const std::string card_hover = hex_colour(p.card_hover);
+    const std::string surface_hover = hex_colour(p.surface_hover);
+    const std::string operation_hover = hex_colour(p.operation_hover);
+    const std::string equals_hover = hex_colour(p.equals_hover);
 
     const std::string css =
         "*{font-family:\"" + ui + "\";font-weight:400}"
-        "window,.shell{background:#050608;color:#E8ECEF}"
+        "window,.shell{background:" + background + ";color:" + text + "}"
         ".shell{padding:" + std::to_string(metrics.shell_padding) + "px}"
-        ".calculator-column{background:#050608}"
+        ".calculator-column{background:" + background + "}"
         ".header{margin-bottom:0}"
-        ".brand-title{font-family:\"" + brand + "\";font-size:20px;color:#EEF1F3}"
-        ".toolbar-button{background:#0D1014;color:#AEB6BD;border:1px solid #353A40;"
+        ".brand-title{font-family:\"" + brand + "\";font-size:20px;color:" + title + "}"
+        ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
             "border-radius:8px;min-height:28px;padding:0 10px;font-weight:700}"
-        ".toolbar-button:hover{background:#171B20;color:#EEF1F3;border-color:#6A737C}"
-        ".mode-strip{background:#0D1014;border:1px solid #353A40;border-radius:9px;padding:3px}"
-        ".mode-tab{background:transparent;color:#899198;border:0;border-radius:7px;"
+        ".toolbar-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
+        ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:9px;padding:3px}"
+        ".mode-tab{background:transparent;color:" + subtle + ";border:0;border-radius:7px;"
             "min-height:28px;font-size:10px;font-weight:700;padding:0 8px}"
-        ".mode-tab:hover{background:#171B20;color:#D7DDE2}"
-        ".mode-tab.selected{background:#D7DDE2;color:#111418}"
-        ".display{background:#101318;border:1px solid #353A40;border-radius:9px;padding:10px}"
-        ".expression{background:#0E1115;color:#AEB6BD;border:0;border-radius:7px;"
+        ".mode-tab:hover{background:" + surface_hover + ";color:" + text + "}"
+        ".mode-tab.selected{background:" + primary + ";color:" + primary_text + "}"
+        ".display{background:" + panel + ";border:1px solid " + border + ";border-radius:9px;padding:10px}"
+        ".expression{background:" + input + ";color:" + muted + ";border:0;border-radius:7px;"
             "padding:4px 8px;min-height:20px;font-size:12px;outline:none;box-shadow:none}"
         ".expression:focus{border:0;outline:none;box-shadow:none}"
-        ".result{font-family:\"" + brand + "\";font-size:34px;color:#EEF1F3;padding-top:2px}"
-        ".status{font-size:9px;font-weight:700;letter-spacing:.08em;color:#899198}"
-        ".status.fault{color:#C96B6B}"
-        ".calc-button{border:1px solid #353A40;border-radius:8px;min-height:" +
+        ".result{font-family:\"" + brand + "\";font-size:34px;color:" + title + ";padding-top:2px}"
+        ".status{font-size:9px;font-weight:700;letter-spacing:.08em;color:" + subtle + "}"
+        ".status.fault{color:" + fault + "}"
+        ".calc-button{border:1px solid " + border + ";border-radius:8px;min-height:" +
             std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0}"
         ".calc-button:disabled{opacity:.38}"
-        ".calc-button.number{background:#171B20;color:#EEF1F3}"
-        ".calc-button.number:hover{background:#22272D;border-color:#6A737C}"
-        ".calc-button.operation{background:#20252B;color:#D7DDE2}"
-        ".calc-button.operation:hover{background:#2B3137;border-color:#6A737C}"
-        ".calc-button.utility{background:#0D1014;color:#AEB6BD;font-size:11px}"
-        ".calc-button.utility:hover{background:#171B20;color:#EEF1F3;border-color:#6A737C}"
-        ".calc-button.utility.selected{background:#2B3137;color:#EEF1F3;border-color:#BEC7CF}"
-        ".calc-button.memory-button{background:transparent;color:#AEB6BD;border-color:transparent;"
+        ".calc-button.number{background:" + card + ";color:" + title + "}"
+        ".calc-button.number:hover{background:" + card_hover + ";border-color:" + neutral + "}"
+        ".calc-button.operation{background:" + operation + ";color:" + text + "}"
+        ".calc-button.operation:hover{background:" + operation_hover + ";border-color:" + neutral + "}"
+        ".calc-button.utility{background:" + surface + ";color:" + muted + ";font-size:11px}"
+        ".calc-button.utility:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
+        ".calc-button.utility.selected{background:" + selected + ";color:" + selection_text + ";border-color:" + neutral + "}"
+        ".calc-button.memory-button{background:transparent;color:" + muted + ";border-color:transparent;"
             "border-radius:5px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:10px}"
-        ".calc-button.memory-button:hover{background:#171B20;color:#EEF1F3;border-color:transparent}"
-        ".calc-button.clear{background:#171B20;color:#D19E47}"
-        ".calc-button.clear:hover{background:#22272D;border-color:#D19E47}"
-        ".calc-button.equals{background:#D7DDE2;color:#111418;border-color:#D7DDE2;font-size:16px}"
-        ".calc-button.equals:hover{background:#EEF1F3;border-color:#EEF1F3}"
-        ".history-dock{background:#101318;border:1px solid #353A40;border-radius:9px;padding:8px}"
-        ".history-text{background:#101318;color:#D7DDE2;font-size:12px}"
-        ".history-list{background:#101318;border:1px solid #353A40;border-radius:10px}"
-        ".history-row{padding:10px;border-bottom:1px solid #353A40;color:#D7DDE2;font-size:12px}"
+        ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent}"
+        ".calc-button.clear{background:" + card + ";color:" + warning + "}"
+        ".calc-button.clear:hover{background:" + card_hover + ";border-color:" + warning + "}"
+        ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:16px}"
+        ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + "}"
+        ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:9px;padding:8px}"
+        ".history-text{background:" + panel + ";color:" + text + ";font-size:12px}"
+        ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:10px}"
+        ".history-row{padding:10px;border-bottom:1px solid " + border + ";color:" + text + ";font-size:12px}"
         ".compact .brand-title{font-size:17px}"
         ".compact .display{padding:7px}"
         ".compact .calc-button{min-height:28px;font-size:12px}"
         ".compact .mode-tab{min-height:25px}";
 
-    css_provider = gtk_css_provider_new();
+    if (!css_provider) {
+        css_provider = gtk_css_provider_new();
+        gtk_style_context_add_provider_for_display(
+            gtk_widget_get_display(window),
+            GTK_STYLE_PROVIDER(css_provider),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
     gtk_css_provider_load_from_data(css_provider, css.c_str(), -1);
-    gtk_style_context_add_provider_for_display(
-        gtk_widget_get_display(window),
-        GTK_STYLE_PROVIDER(css_provider),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    if (theme_button) {
+        const std::string label(
+            infiltrator::calc::ui::theme_mode_name(theme_mode));
+        gtk_button_set_label(GTK_BUTTON(theme_button), label.c_str());
+        gtk_widget_set_tooltip_text(
+            theme_button,
+            theme_mode == ThemeMode::System
+                ? (effective_dark_theme
+                    ? "Theme: follow system (Night)"
+                    : "Theme: follow system (Day)")
+                : (theme_mode == ThemeMode::Day
+                    ? "Theme: Day"
+                    : "Theme: Night"));
+    }
+}
+
+void on_theme_clicked(GtkButton*, gpointer) {
+    theme_mode = infiltrator::calc::ui::next_theme_mode(theme_mode);
+    save_theme_mode();
+    if (main_window) apply_css(main_window);
+}
+
+void on_system_theme_changed(GObject*, GParamSpec*, gpointer) {
+    if (theme_mode == ThemeMode::System && main_window) {
+        apply_css(main_window);
+    }
 }
 
 void activate(GtkApplication* app, gpointer) {
     const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
 
     GtkWidget* window = gtk_application_window_new(app);
+    main_window = window;
+    theme_mode = load_theme_mode();
     gtk_window_set_title(GTK_WINDOW(window), "Infiltrator Calc");
     gtk_window_set_default_size(
         GTK_WINDOW(window), metrics.default_width, metrics.default_height);
@@ -485,7 +620,14 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_set_hexpand(title, TRUE);
     gtk_box_append(GTK_BOX(header), title);
 
+    theme_button = toolbar_button("System");
+    g_signal_connect(
+        theme_button, "clicked", G_CALLBACK(on_theme_clicked), nullptr);
+    gtk_box_append(GTK_BOX(header), theme_button);
+
     history_button = toolbar_button("History");
+    g_signal_connect(
+        history_button, "clicked", G_CALLBACK(show_history), nullptr);
     gtk_box_append(GTK_BOX(header), history_button);
 
     GtkWidget* mode_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
@@ -563,6 +705,16 @@ void activate(GtkApplication* app, gpointer) {
         GTK_SCROLLED_WINDOW(history_dock), history_text);
 
     render_state();
+
+    GtkSettings* settings = gtk_settings_get_default();
+    if (settings) {
+        g_signal_connect(
+            settings, "notify::gtk-theme-name",
+            G_CALLBACK(on_system_theme_changed), nullptr);
+        g_signal_connect(
+            settings, "notify::gtk-application-prefer-dark-theme",
+            G_CALLBACK(on_system_theme_changed), nullptr);
+    }
 
     gtk_window_present(GTK_WINDOW(window));
     update_responsive_layout(window);
