@@ -51,6 +51,8 @@ private struct InfiltratorPalette {
     let selected: Color
     let warning: Color
     let fault: Color
+    let operation: Color
+    let neutralAccent: Color
 
     static let night = InfiltratorPalette(
         background: Color(hex: 0x050608),
@@ -67,7 +69,9 @@ private struct InfiltratorPalette {
         primaryText: Color(hex: 0x111418),
         selected: Color(hex: 0x2B3137),
         warning: Color(hex: 0xD19E47),
-        fault: Color(hex: 0xC96B6B)
+        fault: Color(hex: 0xC96B6B),
+        operation: Color(hex: 0x20252B),
+        neutralAccent: Color(hex: 0xBEC7CF)
     )
 
     static let day = InfiltratorPalette(
@@ -85,7 +89,9 @@ private struct InfiltratorPalette {
         primaryText: Color(hex: 0xFFFFFF),
         selected: Color(hex: 0xDDE2E7),
         warning: Color(hex: 0x9A6500),
-        fault: Color(hex: 0xB54848)
+        fault: Color(hex: 0xB54848),
+        operation: Color(hex: 0xE8ECEF),
+        neutralAccent: Color(hex: 0x6F7881)
     )
 }
 
@@ -343,7 +349,7 @@ private struct CalculatorKey: View {
         if selected { return palette.selected }
         switch kind {
         case .number: return palette.card
-        case .operation: return Color(hex: 0x20252B)
+        case .operation: return palette.operation
         case .utility: return palette.surface
         case .clear: return palette.card
         case .equals: return palette.primary
@@ -360,7 +366,7 @@ private struct CalculatorKey: View {
     }
 
     private var border: Color {
-        if selected { return Color(hex: 0xBEC7CF) }
+        if selected { return palette.neutralAccent }
         if kind == .equals { return palette.primary }
         return palette.border
     }
