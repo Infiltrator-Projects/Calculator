@@ -1,3 +1,13 @@
+infiltrator-calc (0.1.12) unstable; urgency=medium
+
+  * Rework the native Windows shell to a compact calculator density.
+  * Repaint mutually exclusive owner-drawn selections immediately when modes or programmer options change.
+  * Use explicit Segoe UI fallback when MB Corpo faces are unavailable.
+  * Remove redundant subtitle/footer chrome and rounded-control corner artefacts.
+  * Expand Windows runtime smoke coverage for geometry, mode switching and font fallback.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 12:10:00 +1000
+
 infiltrator-calc (0.1.11) unstable; urgency=medium
 
   * Fix native Windows keypad creation during WM_CREATE so calculator keys are visible.
