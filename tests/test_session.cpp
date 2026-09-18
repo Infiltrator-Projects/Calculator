@@ -22,9 +22,13 @@ int main(){
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");
 
     session.memory_clear();
+    if(!session.memory_empty()) fail("cleared memory should be empty");
     session.memory_add(12.5);
+    if(session.memory_empty()) fail("memory add should make memory available");
     session.memory_subtract(2.5);
     if(std::abs(session.memory_recall()-10.0)>1e-12) fail("memory state wrong");
+    session.memory_clear();
+    if(!session.memory_empty()) fail("second memory clear should be empty");
 
     expect_value(session.evaluate("x + 5"),15.0,"history result");
     if(session.history().size()!=3) fail("history length wrong");
