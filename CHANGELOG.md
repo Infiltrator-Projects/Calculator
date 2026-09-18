@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.15
+
+- Added a canonical cross-platform calculator UI contract that owns desktop metrics, mode names, button order, labels, roles and commands for Standard, Scientific and Programmer.
+- Added a platform-neutral UI controller that owns mode, expression, result/status, DEG/RAD, programmer base/width/signedness, memory, variables and history behaviour.
+- Migrated both GTK and native Win32 shells to render and dispatch through the same shared controller instead of maintaining separate calculator state machines.
+- Removed platform-local keypad definitions so Linux and Windows can no longer silently reorder or reinterpret calculator controls independently.
+- Added shared UI contract/controller tests plus a source-level parity guard that fails if either desktop shell reintroduces local calculator layout or state ownership.
+- Documented the ownership boundary: Common owns product-neutral design tokens, Calc owns calculator-specific UI/state, and platform shells own only native rendering mechanics.
+
 ## 0.1.14
 
 - Brought the Linux GTK shell up to the denser Windows 0.1.13 interaction hierarchy while retaining native GTK implementation and the shared Infiltrator design language.
