@@ -1017,6 +1017,11 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
                            WPARAM wparam, LPARAM lparam) {
     switch (message) {
     case WM_CREATE:
+        // CreateWindowExW sends WM_CREATE before it returns to wWinMain, so
+        // g_main has not yet been assigned there.  Set it here before any
+        // child controls are created; the keypad factory uses g_main as its
+        // parent.
+        g_main = window;
         apply_dark_nonclient(window);
         create_controls(window);
         return 0;
