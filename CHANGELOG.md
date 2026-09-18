@@ -8,6 +8,7 @@
 - Replaced locale-sensitive numeric token conversion with Common's deterministic decimal parser.
 - Centralised Calculator's 15-significant-digit display formatting across GTK, Win32 and iPhone.
 - Completed the iPhone user-facing rename to Calculator and updated stale Common/version documentation.
+- Updated the cross-platform parity gate to require bridge-backed Common theme ownership on iPhone.
 
 ## 0.1.19
 
