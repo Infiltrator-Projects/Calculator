@@ -620,7 +620,9 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_set_hexpand(title, TRUE);
     gtk_box_append(GTK_BOX(header), title);
 
-    theme_button = toolbar_button("System");
+    const std::string initial_theme_label(
+        infiltrator::calc::ui::theme_mode_name(theme_mode));
+    theme_button = toolbar_button(initial_theme_label.c_str());
     g_signal_connect(
         theme_button, "clicked", G_CALLBACK(on_theme_clicked), nullptr);
     gtk_box_append(GTK_BOX(header), theme_button);
