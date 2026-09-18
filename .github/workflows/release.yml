@@ -116,12 +116,57 @@ jobs:
           using System;
           using System.Runtime.InteropServices;
           using System.Text;
+
+          [StructLayout(LayoutKind.Sequential)]
+          public struct RECT {
+              public int Left;
+              public int Top;
+              public int Right;
+              public int Bottom;
+          }
+
+          [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+          public struct LOGFONT {
+              public int lfHeight;
+              public int lfWidth;
+              public int lfEscapement;
+              public int lfOrientation;
+              public int lfWeight;
+              public byte lfItalic;
+              public byte lfUnderline;
+              public byte lfStrikeOut;
+              public byte lfCharSet;
+              public byte lfOutPrecision;
+              public byte lfClipPrecision;
+              public byte lfQuality;
+              public byte lfPitchAndFamily;
+              [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+              public string lfFaceName;
+          }
+
           public static class CalcSmoke {
               public delegate bool EnumChildProc(IntPtr hwnd, IntPtr lParam);
+
               [DllImport("user32.dll")]
               public static extern bool EnumChildWindows(IntPtr parent, EnumChildProc callback, IntPtr lParam);
+
               [DllImport("user32.dll", CharSet = CharSet.Unicode)]
               public static extern int GetClassName(IntPtr hwnd, StringBuilder className, int maxCount);
+
+              [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+              public static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int maxCount);
+
+              [DllImport("user32.dll")]
+              public static extern bool IsWindowVisible(IntPtr hwnd);
+
+              [DllImport("user32.dll")]
+              public static extern IntPtr SendMessage(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+              [DllImport("user32.dll")]
+              public static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
+
+              [DllImport("gdi32.dll", CharSet = CharSet.Unicode)]
+              public static extern int GetObject(IntPtr handle, int size, out LOGFONT logfont);
           }
           "@
 
@@ -137,8 +182,10 @@ jobs:
             if ($process.MainWindowHandle -eq [IntPtr]::Zero) { throw 'Windows calculator did not create a main window' }
 
             $buttons = [System.Collections.Generic.List[System.IntPtr]]::new()
+            $children = [System.Collections.Generic.List[System.IntPtr]]::new()
             $callback = [CalcSmoke+EnumChildProc]{
               param([IntPtr]$hwnd, [IntPtr]$lParam)
+              $children.Add($hwnd)
               $name = [System.Text.StringBuilder]::new(64)
               [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
               if ($name.ToString() -ieq 'Button') { $buttons.Add($hwnd) }
@@ -149,7 +196,82 @@ jobs:
             if ($buttons.Count -lt 100) {
               throw "Windows keypad smoke test found only $($buttons.Count) child buttons; expected the mode controls and full calculator key grids"
             }
-            Write-Host "Windows keypad smoke test passed with $($buttons.Count) child buttons."
+
+            $client = New-Object RECT
+            if (-not [CalcSmoke]::GetClientRect($process.MainWindowHandle, [ref]$client)) {
+              throw 'Could not read Windows calculator client geometry'
+            }
+            $clientWidth = $client.Right - $client.Left
+            $clientHeight = $client.Bottom - $client.Top
+            if ($clientWidth -gt 400 -or $clientHeight -gt 670) {
+              throw "Windows calculator default client area regressed to ${clientWidth}x${clientHeight}"
+            }
+
+            function Get-ButtonByText([string]$label) {
+              foreach ($hwnd in $buttons) {
+                $text = [System.Text.StringBuilder]::new(64)
+                [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
+                if ($text.ToString() -ceq $label) { return $hwnd }
+              }
+              return [IntPtr]::Zero
+            }
+
+            function Get-VisibleButtonCount {
+              $count = 0
+              foreach ($hwnd in $buttons) {
+                if ([CalcSmoke]::IsWindowVisible($hwnd)) { $count++ }
+              }
+              return $count
+            }
+
+            $standard = Get-ButtonByText 'Standard'
+            $scientific = Get-ButtonByText 'Scientific'
+            $programmer = Get-ButtonByText 'Programmer'
+            if ($standard -eq [IntPtr]::Zero -or $scientific -eq [IntPtr]::Zero -or $programmer -eq [IntPtr]::Zero) {
+              throw 'Windows mode buttons were not found'
+            }
+
+            $initialVisible = Get-VisibleButtonCount
+            [void][CalcSmoke]::SendMessage($scientific, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 100
+            $scientificVisible = Get-VisibleButtonCount
+            [void][CalcSmoke]::SendMessage($programmer, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 100
+            $programmerVisible = Get-VisibleButtonCount
+            [void][CalcSmoke]::SendMessage($standard, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 100
+            $standardVisible = Get-VisibleButtonCount
+
+            if ($initialVisible -ne 32 -or $scientificVisible -ne 44 -or
+                $programmerVisible -ne 44 -or $standardVisible -ne 32) {
+              throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
+            }
+
+            $title = [IntPtr]::Zero
+            foreach ($hwnd in $children) {
+              $name = [System.Text.StringBuilder]::new(64)
+              $text = [System.Text.StringBuilder]::new(128)
+              [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
+              [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
+              if ($name.ToString() -ieq 'Static' -and $text.ToString() -ceq 'Infiltrator Calc') {
+                $title = $hwnd
+                break
+              }
+            }
+            if ($title -eq [IntPtr]::Zero) { throw 'Windows title control was not found' }
+
+            $fontHandle = [CalcSmoke]::SendMessage($title, 0x0031, [IntPtr]::Zero, [IntPtr]::Zero)
+            $font = New-Object LOGFONT
+            $fontSize = [Runtime.InteropServices.Marshal]::SizeOf([type][LOGFONT])
+            if ($fontHandle -eq [IntPtr]::Zero -or
+                [CalcSmoke]::GetObject($fontHandle, $fontSize, [ref]$font) -eq 0) {
+              throw 'Windows title font could not be inspected'
+            }
+            if ($font.lfFaceName -notin @('Segoe UI', 'MB Corpo A Title Cond WEB')) {
+              throw "Unexpected Windows title font fallback: $($font.lfFaceName)"
+            }
+
+            Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, mode switching correct, title font $($font.lfFaceName)."
           }
           finally {
             if ($null -ne $process -and -not $process.HasExited) {
