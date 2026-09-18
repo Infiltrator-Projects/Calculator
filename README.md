@@ -81,8 +81,8 @@ The Linux and Windows desktop shells consume the same Calc-owned UI contract and
 
 Releases are multi-platform by default. The same versioned source is built and tested across all three targets:
 
-- Linux x64: `infiltrator-calc_<version>_amd64.deb`;
-- Windows x64: `infiltrator-calc_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
+- Linux x64: `calculator_<version>_amd64.deb`;
+- Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
 - iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI publishes an iOS Simulator bundle and an unsigned device bundle for build verification.
 
 A signed installable `.ipa` requires an Apple signing identity and provisioning profile. Those credentials are deliberately not stored in the repository. Once signing is configured, the same Xcode target is ready to archive and export as an `.ipa`.

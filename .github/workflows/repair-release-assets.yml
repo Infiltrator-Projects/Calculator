@@ -1,0 +1,52 @@
+name: Repair Calculator release asset names
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-release-assets.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Rename Calculator-branded release assets in place
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for version in 0.1.19 0.1.20 0.1.21 0.1.22; do
+            tag="v${version}"
+            release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}")"
+
+            for suffix in amd64.deb ios-device-unsigned.zip ios-simulator.zip windows_x64.exe; do
+              old="infiltrator-calc_${version}_${suffix}"
+              new="calculator_${version}_${suffix}"
+              id="$(jq -r --arg name "$old" '.assets[] | select(.name == $name) | .id' <<<"$release_json")"
+              if [[ -n "$id" ]]; then
+                gh api --method PATCH                   "repos/${GITHUB_REPOSITORY}/releases/assets/${id}"                   -f name="$new" >/dev/null
+                echo "Renamed $old -> $new"
+              fi
+            done
+
+            tmp="$(mktemp -d)"
+            gh release download "$tag"               --repo "$GITHUB_REPOSITORY"               --dir "$tmp"               --pattern "calculator_${version}_amd64.deb"               --pattern "calculator_${version}_windows_x64.exe"               --pattern "calculator_${version}_ios-simulator.zip"               --pattern "calculator_${version}_ios-device-unsigned.zip"
+
+            (
+              cd "$tmp"
+              sha256sum                 "calculator_${version}_amd64.deb"                 "calculator_${version}_windows_x64.exe"                 "calculator_${version}_ios-simulator.zip"                 "calculator_${version}_ios-device-unsigned.zip"                 > SHA256SUMS.txt
+            )
+
+            checksum_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}"               --jq '.assets[] | select(.name == "SHA256SUMS.txt") | .id')"
+            if [[ -n "$checksum_id" ]]; then
+              gh api --method DELETE                 "repos/${GITHUB_REPOSITORY}/releases/assets/${checksum_id}"
+            fi
+            gh release upload "$tag" "$tmp/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
+            rm -rf "$tmp"
+          done

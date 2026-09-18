@@ -64,13 +64,13 @@ jobs:
           chmod +x debian/rules
           dpkg-buildpackage -us -uc -b
           mkdir -p dist/linux
-          cp ../infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb dist/linux/
-          dpkg-deb --info dist/linux/infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb
+          cp ../infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
+          dpkg-deb --info "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
 
       - name: Upload Linux package
         uses: actions/upload-artifact@v4
         with:
-          name: infiltrator-calc-linux-amd64
+          name: calculator-linux-amd64
           path: dist/linux/*
           if-no-files-found: error
 
@@ -391,16 +391,16 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $version = (Get-Content VERSION -Raw).Trim()
           New-Item -ItemType Directory -Force -Path 'dist/windows' | Out-Null
-          Copy-Item 'build-windows/Release/infiltrator-calc.exe' "dist/windows/infiltrator-calc_${version}_windows_x64.exe"
-          if (-not (Test-Path "dist/windows/infiltrator-calc_${version}_windows_x64.exe")) {
+          Copy-Item 'build-windows/Release/infiltrator-calc.exe' "dist/windows/calculator_${version}_windows_x64.exe"
+          if (-not (Test-Path "dist/windows/calculator_${version}_windows_x64.exe")) {
             throw 'Windows release executable was not packaged'
           }
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: infiltrator-calc-windows-x64
-          path: dist/windows/infiltrator-calc_*_windows_x64.exe
+          name: calculator-windows-x64
+          path: dist/windows/calculator_*_windows_x64.exe
           if-no-files-found: error
 
 
@@ -458,7 +458,7 @@ jobs:
           mkdir -p dist/ios
           ditto -c -k --sequesterRsrc --keepParent \
             "$app" \
-            "dist/ios/infiltrator-calc_${version}_ios-simulator.zip"
+            "dist/ios/calculator_${version}_ios-simulator.zip"
 
       - name: Build unsigned iPhone device app
         run: |
@@ -482,15 +482,15 @@ jobs:
 
           ditto -c -k --sequesterRsrc --keepParent \
             "$app" \
-            "dist/ios/infiltrator-calc_${version}_ios-device-unsigned.zip"
+            "dist/ios/calculator_${version}_ios-device-unsigned.zip"
 
       - name: Upload iOS build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: infiltrator-calc-ios
+          name: calculator-ios
           path: |
-            dist/ios/infiltrator-calc_*_ios-simulator.zip
-            dist/ios/infiltrator-calc_*_ios-device-unsigned.zip
+            dist/ios/calculator_*_ios-simulator.zip
+            dist/ios/calculator_*_ios-device-unsigned.zip
           if-no-files-found: error
 
   publish:
@@ -503,19 +503,19 @@ jobs:
       - name: Download Linux package
         uses: actions/download-artifact@v4
         with:
-          name: infiltrator-calc-linux-amd64
+          name: calculator-linux-amd64
           path: dist/linux
 
       - name: Download Windows package
         uses: actions/download-artifact@v4
         with:
-          name: infiltrator-calc-windows-x64
+          name: calculator-windows-x64
           path: dist/windows
 
       - name: Download iOS package
         uses: actions/download-artifact@v4
         with:
-          name: infiltrator-calc-ios
+          name: calculator-ios
           path: dist/ios
 
       - name: Verify cross-platform release assets
@@ -523,16 +523,16 @@ jobs:
           VERSION: ${{ needs.linux.outputs.version }}
         run: |
           set -euo pipefail
-          test -f "dist/linux/infiltrator-calc_${VERSION}_amd64.deb"
-          test -f "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe"
-          test -f "dist/ios/infiltrator-calc_${VERSION}_ios-simulator.zip"
-          test -f "dist/ios/infiltrator-calc_${VERSION}_ios-device-unsigned.zip"
+          test -f "dist/linux/calculator_${VERSION}_amd64.deb"
+          test -f "dist/windows/calculator_${VERSION}_windows_x64.exe"
+          test -f "dist/ios/calculator_${VERSION}_ios-simulator.zip"
+          test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip"
 
           sha256sum \
-            "dist/linux/infiltrator-calc_${VERSION}_amd64.deb" \
-            "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe" \
-            "dist/ios/infiltrator-calc_${VERSION}_ios-simulator.zip" \
-            "dist/ios/infiltrator-calc_${VERSION}_ios-device-unsigned.zip" \
+            "dist/linux/calculator_${VERSION}_amd64.deb" \
+            "dist/windows/calculator_${VERSION}_windows_x64.exe" \
+            "dist/ios/calculator_${VERSION}_ios-simulator.zip" \
+            "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
             > dist/SHA256SUMS.txt
 
       - name: Publish immutable cross-platform GitHub release
@@ -542,10 +542,10 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "v${VERSION}" \
-            "dist/linux/infiltrator-calc_${VERSION}_amd64.deb" \
-            "dist/windows/infiltrator-calc_${VERSION}_windows_x64.exe" \
-            "dist/ios/infiltrator-calc_${VERSION}_ios-simulator.zip" \
-            "dist/ios/infiltrator-calc_${VERSION}_ios-device-unsigned.zip" \
+            "dist/linux/calculator_${VERSION}_amd64.deb" \
+            "dist/windows/calculator_${VERSION}_windows_x64.exe" \
+            "dist/ios/calculator_${VERSION}_ios-simulator.zip" \
+            "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
             "dist/SHA256SUMS.txt" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
