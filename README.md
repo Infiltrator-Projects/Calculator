@@ -4,9 +4,9 @@
 
 Infiltrator Calc is a native cross-platform calculator for the Infiltrator software family, with first-class Linux, Windows and iPhone interfaces.
 
-The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface so it can become a reusable foundation rather than a collection of button callbacks.
+The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
-**Current source version:** 0.1.14  
+**Current source version:** 0.1.15  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Infiltratr Common 1.18.1  
 **Design contract:** Infiltrator Design v1  
@@ -41,7 +41,7 @@ The architecture is intended to grow into:
 
 The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
 
-The Linux, Windows and iPhone shells share the Infiltrator Design v1 visual language without forcing identical physical sizing. Linux uses a compact desktop density so every calculator row, including `=`, remains visible on normal 768–800 px work areas; Windows uses native Win32 controls over the shared C++ core; and iPhone keeps larger native touch targets. All three retain layered graphite surfaces, restrained silver borders, explicit selected states and a high-contrast primary equals action.
+The Linux and Windows desktop shells consume the same Calc-owned UI contract and controller: the same modes, button order, commands, desktop sizing metrics and interaction state are defined once, then rendered through GTK4 or native Win32. Platform code owns only toolkit mechanics such as widgets, HWND/GDI rendering, DPI and native window integration. iPhone keeps native SwiftUI touch sizing while sharing the calculation core and Infiltrator Design v1 visual language.
 
 ## Release platforms
 
@@ -63,7 +63,7 @@ The calculation core links against `InfiltratrCommon::Portable` from the exact r
 
 ## Typography
 
-Infiltrator Calc prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent. The native Windows shell relies on Windows font substitution with Segoe UI as the platform fallback defined by the shared design contract.
+Infiltrator Calc prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent. The native Windows shell explicitly uses Segoe UI when the preferred MB Corpo faces are unavailable, matching the Windows fallback defined by the shared design contract.
 
 The project does **not** redistribute proprietary MB Corpo font binaries. The current UI roles are:
 
