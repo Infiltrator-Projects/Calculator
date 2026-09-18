@@ -40,6 +40,7 @@ public:
     void set_mode(Mode mode);
     void clear_history() noexcept;
 
+    bool command_enabled(Command command) const;
     DispatchResult dispatch(Command command, std::size_t cursor = kEnd);
 
 private:
@@ -51,14 +52,20 @@ private:
     bool current_programmer_value(std::uint64_t& value);
 
     void calculate();
+    void calculate_standard();
     void calculate_programmer();
     void clear_calculation();
+    void update_standard_preview();
     void unary_transform(Command command);
     void scientific_transform(Command command);
     void programmer_mode_change(Command command);
 
     void set_status(std::string text, bool fault = false);
     std::string programmer_status_text() const;
+    bool current_number_has_decimal() const;
+    bool has_unmatched_open_parenthesis() const;
+    bool expression_has_value() const;
+    bool expression_ends_with_binary_operator() const;
 
     Session session_;
     ViewState state_;
