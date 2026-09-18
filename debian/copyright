@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Calculator
 Upstream-Contact: Shannon Smith <infiltratr@yandex.com>
-Source: https://github.com/Infiltrator-Projects/Infiltrator-Calc
+Source: https://github.com/Infiltrator-Projects/Calculator
 
 Files: *
 Copyright: 2026 Shannon Smith

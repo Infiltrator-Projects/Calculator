@@ -115,8 +115,8 @@ This follows the established desktop applications in the software family.
 Clone recursively so the exact Common revision is available:
 
 ```bash
-git clone --recurse-submodules https://github.com/Infiltrator-Projects/Infiltrator-Calc.git
-cd Infiltrator-Calc
+git clone --recurse-submodules https://github.com/Infiltrator-Projects/Calculator.git
+cd Calculator
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
