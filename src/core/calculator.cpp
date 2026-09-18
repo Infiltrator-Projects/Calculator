@@ -175,6 +175,104 @@ private:
     }
 };
 
+class ImmediateParser {
+public:
+    explicit ImmediateParser(std::string_view input) : input_(input) {}
+
+    Result run() {
+        skip_space();
+        if (input_.empty()) return fail("empty expression");
+
+        bool percent = false;
+        double value = parse_operand(percent);
+        if (!error_.empty()) return fail(error_.c_str());
+        if (percent) value /= 100.0;
+
+        while (error_.empty()) {
+            skip_space();
+            if (position_ == input_.size()) break;
+
+            const char op = input_[position_];
+            if (op != '+' && op != '-' && op != '*' &&
+                op != '/' && op != '^') {
+                return fail("unsupported immediate expression");
+            }
+            ++position_;
+
+            bool right_percent = false;
+            double right = parse_operand(right_percent);
+            if (!error_.empty()) return fail(error_.c_str());
+
+            if (right_percent) {
+                if (op == '+' || op == '-') right = value * right / 100.0;
+                else right /= 100.0;
+            }
+
+            switch (op) {
+            case '+': value += right; break;
+            case '-': value -= right; break;
+            case '*': value *= right; break;
+            case '/':
+                if (right == 0.0) return fail("division by zero");
+                value /= right;
+                break;
+            case '^':
+                value = std::pow(value, right);
+                break;
+            default:
+                break;
+            }
+
+            if (!std::isfinite(value)) return fail("non-finite result");
+        }
+
+        return {true, value, {}};
+    }
+
+private:
+    std::string_view input_;
+    std::size_t position_ = 0;
+    std::string error_;
+
+    Result fail(const char* message) const {
+        return {false, 0.0, message ? message : "invalid expression"};
+    }
+
+    void skip_space() {
+        while (position_ < input_.size() &&
+               std::isspace(static_cast<unsigned char>(input_[position_]))) {
+            ++position_;
+        }
+    }
+
+    double parse_operand(bool& percent) {
+        skip_space();
+        if (position_ >= input_.size()) {
+            error_ = "expected a number";
+            return 0.0;
+        }
+
+        const char* begin = input_.data() + position_;
+        char* end = nullptr;
+        const double value = std::strtod(begin, &end);
+        if (end == begin) {
+            error_ = "unsupported immediate expression";
+            return 0.0;
+        }
+
+        position_ += static_cast<std::size_t>(end - begin);
+        if (!std::isfinite(value)) {
+            error_ = "invalid number";
+            return 0.0;
+        }
+
+        skip_space();
+        percent = position_ < input_.size() && input_[position_] == '%';
+        if (percent) ++position_;
+        return value;
+    }
+};
+
 } // namespace
 
 Result evaluate(const std::string& expression) {
@@ -184,6 +282,10 @@ Result evaluate(const std::string& expression) {
 
 Result evaluate(const std::string& expression, const Variables& variables) {
     return Parser(expression, variables).run();
+}
+
+Result evaluate_immediate(const std::string& expression) {
+    return ImmediateParser(expression).run();
 }
 
 } // namespace infiltrator::calc
