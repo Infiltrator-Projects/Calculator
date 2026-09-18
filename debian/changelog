@@ -1,3 +1,14 @@
+infiltrator-calc (0.1.16) unstable; urgency=medium
+
+  * Add shared compact, regular and wide responsive desktop states.
+  * Dock history on wide GTK and Win32 layouts while retaining the popup on normal widths.
+  * Add shared state-aware command enablement for memory, Programmer digits and operators.
+  * Give Standard mode immediate left-to-right arithmetic and contextual percentage semantics.
+  * Track whether calculator memory is actually populated.
+  * Expand responsive, mode-semantics and command-state regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 14:05:00 +1000
+
 infiltrator-calc (0.1.15) unstable; urgency=medium
 
   * Add a canonical cross-platform calculator UI contract for layout, roles and commands.
