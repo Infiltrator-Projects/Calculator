@@ -280,7 +280,7 @@ final class CalculatorModel: ObservableObject {
         )
     }
 
-    private func consume(_ result: NSDictionary, replaceExpression: Bool = false) {
+    private func consume(_ result: [AnyHashable: Any], replaceExpression: Bool = false) {
         if resultOK(result) {
             display = result["display"] as? String ?? format(resultValue(result))
             if replaceExpression { expression = display }
@@ -292,7 +292,7 @@ final class CalculatorModel: ObservableObject {
         }
     }
 
-    private func consumeProgrammer(_ result: NSDictionary, preserveStatus: Bool = false) {
+    private func consumeProgrammer(_ result: [AnyHashable: Any], preserveStatus: Bool = false) {
         if resultOK(result) {
             display = result["display"] as? String ?? "0"
             status = preserveStatus ? modeStatus : modeStatus
@@ -303,11 +303,11 @@ final class CalculatorModel: ObservableObject {
         }
     }
 
-    private func resultOK(_ result: NSDictionary) -> Bool {
+    private func resultOK(_ result: [AnyHashable: Any]) -> Bool {
         (result["ok"] as? NSNumber)?.boolValue ?? false
     }
 
-    private func resultValue(_ result: NSDictionary) -> Double {
+    private func resultValue(_ result: [AnyHashable: Any]) -> Double {
         (result["value"] as? NSNumber)?.doubleValue ?? 0.0
     }
 
