@@ -1313,9 +1313,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     };
     InitCommonControlsEx(&controls);
 
-    g_background_brush = CreateSolidBrush(kBackground);
-    g_panel_brush = CreateSolidBrush(kPanel);
-    g_input_brush = CreateSolidBrush(kInput);
+    g_theme_mode = load_theme_mode();
+    resolve_theme();
+    recreate_theme_brushes();
 
     const wchar_t* ui_family = ui_font_family();
     const wchar_t* brand_family = brand_font_family();
