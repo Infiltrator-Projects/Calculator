@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.7
+
+- Added a native SwiftUI iPhone application using the same Standard, Scientific and Programmer model as the desktop shells.
+- Added an Objective-C++ bridge into the shared C++ session and programmer engines instead of reimplementing calculator logic in Swift.
+- Added iPhone-native history, memory, variable assignment, DEG/RAD and programmer base/width/signedness controls.
+- Added explicit iOS Simulator and real-device ARM64 build validation.
+- Made the GTK desktop shell optional in CMake so the portable core can build and test independently on Apple runners.
+- Release publication now requires Linux, Windows and iOS builds to succeed before GitHub assets are published.
+- iOS CI produces simulator and unsigned device bundles; a signed installable IPA remains gated on Apple signing credentials.
+
 ## 0.1.6
 
 - Reworked the calculator shell around the canonical Infiltrator Design v1 graphite/silver tokens.
