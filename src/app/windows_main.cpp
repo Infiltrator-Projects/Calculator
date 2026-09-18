@@ -47,27 +47,27 @@ COLORREF to_colorref(std::uint32_t rgb) {
         static_cast<BYTE>(rgb & 0xFFU));
 }
 
-#define kBackground to_colorref(g_theme_palette.background)
-#define kPanel to_colorref(g_theme_palette.panel)
-#define kCard to_colorref(g_theme_palette.card)
-#define kSurface to_colorref(g_theme_palette.surface)
-#define kInput to_colorref(g_theme_palette.input)
-#define kBorder to_colorref(g_theme_palette.border)
-#define kText to_colorref(g_theme_palette.text)
-#define kTitle to_colorref(g_theme_palette.title)
-#define kMuted to_colorref(g_theme_palette.muted)
-#define kSubtle to_colorref(g_theme_palette.subtle)
-#define kButtonBackground to_colorref(g_theme_palette.button_background)
-#define kButtonForeground to_colorref(g_theme_palette.button_foreground)
-#define kSelection to_colorref(g_theme_palette.selection_background)
-#define kNeutralAccent to_colorref(g_theme_palette.neutral_accent)
-#define kWarning to_colorref(g_theme_palette.warning)
-#define kFault to_colorref(g_theme_palette.fault)
-#define kOperation to_colorref(g_theme_palette.operation)
-#define kCardHover to_colorref(g_theme_palette.card_hover)
-#define kSurfaceHover to_colorref(g_theme_palette.surface_hover)
-#define kOperationHover to_colorref(g_theme_palette.operation_hover)
-#define kEqualsHover to_colorref(g_theme_palette.equals_hover)
+#define kBackground to_colorref(g_theme_palette.background_rgb)
+#define kPanel to_colorref(g_theme_palette.panel_rgb)
+#define kCard to_colorref(g_theme_palette.card_rgb)
+#define kSurface to_colorref(g_theme_palette.surface_rgb)
+#define kInput to_colorref(g_theme_palette.input_rgb)
+#define kBorder to_colorref(g_theme_palette.border_rgb)
+#define kText to_colorref(g_theme_palette.text_rgb)
+#define kTitle to_colorref(g_theme_palette.title_rgb)
+#define kMuted to_colorref(g_theme_palette.muted_rgb)
+#define kSubtle to_colorref(g_theme_palette.subtle_rgb)
+#define kButtonBackground to_colorref(g_theme_palette.button_background_rgb)
+#define kButtonForeground to_colorref(g_theme_palette.button_foreground_rgb)
+#define kSelection to_colorref(g_theme_palette.selection_background_rgb)
+#define kNeutralAccent to_colorref(g_theme_palette.neutral_accent_rgb)
+#define kWarning to_colorref(g_theme_palette.warning_rgb)
+#define kFault to_colorref(g_theme_palette.fault_rgb)
+#define kOperation to_colorref(g_theme_palette.operation_rgb)
+#define kCardHover to_colorref(g_theme_palette.card_hover_rgb)
+#define kSurfaceHover to_colorref(g_theme_palette.surface_hover_rgb)
+#define kOperationHover to_colorref(g_theme_palette.operation_hover_rgb)
+#define kEqualsHover to_colorref(g_theme_palette.equals_hover_rgb)
 
 using infiltrator::calc::ui::ButtonRole;
 using infiltrator::calc::ui::ButtonSpec;
@@ -223,11 +223,12 @@ void save_theme_mode() {
 }
 
 void resolve_theme() {
+    const bool system_dark = system_prefers_dark();
     g_effective_dark_theme =
         g_theme_mode == ThemeMode::Night ||
-        (g_theme_mode == ThemeMode::System && system_prefers_dark());
+        (g_theme_mode == ThemeMode::System && system_dark);
     g_theme_palette =
-        infiltrator::calc::ui::resolved_palette(g_effective_dark_theme);
+        infiltrator::calc::ui::resolved_palette(g_theme_mode, system_dark);
 }
 
 void recreate_theme_brushes() {
@@ -326,9 +327,7 @@ void apply_control_theme(HWND control) {
 }
 
 std::wstring format_value(double value) {
-    std::ostringstream out;
-    out << std::setprecision(15) << value;
-    return utf8_to_wide(out.str());
+    return utf8_to_wide(infiltrator::calc::format_value(value));
 }
 
 std::size_t expression_cursor() {

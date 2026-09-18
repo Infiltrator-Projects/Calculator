@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <iomanip>
 #include <sstream>
 #include <utility>
 
@@ -12,12 +11,6 @@ namespace infiltrator::calc::ui {
 namespace {
 
 constexpr double kPi = 3.14159265358979323846;
-
-std::string format_value(double value) {
-    std::ostringstream out;
-    out << std::setprecision(15) << value;
-    return out.str();
-}
 
 } // namespace
 
@@ -147,7 +140,7 @@ void Controller::calculate_standard() {
         return;
     }
 
-    state_.result = format_value(result.value);
+    state_.result = infiltrator::calc::format_value(result.value);
     set_status("READY");
 }
 
@@ -168,7 +161,7 @@ void Controller::calculate() {
         return;
     }
 
-    state_.result = format_value(result.value);
+    state_.result = infiltrator::calc::format_value(result.value);
     set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
                               : "SCIENTIFIC · RADIANS");
 }
@@ -216,7 +209,7 @@ void Controller::unary_transform(Command command) {
         return;
     }
 
-    state_.expression = format_value(value);
+    state_.expression = infiltrator::calc::format_value(value);
     state_.result = state_.expression;
     set_status("READY");
 }
@@ -261,7 +254,7 @@ void Controller::scientific_transform(Command command) {
         return;
     }
 
-    state_.expression = format_value(value);
+    state_.expression = infiltrator::calc::format_value(value);
     state_.result = state_.expression;
     set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
                               : "SCIENTIFIC · RADIANS");
@@ -312,7 +305,7 @@ void Controller::update_standard_preview() {
     if (preview.empty()) return;
     const Result result = evaluate_immediate(preview);
     if (result.ok) {
-        state_.result = format_value(result.value);
+        state_.result = infiltrator::calc::format_value(result.value);
         set_status("READY");
     }
 }
@@ -483,7 +476,7 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         return {normalized_cursor(cursor), false};
     case Command::MemoryRecall:
         set_status("MEMORY RECALL");
-        return insert(format_value(session_.memory_recall()), cursor);
+        return insert(infiltrator::calc::format_value(session_.memory_recall()), cursor);
     case Command::MemoryAdd:
     case Command::MemorySubtract: {
         double value = 0.0;

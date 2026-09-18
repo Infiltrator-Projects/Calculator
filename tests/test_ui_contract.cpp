@@ -37,12 +37,14 @@ int main() {
     static_assert(wide.layout_class == LayoutClass::Wide);
     static_assert(wide.dock_history);
 
-    const auto& night = resolved_palette(true);
-    const auto& day = resolved_palette(false);
-    assert(night.background == 0x050608);
-    assert(night.panel == 0x101318);
-    assert(day.background == 0xF4F5F7);
-    assert(day.panel == 0xFFFFFF);
+    const auto& night = resolved_palette(ThemeMode::Night, false);
+    const auto& day = resolved_palette(ThemeMode::Day, true);
+    const auto& system_night = resolved_palette(ThemeMode::System, true);
+    assert(night.background_rgb == 0x050608);
+    assert(night.panel_rgb == 0x101318);
+    assert(day.background_rgb == 0xF4F5F7);
+    assert(day.panel_rgb == 0xFFFFFF);
+    assert(system_night.background_rgb == night.background_rgb);
     assert(theme_mode_name(ThemeMode::System) == "System");
     assert(theme_mode_name(ThemeMode::Day) == "Day");
     assert(theme_mode_name(ThemeMode::Night) == "Night");

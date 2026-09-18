@@ -8,8 +8,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
-#include <iomanip>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -119,16 +117,11 @@ void save_theme_mode() {
 }
 
 const ThemePalette& active_palette() {
+    const bool system_dark = system_prefers_dark();
     effective_dark_theme =
         theme_mode == ThemeMode::Night ||
-        (theme_mode == ThemeMode::System && system_prefers_dark());
-    return infiltrator::calc::ui::resolved_palette(effective_dark_theme);
-}
-
-std::string format_value(double value) {
-    std::ostringstream out;
-    out << std::setprecision(15) << value;
-    return out.str();
+        (theme_mode == ThemeMode::System && system_dark);
+    return infiltrator::calc::ui::resolved_palette(theme_mode, system_dark);
 }
 
 std::string history_text_value() {
@@ -144,7 +137,7 @@ std::string history_text_value() {
         text += it->input;
         text += "\n  = ";
         text += it->result.ok
-                    ? format_value(it->result.value)
+                    ? infiltrator::calc::format_value(it->result.value)
                     : ("Error: " + it->result.error);
         text += "\n\n";
     }
@@ -295,7 +288,7 @@ void show_history(GtkWidget*, gpointer) {
         const std::string text =
             it->input + "\n" +
             (it->result.ok
-                 ? format_value(it->result.value)
+                 ? infiltrator::calc::format_value(it->result.value)
                  : ("Error: " + it->result.error));
 
         GtkWidget* row = gtk_label_new(text.c_str());
@@ -480,28 +473,28 @@ void apply_css(GtkWidget* window) {
     const auto& metrics = infiltrator::calc::ui::kDesktopMetrics;
     const ThemePalette& p = active_palette();
 
-    const std::string background = hex_colour(p.background);
-    const std::string panel = hex_colour(p.panel);
-    const std::string card = hex_colour(p.card);
-    const std::string surface = hex_colour(p.surface);
-    const std::string input = hex_colour(p.input);
-    const std::string border = hex_colour(p.border);
-    const std::string text = hex_colour(p.text);
-    const std::string title = hex_colour(p.title);
-    const std::string muted = hex_colour(p.muted);
-    const std::string subtle = hex_colour(p.subtle);
-    const std::string primary = hex_colour(p.button_background);
-    const std::string primary_text = hex_colour(p.button_foreground);
-    const std::string selected = hex_colour(p.selection_background);
-    const std::string selection_text = hex_colour(p.selection_foreground);
-    const std::string neutral = hex_colour(p.neutral_accent);
-    const std::string warning = hex_colour(p.warning);
-    const std::string fault = hex_colour(p.fault);
-    const std::string operation = hex_colour(p.operation);
-    const std::string card_hover = hex_colour(p.card_hover);
-    const std::string surface_hover = hex_colour(p.surface_hover);
-    const std::string operation_hover = hex_colour(p.operation_hover);
-    const std::string equals_hover = hex_colour(p.equals_hover);
+    const std::string background = hex_colour(p.background_rgb);
+    const std::string panel = hex_colour(p.panel_rgb);
+    const std::string card = hex_colour(p.card_rgb);
+    const std::string surface = hex_colour(p.surface_rgb);
+    const std::string input = hex_colour(p.input_rgb);
+    const std::string border = hex_colour(p.border_rgb);
+    const std::string text = hex_colour(p.text_rgb);
+    const std::string title = hex_colour(p.title_rgb);
+    const std::string muted = hex_colour(p.muted_rgb);
+    const std::string subtle = hex_colour(p.subtle_rgb);
+    const std::string primary = hex_colour(p.button_background_rgb);
+    const std::string primary_text = hex_colour(p.button_foreground_rgb);
+    const std::string selected = hex_colour(p.selection_background_rgb);
+    const std::string selection_text = hex_colour(p.selection_foreground_rgb);
+    const std::string neutral = hex_colour(p.neutral_accent_rgb);
+    const std::string warning = hex_colour(p.warning_rgb);
+    const std::string fault = hex_colour(p.fault_rgb);
+    const std::string operation = hex_colour(p.operation_rgb);
+    const std::string card_hover = hex_colour(p.card_hover_rgb);
+    const std::string surface_hover = hex_colour(p.surface_hover_rgb);
+    const std::string operation_hover = hex_colour(p.operation_hover_rgb);
+    const std::string equals_hover = hex_colour(p.equals_hover_rgb);
 
     const std::string css =
         "*{font-family:\"" + ui + "\";font-weight:400}"
