@@ -179,7 +179,7 @@ struct ContentView: View {
                 ForEach(Array(model.rows.enumerated()), id: \.offset) { _, row in
                     ForEach(Array(row.enumerated()), id: \.offset) { _, key in
                         CalculatorKey(
-                            title: key,
+                            title: model.visibleTitle(key),
                             selected: model.keyIsSelected(key),
                             enabled: model.keyIsEnabled(key)
                         ) {
