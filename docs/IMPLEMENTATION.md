@@ -80,7 +80,7 @@ This keeps calculator behaviour testable without constructing GTK or Win32 contr
 
 ## iPhone bridge
 
-SwiftUI calls the shared C++ engines through `ICCalculatorBridge`. The bridge converts Objective-C/Swift values to the C++ domain and returns result dictionaries suitable for the existing Swift model.
+SwiftUI calls the shared C++ engines through `CalculatorBridge`. The bridge converts Objective-C/Swift values to the C++ domain and returns result dictionaries suitable for the existing Swift model.
 
 The bridge also exposes Common's canonical Day/Night semantic palette. Swift resolves System appearance using `ColorScheme` but does not maintain a private copy of Common colour values.
 

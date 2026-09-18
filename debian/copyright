@@ -1,5 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Infiltrator Calc
+Upstream-Name: Calculator
 Upstream-Contact: Shannon Smith <infiltratr@yandex.com>
 Source: https://github.com/Infiltrator-Projects/Infiltrator-Calc
 
@@ -8,12 +8,12 @@ Copyright: 2026 Shannon Smith
 License: GPL-3+
 
 License: GPL-3+
- Infiltrator Calc is free software: you can redistribute it and/or modify
+ Calculator is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by the
  Free Software Foundation, either version 3 of the License, or (at your
  option) any later version.
  .
- Infiltrator Calc is distributed in the hope that it will be useful, but
+ Calculator is distributed in the hope that it will be useful, but
  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  for more details.

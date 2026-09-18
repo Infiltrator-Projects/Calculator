@@ -89,6 +89,10 @@ A signed installable `.ipa` requires an Apple signing identity and provisioning 
 
 A release is published only after Linux, Windows and iOS builds and the shared-core tests succeed.
 
+### Compatibility identifiers
+
+The user-facing product name is **Calculator**. The Debian package/executable/configuration identifier `infiltrator-calc` and the existing iOS bundle identifier `net.ssmith.infiltrator.calc` are retained as stable compatibility identities so upgrades, settings and installed application identity are not broken by the rename. They are not the product name.
+
 ## Shared design
 
 Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
@@ -104,7 +108,7 @@ The project does **not** redistribute proprietary MB Corpo font binaries. The cu
 - `MB Corpo S Title WEB` for normal interface text and controls;
 - `MB Corpo A Title Cond WEB` for product/display titles.
 
-This follows the established Infiltrator desktop applications.
+This follows the established desktop applications in the software family.
 
 ## Build
 
@@ -140,9 +144,9 @@ docs/                    Maintained architecture, design and implementation docu
 
 ## Release direction
 
-The project uses `main` as its working branch and follows the Infiltrator release discipline: test the exact source commit, build from that commit, and publish immutable release identities.
+The project uses `main` as its working branch and follows the project release discipline: test the exact source commit, build from that commit, and publish immutable release identities.
 
-The packaged form is a generic Debian package suitable for Infiltrator Repository and, ultimately, Infiltrator Mint.
+The packaged form is a generic Debian package suitable for the Package Repository and future distribution integration.
 
 ## Licence
 
