@@ -6,8 +6,8 @@ windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
-    assert '../ui/calculator_ui_contract.hpp' in source, (
-        f"{name} does not consume the shared calculator UI contract"
+    assert '../ui/calculator_ui_controller.hpp' in source, (
+        f"{name} does not consume the shared calculator UI controller"
     )
     for needle in (
         "kDesktopMetrics.default_width",
@@ -18,6 +18,7 @@ for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
         "kProgrammerKeypad",
         "mode_name(",
         "Command::",
+        ".dispatch(",
     ):
         assert needle in source, f"{name} bypasses shared UI contract: {needle}"
 
@@ -48,3 +49,22 @@ for needle in (
     assert needle in contract, f"shared UI contract is incomplete: {needle}"
 
 print("Cross-platform desktop UI parity contract passed.")
+
+for forbidden_state in (
+    "infiltrator::calc::Session session",
+    "infiltrator::calc::Session g_session",
+    "Mode mode =",
+    "Mode g_mode =",
+    "bool degrees =",
+    "bool g_degrees =",
+    "programmer_base =",
+    "g_programmer_base =",
+    "programmer_width =",
+    "g_programmer_width =",
+):
+    assert forbidden_state not in linux, (
+        f"Linux GTK reintroduced platform-owned calculator state: {forbidden_state}"
+    )
+    assert forbidden_state not in windows, (
+        f"Windows Win32 reintroduced platform-owned calculator state: {forbidden_state}"
+    )
