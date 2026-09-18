@@ -1,35 +1,50 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-source = Path("src/app/main.cpp").read_text(encoding="utf-8")
+linux = Path("src/app/main.cpp").read_text(encoding="utf-8")
+windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
+contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 
-required = {
-    "compact desktop default": "gtk_window_set_default_size(GTK_WINDOW(window), 380, 620);",
-    "compact key height": "min-height:32px;",
-    "compact row spacing": "gtk_grid_set_row_spacing(GTK_GRID(grid), 5);",
-    "compact column spacing": "gtk_grid_set_column_spacing(GTK_GRID(grid), 6);",
-    "keys do not vertically stretch": "gtk_widget_set_vexpand(button, FALSE);",
-    "keypad does not vertically stretch": "gtk_widget_set_vexpand(grid, FALSE);",
-    "standard memory strip": 'const char* memory_keys[] = {"MC", "MR", "M+", "M−"};',
-    "compact six-row standard keypad": '{"±", "0", ".", "="}',
-    "hidden subtitle": "gtk_widget_set_visible(subtitle, FALSE);",
-    "hidden footer": "gtk_widget_set_visible(footer, FALSE);",
-    "memory strip styling": ".calc-button.memory-button",
-}
-for name, needle in required.items():
-    assert needle in source, f"{name} contract missing: {needle}"
+for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
+    assert '../ui/calculator_ui_contract.hpp' in source, (
+        f"{name} does not consume the shared calculator UI contract"
+    )
+    for needle in (
+        "kDesktopMetrics.default_width",
+        "kDesktopMetrics.default_height",
+        "kStandardMemory",
+        "kStandardKeypad",
+        "kScientificKeypad",
+        "kProgrammerKeypad",
+        "mode_name(",
+        "Command::",
+    ):
+        assert needle in source, f"{name} bypasses shared UI contract: {needle}"
 
-for forbidden in (
-    "gtk_window_set_default_size(GTK_WINDOW(window), 480, 820);",
-    "gtk_window_set_default_size(GTK_WINDOW(window), 440, 690);",
-    "min-height:50px;",
-    "gtk_grid_set_row_spacing(GTK_GRID(grid), 10);",
-    "gtk_widget_set_vexpand(button, TRUE);",
-    '{"MC", "MR", "M+", "M−"},\n        {"C", "⌫", "%", "÷"}',
+    for forbidden in (
+        "standard_keys[][4]",
+        "scientific_keys[][4]",
+        "programmer_keys[][4]",
+        'L"MC", L"MR", L"M+", L"M−"',
+        '{"MC", "MR", "M+", "M−"}',
+    ):
+        assert forbidden not in source, (
+            f"{name} reintroduced a local calculator layout definition: {forbidden}"
+        )
+
+for needle in (
+    "inline constexpr DesktopMetrics kDesktopMetrics",
+    "360, 610",
+    "320, 520",
+    "inline constexpr std::array<ButtonSpec, 4> kStandardMemory",
+    "inline constexpr std::array<ButtonSpec, 24> kStandardKeypad",
+    "inline constexpr std::array<ButtonSpec, 40> kScientificKeypad",
+    "inline constexpr std::array<ButtonSpec, 40> kProgrammerKeypad",
+    '{"MC", ButtonRole::Utility, Command::MemoryClear}',
+    '{"=", ButtonRole::Equals, Command::Equals}',
+    "is_programmer_selector(Command command)",
+    "insertion_text(Command command)",
 ):
-    assert forbidden not in source, f"oversized/stale Linux desktop layout regressed: {forbidden}"
+    assert needle in contract, f"shared UI contract is incomplete: {needle}"
 
-assert 'fill_grid(standard_grid, standard_keys, 6);' in source
-assert '{"1", "2", "3", "="}' in source
-
-print("Linux desktop compact-layout contract passed.")
+print("Cross-platform desktop UI parity contract passed.")
