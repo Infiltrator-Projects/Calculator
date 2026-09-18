@@ -18,6 +18,8 @@ for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
         "mode_name(",
         "Command::",
         ".dispatch(",
+        "command_enabled(",
+        "responsive_layout(",
     ):
         assert needle in source, f"{name} bypasses shared UI contract: {needle}"
 
@@ -44,6 +46,9 @@ for needle in (
     '{"=", ButtonRole::Equals, Command::Equals}',
     "is_programmer_selector(Command command)",
     "insertion_text(Command command)",
+    "responsive_layout(int width, int height)",
+    "wide_threshold",
+    "history_min_width",
 ):
     assert needle in contract, f"shared UI contract is incomplete: {needle}"
 
