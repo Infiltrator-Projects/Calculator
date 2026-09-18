@@ -12,6 +12,36 @@ The project is deliberately larger in ambition than a four-function calculator, 
 **Design contract:** Infiltrator Design v1  
 **Licence:** GPL-3.0-or-later
 
+## Engineering ethos
+
+Infiltrator Calc is a first-principles engineering project. The question is not
+simply how to reproduce an existing calculator, but what a calculator should be
+when it is designed today with the strongest available mathematics, numerical
+methods, human-interface research, platform capabilities and software
+engineering practice.
+
+"Modern" is not treated as a synonym for "better". New techniques are adopted
+when they improve correctness, precision, performance, resilience, usability,
+accessibility or maintainability; older techniques are retained when they
+remain the better solution. Existing mature implementations are evidence to
+study, not specifications to clone. Their hard-won lessons are separated from
+their historical platform and compatibility constraints, then reconsidered
+against current research and the needs of this project.
+
+The implementation therefore aims for the best justified approach rather than
+the newest fashionable one or the easiest conventional one. Architectural
+decisions should be measurable, testable and explainable. Where a capability
+can be shared cleanly across platforms, it is implemented once; platform code
+is kept for genuinely platform-specific behaviour. Features are not considered
+finished merely because they work in the common case: edge conditions,
+numerical behaviour, accessibility, failure modes and regression protection are
+part of the feature.
+
+The same principle applies across the Infiltrator family: start from the
+problem, study what is known now, preserve proven ideas that still deserve to
+survive, replace assumptions that no longer do, and prove the result in real
+use.
+
 ## Current capabilities
 
 Infiltrator Calc has three explicitly switchable modes presented as a visible mode strip on desktop and iPhone, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
