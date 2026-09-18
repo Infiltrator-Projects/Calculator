@@ -10,6 +10,7 @@
 
 #include "../core/programmer.hpp"
 #include "../core/session.hpp"
+#include "../ui/calculator_ui_contract.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -56,7 +57,11 @@ constexpr COLORREF kSurfaceHover = RGB(23, 27, 32);
 constexpr COLORREF kOperationHover = RGB(43, 49, 55);
 constexpr COLORREF kEqualsHover = RGB(238, 241, 243);
 
-enum class Mode { Standard = 0, Scientific = 1, Programmer = 2 };
+using infiltrator::calc::ui::ButtonRole;
+using infiltrator::calc::ui::ButtonSpec;
+using infiltrator::calc::ui::Command;
+using infiltrator::calc::ui::Mode;
+
 enum class ButtonKind { Number, Operation, Utility, Clear, Equals, Mode, Toolbar };
 
 HINSTANCE g_instance = nullptr;
@@ -76,7 +81,7 @@ HWND g_hover_button = nullptr;
 std::vector<HWND> g_standard_buttons;
 std::vector<HWND> g_scientific_buttons;
 std::vector<HWND> g_programmer_buttons;
-std::unordered_map<int, std::wstring> g_key_labels;
+std::unordered_map<int, const ButtonSpec*> g_key_specs;
 
 HFONT g_ui_font = nullptr;
 HFONT g_ui_bold_font = nullptr;
@@ -434,24 +439,38 @@ void scientific_transform(const std::wstring& name) {
                          : L"SCIENTIFIC · RADIANS");
 }
 
-std::wstring insertion_for_label(const std::wstring& label) {
-    if (label == L"×") return L"*";
-    if (label == L"÷") return L"/";
-    if (label == L"−") return L"-";
-    return label;
-}
-
-void programmer_mode_change(const std::wstring& label) {
-    if (label == L"BIN") g_programmer_base = infiltrator::calc::ProgrammerBase::Binary;
-    else if (label == L"OCT") g_programmer_base = infiltrator::calc::ProgrammerBase::Octal;
-    else if (label == L"DEC") g_programmer_base = infiltrator::calc::ProgrammerBase::Decimal;
-    else if (label == L"HEX") g_programmer_base = infiltrator::calc::ProgrammerBase::Hexadecimal;
-    else if (label == L"W8") g_programmer_width = infiltrator::calc::IntegerWidth::Bits8;
-    else if (label == L"W16") g_programmer_width = infiltrator::calc::IntegerWidth::Bits16;
-    else if (label == L"W32") g_programmer_width = infiltrator::calc::IntegerWidth::Bits32;
-    else if (label == L"W64") g_programmer_width = infiltrator::calc::IntegerWidth::Bits64;
-    else if (label == L"U/S") g_programmer_signed = !g_programmer_signed;
-    else return;
+void programmer_mode_change(Command command) {
+    switch (command) {
+    case Command::BaseBin:
+        g_programmer_base = infiltrator::calc::ProgrammerBase::Binary;
+        break;
+    case Command::BaseOct:
+        g_programmer_base = infiltrator::calc::ProgrammerBase::Octal;
+        break;
+    case Command::BaseDec:
+        g_programmer_base = infiltrator::calc::ProgrammerBase::Decimal;
+        break;
+    case Command::BaseHex:
+        g_programmer_base = infiltrator::calc::ProgrammerBase::Hexadecimal;
+        break;
+    case Command::Width8:
+        g_programmer_width = infiltrator::calc::IntegerWidth::Bits8;
+        break;
+    case Command::Width16:
+        g_programmer_width = infiltrator::calc::IntegerWidth::Bits16;
+        break;
+    case Command::Width32:
+        g_programmer_width = infiltrator::calc::IntegerWidth::Bits32;
+        break;
+    case Command::Width64:
+        g_programmer_width = infiltrator::calc::IntegerWidth::Bits64;
+        break;
+    case Command::ToggleSigned:
+        g_programmer_signed = !g_programmer_signed;
+        break;
+    default:
+        return;
+    }
 
     if (!window_text(g_expression).empty()) {
         calculate_programmer();
@@ -506,34 +525,48 @@ void show_history() {
         g_main, nullptr, g_instance, nullptr);
 }
 
-void handle_key(const std::wstring& label) {
+void handle_key(const ButtonSpec& spec) {
+    const Command command = spec.command;
+    const std::wstring label = utf8_to_wide(std::string(spec.label));
+
     if (g_mode == Mode::Programmer) {
-        if (label == L"BIN" || label == L"OCT" || label == L"DEC" ||
-            label == L"HEX" || label == L"W8" || label == L"W16" ||
-            label == L"W32" || label == L"W64" || label == L"U/S") {
-            programmer_mode_change(label);
+        if (infiltrator::calc::ui::is_programmer_selector(command)) {
+            programmer_mode_change(command);
             return;
         }
-        if (label == L"=") {
+        if (command == Command::Equals) {
             calculate_programmer();
             return;
         }
-        if (label == L"AC") {
+        if (command == Command::AllClear) {
             clear_calculation();
             return;
         }
-        if (label == L"⌫") {
+        if (command == Command::Backspace) {
             backspace();
             return;
         }
-        insert_text(insertion_for_label(label));
+
+        const std::string_view insertion =
+            infiltrator::calc::ui::insertion_text(command);
+        if (!insertion.empty()) {
+            insert_text(utf8_to_wide(std::string(insertion)));
+        }
         return;
     }
 
-    if (label == L"DEG" || label == L"RAD") {
+    switch (command) {
+    case Command::ToggleDegrees:
         g_degrees = !g_degrees;
         for (HWND button : g_scientific_buttons) {
-            if (window_text(button) == L"DEG" || window_text(button) == L"RAD") {
+            const auto it = std::find_if(
+                g_key_specs.begin(), g_key_specs.end(),
+                [button](const auto& item) {
+                    return GetDlgCtrlID(button) == item.first &&
+                           item.second != nullptr &&
+                           item.second->command == Command::ToggleDegrees;
+                });
+            if (it != g_key_specs.end()) {
                 SetWindowTextW(button, g_degrees ? L"DEG" : L"RAD");
                 break;
             }
@@ -541,114 +574,125 @@ void handle_key(const std::wstring& label) {
         set_status(g_degrees ? L"SCIENTIFIC · DEGREES"
                              : L"SCIENTIFIC · RADIANS");
         return;
-    }
-    if (label == L"=") {
+    case Command::Equals:
         calculate();
         return;
-    }
-    if (label == L"C") {
+    case Command::Clear:
         clear_calculation();
         return;
-    }
-    if (label == L"⌫") {
+    case Command::Backspace:
         backspace();
         return;
-    }
-    if (label == L"±" || label == L"x²" || label == L"√" || label == L"1/x") {
+    case Command::Negate:
+    case Command::Square:
+    case Command::SquareRoot:
+    case Command::Reciprocal:
         unary_transform(label);
         return;
-    }
-    if (label == L"MC") {
+    case Command::MemoryClear:
         g_session.memory_clear();
         set_status(L"MEMORY CLEARED");
         return;
-    }
-    if (label == L"MR") {
+    case Command::MemoryRecall:
         insert_text(format_value(g_session.memory_recall()));
         set_status(L"MEMORY RECALL");
         return;
-    }
-    if (label == L"M+" || label == L"M−") {
+    case Command::MemoryAdd:
+    case Command::MemorySubtract: {
         double value = 0.0;
         if (current_value(value)) {
-            if (label == L"M+") g_session.memory_add(value);
+            if (command == Command::MemoryAdd) g_session.memory_add(value);
             else g_session.memory_subtract(value);
             set_status(L"MEMORY UPDATED");
         }
         return;
     }
-    if (label == L"sin" || label == L"cos" || label == L"tan" ||
-        label == L"asin" || label == L"acos" || label == L"atan" ||
-        label == L"ln" || label == L"log" || label == L"exp" ||
-        label == L"abs") {
+    case Command::Sin:
+    case Command::Cos:
+    case Command::Tan:
+    case Command::Asin:
+    case Command::Acos:
+    case Command::Atan:
+    case Command::Ln:
+    case Command::Log10:
+    case Command::Exp:
+    case Command::Abs:
         scientific_transform(label);
         return;
-    }
-    if (label == L"π") {
+    case Command::Pi:
         insert_text(L"pi");
         return;
-    }
-    if (label == L"e") {
+    case Command::Euler:
         insert_text(L"e");
         return;
-    }
-    if (label == L"x!") {
+    case Command::Factorial:
         insert_text(L"!");
         return;
-    }
-    if (label == L"∛") {
+    case Command::CubeRoot:
         insert_text(L"cbrt(");
         return;
+    default:
+        break;
     }
 
-    insert_text(insertion_for_label(label));
+    const std::string_view insertion =
+        infiltrator::calc::ui::insertion_text(command);
+    if (!insertion.empty()) {
+        insert_text(utf8_to_wide(std::string(insertion)));
+    }
 }
 
-bool is_number_label(const std::wstring& label) {
-    if (label.size() != 1U) return false;
-    const wchar_t ch = label[0];
-    return (ch >= L'0' && ch <= L'9') ||
-           (ch >= L'A' && ch <= L'F') ||
-           ch == L'.';
-}
-
-bool is_memory_label(const std::wstring& label) {
-    return label == L"MC" || label == L"MR" ||
-           label == L"M+" || label == L"M−";
-}
-
-ButtonKind button_kind(int id, const std::wstring& label) {
+ButtonKind button_kind(int id, const ButtonSpec* spec) {
     if (id == kIdHistory) return ButtonKind::Toolbar;
     if (id == kIdModeStandard || id == kIdModeScientific ||
         id == kIdModeProgrammer) return ButtonKind::Mode;
-    if (label == L"=") return ButtonKind::Equals;
-    if (label == L"C" || label == L"AC" || label == L"⌫")
-        return ButtonKind::Clear;
-    if (label == L"MC" || label == L"MR" || label == L"M+" ||
-        label == L"M−" || label == L"DEG" || label == L"RAD" ||
-        label == L"BIN" || label == L"OCT" || label == L"DEC" ||
-        label == L"HEX" || label == L"W8" || label == L"W16" ||
-        label == L"W32" || label == L"W64" || label == L"U/S")
-        return ButtonKind::Utility;
-    if (is_number_label(label)) return ButtonKind::Number;
+    if (spec == nullptr) return ButtonKind::Operation;
+
+    switch (spec->role) {
+    case ButtonRole::Number: return ButtonKind::Number;
+    case ButtonRole::Operation: return ButtonKind::Operation;
+    case ButtonRole::Utility: return ButtonKind::Utility;
+    case ButtonRole::Clear: return ButtonKind::Clear;
+    case ButtonRole::Equals: return ButtonKind::Equals;
+    }
     return ButtonKind::Operation;
 }
 
-bool is_selected_button(int id, const std::wstring& label) {
+bool is_memory_command(Command command) {
+    return command == Command::MemoryClear ||
+           command == Command::MemoryRecall ||
+           command == Command::MemoryAdd ||
+           command == Command::MemorySubtract;
+}
+
+bool is_selected_button(int id, const ButtonSpec* spec) {
     if (id == kIdModeStandard) return g_mode == Mode::Standard;
     if (id == kIdModeScientific) return g_mode == Mode::Scientific;
     if (id == kIdModeProgrammer) return g_mode == Mode::Programmer;
+    if (spec == nullptr) return false;
 
-    if (label == L"BIN") return g_programmer_base == infiltrator::calc::ProgrammerBase::Binary;
-    if (label == L"OCT") return g_programmer_base == infiltrator::calc::ProgrammerBase::Octal;
-    if (label == L"DEC") return g_programmer_base == infiltrator::calc::ProgrammerBase::Decimal;
-    if (label == L"HEX") return g_programmer_base == infiltrator::calc::ProgrammerBase::Hexadecimal;
-    if (label == L"W8") return g_programmer_width == infiltrator::calc::IntegerWidth::Bits8;
-    if (label == L"W16") return g_programmer_width == infiltrator::calc::IntegerWidth::Bits16;
-    if (label == L"W32") return g_programmer_width == infiltrator::calc::IntegerWidth::Bits32;
-    if (label == L"W64") return g_programmer_width == infiltrator::calc::IntegerWidth::Bits64;
-    if (label == L"U/S") return g_programmer_signed;
-    return false;
+    switch (spec->command) {
+    case Command::BaseBin:
+        return g_programmer_base == infiltrator::calc::ProgrammerBase::Binary;
+    case Command::BaseOct:
+        return g_programmer_base == infiltrator::calc::ProgrammerBase::Octal;
+    case Command::BaseDec:
+        return g_programmer_base == infiltrator::calc::ProgrammerBase::Decimal;
+    case Command::BaseHex:
+        return g_programmer_base == infiltrator::calc::ProgrammerBase::Hexadecimal;
+    case Command::Width8:
+        return g_programmer_width == infiltrator::calc::IntegerWidth::Bits8;
+    case Command::Width16:
+        return g_programmer_width == infiltrator::calc::IntegerWidth::Bits16;
+    case Command::Width32:
+        return g_programmer_width == infiltrator::calc::IntegerWidth::Bits32;
+    case Command::Width64:
+        return g_programmer_width == infiltrator::calc::IntegerWidth::Bits64;
+    case Command::ToggleSigned:
+        return g_programmer_signed;
+    default:
+        return false;
+    }
 }
 
 LRESULT draw_button(const DRAWITEMSTRUCT* item) {
@@ -656,8 +700,11 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
 
     const int id = static_cast<int>(item->CtlID);
     const std::wstring label = window_text(item->hwndItem);
-    const ButtonKind kind = button_kind(id, label);
-    const bool selected = is_selected_button(id, label);
+    const auto spec_it = g_key_specs.find(id);
+    const ButtonSpec* spec =
+        spec_it != g_key_specs.end() ? spec_it->second : nullptr;
+    const ButtonKind kind = button_kind(id, spec);
+    const bool selected = is_selected_button(id, spec);
     const bool pressed = (item->itemState & ODS_SELECTED) != 0U;
     const bool disabled = (item->itemState & ODS_DISABLED) != 0U;
     const bool hovered = item->hwndItem == g_hover_button;
@@ -676,7 +723,7 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
         text = kButtonBackground;
         break;
     case ButtonKind::Utility:
-        if (is_memory_label(label)) {
+        if (spec != nullptr && is_memory_command(spec->command)) {
             fill = kBackground;
             text = kMuted;
             border = kBackground;
@@ -825,14 +872,16 @@ HWND create_button(HWND parent, int id, const wchar_t* label, HFONT font) {
     return button;
 }
 
-void create_key_grid(const wchar_t* const* labels, int rows,
+void create_key_grid(const ButtonSpec* specs, std::size_t count,
                      std::vector<HWND>& destination, int& next_id) {
     destination.clear();
-    destination.reserve(static_cast<std::size_t>(rows * 4));
-    for (int i = 0; i < rows * 4; ++i) {
+    destination.reserve(count);
+    for (std::size_t i = 0; i < count; ++i) {
         const int id = next_id++;
-        g_key_labels.emplace(id, labels[i]);
-        destination.push_back(create_button(g_main, id, labels[i], g_ui_bold_font));
+        const std::wstring label = utf8_to_wide(std::string(specs[i].label));
+        g_key_specs.emplace(id, &specs[i]);
+        destination.push_back(
+            create_button(g_main, id, label.c_str(), g_ui_bold_font));
     }
 }
 
@@ -888,7 +937,8 @@ void layout_grid_range(const std::vector<HWND>& buttons,
                        int left, int top, int width, int height) {
     if (start_index >= buttons.size() || rows <= 0) return;
 
-    const int gap = sx(g_main, 6);
+    const int gap = sx(
+        g_main, infiltrator::calc::ui::kDesktopMetrics.grid_gap_x);
     const int columns = 4;
     const int button_width = std::max(sx(g_main, 46),
                                       (width - gap * (columns - 1)) / columns);
@@ -916,7 +966,8 @@ void layout_grid(const std::vector<HWND>& buttons, int rows,
 void layout_standard_grid(int left, int top, int width, int height) {
     if (g_standard_buttons.size() < 28U) return;
 
-    const int memory_height = sx(g_main, 24);
+    const int memory_height = sx(
+        g_main, infiltrator::calc::ui::kDesktopMetrics.memory_height);
     const int memory_gap = sx(g_main, 2);
     const int memory_width = width / 4;
 
@@ -1019,9 +1070,18 @@ void create_controls(HWND window) {
                                  0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_history_button = create_button(window, kIdHistory, L"History", g_ui_bold_font);
 
-    g_mode_buttons[0] = create_button(window, kIdModeStandard, L"Standard", g_ui_bold_font);
-    g_mode_buttons[1] = create_button(window, kIdModeScientific, L"Scientific", g_ui_bold_font);
-    g_mode_buttons[2] = create_button(window, kIdModeProgrammer, L"Programmer", g_ui_bold_font);
+    const std::wstring standard_mode =
+        utf8_to_wide(std::string(infiltrator::calc::ui::mode_name(Mode::Standard)));
+    const std::wstring scientific_mode =
+        utf8_to_wide(std::string(infiltrator::calc::ui::mode_name(Mode::Scientific)));
+    const std::wstring programmer_mode =
+        utf8_to_wide(std::string(infiltrator::calc::ui::mode_name(Mode::Programmer)));
+    g_mode_buttons[0] = create_button(
+        window, kIdModeStandard, standard_mode.c_str(), g_ui_bold_font);
+    g_mode_buttons[1] = create_button(
+        window, kIdModeScientific, scientific_mode.c_str(), g_ui_bold_font);
+    g_mode_buttons[2] = create_button(
+        window, kIdModeProgrammer, programmer_mode.c_str(), g_ui_bold_font);
 
     g_expression = CreateWindowExW(
         0, L"EDIT", L"",
@@ -1059,44 +1119,35 @@ void create_controls(HWND window) {
                                   return CallWindowProcW(g_old_edit_proc, edit, message, wparam, lparam);
                               })));
 
-    const wchar_t* standard_keys[] = {
-        L"MC", L"MR", L"M+", L"M−",
-        L"%", L"C", L"⌫", L"÷",
-        L"1/x", L"x²", L"√", L"^",
-        L"7", L"8", L"9", L"×",
-        L"4", L"5", L"6", L"−",
-        L"1", L"2", L"3", L"+",
-        L"±", L"0", L".", L"="
-    };
-    const wchar_t* scientific_keys[] = {
-        L"DEG", L"π", L"e", L"C",
-        L"sin", L"cos", L"tan", L"⌫",
-        L"asin", L"acos", L"atan", L"^",
-        L"ln", L"log", L"exp", L"x!",
-        L"√", L"∛", L"abs", L"%",
-        L"7", L"8", L"9", L"÷",
-        L"4", L"5", L"6", L"×",
-        L"1", L"2", L"3", L"−",
-        L"(", L"0", L")", L"+",
-        L"±", L".", L"1/x", L"="
-    };
-    const wchar_t* programmer_keys[] = {
-        L"BIN", L"OCT", L"DEC", L"HEX",
-        L"W8", L"W16", L"W32", L"W64",
-        L"U/S", L"~", L"&", L"|",
-        L"^", L"<<", L">>", L"AC",
-        L"(", L")", L"÷", L"×",
-        L"7", L"8", L"9", L"−",
-        L"4", L"5", L"6", L"+",
-        L"1", L"2", L"3", L"=",
-        L"0", L"A", L"B", L"⌫",
-        L"C", L"D", L"E", L"F"
-    };
-
     int next_id = kIdKeyBase;
-    create_key_grid(standard_keys, 7, g_standard_buttons, next_id);
-    create_key_grid(scientific_keys, 10, g_scientific_buttons, next_id);
-    create_key_grid(programmer_keys, 10, g_programmer_buttons, next_id);
+
+    g_standard_buttons.clear();
+    g_standard_buttons.reserve(
+        infiltrator::calc::ui::kStandardMemory.size() +
+        infiltrator::calc::ui::kStandardKeypad.size());
+    for (const ButtonSpec& spec : infiltrator::calc::ui::kStandardMemory) {
+        const int id = next_id++;
+        const std::wstring label = utf8_to_wide(std::string(spec.label));
+        g_key_specs.emplace(id, &spec);
+        g_standard_buttons.push_back(
+            create_button(g_main, id, label.c_str(), g_ui_bold_font));
+    }
+    for (const ButtonSpec& spec : infiltrator::calc::ui::kStandardKeypad) {
+        const int id = next_id++;
+        const std::wstring label = utf8_to_wide(std::string(spec.label));
+        g_key_specs.emplace(id, &spec);
+        g_standard_buttons.push_back(
+            create_button(g_main, id, label.c_str(), g_ui_bold_font));
+    }
+
+    create_key_grid(
+        infiltrator::calc::ui::kScientificKeypad.data(),
+        infiltrator::calc::ui::kScientificKeypad.size(),
+        g_scientific_buttons, next_id);
+    create_key_grid(
+        infiltrator::calc::ui::kProgrammerKeypad.data(),
+        infiltrator::calc::ui::kProgrammerKeypad.size(),
+        g_programmer_buttons, next_id);
 
     update_mode_ui();
 }
@@ -1197,8 +1248,10 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
 
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
-        info->ptMinTrackSize.x = sx(window, 320);
-        info->ptMinTrackSize.y = sx(window, 520);
+        info->ptMinTrackSize.x = sx(
+            window, infiltrator::calc::ui::kDesktopMetrics.minimum_width);
+        info->ptMinTrackSize.y = sx(
+            window, infiltrator::calc::ui::kDesktopMetrics.minimum_height);
         return 0;
     }
 
@@ -1227,9 +1280,9 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             return 0;
         }
 
-        const auto found = g_key_labels.find(id);
-        if (found != g_key_labels.end()) {
-            handle_key(found->second);
+        const auto found = g_key_specs.find(id);
+        if (found != g_key_specs.end() && found->second != nullptr) {
+            handle_key(*found->second);
             redraw_active_grid();
             InvalidateRect(window, nullptr, FALSE);
             return 0;
@@ -1356,7 +1409,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
         return 1;
     }
 
-    RECT desired{0, 0, 360, 610};
+    RECT desired{
+        0, 0,
+        infiltrator::calc::ui::kDesktopMetrics.default_width,
+        infiltrator::calc::ui::kDesktopMetrics.default_height};
     AdjustWindowRectEx(&desired, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     g_main = CreateWindowExW(
