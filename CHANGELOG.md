@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.11
+
+- Fixed native Windows keypad creation by binding the main window handle during `WM_CREATE` before constructing child key controls.
+- Added a Windows startup regression test that launches the built EXE and verifies the complete calculator button set is actually created.
+- Retained the standalone native Win32/MSVC packaging introduced in 0.1.10 and the compact Linux layout repair.
+
 ## 0.1.10
 
 - Replaced the Windows GTK/MSYS2 shell with a native Win32 interface over the existing shared C++ calculator core.
