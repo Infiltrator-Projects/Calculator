@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.35 — 2026-09-19
+
+- Corrected the 0.1.34 Standard-mode sizing regression: Standard is compact again instead of stretching its keypad to fill an oversized window.
+- Moved the 480-unit Standard preferred/minimum height into the shared desktop contract, with Scientific and Programmer retaining the 610-unit preferred / 520-unit minimum extended geometry.
+- Made GTK and Win32 consume the same mode-aware height contract and added regression coverage preventing a return to platform-local or stretched Standard geometry.
+
 ## 0.1.34 — 2026-09-19
 
 - Removed the dead vertical strip below the Linux Standard keypad by allowing the Standard panel, grid and keypad rows to consume the window's shared 520px allocation.

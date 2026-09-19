@@ -56,15 +56,6 @@ bool effective_dark_theme = true;
 constexpr const char* kUiFont = "MB Corpo S Title WEB";
 constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";
 
-constexpr int kStandardWindowHeight = 520;
-constexpr int kExtendedWindowHeight = 610;
-
-int preferred_window_height(Mode mode) {
-    return mode == Mode::Standard
-        ? kStandardWindowHeight
-        : kExtendedWindowHeight;
-}
-
 std::string hex_colour(std::uint32_t value) {
     char buffer[8] = {};
     std::snprintf(buffer, sizeof(buffer), "#%06X", value & 0xFFFFFFU);
@@ -365,7 +356,7 @@ void on_mode_clicked(GtkButton*, gpointer data) {
             gtk_window_set_default_size(
                 GTK_WINDOW(main_window),
                 std::max(current_width, metrics.default_width),
-                preferred_window_height(mode));
+                calculator::ui::desktop_preferred_height(mode));
         }
     }
 
@@ -450,15 +441,13 @@ GtkWidget* new_grid() {
     return grid;
 }
 
-void fill_grid(
-    GtkWidget* grid, const ButtonSpec* specs, std::size_t count,
-    bool vertical_expand = false) {
+void fill_grid(GtkWidget* grid, const ButtonSpec* specs, std::size_t count) {
     for (std::size_t index = 0; index < count; ++index) {
         const int row = static_cast<int>(index / 4U);
         const int column = static_cast<int>(index % 4U);
-        GtkWidget* button = calc_button(specs[index]);
-        gtk_widget_set_vexpand(button, vertical_expand);
-        gtk_grid_attach(GTK_GRID(grid), button, column, row, 1, 1);
+        gtk_grid_attach(
+            GTK_GRID(grid), calc_button(specs[index]),
+            column, row, 1, 1);
     }
 }
 
@@ -634,7 +623,7 @@ void activate(GtkApplication* app, gpointer) {
     gtk_window_set_default_size(
         GTK_WINDOW(window),
         metrics.default_width,
-        preferred_window_height(Mode::Standard));
+        calculator::ui::desktop_preferred_height(Mode::Standard));
 
     GtkWidget* shell = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, metrics.section_gap);
     gtk_widget_add_css_class(shell, "shell");
@@ -701,7 +690,6 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(display), status_label);
 
     standard_panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-    gtk_widget_set_vexpand(standard_panel, TRUE);
     gtk_box_append(GTK_BOX(calculator_column), standard_panel);
 
     GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -711,13 +699,11 @@ void activate(GtkApplication* app, gpointer) {
     }
 
     GtkWidget* standard_grid = new_grid();
-    gtk_widget_set_vexpand(standard_grid, TRUE);
     gtk_box_append(GTK_BOX(standard_panel), standard_grid);
     fill_grid(
         standard_grid,
         calculator::ui::kStandardKeypad.data(),
-        calculator::ui::kStandardKeypad.size(),
-        true);
+        calculator::ui::kStandardKeypad.size());
 
     scientific_grid = new_grid();
     gtk_box_append(GTK_BOX(calculator_column), scientific_grid);

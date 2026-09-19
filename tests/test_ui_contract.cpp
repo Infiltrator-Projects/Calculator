@@ -30,6 +30,14 @@ int main() {
     static_assert(kDesktopMetrics.default_height == 610);
     static_assert(kDesktopMetrics.minimum_width == 320);
     static_assert(kDesktopMetrics.minimum_height == 520);
+    static_assert(kDesktopMetrics.standard_height == 480);
+    static_assert(kDesktopMetrics.standard_minimum_height == 480);
+    static_assert(desktop_preferred_height(Mode::Standard) == 480);
+    static_assert(desktop_preferred_height(Mode::Scientific) == 610);
+    static_assert(desktop_preferred_height(Mode::Programmer) == 610);
+    static_assert(desktop_minimum_height(Mode::Standard) == 480);
+    static_assert(desktop_minimum_height(Mode::Scientific) == 520);
+    static_assert(desktop_minimum_height(Mode::Programmer) == 520);
     static_assert(kDesktopMetrics.grid_gap_x == 6);
     static_assert(kDesktopMetrics.grid_gap_y == 5);
     static_assert(kDesktopMetrics.key_min_height == 32);

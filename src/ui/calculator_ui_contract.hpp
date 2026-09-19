@@ -103,6 +103,8 @@ struct DesktopMetrics {
     int default_height;
     int minimum_width;
     int minimum_height;
+    int standard_height;
+    int standard_minimum_height;
     int shell_padding;
     int section_gap;
     int grid_gap_x;
@@ -126,12 +128,25 @@ struct ResponsiveLayout {
 inline constexpr DesktopMetrics kDesktopMetrics{
     360, 610,
     320, 520,
+    480, 480,
     10, 6,
     6, 5,
     32, 24,
     38, 104,
     720, 340, 560, 240
 };
+
+inline constexpr int desktop_preferred_height(Mode mode) {
+    return mode == Mode::Standard
+        ? kDesktopMetrics.standard_height
+        : kDesktopMetrics.default_height;
+}
+
+inline constexpr int desktop_minimum_height(Mode mode) {
+    return mode == Mode::Standard
+        ? kDesktopMetrics.standard_minimum_height
+        : kDesktopMetrics.minimum_height;
+}
 
 inline constexpr ResponsiveLayout responsive_layout(int width, int height) {
     if (width >= kDesktopMetrics.wide_threshold) {

@@ -958,6 +958,35 @@ void layout_main(HWND window) {
     ShowWindow(g_footer, SW_HIDE);
 }
 
+void resize_main_for_mode(HWND window, Mode mode) {
+    if (window == nullptr) return;
+
+    RECT client{};
+    RECT outer{};
+    if (!GetClientRect(window, &client) || !GetWindowRect(window, &outer)) {
+        return;
+    }
+
+    const int dpi = window_dpi(window);
+    const int client_width = client.right - client.left;
+    const int logical_width = MulDiv(client_width, 96, dpi);
+    if (logical_width >= calculator::ui::kDesktopMetrics.wide_threshold) {
+        return;
+    }
+
+    const int nonclient_height =
+        (outer.bottom - outer.top) - (client.bottom - client.top);
+    const int desired_client_height = sx(
+        window, calculator::ui::desktop_preferred_height(mode));
+    const int desired_outer_height =
+        desired_client_height + std::max(0, nonclient_height);
+
+    SetWindowPos(
+        window, nullptr, 0, 0,
+        outer.right - outer.left, desired_outer_height,
+        SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
 void draw_panel(HDC dc, const RECT& rect, COLORREF fill, COLORREF border,
                 int radius) {
     HBRUSH brush = CreateSolidBrush(fill);
@@ -1245,7 +1274,9 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         info->ptMinTrackSize.x = sx(
             window, calculator::ui::kDesktopMetrics.minimum_width);
         info->ptMinTrackSize.y = sx(
-            window, calculator::ui::kDesktopMetrics.minimum_height);
+            window,
+            calculator::ui::desktop_minimum_height(
+                g_controller.state().mode));
         return 0;
     }
 
@@ -1265,6 +1296,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             sync_controller_expression();
             g_controller.set_mode(Mode::Standard);
             update_mode_ui();
+            resize_main_for_mode(window, Mode::Standard);
             layout_main(window);
             return 0;
         }
@@ -1272,6 +1304,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             sync_controller_expression();
             g_controller.set_mode(Mode::Scientific);
             update_mode_ui();
+            resize_main_for_mode(window, Mode::Scientific);
             layout_main(window);
             return 0;
         }
@@ -1279,6 +1312,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             sync_controller_expression();
             g_controller.set_mode(Mode::Programmer);
             update_mode_ui();
+            resize_main_for_mode(window, Mode::Programmer);
             layout_main(window);
             return 0;
         }
@@ -1436,7 +1470,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     RECT desired{
         0, 0,
         calculator::ui::kDesktopMetrics.default_width,
-        calculator::ui::kDesktopMetrics.default_height};
+        calculator::ui::desktop_preferred_height(Mode::Standard)};
     AdjustWindowRectEx(&desired, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     g_main = CreateWindowExW(

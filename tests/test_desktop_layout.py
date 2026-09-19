@@ -16,14 +16,29 @@ cmake = Path("CMakeLists.txt").read_text(encoding="utf-8")
 for needle in (
     'constexpr const char* kUiFont = "MB Corpo S Title WEB";',
     'constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";',
-    "constexpr int kStandardWindowHeight = 520;",
-    "constexpr int kExtendedWindowHeight = 610;",
-    "preferred_window_height(Mode::Standard)",
-    "gtk_widget_set_vexpand(standard_panel, TRUE);",
-    "gtk_widget_set_vexpand(standard_grid, TRUE);",
-    "calculator::ui::kStandardKeypad.size(),\n        true);",
+    "calculator::ui::desktop_preferred_height(mode)",
+    "calculator::ui::desktop_preferred_height(Mode::Standard)",
 ):
     assert needle in linux, f"Linux compact/MB typography contract missing: {needle}"
+
+for forbidden in (
+    "kStandardWindowHeight",
+    "kExtendedWindowHeight",
+    "gtk_widget_set_vexpand(standard_panel, TRUE);",
+    "gtk_widget_set_vexpand(standard_grid, TRUE);",
+):
+    assert forbidden not in linux, (
+        f"Linux reintroduced local/stretched Standard geometry: {forbidden}"
+    )
+
+for needle in (
+    "desktop_preferred_height(Mode::Standard)",
+    "desktop_preferred_height(Mode::Scientific)",
+    "desktop_preferred_height(Mode::Programmer)",
+    "desktop_minimum_height(",
+    "resize_main_for_mode",
+):
+    assert needle in windows, f"Windows mode-aware geometry missing: {needle}"
 
 for forbidden in (
     'kUiFont = "Sans"',
@@ -74,6 +89,9 @@ for needle in (
     "inline constexpr DesktopMetrics kDesktopMetrics",
     "360, 610",
     "320, 520",
+    "480, 480",
+    "desktop_preferred_height(Mode mode)",
+    "desktop_minimum_height(Mode mode)",
     "inline constexpr std::array<ButtonSpec, 4> kStandardMemory",
     "inline constexpr std::array<ButtonSpec, 24> kStandardKeypad",
     "inline constexpr std::array<ButtonSpec, 40> kScientificKeypad",

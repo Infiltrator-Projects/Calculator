@@ -1,3 +1,13 @@
+infiltrator-calculator (0.1.35) unstable; urgency=medium
+
+  * Restore the intended compact Standard-mode desktop geometry.
+  * Move Standard 480px and extended 610px sizing into the shared desktop contract.
+  * Keep Scientific and Programmer on the taller extended geometry.
+  * Remove the 0.1.34 keypad stretching workaround and enforce mode-aware sizing on GTK and Win32.
+  * Add regression coverage preventing local or stretched Standard geometry.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 22:48:00 +1000
+
 infiltrator-calculator (0.1.34) unstable; urgency=medium
 
   * Remove unused vertical space below the Linux Standard keypad.

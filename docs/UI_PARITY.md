@@ -23,7 +23,7 @@ Calculator has one interaction state machine rendered by three native shells. Li
 - command enablement; and
 - command dispatch and calculator interaction behaviour.
 
-The logical metrics are platform-neutral contract values. Win32 performs DPI conversion when mapping them to physical coordinates; GTK renders them through its native layout system.
+The logical metrics are platform-neutral contract values. Standard mode has a compact 480-unit preferred/minimum desktop height; Scientific and Programmer use the extended 610-unit preferred height with a 520-unit minimum. Both GTK and Win32 consume those mode-aware values rather than inventing platform-local heights. Win32 performs DPI conversion when mapping them to physical coordinates; GTK renders them through its native layout system.
 
 ## Platform-shell rule
 
