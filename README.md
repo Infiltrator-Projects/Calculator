@@ -6,7 +6,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
-**Current source version:** 0.1.23  
+**Current source version:** 0.1.24  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.2  
 **Design contract:** shared Design v1  
@@ -91,7 +91,7 @@ A release is published only after Linux, Windows and iOS builds and the shared-c
 
 ### Compatibility identifiers
 
-The user-facing product name is **Calculator**. The Debian package/executable/configuration identifier `infiltrator-calc` and the existing iOS bundle identifier `net.ssmith.infiltrator.calc` are retained as stable compatibility identities so upgrades, settings and installed application identity are not broken by the rename. They are not the product name.
+The user-facing product name is **Calculator**. The Debian/APT package identity is `infiltrator-calculator`. The existing executable/configuration identifier `infiltrator-calc` and iOS bundle identifier `net.ssmith.infiltrator.calc` remain stable compatibility identities so settings, launch paths and installed application identity are not broken. Existing `infiltrator-calc` Debian package installations migrate through the central repository transition package.
 
 ## Shared design
 
