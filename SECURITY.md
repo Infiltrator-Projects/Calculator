@@ -20,7 +20,7 @@ Security-sensitive inputs and boundaries include:
 
 - expression and variable text supplied by the user or pasted from another source;
 - numeric parsing and conversion at the Calculator/Common boundary;
-- fixed-width Programmer parsing, shifts and arithmetic where malformed input must not trigger undefined behaviour;
+- fixed-width Programmer parsing, shifts and arithmetic where malformed or excessively nested input must fail within explicit parser bounds rather than trigger undefined behaviour or native stack exhaustion;
 - the Objective-C++ boundary between Swift and the shared C++ core;
 - platform-owned configuration/persistence such as Linux preferences, Windows Registry state and iPhone AppStorage;
 - local font/theme discovery and toolkit/platform callbacks; and

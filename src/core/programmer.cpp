@@ -2,6 +2,7 @@
 #include "programmer.hpp"
 
 #include <cctype>
+#include <cstddef>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -9,6 +10,8 @@
 
 namespace calculator {
 namespace {
+
+constexpr std::size_t kMaxParseDepth = 256;
 
 std::uint64_t mask_for(IntegerWidth width) {
     switch (width) {
@@ -57,6 +60,7 @@ private:
     ProgrammerBase base_;
     IntegerWidth width_;
     std::size_t position_ = 0;
+    std::size_t recursion_depth_ = 0;
     std::string error_;
 
     ProgrammerResult fail(const char* message) {
@@ -85,6 +89,19 @@ private:
             return true;
         }
         return false;
+    }
+
+    bool enter_recursion() {
+        if (recursion_depth_ >= kMaxParseDepth) {
+            if (error_.empty()) error_ = "expression nesting too deep";
+            return false;
+        }
+        ++recursion_depth_;
+        return true;
+    }
+
+    void leave_recursion() noexcept {
+        if (recursion_depth_ > 0) --recursion_depth_;
     }
 
     std::uint64_t parse_or() {
@@ -159,10 +176,16 @@ private:
     }
 
     std::uint64_t parse_unary() {
-        if (consume('~')) return (~parse_unary()) & mask_for(width_);
-        if (consume('+')) return parse_unary() & mask_for(width_);
-        if (consume('-')) return (0ULL - parse_unary()) & mask_for(width_);
-        return parse_primary();
+        if (!enter_recursion()) return 0;
+
+        std::uint64_t value = 0;
+        if (consume('~')) value = (~parse_unary()) & mask_for(width_);
+        else if (consume('+')) value = parse_unary() & mask_for(width_);
+        else if (consume('-')) value = (0ULL - parse_unary()) & mask_for(width_);
+        else value = parse_primary();
+
+        leave_recursion();
+        return value & mask_for(width_);
     }
 
     std::uint64_t parse_primary() {

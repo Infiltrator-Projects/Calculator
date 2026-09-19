@@ -1,3 +1,11 @@
+infiltrator-calculator (0.1.32) unstable; urgency=medium
+
+  * Bound recursive Programmer parsing for nested parentheses and unary operators.
+  * Return a deterministic nesting error instead of risking native stack exhaustion.
+  * Add permanent Programmer regression coverage for both deep nesting forms.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 21:55:00 +1000
+
 infiltrator-calculator (0.1.31) unstable; urgency=medium
 
   * Route iPhone interaction through the shared C++ controller, restoring Standard immediate arithmetic and contextual percentage parity.

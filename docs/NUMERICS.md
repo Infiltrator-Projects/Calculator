@@ -58,7 +58,7 @@ Postfix `%` divides a value by 100 in expression mode. Factorial accepts non-neg
 
 The current function set delegates elementary transcendental operations to the C++ standard math library. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
 
-Recursive grammar descent is explicitly bounded. Expressions whose nesting exceeds the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
+Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Inputs whose nested parentheses or unary operators exceed the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
 
 ## Standard immediate semantics
 

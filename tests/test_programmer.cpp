@@ -15,6 +15,10 @@ static void expect_error(const char* expression,calculator::ProgrammerBase base,
     const auto r=calculator::evaluate_programmer(expression,base,width);
     if(r.ok||r.error.empty())fail(std::string(expression)+" should fail");
 }
+static void expect_error_message(const std::string& expression,calculator::ProgrammerBase base,calculator::IntegerWidth width,const char* expected){
+    const auto r=calculator::evaluate_programmer(expression,base,width);
+    if(r.ok||r.error!=expected)fail("unexpected error for bounded Programmer expression: "+r.error);
+}
 
 int main(){
     using calculator::IntegerWidth;
@@ -37,6 +41,20 @@ int main(){
     expect_error("1 << 64",ProgrammerBase::Decimal,IntegerWidth::Bits64);
     expect_error("1 << 256",ProgrammerBase::Decimal,IntegerWidth::Bits8);
     expect_error("102",ProgrammerBase::Binary,IntegerWidth::Bits8);
+
+    std::string deeply_nested(300,'(');
+    deeply_nested += "1";
+    deeply_nested.append(300,')');
+    expect_error_message(
+        deeply_nested,ProgrammerBase::Decimal,IntegerWidth::Bits64,
+        "expression nesting too deep");
+
+    std::string deeply_unary(300,'~');
+    deeply_unary += "0";
+    expect_error_message(
+        deeply_unary,ProgrammerBase::Decimal,IntegerWidth::Bits64,
+        "expression nesting too deep");
+
     if(failures){std::cerr<<failures<<" programmer test(s) failed\n";return 1;}
     std::cout<<"programmer tests passed\n";
     return 0;
