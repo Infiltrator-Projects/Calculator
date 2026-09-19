@@ -251,7 +251,7 @@ const wchar_t* brand_font_family() {
 
 bool register_font_resource(int resource_id) {
     HRSRC resource = FindResourceW(
-        g_instance, MAKEINTRESOURCEW(resource_id), RT_RCDATA);
+        g_instance, MAKEINTRESOURCEW(resource_id), MAKEINTRESOURCEW(10));
     if (resource == nullptr) return false;
 
     HGLOBAL loaded = LoadResource(g_instance, resource);
