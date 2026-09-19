@@ -50,9 +50,11 @@ Controller controller;
 ThemeMode theme_mode = ThemeMode::System;
 bool effective_dark_theme = true;
 
-// Linux uses the desktop's native sans-serif family for small UI text.
-constexpr const char* kUiFont = "Sans";
-constexpr const char* kBrandFont = "Sans";
+// Calculator has exactly three approved MB Corpo faces: S Regular, S Bold
+// and A Condensed Regular. GTK selects the S regular/bold face by weight and
+// the A condensed face for display text; no fourth family is selected here.
+constexpr const char* kUiFont = "MB Corpo S Title WEB";
+constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";
 
 constexpr int kStandardWindowHeight = 480;
 constexpr int kExtendedWindowHeight = 610;
@@ -163,30 +165,12 @@ void refresh_history_dock() {
     gtk_text_buffer_set_text(buffer, text.c_str(), -1);
 }
 
-bool font_family_available(const char* wanted) {
-    PangoFontMap* map = PANGO_FONT_MAP(pango_cairo_font_map_get_default());
-    PangoFontFamily** families = nullptr;
-    int count = 0;
-    pango_font_map_list_families(map, &families, &count);
-
-    bool found = false;
-    for (int i = 0; i < count; ++i) {
-        const char* name = pango_font_family_get_name(families[i]);
-        if (name && g_ascii_strcasecmp(name, wanted) == 0) {
-            found = true;
-            break;
-        }
-    }
-    g_free(families);
-    return found;
-}
-
 const char* ui_font() {
-    return font_family_available(kUiFont) ? kUiFont : "Sans";
+    return kUiFont;
 }
 
 const char* brand_font() {
-    return font_family_available(kBrandFont) ? kBrandFont : ui_font();
+    return kBrandFont;
 }
 
 void sync_expression_from_widget() {
@@ -530,24 +514,24 @@ void apply_css(GtkWidget* window) {
         ".shell{padding:" + std::to_string(metrics.shell_padding) + "px}"
         ".calculator-column{background:" + background + "}"
         ".header{margin-bottom:0}"
-        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:600;color:" + title + "}"
+        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + title + "}"
         ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
-            "border-radius:8px;min-height:28px;padding:0 10px;font-size:12px;font-weight:600}"
+            "border-radius:8px;min-height:28px;padding:0 10px;font-size:12px;font-weight:700}"
         ".toolbar-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:9px;padding:3px}"
         ".mode-tab{background:transparent;color:" + subtle + ";border:0;border-radius:7px;"
-            "min-height:28px;font-size:11px;font-weight:600;padding:0 8px}"
+            "min-height:28px;font-size:11px;font-weight:700;padding:0 8px}"
         ".mode-tab:hover{background:" + surface_hover + ";color:" + text + "}"
         ".mode-tab.selected{background:" + primary + ";color:" + primary_text + "}"
         ".display{background:" + panel + ";border:1px solid " + border + ";border-radius:9px;padding:10px}"
         ".expression{background:" + input + ";color:" + muted + ";border:0;border-radius:7px;"
             "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none}"
         ".expression:focus{border:0;outline:none;box-shadow:none}"
-        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:500;color:" + title + ";padding-top:2px}"
-        ".status{font-size:10px;font-weight:600;letter-spacing:.04em;color:" + subtle + "}"
+        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + title + ";padding-top:2px}"
+        ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + subtle + "}"
         ".status.fault{color:" + fault + "}"
         ".calc-button{border:1px solid " + border + ";border-radius:8px;min-height:" +
-            std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:600;padding:0}"
+            std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0}"
         ".calc-button:disabled{opacity:.38}"
         ".calc-button.number{background:" + card + ";color:" + title + "}"
         ".calc-button.number:hover{background:" + card_hover + ";border-color:" + neutral + "}"
@@ -561,7 +545,7 @@ void apply_css(GtkWidget* window) {
         ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent}"
         ".calc-button.clear{background:" + card + ";color:" + warning + "}"
         ".calc-button.clear:hover{background:" + card_hover + ";border-color:" + warning + "}"
-        ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:15px;font-weight:600}"
+        ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:15px;font-weight:700}"
         ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + "}"
         ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:9px;padding:8px}"
         ".history-text{background:" + panel + ";color:" + text + ";font-size:12px}"

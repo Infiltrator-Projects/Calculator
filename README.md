@@ -6,7 +6,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
-**Current source version:** 0.1.25  
+**Current source version:** 0.1.28  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.3  
 **Design contract:** shared Design v1  
@@ -88,14 +88,15 @@ The calculation core links against `InfiltratrCommon::Portable` from the exact r
 
 ## Typography
 
-Calculator prefers locally installed MB Corpo fonts when available and falls back automatically to normal system fonts when they are absent. The native Windows shell explicitly uses Segoe UI when the preferred MB Corpo faces are unavailable, matching the Windows fallback defined by the shared design contract.
+Calculator's desktop typography is restricted to the three established MB Corpo faces used by the software family. Calculator does not deliberately select a generic fourth family such as Sans or Segoe UI.
 
-The project does **not** redistribute proprietary MB Corpo font binaries. The current UI roles are:
+The project does **not** redistribute proprietary MB Corpo font binaries. The three approved local font files and roles are:
 
-- `MB Corpo S Title WEB` for normal interface text and controls;
-- `MB Corpo A Title Cond WEB` for product/display titles.
+- `mb_corpo_s_regular.ttf` — `MB Corpo S Title WEB` regular interface text;
+- `mb_corpo_s_bold.ttf` — `MB Corpo S Title WEB` bold interface text, actions and emphasis;
+- `mb_corpo_a_cond_regular.ttf` — `MB Corpo A Title Cond WEB` product and display titles.
 
-This follows the established desktop applications in the software family.
+Linux and Windows request only those MB Corpo roles; the regular/bold distinction is expressed with the real 400/700 weights rather than a synthetic semibold face.
 
 ## Build
 

@@ -240,37 +240,12 @@ void recreate_theme_brushes() {
     g_input_brush = CreateSolidBrush(kInput);
 }
 
-bool font_family_available(const wchar_t* family) {
-    if (family == nullptr || *family == L'\0') return false;
-
-    HDC dc = GetDC(nullptr);
-    if (dc == nullptr) return false;
-
-    LOGFONTW query{};
-    query.lfCharSet = DEFAULT_CHARSET;
-    wcsncpy_s(query.lfFaceName, family, _TRUNCATE);
-
-    bool found = false;
-    auto callback = +[](const LOGFONTW*, const TEXTMETRICW*, DWORD, LPARAM data) -> int {
-        *reinterpret_cast<bool*>(data) = true;
-        return 0;
-    };
-    EnumFontFamiliesExW(dc, &query, callback,
-                        reinterpret_cast<LPARAM>(&found), 0);
-    ReleaseDC(nullptr, dc);
-    return found;
-}
-
 const wchar_t* ui_font_family() {
-    return font_family_available(L"MB Corpo S Title WEB")
-        ? L"MB Corpo S Title WEB"
-        : L"Segoe UI";
+    return L"MB Corpo S Title WEB";
 }
 
 const wchar_t* brand_font_family() {
-    return font_family_available(L"MB Corpo A Title Cond WEB")
-        ? L"MB Corpo A Title Cond WEB"
-        : L"Segoe UI";
+    return L"MB Corpo A Title Cond WEB";
 }
 
 HFONT make_font(HWND window, int point_size, int weight, const wchar_t* family) {
@@ -1319,10 +1294,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     const wchar_t* ui_family = ui_font_family();
     const wchar_t* brand_family = brand_font_family();
     g_ui_font = make_font(nullptr, 10, FW_NORMAL, ui_family);
-    g_ui_bold_font = make_font(nullptr, 10, FW_SEMIBOLD, ui_family);
+    g_ui_bold_font = make_font(nullptr, 10, FW_BOLD, ui_family);
     g_title_font = make_font(nullptr, 18, FW_NORMAL, brand_family);
     g_result_font = make_font(nullptr, 32, FW_NORMAL, brand_family);
-    g_small_font = make_font(nullptr, 8, FW_SEMIBOLD, ui_family);
+    g_small_font = make_font(nullptr, 8, FW_BOLD, ui_family);
 
     WNDCLASSEXW main_class{};
     main_class.cbSize = sizeof(main_class);
