@@ -30,11 +30,9 @@ The primary representation authority is IEEE 754 / ISO/IEC 60559. The project cu
 
 ## Decimal token conversion
 
-Calculator owns expression tokenisation because the parser must know where a numeric literal ends and an operator begins. Common's `infiltratr_parse_double()` deliberately validates a complete decimal string.
+Calculator owns expression grammar and decides when a numeric operand is expected. Common 1.19.7 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
 
-`parse_decimal_token()` recognises the Calculator decimal-token boundary and delegates locale-independent conversion to Common. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by that conversion contract.
-
-This keeps locale/parser mechanics reusable without moving Calculator's expression grammar into Common.
+Calculator therefore no longer carries a private decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned.
 
 ## Scientific expression grammar
 
@@ -56,7 +54,7 @@ Exponentiation is right-associative and binds more tightly than a leading sign: 
 
 Postfix `%` divides a value by 100 in expression mode. Factorial accepts non-negative integral real values through 170; larger factorials exceed the finite range of the current binary64 domain.
 
-The current function set delegates elementary transcendental operations to the C++ standard math library. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
+The current function set delegates elementary transcendental operations to the C++ standard math library through one Calculator-owned `apply_real_function()` contract. Both the expression parser and interactive unary/scientific controls use that same implementation, including degree/radian conversion and domain validation. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
 
 Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Inputs whose nested parentheses or unary operators exceed the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
 

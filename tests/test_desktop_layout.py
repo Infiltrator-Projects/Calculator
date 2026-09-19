@@ -14,12 +14,13 @@ ios_font_script = Path("ios/bundle-fonts.sh").read_text(encoding="utf-8")
 cmake = Path("CMakeLists.txt").read_text(encoding="utf-8")
 
 for needle in (
-    'constexpr const char* kUiFont = "MB Corpo S Title WEB";',
-    'constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";',
+    "calculator::ui::typography().ui_family",
+    "calculator::ui::typography().brand_family",
+    "calculator::ui::design_metrics()",
     "calculator::ui::desktop_preferred_height(mode)",
     "calculator::ui::desktop_preferred_height(Mode::Standard)",
 ):
-    assert needle in linux, f"Linux compact/MB typography contract missing: {needle}"
+    assert needle in linux, f"Linux Common/design contract missing: {needle}"
 
 for forbidden in (
     "kStandardWindowHeight",
@@ -50,11 +51,12 @@ for forbidden in (
     )
 
 for needle in (
-    'return L"MB Corpo S Title WEB";',
-    'return L"MB Corpo A Title Cond WEB";',
+    "calculator::ui::typography().ui_family",
+    "calculator::ui::typography().brand_family",
+    "calculator::ui::design_metrics()",
     "FW_BOLD",
 ):
-    assert needle in windows, f"Windows MB typography contract missing: {needle}"
+    assert needle in windows, f"Windows Common typography/design contract missing: {needle}"
 
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
     assert '../ui/calculator_ui_controller.hpp' in source, (
@@ -144,6 +146,8 @@ for needle in (
     "INFILTRATR_THEME_NIGHT",
     "infiltratr_theme_resolve",
     "infiltratr_theme_mode_next",
+    "infiltratr_design_metrics",
+    "infiltratr_typography",
 ):
     assert needle in theme, f"Calculator Common theme adapter missing: {needle}"
 
@@ -182,10 +186,14 @@ for needle in (
 # bridge rather than being mirrored in Swift.
 for needle in (
     "CalculatorBridge.themePalette(dark: dark)",
+    "CalculatorBridge.designMetrics()",
     "CalculatorPalette(dark: false)",
     "CalculatorPalette(dark: true)",
+    "sharedDesign.controlSpacing",
+    "sharedDesign.contentPadding",
+    "sharedDesign.screenPadding",
 ):
-    assert needle in ios, f"iPhone does not consume Common theme data: {needle}"
+    assert needle in ios, f"iPhone does not consume Common design data: {needle}"
 
 for forbidden in (
     "static let night",
@@ -200,9 +208,12 @@ for forbidden in (
 for needle in (
     "#include <infiltratr/design.h>",
     "infiltratr_theme_resolve",
+    "infiltratr_design_metrics",
     "background_rgb",
     "button_background_rgb",
     "equals_hover_rgb",
+    "control_radius",
+    "content_padding",
 ):
     assert needle in ios_bridge, f"iPhone Common theme bridge missing: {needle}"
 
@@ -228,8 +239,26 @@ for needle in (
     "mb_corpo_a_cond_regular.ttf",
 ):
     assert needle in ios_project, f"iPhone font bundle declaration missing: {needle}"
-    assert needle in ios_font_script, f"iPhone font fetch verification missing: {needle}"
-    assert needle in cmake, f"desktop font packaging missing: {needle}"
+
+for needle in (
+    "typography.assets.source_repository",
+    "typography.assets.source_commit",
+    "typography.assets.archive_sha256",
+    "typography.font_files.brand_regular",
+    "typography.font_files.ui_bold",
+    "typography.font_files.ui_regular",
+):
+    assert needle in ios_font_script, f"iPhone Common typography metadata missing: {needle}"
+
+for needle in (
+    "InfiltratrTypographyAssets.cmake",
+    "INFILTRATR_MB_CORPO_ARCHIVE_URL",
+    "INFILTRATR_MB_CORPO_ARCHIVE_SHA256",
+    "INFILTRATR_MB_CORPO_BRAND_REGULAR_FILE",
+    "INFILTRATR_MB_CORPO_UI_BOLD_FILE",
+    "INFILTRATR_MB_CORPO_UI_REGULAR_FILE",
+):
+    assert needle in cmake, f"desktop Common typography provenance missing: {needle}"
 
 for needle in (
     "MBCorpoSTitleWEB-Regular",
@@ -275,3 +304,7 @@ for forbidden in (
     )
 assert "calculator_ui_controller.hpp" in ios_bridge
 assert "Controller" in ios_bridge
+assert "history_text()" in ios_bridge
+assert "session().history()" not in ios_bridge
+assert "session().history()" not in linux
+assert "session().history()" not in windows

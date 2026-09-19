@@ -14,6 +14,8 @@ enum class ThemeMode {
 };
 
 using ThemePalette = InfiltratrThemePalette;
+using DesignMetrics = InfiltratrDesignMetrics;
+using Typography = InfiltratrTypography;
 
 inline std::string_view theme_mode_name(ThemeMode mode) {
     return infiltratr_theme_mode_name(
@@ -30,6 +32,14 @@ inline const ThemePalette& resolved_palette(ThemeMode mode,
                                             bool system_is_dark) {
     return *infiltratr_theme_resolve(
         static_cast<InfiltratrThemeMode>(mode), system_is_dark);
+}
+
+inline const DesignMetrics& design_metrics() {
+    return *infiltratr_design_metrics();
+}
+
+inline const Typography& typography() {
+    return *infiltratr_typography();
 }
 
 } // namespace calculator::ui

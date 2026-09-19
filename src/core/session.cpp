@@ -94,6 +94,28 @@ std::optional<double> Session::variable(const std::string& name) const {
 
 const Variables& Session::variables() const noexcept { return variables_; }
 const std::deque<HistoryEntry>& Session::history() const noexcept { return history_; }
+
+std::string Session::history_text(std::size_t limit,
+                                  std::string_view newline) const {
+    if (history_.empty()) return "No calculations yet.";
+
+    std::string text;
+    std::size_t shown = 0;
+    for (auto it = history_.rbegin();
+         it != history_.rend() && shown < limit;
+         ++it, ++shown) {
+        text += it->input;
+        text.append(newline.data(), newline.size());
+        text += "  = ";
+        text += it->result.ok
+                    ? calculator::format_value(it->result.value)
+                    : ("Error: " + it->result.error);
+        text.append(newline.data(), newline.size());
+        text.append(newline.data(), newline.size());
+    }
+    return text;
+}
+
 void Session::clear_history() noexcept { history_.clear(); }
 
 } // namespace calculator

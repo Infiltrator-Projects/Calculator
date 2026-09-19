@@ -53,9 +53,6 @@ bool effective_dark_theme = true;
 // Calculator has exactly three approved MB Corpo faces: S Regular, S Bold
 // and A Condensed Regular. GTK selects the S regular/bold face by weight and
 // the A condensed face for display text; no fourth family is selected here.
-constexpr const char* kUiFont = "MB Corpo S Title WEB";
-constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";
-
 std::string hex_colour(std::uint32_t value) {
     char buffer[8] = {};
     std::snprintf(buffer, sizeof(buffer), "#%06X", value & 0xFFFFFFU);
@@ -128,31 +125,11 @@ const ThemePalette& active_palette() {
     return calculator::ui::resolved_palette(theme_mode, system_dark);
 }
 
-std::string history_text_value() {
-    if (controller.session().history().empty()) {
-        return "No calculations yet.";
-    }
-
-    std::string text;
-    std::size_t shown = 0;
-    for (auto it = controller.session().history().rbegin();
-         it != controller.session().history().rend() && shown < 50U;
-         ++it, ++shown) {
-        text += it->input;
-        text += "\n  = ";
-        text += it->result.ok
-                    ? calculator::format_value(it->result.value)
-                    : ("Error: " + it->result.error);
-        text += "\n\n";
-    }
-    return text;
-}
-
 void refresh_history_dock() {
     if (!history_text) return;
     GtkTextBuffer* buffer =
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(history_text));
-    const std::string text = history_text_value();
+    const std::string text = controller.history_text(50, "\n");
     gtk_text_buffer_set_text(buffer, text.c_str(), -1);
 }
 
@@ -175,11 +152,11 @@ bool font_family_available(const char* wanted) {
 }
 
 const char* ui_font() {
-    return kUiFont;
+    return calculator::ui::typography().ui_family;
 }
 
 const char* brand_font() {
-    return kBrandFont;
+    return calculator::ui::typography().brand_family;
 }
 
 void sync_expression_from_widget() {
@@ -492,6 +469,7 @@ void apply_css(GtkWidget* window) {
     const std::string ui = ui_font();
     const std::string brand = brand_font();
     const auto& metrics = calculator::ui::kDesktopMetrics;
+    const auto& design = calculator::ui::design_metrics();
     const ThemePalette& p = active_palette();
 
     const std::string background = hex_colour(p.background_rgb);
@@ -525,21 +503,26 @@ void apply_css(GtkWidget* window) {
         ".header{margin-bottom:0}"
         ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + title + "}"
         ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
-            "border-radius:8px;min-height:28px;padding:0 10px;font-size:12px;font-weight:700}"
+            "border-radius:" + std::to_string(design.control_radius) + "px;min-height:28px;padding:0 " +
+            std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700}"
         ".toolbar-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
-        ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:9px;padding:3px}"
-        ".mode-tab{background:transparent;color:" + subtle + ";border:0;border-radius:7px;"
+        ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
+            std::to_string(design.compact_spacing / 2U) + "px}"
+        ".mode-tab{background:transparent;color:" + subtle + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "min-height:28px;font-size:11px;font-weight:700;padding:0 8px}"
         ".mode-tab:hover{background:" + surface_hover + ";color:" + text + "}"
         ".mode-tab.selected{background:" + primary + ";color:" + primary_text + "}"
-        ".display{background:" + panel + ";border:1px solid " + border + ";border-radius:9px;padding:10px}"
-        ".expression{background:" + input + ";color:" + muted + ";border:0;border-radius:7px;"
+        ".display{background:" + panel + ";border:1px solid " + border + ";border-radius:" +
+            std::to_string(design.card_radius) + "px;padding:" +
+            std::to_string(design.control_spacing) + "px}"
+        ".expression{background:" + input + ";color:" + muted + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none}"
         ".expression:focus{border:0;outline:none;box-shadow:none}"
         ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + title + ";padding-top:2px}"
         ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + subtle + "}"
         ".status.fault{color:" + fault + "}"
-        ".calc-button{border:1px solid " + border + ";border-radius:8px;min-height:" +
+        ".calc-button{border:1px solid " + border + ";border-radius:" +
+            std::to_string(design.control_radius) + "px;min-height:" +
             std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0}"
         ".calc-button:disabled{opacity:.38}"
         ".calc-button.number{background:" + card + ";color:" + title + "}"
@@ -550,16 +533,18 @@ void apply_css(GtkWidget* window) {
         ".calc-button.utility:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
         ".calc-button.utility.selected{background:" + selected + ";color:" + selection_text + ";border-color:" + neutral + "}"
         ".calc-button.memory-button{background:transparent;color:" + muted + ";border-color:transparent;"
-            "border-radius:5px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:11px}"
+            "border-radius:" + std::to_string(design.small_radius) + "px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:11px}"
         ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent}"
         ".calc-button.clear{background:" + card + ";color:" + warning + "}"
         ".calc-button.clear:hover{background:" + card_hover + ";border-color:" + warning + "}"
         ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:15px;font-weight:700}"
         ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + "}"
-        ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:9px;padding:8px}"
+        ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px;padding:" +
+            std::to_string(design.control_spacing) + "px}"
         ".history-text{background:" + panel + ";color:" + text + ";font-size:12px}"
-        ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:10px}"
-        ".history-row{padding:10px;border-bottom:1px solid " + border + ";color:" + text + ";font-size:12px}"
+        ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px}"
+        ".history-row{padding:" + std::to_string(design.control_spacing) +
+            "px;border-bottom:1px solid " + border + ";color:" + text + ";font-size:12px}"
         ".compact .brand-title{font-size:17px}"
         ".compact .display{padding:7px}"
         ".compact .calc-button{min-height:30px;font-size:13px}"
@@ -609,8 +594,8 @@ void activate(GtkApplication* app, gpointer) {
     main_window = window;
     theme_mode = load_theme_mode();
 
-    if (!font_family_available(kUiFont) ||
-        !font_family_available(kBrandFont)) {
+    if (!font_family_available(ui_font()) ||
+        !font_family_available(brand_font())) {
         g_printerr(
             "Calculator requires its packaged MB Corpo S and A font families; "
             "refusing silent font substitution.\n");

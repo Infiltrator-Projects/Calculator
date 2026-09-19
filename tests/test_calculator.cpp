@@ -117,6 +117,22 @@ int main() {
     expect_error("171!");
     expect_error("madeup(1)");
 
+    const auto sin_degrees = calculator::apply_real_function(
+        calculator::RealFunction::Sin, 30.0, calculator::AngleUnit::Degrees);
+    if (!sin_degrees.ok || std::abs(sin_degrees.value - 0.5) > 1e-12) {
+        fail("shared degree sine transform wrong");
+    }
+    const auto reciprocal_zero = calculator::apply_real_function(
+        calculator::RealFunction::Reciprocal, 0.0);
+    if (reciprocal_zero.ok || reciprocal_zero.error != "division by zero") {
+        fail("shared reciprocal zero contract wrong");
+    }
+    const auto invalid_root = calculator::apply_real_function(
+        calculator::RealFunction::SquareRoot, -1.0);
+    if (invalid_root.ok || invalid_root.error != "function domain error") {
+        fail("shared square-root domain contract wrong");
+    }
+
     std::string deeply_nested(300, '(');
     deeply_nested += "1";
     deeply_nested.append(300, ')');

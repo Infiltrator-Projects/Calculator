@@ -36,7 +36,7 @@ External or cross-language boundaries should use explicit-width types where bit 
 
 ## Locale and text boundaries
 
-Numeric expression syntax is locale-independent. Decimal token conversion uses Common's deterministic parser rather than the host process locale.
+Numeric expression syntax is locale-independent. Common 1.19.7's cursor-based decimal-token parser owns token conversion directly, so Calculator does not carry a second numeric scanner or depend on the host process locale.
 
 User-interface text and platform font rendering may vary by locale/platform, but locale must not silently change the meaning of Calculator's decimal grammar, operators or Programmer radices.
 
@@ -58,7 +58,7 @@ Portability requires equivalent interaction/state ownership, not pixel-identical
 
 ## Theme and typography
 
-Common owns Day/Night semantic design values. Each platform owns System-theme detection and native rendering.
+Common owns Day/Night semantic design values, structural design metrics and canonical typography identity. Each platform owns System-theme detection and native rendering; Calculator deliberately applies the Common-permitted strict no-fallback MB Corpo policy.
 
 Calculator-owned text is restricted to three canonical MB Corpo faces: S Regular, S Bold and A Condensed Regular. Release builds bundle or embed those exact hash-verified font resources on every platform. Missing or mismatched Calculator fonts are a build/startup failure; silently substituting a fourth font family is outside the product contract.
 

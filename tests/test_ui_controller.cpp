@@ -123,7 +123,7 @@ int main() {
     CHECK(backspace.cursor == 1);
 
     controller.clear_history();
-    CHECK(controller.session().history().empty());
+    CHECK(controller.history_text() == "No calculations yet.");
 
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";

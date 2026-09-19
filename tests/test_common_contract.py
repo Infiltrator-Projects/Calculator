@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import json
 import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ROOT / "src" / "infiltratr-common"
-EXPECTED_VERSION = "1.19.6"
-EXPECTED_COMMIT = "4964786ebf1e66dfdb9309c3813dcb17bce19eb5"
+EXPECTED_VERSION = "1.19.7"
+EXPECTED_COMMIT = "882c61a1e8626d4c733bdf45bda7152a30e56ded"
 
 assert (COMMON / "VERSION").read_text(encoding="utf-8").strip() == EXPECTED_VERSION
 
@@ -53,6 +54,60 @@ missing = sorted(
     if not re.search(rf"\b{re.escape(function)}\s*\(", public_headers)
 )
 assert not missing, f"Calculator calls APIs absent from Common public headers: {missing}"
+
+for required in (
+    "infiltratr_parse_double_token",
+    "infiltratr_design_metrics",
+    "infiltratr_typography",
+):
+    assert required in calls, f"Calculator is not consuming Common 1.19.7 {required}"
+
+typography_assets = (
+    COMMON / "cmake" / "InfiltratrTypographyAssets.cmake"
+).read_text(encoding="utf-8")
+assert "InfiltratrTypographyAssets.cmake" in cmake
+for variable in (
+    "INFILTRATR_MB_CORPO_ARCHIVE_URL",
+    "INFILTRATR_MB_CORPO_ARCHIVE_SHA256",
+    "INFILTRATR_MB_CORPO_BRAND_REGULAR_FILE",
+    "INFILTRATR_MB_CORPO_UI_BOLD_FILE",
+    "INFILTRATR_MB_CORPO_UI_REGULAR_FILE",
+):
+    assert variable in typography_assets, f"Common typography metadata missing {variable}"
+    assert variable in cmake, f"Calculator duplicates Common typography metadata: {variable}"
+
+# The iPhone font bundler reads canonical provenance directly from Common's
+# design contract rather than carrying another commit/hash table.
+ios_font_script = (ROOT / "ios" / "bundle-fonts.sh").read_text(encoding="utf-8")
+for key in (
+    "typography.assets.source_repository",
+    "typography.assets.source_commit",
+    "typography.assets.archive_path",
+    "typography.assets.archive_sha256",
+    "typography.font_files.brand_regular",
+    "typography.font_files.ui_bold",
+    "typography.font_files.ui_regular",
+    "typography.assets.file_sha256.brand_regular",
+    "typography.assets.file_sha256.ui_bold",
+    "typography.assets.file_sha256.ui_regular",
+):
+    assert key in ios_font_script, f"iPhone font bundler bypasses Common metadata: {key}"
+
+design_contract = json.loads(
+    (COMMON / "design" / "infiltrator-design-v1.json").read_text(encoding="utf-8")
+)
+canonical_fonts = design_contract["typography"]["font_files"]
+ios_project_text = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
+ios_typography_text = (
+    ROOT / "ios" / "Sources" / "CalculatorTypography.swift"
+).read_text(encoding="utf-8")
+for filename in canonical_fonts.values():
+    assert filename in ios_project_text, (
+        f"iPhone bundle declaration drifted from Common typography: {filename}"
+    )
+    assert Path(filename).stem in ios_typography_text, (
+        f"iPhone typography registration drifted from Common typography: {filename}"
+    )
 
 # iPhone compiles Common directly, so derive the canonical Portable source list
 # from Common's own CMake instead of duplicating that private list in this test.

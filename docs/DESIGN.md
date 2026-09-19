@@ -29,9 +29,9 @@ A new numeric representation should be introduced when a feature has a correctne
 
 ## Shared foundation boundary
 
-Common is used for stable, product-neutral facilities. Calculator currently relies on it for deterministic decimal conversion and the canonical Design v1 theme contract.
+Common is used for stable, product-neutral facilities. Calculator currently relies on Common 1.19.7 for exact decimal-token conversion, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
 
-Calculator-specific semantics stay local even when they could technically be generalized. Shared code is valuable only when the abstraction is clearer than the duplication it replaces.
+Calculator-specific semantics stay local even when they could technically be generalized. Real unary/scientific transforms are shared inside Calculator because they are calculator-domain semantics; the controller and expression parser consume one core implementation rather than moving those rules into Common. Shared code is valuable only when the abstraction is clearer than the duplication it replaces.
 
 ## Platform-native presentation
 

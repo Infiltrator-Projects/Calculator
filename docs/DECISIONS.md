@@ -73,3 +73,12 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** Representation is part of numerical correctness. Formatting cannot turn an inexact representation into an exact domain.
 
 **Consequence.** New mathematical capability must state its representation, error model and validation strategy before it is treated as production behaviour.
+
+
+## ADR-010 — Share mechanics at the narrowest correct layer
+
+**Decision.** Product-neutral mechanics are consumed from pinned Common, while duplicate Calculator-domain semantics are consolidated inside the Calculator C++ core rather than promoted merely because two internal callers exist.
+
+**Rationale.** Common 1.19.7 now supplies decimal-token parsing, native design metrics, typography identity and font-asset provenance. Unary/scientific mathematics and history/session presentation are Calculator semantics and therefore have one Calculator-owned implementation.
+
+**Consequence.** The C/C++ split remains intentional: Common stays C11 infrastructure; Calculator state, parsers and domain logic stay C++17; native shells remain procedural adapters without acquiring mathematical/session ownership.

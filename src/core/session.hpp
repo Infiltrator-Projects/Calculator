@@ -7,6 +7,7 @@
 #include <deque>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -44,6 +45,9 @@ public:
     const Variables& variables() const noexcept;
 
     const std::deque<HistoryEntry>& history() const noexcept;
+    std::string history_text(
+        std::size_t limit = 50,
+        std::string_view newline = "\n") const;
     void clear_history() noexcept;
 
 private:

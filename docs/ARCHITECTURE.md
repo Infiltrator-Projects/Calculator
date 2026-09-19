@@ -39,7 +39,9 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 `src/core/calculator.*` owns the binary64 expression domain used by Scientific calculations and reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation.
 
-Decimal token boundaries are identified by Calculator, then numeric conversion is delegated to Common's locale-independent decimal parser. This keeps expression grammar calculator-specific while sharing the product-neutral conversion primitive.
+Calculator decides where the expression grammar expects a number, then Common 1.19.7's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
+
+Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
 ### Standard immediate evaluation
 
@@ -61,7 +63,7 @@ Signedness affects decimal presentation of the resulting bit pattern. It does no
 
 The session delegates mathematical evaluation to the core. It does not implement an alternate expression grammar.
 
-History is bounded by construction so an indefinitely running UI cannot grow it without limit. Variables, memory and history are currently session state rather than durable user data.
+History is bounded by construction so an indefinitely running UI cannot grow it without limit. Session also owns the canonical bounded history-text projection, while Controller exposes it to platform shells; GTK, Win32 and SwiftUI therefore do not reach through the controller to reconstruct session presentation independently. Variables, memory and history are currently session state rather than durable user data.
 
 ## Shared interaction layer
 
@@ -89,7 +91,7 @@ SwiftUI owns touch-native composition, platform appearance observation and prese
 
 ## Common boundary
 
-Common is an exact git submodule dependency. It owns reusable facilities whose semantics are not specific to Calculator, including deterministic decimal conversion and the shared Design v1 semantic theme contract.
+Common is an exact git submodule dependency. Common 1.19.7 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette, structural rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts while deliberately retaining its stricter no-fallback font policy.
 
 Calculator owns expression grammar, immediate-calculator behaviour, Programmer-mode width semantics, calculator state, command semantics and calculator-specific layout. Code is moved into Common only when it has a stable product-neutral contract and a demonstrated shared consumer.
 

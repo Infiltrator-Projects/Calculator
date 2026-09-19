@@ -22,8 +22,8 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.6")
-set(INFILTRATR_COMMON_EXPECTED_COMMIT "4964786ebf1e66dfdb9309c3813dcb17bce19eb5")
+set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.7")
+set(INFILTRATR_COMMON_EXPECTED_COMMIT "882c61a1e8626d4c733bdf45bda7152a30e56ded")
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/VERSION" INFILTRATR_COMMON_VERSION)
 string(STRIP "${INFILTRATR_COMMON_VERSION}" INFILTRATR_COMMON_VERSION)
@@ -60,6 +60,8 @@ endif()
 # surface. EXCLUDE_FROM_ALL keeps unreferenced Common targets and install rules
 # out of Calculator packages while calculator-core still pulls Portable in.
 add_subdirectory(src/infiltratr-common EXCLUDE_FROM_ALL)
+include(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/cmake/InfiltratrTypographyAssets.cmake")
 
 add_library(calculator-core STATIC
     src/core/calculator.cpp
@@ -100,19 +102,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
 endif()
 
 if(CALCULATOR_BUILD_DESKTOP)
-    # Calculator-owned text is restricted to the same three MB Corpo faces as
-    # MBLINK. Fetch the immutable, hash-verified source archive and package/
-    # embed those exact TTFs so no platform font substitution is required.
-    set(CALCULATOR_FONT_SOURCE_COMMIT "aa161e7342112beab8feb7669f072c870f742765")
-    set(CALCULATOR_FONT_ARCHIVE_URL
-        "https://raw.githubusercontent.com/Infiltrator-Projects/MBLINK/${CALCULATOR_FONT_SOURCE_COMMIT}/assets/fonts/mb-corpo-fonts.tar.xz")
+    # Calculator deliberately imposes the strict no-fallback option permitted
+    # by Common's typography contract. Common owns immutable asset provenance;
+    # Calculator only fetches/packages the exact verified resources.
     set(CALCULATOR_FONT_ARCHIVE
         "${CMAKE_CURRENT_BINARY_DIR}/calculator-mb-corpo-fonts.tar.xz")
     file(DOWNLOAD
-        "${CALCULATOR_FONT_ARCHIVE_URL}"
+        "${INFILTRATR_MB_CORPO_ARCHIVE_URL}"
         "${CALCULATOR_FONT_ARCHIVE}"
         EXPECTED_HASH
-            SHA256=bdb6063f838a7fab22b4d6b412170640c69511df53aa3dfa9a4ea8431c9d8274
+            "SHA256=${INFILTRATR_MB_CORPO_ARCHIVE_SHA256}"
         TLS_VERIFY ON
         STATUS CALCULATOR_FONT_DOWNLOAD_STATUS)
     list(GET CALCULATOR_FONT_DOWNLOAD_STATUS 0 CALCULATOR_FONT_DOWNLOAD_CODE)
@@ -131,19 +130,19 @@ if(CALCULATOR_BUILD_DESKTOP)
         DESTINATION "${CALCULATOR_FONT_DIR}")
 
     set(CALCULATOR_FONT_A_COND_REGULAR
-        "${CALCULATOR_FONT_DIR}/mb_corpo_a_cond_regular.ttf")
+        "${CALCULATOR_FONT_DIR}/${INFILTRATR_MB_CORPO_BRAND_REGULAR_FILE}")
     set(CALCULATOR_FONT_S_BOLD
-        "${CALCULATOR_FONT_DIR}/mb_corpo_s_bold.ttf")
+        "${CALCULATOR_FONT_DIR}/${INFILTRATR_MB_CORPO_UI_BOLD_FILE}")
     set(CALCULATOR_FONT_S_REGULAR
-        "${CALCULATOR_FONT_DIR}/mb_corpo_s_regular.ttf")
+        "${CALCULATOR_FONT_DIR}/${INFILTRATR_MB_CORPO_UI_REGULAR_FILE}")
     set(CALCULATOR_FONT_FILES
         "${CALCULATOR_FONT_A_COND_REGULAR}"
         "${CALCULATOR_FONT_S_BOLD}"
         "${CALCULATOR_FONT_S_REGULAR}")
     set(CALCULATOR_FONT_EXPECTED_SHA256
-        "c8bcd7e1a7d71169b38491d9b7c1ffe7ba7b46e888f0c1219931343a47bc0e05"
-        "d37ea986e2344d83390f94f170e6272b56efd00bfec808afe8314c4ca45d43b4"
-        "94ede6629443c03d4362dcef425fb3ff520be5d654370021a34e81286804465c")
+        "${INFILTRATR_MB_CORPO_BRAND_REGULAR_SHA256}"
+        "${INFILTRATR_MB_CORPO_UI_BOLD_SHA256}"
+        "${INFILTRATR_MB_CORPO_UI_REGULAR_SHA256}")
     foreach(CALCULATOR_FONT_INDEX RANGE 0 2)
         list(GET CALCULATOR_FONT_FILES
              ${CALCULATOR_FONT_INDEX} CALCULATOR_FONT_FILE)

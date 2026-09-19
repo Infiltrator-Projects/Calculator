@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.36" date="2026-09-19">
+      <description>
+        <p>Deepen Common 1.19.7 reuse, centralise scientific/unary semantics and history rendering, and tighten platform/domain ownership boundaries.</p>
+      </description>
+    </release>
     <release version="0.1.35" date="2026-09-19">
       <description>
         <p>Restore the intended compact Standard-mode geometry with a shared 480-unit desktop contract while retaining taller Scientific and Programmer layouts.</p>

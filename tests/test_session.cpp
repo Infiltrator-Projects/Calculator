@@ -46,6 +46,14 @@ int main(){
     session.evaluate("2+2");
     if(session.history().size()!=3) fail("history limit wrong");
 
+    const std::string history_text = session.history_text(2, "\n");
+    if(history_text.find("2+2\n  = 4\n\n") != 0)
+        fail("history text newest entry wrong");
+    if(history_text.find("1+1\n  = 2\n\n") == std::string::npos)
+        fail("history text second entry wrong");
+    if(history_text.find("x + 5") != std::string::npos)
+        fail("history text limit ignored");
+
     session.clear_history();
     if(!session.history().empty()) fail("history clear wrong");
 

@@ -6,6 +6,14 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.36 — 2026-09-19
+
+- Advance Calculator to immutable Common 1.19.7 and replace its private decimal-token scanner with Common's exact locale-independent token parser.
+- Consume Common's native typography identity, structural design metrics and MB Corpo asset provenance instead of maintaining desktop copies.
+- Centralise real unary/scientific transforms in the Calculator core so parser and controller no longer implement the same mathematics separately.
+- Centralise bounded history text rendering in Session/Controller and remove platform-shell reach-through into mutable session state.
+- Preserve the deliberate C/C++ split: Common remains C11 portable infrastructure, Calculator domain/state remains C++17, and native shells retain only platform adaptation.
+
 ## 0.1.35 — 2026-09-19
 
 - Corrected the 0.1.34 Standard-mode sizing regression: Standard is compact again instead of stretching its keypad to fill an oversized window.

@@ -247,11 +247,15 @@ void recreate_theme_brushes() {
 }
 
 const wchar_t* ui_font_family() {
-    return L"MB Corpo S Title WEB";
+    static const std::wstring family =
+        utf8_to_wide(calculator::ui::typography().ui_family);
+    return family.c_str();
 }
 
 const wchar_t* brand_font_family() {
-    return L"MB Corpo A Title Cond WEB";
+    static const std::wstring family =
+        utf8_to_wide(calculator::ui::typography().brand_family);
+    return family.c_str();
 }
 
 bool register_font_resource(int resource_id) {
@@ -451,26 +455,7 @@ void calculate_from_entry() {
 }
 
 std::wstring history_text() {
-    if (g_controller.session().history().empty()) {
-        return L"No calculations yet.";
-    }
-
-    std::wstring text;
-    std::size_t shown = 0;
-    for (auto it = g_controller.session().history().rbegin();
-         it != g_controller.session().history().rend() && shown < 50U;
-         ++it, ++shown) {
-        text += utf8_to_wide(it->input);
-        text += L"\r\n  = ";
-        if (it->result.ok) {
-            text += format_value(it->result.value);
-        } else {
-            text += L"Error: ";
-            text += utf8_to_wide(it->result.error);
-        }
-        text += L"\r\n\r\n";
-    }
-    return text;
+    return utf8_to_wide(g_controller.history_text(50, "\r\n"));
 }
 
 void refresh_history() {
@@ -655,8 +640,10 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
     HPEN pen = CreatePen(PS_SOLID, sx(g_main, 1), border);
     HGDIOBJ old_brush = SelectObject(item->hDC, brush);
     HGDIOBJ old_pen = SelectObject(item->hDC, pen);
+    const int control_radius = static_cast<int>(
+        calculator::ui::design_metrics().control_radius);
     RoundRect(item->hDC, rect.left, rect.top, rect.right, rect.bottom,
-              sx(g_main, 10), sx(g_main, 10));
+              sx(g_main, control_radius), sx(g_main, control_radius));
     SelectObject(item->hDC, old_brush);
     SelectObject(item->hDC, old_pen);
     DeleteObject(brush);
@@ -1173,7 +1160,9 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
     case WM_SIZE: {
         RECT client{};
         GetClientRect(window, &client);
-        const int margin = sx(window, 16);
+        const int margin = sx(
+            window,
+            static_cast<int>(calculator::ui::design_metrics().content_padding));
         const int button_height = sx(window, 38);
         MoveWindow(g_history_edit, margin, margin,
                    std::max(0, static_cast<int>(client.right) - margin * 2),
@@ -1372,8 +1361,10 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         RECT client{};
         GetClientRect(window, &client);
         FillRect(dc, &client, g_background_brush);
-        draw_panel(dc, g_mode_rect, kSurface, kBorder, 12);
-        draw_panel(dc, g_display_rect, kPanel, kBorder, 12);
+        const int card_radius = static_cast<int>(
+            calculator::ui::design_metrics().card_radius);
+        draw_panel(dc, g_mode_rect, kSurface, kBorder, card_radius);
+        draw_panel(dc, g_display_rect, kPanel, kBorder, card_radius);
         EndPaint(window, &ps);
         return 0;
     }

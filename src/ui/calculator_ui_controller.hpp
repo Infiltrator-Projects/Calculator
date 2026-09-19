@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 
 namespace calculator::ui {
 
@@ -38,11 +39,11 @@ public:
 
     const ViewState& state() const noexcept { return state_; }
 
-    Session& session() noexcept { return session_; }
-    const Session& session() const noexcept { return session_; }
-
     void set_expression(std::string expression);
     void set_mode(Mode mode);
+    std::string history_text(
+        std::size_t limit = 50,
+        std::string_view newline = "\n") const;
     void clear_history() noexcept;
 
     bool command_enabled(Command command) const;

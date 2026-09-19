@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "calculator.hpp"
 
-#include <infiltratr/core.h>
+#include <infiltratr/token.h>
 
 #include <cctype>
 #include <charconv>
@@ -23,63 +23,28 @@ enum class DecimalTokenStatus {
     Ok
 };
 
-bool ascii_digit(char c) {
-    return c >= '0' && c <= '9';
-}
-
-// Calculator must identify where a numeric token ends because Common's
-// infiltratr_parse_double() deliberately validates a complete string. Keep
-// token-boundary recognition local, then delegate locale-independent binary64
-// conversion to Common so parsing policy is shared without exporting the
-// calculator expression grammar.
+// Common owns exact locale-independent decimal token conversion. Calculator
+// supplies only the expression cursor and retains all expression grammar.
 DecimalTokenStatus parse_decimal_token(std::string_view input,
                                        std::size_t& position,
                                        bool allow_sign,
                                        double& value) {
-    const std::size_t start = position;
-    std::size_t cursor = position;
+    if (position >= input.size()) return DecimalTokenStatus::None;
 
-    if (allow_sign && cursor < input.size() &&
-        (input[cursor] == '+' || input[cursor] == '-')) {
-        ++cursor;
-    }
+    const char first = input[position];
+    const bool plausible =
+        (first >= '0' && first <= '9') || first == '.' ||
+        (allow_sign && (first == '+' || first == '-'));
+    if (!plausible) return DecimalTokenStatus::None;
 
-    bool saw_digit = false;
-    while (cursor < input.size() && ascii_digit(input[cursor])) {
-        saw_digit = true;
-        ++cursor;
-    }
-
-    if (cursor < input.size() && input[cursor] == '.') {
-        ++cursor;
-        while (cursor < input.size() && ascii_digit(input[cursor])) {
-            saw_digit = true;
-            ++cursor;
-        }
-    }
-
-    if (!saw_digit) return DecimalTokenStatus::None;
-
-    if (cursor < input.size() &&
-        (input[cursor] == 'e' || input[cursor] == 'E')) {
-        ++cursor;
-        if (cursor < input.size() &&
-            (input[cursor] == '+' || input[cursor] == '-')) {
-            ++cursor;
-        }
-
-        const std::size_t exponent_start = cursor;
-        while (cursor < input.size() && ascii_digit(input[cursor])) ++cursor;
-        if (cursor == exponent_start) return DecimalTokenStatus::Invalid;
-    }
-
-    const std::string token(input.substr(start, cursor - start));
+    const char* const begin = input.data() + position;
+    const char* cursor = begin;
     double parsed = 0.0;
-    if (!infiltratr_parse_double(token.c_str(), &parsed)) {
+    if (!infiltratr_parse_double_token(&cursor, allow_sign, &parsed)) {
         return DecimalTokenStatus::Invalid;
     }
 
-    position = cursor;
+    position += static_cast<std::size_t>(cursor - begin);
     value = parsed;
     return DecimalTokenStatus::Ok;
 }
@@ -211,25 +176,31 @@ private:
     }
 
     double apply_function(const std::string& name, double x) {
-        double value = 0.0;
-        if (name == "sin") value = std::sin(x);
-        else if (name == "cos") value = std::cos(x);
-        else if (name == "tan") value = std::tan(x);
-        else if (name == "asin") value = std::asin(x);
-        else if (name == "acos") value = std::acos(x);
-        else if (name == "atan") value = std::atan(x);
-        else if (name == "sinh") value = std::sinh(x);
-        else if (name == "cosh") value = std::cosh(x);
-        else if (name == "tanh") value = std::tanh(x);
-        else if (name == "sqrt") value = std::sqrt(x);
-        else if (name == "cbrt") value = std::cbrt(x);
-        else if (name == "ln") value = std::log(x);
-        else if (name == "log") value = std::log10(x);
-        else if (name == "exp") value = std::exp(x);
-        else if (name == "abs") value = std::fabs(x);
+        RealFunction function = RealFunction::Abs;
+        if (name == "sin") function = RealFunction::Sin;
+        else if (name == "cos") function = RealFunction::Cos;
+        else if (name == "tan") function = RealFunction::Tan;
+        else if (name == "asin") function = RealFunction::Asin;
+        else if (name == "acos") function = RealFunction::Acos;
+        else if (name == "atan") function = RealFunction::Atan;
+        else if (name == "sinh") function = RealFunction::Sinh;
+        else if (name == "cosh") function = RealFunction::Cosh;
+        else if (name == "tanh") function = RealFunction::Tanh;
+        else if (name == "sqrt") function = RealFunction::SquareRoot;
+        else if (name == "cbrt") function = RealFunction::Cbrt;
+        else if (name == "ln") function = RealFunction::Ln;
+        else if (name == "log") function = RealFunction::Log10;
+        else if (name == "exp") function = RealFunction::Exp;
+        else if (name == "abs") function = RealFunction::Abs;
         else { error_ = "unknown function"; return 0.0; }
-        if (!std::isfinite(value)) { error_ = "function domain error"; return 0.0; }
-        return value;
+
+        const Result result =
+            apply_real_function(function, x, AngleUnit::Radians);
+        if (!result.ok) {
+            error_ = result.error;
+            return 0.0;
+        }
+        return result.value;
     }
 
     double parse_primary() {
@@ -373,6 +344,80 @@ private:
 };
 
 } // namespace
+
+Result apply_real_function(RealFunction function, double value,
+                           AngleUnit angle_unit) {
+    double argument = value;
+    if (angle_unit == AngleUnit::Degrees &&
+        (function == RealFunction::Sin ||
+         function == RealFunction::Cos ||
+         function == RealFunction::Tan)) {
+        argument = value * kPi / 180.0;
+    }
+
+    switch (function) {
+    case RealFunction::Square:
+        value *= value;
+        break;
+    case RealFunction::SquareRoot:
+        value = std::sqrt(value);
+        break;
+    case RealFunction::Reciprocal:
+        if (value == 0.0) return {false, 0.0, "division by zero"};
+        value = 1.0 / value;
+        break;
+    case RealFunction::Sin:
+        value = std::sin(argument);
+        break;
+    case RealFunction::Cos:
+        value = std::cos(argument);
+        break;
+    case RealFunction::Tan:
+        value = std::tan(argument);
+        break;
+    case RealFunction::Asin:
+        value = std::asin(value);
+        if (angle_unit == AngleUnit::Degrees) value = value * 180.0 / kPi;
+        break;
+    case RealFunction::Acos:
+        value = std::acos(value);
+        if (angle_unit == AngleUnit::Degrees) value = value * 180.0 / kPi;
+        break;
+    case RealFunction::Atan:
+        value = std::atan(value);
+        if (angle_unit == AngleUnit::Degrees) value = value * 180.0 / kPi;
+        break;
+    case RealFunction::Sinh:
+        value = std::sinh(value);
+        break;
+    case RealFunction::Cosh:
+        value = std::cosh(value);
+        break;
+    case RealFunction::Tanh:
+        value = std::tanh(value);
+        break;
+    case RealFunction::Cbrt:
+        value = std::cbrt(value);
+        break;
+    case RealFunction::Ln:
+        value = std::log(value);
+        break;
+    case RealFunction::Log10:
+        value = std::log10(value);
+        break;
+    case RealFunction::Exp:
+        value = std::exp(value);
+        break;
+    case RealFunction::Abs:
+        value = std::fabs(value);
+        break;
+    }
+
+    if (!std::isfinite(value)) {
+        return {false, 0.0, "function domain error"};
+    }
+    return {true, value, {}};
+}
 
 std::string format_value(double value) {
     char buffer[64] = {};

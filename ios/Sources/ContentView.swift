@@ -96,6 +96,37 @@ private struct CalculatorPalette {
 
 }
 
+private struct SharedDesignMetrics {
+    let smallRadius: CGFloat
+    let controlRadius: CGFloat
+    let cardRadius: CGFloat
+    let panelRadius: CGFloat
+    let compactSpacing: CGFloat
+    let controlSpacing: CGFloat
+    let sectionSpacing: CGFloat
+    let contentPadding: CGFloat
+    let screenPadding: CGFloat
+
+    init() {
+        let common = CalculatorBridge.designMetrics()
+        func value(_ key: String) -> CGFloat {
+            CGFloat(common[key]?.doubleValue ?? 0)
+        }
+
+        smallRadius = value("smallRadius")
+        controlRadius = value("controlRadius")
+        cardRadius = value("cardRadius")
+        panelRadius = value("panelRadius")
+        compactSpacing = value("compactSpacing")
+        controlSpacing = value("controlSpacing")
+        sectionSpacing = value("sectionSpacing")
+        contentPadding = value("contentPadding")
+        screenPadding = value("screenPadding")
+    }
+}
+
+private let sharedDesign = SharedDesignMetrics()
+
 struct ContentView: View {
     @StateObject private var model = CalculatorModel()
     @Environment(\.colorScheme) private var systemColorScheme
@@ -115,10 +146,12 @@ struct ContentView: View {
         }
     }
 
-    private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 10),
-        count: 4
-    )
+    private var columns: [GridItem] {
+        Array(
+            repeating: GridItem(.flexible(), spacing: sharedDesign.controlSpacing),
+            count: 4
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -131,7 +164,7 @@ struct ContentView: View {
                 keypad
                 footer
             }
-            .padding(20)
+            .padding(sharedDesign.screenPadding)
         }
         .preferredColorScheme(themePreference.preferredScheme)
         .sheet(isPresented: $model.showingHistory) {
@@ -210,10 +243,10 @@ struct ContentView: View {
         }
         .padding(5)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
                 .fill(palette.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
                         .stroke(palette.border, lineWidth: 1)
                 )
         )
@@ -236,10 +269,10 @@ struct ContentView: View {
             .padding(.horizontal, 12)
             .frame(minHeight: 42)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                     .fill(palette.input)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                             .stroke(palette.border, lineWidth: 1)
                     )
             )
@@ -265,12 +298,12 @@ struct ContentView: View {
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .padding(16)
+        .padding(sharedDesign.contentPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
                 .fill(palette.panel)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
                         .stroke(palette.border, lineWidth: 1)
                 )
         )
@@ -278,7 +311,7 @@ struct ContentView: View {
 
     private var keypad: some View {
         ScrollView(showsIndicators: false) {
-            LazyVGrid(columns: columns, spacing: 10) {
+            LazyVGrid(columns: columns, spacing: sharedDesign.controlSpacing) {
                 ForEach(Array(model.rows.enumerated()), id: \.offset) { _, row in
                     ForEach(Array(row.enumerated()), id: \.offset) { _, key in
                         CalculatorKey(
@@ -338,10 +371,10 @@ private struct CalculatorKey: View {
         }
         .foregroundStyle(foreground)
         .background(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                 .fill(background)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                         .stroke(border, lineWidth: 1)
                 )
         )
@@ -391,14 +424,14 @@ private struct CalculatorToolbarButtonStyle: ButtonStyle {
         configuration.label
             .foregroundStyle(palette.muted)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                     .fill(
                         configuration.isPressed
                             ? palette.card
                             : palette.surface
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                             .stroke(palette.border, lineWidth: 1)
                     )
             )
@@ -434,7 +467,7 @@ private struct HistoryView: View {
                         .font(CalculatorTypography.regular(15, relativeTo: .body))
                         .foregroundStyle(palette.text)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(18)
+                        .padding(sharedDesign.sectionSpacing)
                 }
                 .background(palette.panel)
             }

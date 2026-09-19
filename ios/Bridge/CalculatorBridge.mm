@@ -106,6 +106,21 @@ NSInteger width_value(IntegerWidth width) {
     };
 }
 
++ (NSDictionary<NSString *, NSNumber *> *)designMetrics {
+    const InfiltratrDesignMetrics *metrics = infiltratr_design_metrics();
+    return @{
+        @"smallRadius": @(metrics->small_radius),
+        @"controlRadius": @(metrics->control_radius),
+        @"cardRadius": @(metrics->card_radius),
+        @"panelRadius": @(metrics->panel_radius),
+        @"compactSpacing": @(metrics->compact_spacing),
+        @"controlSpacing": @(metrics->control_spacing),
+        @"sectionSpacing": @(metrics->section_spacing),
+        @"contentPadding": @(metrics->content_padding),
+        @"screenPadding": @(metrics->screen_padding)
+    };
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {
@@ -173,26 +188,7 @@ NSInteger width_value(IntegerWidth width) {
 }
 
 - (NSString *)historyText {
-    const auto& history = [self controller]->session().history();
-    if (history.empty()) return @"No calculations yet.";
-
-    std::string out;
-    bool first = true;
-    for (auto it = history.rbegin(); it != history.rend(); ++it) {
-        if (!first) out += "\n\n";
-        first = false;
-
-        out += it->input;
-        out += "\n";
-        if (it->result.ok) {
-            out += calculator::format_value(it->result.value);
-        } else {
-            out += "Error: ";
-            out += it->result.error;
-        }
-    }
-
-    return to_ns(out);
+    return to_ns([self controller]->history_text());
 }
 
 - (void)clearHistory {

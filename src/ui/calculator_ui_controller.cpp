@@ -3,16 +3,10 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cmath>
 #include <sstream>
 #include <utility>
 
 namespace calculator::ui {
-namespace {
-
-constexpr double kPi = 3.14159265358979323846;
-
-} // namespace
 
 void Controller::set_expression(std::string expression) {
     state_.expression = std::move(expression);
@@ -30,6 +24,11 @@ void Controller::set_mode(Mode mode) {
     } else {
         set_status("READY");
     }
+}
+
+std::string Controller::history_text(std::size_t limit,
+                                     std::string_view newline) const {
+    return session_.history_text(limit, newline);
 }
 
 void Controller::clear_history() noexcept {
@@ -173,32 +172,34 @@ void Controller::unary_transform(Command command) {
     double value = 0.0;
     if (!current_value(value)) return;
 
-    switch (command) {
-    case Command::Negate:
+    if (command == Command::Negate) {
         value = -value;
-        break;
-    case Command::Square:
-        value *= value;
-        break;
-    case Command::SquareRoot:
-        if (value < 0.0) {
-            set_status("DOMAIN ERROR", true);
-            return;
-        }
-        value = std::sqrt(value);
-        break;
-    case Command::Reciprocal:
-        if (value == 0.0) {
-            set_status("DIVISION BY ZERO", true);
-            return;
-        }
-        value = 1.0 / value;
-        break;
-    default:
+        state_.expression = calculator::format_value(value);
+        state_.result = state_.expression;
+        set_status("READY");
         return;
     }
 
-    state_.expression = calculator::format_value(value);
+    RealFunction function = RealFunction::Abs;
+    switch (command) {
+    case Command::Square: function = RealFunction::Square; break;
+    case Command::SquareRoot: function = RealFunction::SquareRoot; break;
+    case Command::Reciprocal: function = RealFunction::Reciprocal; break;
+    default: return;
+    }
+
+    const Result transformed =
+        calculator::apply_real_function(function, value);
+    if (!transformed.ok) {
+        set_status(
+            transformed.error == "division by zero"
+                ? "DIVISION BY ZERO"
+                : "DOMAIN ERROR",
+            true);
+        return;
+    }
+
+    state_.expression = calculator::format_value(transformed.value);
     state_.result = state_.expression;
     set_status("READY");
 }
@@ -207,43 +208,30 @@ void Controller::scientific_transform(Command command) {
     double value = 0.0;
     if (!current_value(value)) return;
 
-    double argument = value;
-    if (state_.degrees &&
-        (command == Command::Sin ||
-         command == Command::Cos ||
-         command == Command::Tan)) {
-        argument = value * kPi / 180.0;
-    }
-
+    RealFunction function = RealFunction::Abs;
     switch (command) {
-    case Command::Sin: value = std::sin(argument); break;
-    case Command::Cos: value = std::cos(argument); break;
-    case Command::Tan: value = std::tan(argument); break;
-    case Command::Asin:
-        value = std::asin(value);
-        if (state_.degrees) value = value * 180.0 / kPi;
-        break;
-    case Command::Acos:
-        value = std::acos(value);
-        if (state_.degrees) value = value * 180.0 / kPi;
-        break;
-    case Command::Atan:
-        value = std::atan(value);
-        if (state_.degrees) value = value * 180.0 / kPi;
-        break;
-    case Command::Ln: value = std::log(value); break;
-    case Command::Log10: value = std::log10(value); break;
-    case Command::Exp: value = std::exp(value); break;
-    case Command::Abs: value = std::fabs(value); break;
+    case Command::Sin: function = RealFunction::Sin; break;
+    case Command::Cos: function = RealFunction::Cos; break;
+    case Command::Tan: function = RealFunction::Tan; break;
+    case Command::Asin: function = RealFunction::Asin; break;
+    case Command::Acos: function = RealFunction::Acos; break;
+    case Command::Atan: function = RealFunction::Atan; break;
+    case Command::Ln: function = RealFunction::Ln; break;
+    case Command::Log10: function = RealFunction::Log10; break;
+    case Command::Exp: function = RealFunction::Exp; break;
+    case Command::Abs: function = RealFunction::Abs; break;
     default: return;
     }
 
-    if (!std::isfinite(value)) {
+    const Result transformed = calculator::apply_real_function(
+        function, value,
+        state_.degrees ? AngleUnit::Degrees : AngleUnit::Radians);
+    if (!transformed.ok) {
         set_status("DOMAIN ERROR", true);
         return;
     }
 
-    state_.expression = calculator::format_value(value);
+    state_.expression = calculator::format_value(transformed.value);
     state_.result = state_.expression;
     set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
                               : "SCIENTIFIC · RADIANS");

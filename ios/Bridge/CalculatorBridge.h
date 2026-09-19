@@ -7,6 +7,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSDictionary<NSString *, NSNumber *> *)themePaletteForDark:(BOOL)dark
     NS_SWIFT_NAME(themePalette(dark:));
++ (NSDictionary<NSString *, NSNumber *> *)designMetrics
+    NS_SWIFT_NAME(designMetrics());
 
 - (NSDictionary *)snapshot;
 - (void)setExpression:(NSString *)expression;

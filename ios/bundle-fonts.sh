@@ -2,8 +2,26 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 set -eu
 
-SOURCE_COMMIT=aa161e7342112beab8feb7669f072c870f742765
-URL="https://raw.githubusercontent.com/Infiltrator-Projects/MBLINK/${SOURCE_COMMIT}/assets/fonts/mb-corpo-fonts.tar.xz"
+DESIGN_JSON="${SRCROOT}/../src/infiltratr-common/design/infiltrator-design-v1.json"
+
+common_value() {
+    /usr/bin/plutil -extract "$1" raw -o - "${DESIGN_JSON}"
+}
+
+SOURCE_REPOSITORY="$(common_value typography.assets.source_repository)"
+SOURCE_COMMIT="$(common_value typography.assets.source_commit)"
+ARCHIVE_PATH="$(common_value typography.assets.archive_path)"
+ARCHIVE_SHA256="$(common_value typography.assets.archive_sha256)"
+
+BRAND_FILE="$(common_value typography.font_files.brand_regular)"
+UI_BOLD_FILE="$(common_value typography.font_files.ui_bold)"
+UI_REGULAR_FILE="$(common_value typography.font_files.ui_regular)"
+
+BRAND_SHA256="$(common_value typography.assets.file_sha256.brand_regular)"
+UI_BOLD_SHA256="$(common_value typography.assets.file_sha256.ui_bold)"
+UI_REGULAR_SHA256="$(common_value typography.assets.file_sha256.ui_regular)"
+
+URL="https://raw.githubusercontent.com/${SOURCE_REPOSITORY}/${SOURCE_COMMIT}/${ARCHIVE_PATH}"
 ARCHIVE="${DERIVED_FILE_DIR}/calculator-mb-corpo-fonts.tar.xz"
 FONT_DIR="${DERIVED_FILE_DIR}/calculator-mb-fonts"
 DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
@@ -12,7 +30,7 @@ mkdir -p "${DERIVED_FILE_DIR}" "${DEST}"
 curl -fL --retry 3 --retry-delay 2 "${URL}" -o "${ARCHIVE}"
 
 actual="$(shasum -a 256 "${ARCHIVE}" | awk '{print $1}')"
-[ "${actual}" = "bdb6063f838a7fab22b4d6b412170640c69511df53aa3dfa9a4ea8431c9d8274" ] || {
+[ "${actual}" = "${ARCHIVE_SHA256}" ] || {
     echo "error: Calculator MB Corpo archive hash mismatch" >&2
     exit 1
 }
@@ -35,10 +53,10 @@ check_font() {
     }
 }
 
-check_font mb_corpo_a_cond_regular.ttf c8bcd7e1a7d71169b38491d9b7c1ffe7ba7b46e888f0c1219931343a47bc0e05
-check_font mb_corpo_s_bold.ttf d37ea986e2344d83390f94f170e6272b56efd00bfec808afe8314c4ca45d43b4
-check_font mb_corpo_s_regular.ttf 94ede6629443c03d4362dcef425fb3ff520be5d654370021a34e81286804465c
+check_font "${BRAND_FILE}" "${BRAND_SHA256}"
+check_font "${UI_BOLD_FILE}" "${UI_BOLD_SHA256}"
+check_font "${UI_REGULAR_FILE}" "${UI_REGULAR_SHA256}"
 
-cp "${FONT_DIR}/mb_corpo_a_cond_regular.ttf" "${DEST}/"
-cp "${FONT_DIR}/mb_corpo_s_bold.ttf" "${DEST}/"
-cp "${FONT_DIR}/mb_corpo_s_regular.ttf" "${DEST}/"
+cp "${FONT_DIR}/${BRAND_FILE}" "${DEST}/"
+cp "${FONT_DIR}/${UI_BOLD_FILE}" "${DEST}/"
+cp "${FONT_DIR}/${UI_REGULAR_FILE}" "${DEST}/"

@@ -6,9 +6,9 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.1.35  
+**Current source version:** 0.1.36  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Common 1.19.6  
+**Shared foundation:** Common 1.19.7  
 **Design contract:** shared Design v1  
 **Licence:** GPL-3.0-or-later
 
@@ -85,7 +85,7 @@ The user-facing product name is **Calculator**. The Debian/APT package identity 
 
 Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
-The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.6 gitlink. CMake verifies both the checked-out Common `VERSION` and, in repository builds, the exact immutable `4964786e…` 1.19.6 commit, so a stale or same-version/wrong-revision submodule fails configuration instead of silently building. Linux and Windows consume the Common theme C API directly; the iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
+The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.7 gitlink. CMake verifies both the checked-out Common `VERSION` and, in repository builds, the exact immutable `882c61a1…` 1.19.7 commit, so a stale or same-version/wrong-revision submodule fails configuration instead of silently building. Calculator now consumes Common's exact decimal-token parser, native semantic palette, structural design metrics and typography identity rather than maintaining private copies of those product-neutral contracts. The iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
 
 ## Typography
 
@@ -97,7 +97,7 @@ The three approved font files and roles are:
 - `mb_corpo_s_bold.ttf` — `MB Corpo S Title WEB` bold interface text, actions and emphasis;
 - `mb_corpo_a_cond_regular.ttf` — `MB Corpo A Title Cond WEB` product and display titles.
 
-Release builds obtain the immutable MBLINK font archive pinned at commit `aa161e7…`, verify the archive and all three individual TTF hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
+Common 1.19.7 owns the canonical MB Corpo family names, role weights, filenames and immutable first-party archive provenance. Calculator deliberately applies Common's permitted strict no-fallback policy: release builds fetch the exact Common-declared archive, verify its archive/file hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
 
 ## Build
 
