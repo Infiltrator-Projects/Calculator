@@ -6,8 +6,12 @@ windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 theme = Path("src/ui/calculator_theme.hpp").read_text(encoding="utf-8")
 ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
+ios_app = Path("ios/Sources/CalculatorApp.swift").read_text(encoding="utf-8")
+ios_typography = Path("ios/Sources/CalculatorTypography.swift").read_text(encoding="utf-8")
 ios_bridge = Path("ios/Bridge/CalculatorBridge.mm").read_text(encoding="utf-8")
 ios_project = Path("ios/project.yml").read_text(encoding="utf-8")
+ios_font_script = Path("ios/bundle-fonts.sh").read_text(encoding="utf-8")
+cmake = Path("CMakeLists.txt").read_text(encoding="utf-8")
 
 for needle in (
     'constexpr const char* kUiFont = "MB Corpo S Title WEB";',
@@ -189,3 +193,33 @@ for needle in (
     assert needle in ios_project, f"iPhone Common build integration missing: {needle}"
 
 print("Cross-platform desktop UI parity contract passed.")
+
+# Calculator-owned text has exactly three approved MB Corpo faces. Release
+# builds carry those exact verified TTFs, and platform shells do not deliberately
+# select a generic fourth family.
+for needle in (
+    "mb_corpo_s_regular.ttf",
+    "mb_corpo_s_bold.ttf",
+    "mb_corpo_a_cond_regular.ttf",
+):
+    assert needle in ios_project, f"iPhone font bundle declaration missing: {needle}"
+    assert needle in ios_font_script, f"iPhone font fetch verification missing: {needle}"
+    assert needle in cmake, f"desktop font packaging missing: {needle}"
+
+for needle in (
+    "MBCorpoSTitleWEB-Regular",
+    "MBCorpoSTitleWEB-Bold",
+    "MBCorpoATitleCondWEB-Regular",
+    "preconditionFailure",
+):
+    assert needle in ios_typography, f"iPhone strict MB typography missing: {needle}"
+
+assert "CalculatorTypography.verifyBundledFonts()" in ios_app
+assert ".font(.system(" not in ios, "Calculator-owned iPhone text reintroduced a system font"
+assert "return .system(" not in ios_typography, "iPhone typography reintroduced a system fallback"
+assert ".monospaced" not in ios, "iPhone history reintroduced a fourth text face"
+assert "CALCULATOR_FONT_RESOURCE_REGULAR=1101" in cmake
+assert "CALCULATOR_FONT_RESOURCE_BOLD=1102" in cmake
+assert "CALCULATOR_FONT_RESOURCE_CONDENSED=1103" in cmake
+assert "AddFontMemResourceEx" in windows
+assert "refusing silent font substitution" in linux

@@ -1,3 +1,14 @@
+infiltrator-calculator (0.1.29) unstable; urgency=medium
+
+  * Enforce the three approved MB Corpo text faces across Linux, Windows and iPhone.
+  * Package the verified S Regular, S Bold and A Condensed Regular faces with releases.
+  * Embed and privately register the three faces in the standalone Windows executable.
+  * Bundle and verify the same three faces in the iPhone application.
+  * Refuse silent Calculator-owned text-font substitution instead of selecting a fourth family.
+  * Preserve the compact Standard-mode window sizing.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 19:08:00 +1000
+
 infiltrator-calculator (0.1.28) unstable; urgency=medium
 
   * Restore the three approved MB Corpo typography faces on Linux.

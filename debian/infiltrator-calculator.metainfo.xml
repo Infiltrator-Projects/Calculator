@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.29" date="2026-09-19">
+      <description>
+        <p>Enforce the three canonical MB Corpo text faces across Linux, Windows and iPhone while keeping Standard mode compact.</p>
+      </description>
+    </release>
     <release version="0.1.26" date="2026-09-19">
       <description>
         <p>Add AppStream metadata so Linux software centres can associate the Calculator package with its desktop application and icon.</p>

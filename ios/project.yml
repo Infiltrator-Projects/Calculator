@@ -46,11 +46,24 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Calculator
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UIAppFonts:
+          - mb_corpo_a_cond_regular.ttf
+          - mb_corpo_s_bold.ttf
+          - mb_corpo_s_regular.ttf
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/Calculator-Bridging-Header.h"
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../src/core"
           - "$(SRCROOT)/../src/infiltratr-common/include"
         CODE_SIGN_STYLE: Automatic
+    preBuildScripts:
+      - name: Bundle canonical MB Corpo fonts
+        script: '"${SRCROOT}/bundle-fonts.sh"'
+        inputFiles:
+          - "$(SRCROOT)/bundle-fonts.sh"
+        outputFiles:
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_a_cond_regular.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_bold.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_regular.ttf"
     scheme:
       gatherCoverageData: false

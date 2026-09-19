@@ -165,6 +165,24 @@ void refresh_history_dock() {
     gtk_text_buffer_set_text(buffer, text.c_str(), -1);
 }
 
+bool font_family_available(const char* wanted) {
+    PangoFontMap* map = PANGO_FONT_MAP(pango_cairo_font_map_get_default());
+    PangoFontFamily** families = nullptr;
+    int count = 0;
+    pango_font_map_list_families(map, &families, &count);
+
+    bool found = false;
+    for (int i = 0; i < count; ++i) {
+        const char* name = pango_font_family_get_name(families[i]);
+        if (name && g_ascii_strcasecmp(name, wanted) == 0) {
+            found = true;
+            break;
+        }
+    }
+    g_free(families);
+    return found;
+}
+
 const char* ui_font() {
     return kUiFont;
 }
@@ -599,6 +617,17 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
+
+    if (!font_family_available(kUiFont) ||
+        !font_family_available(kBrandFont)) {
+        g_printerr(
+            "Calculator requires its packaged MB Corpo S and A font families; "
+            "refusing silent font substitution.\n");
+        gtk_window_destroy(GTK_WINDOW(window));
+        main_window = nullptr;
+        return;
+    }
+
     gtk_window_set_title(GTK_WINDOW(window), "Calculator");
     gtk_window_set_default_size(
         GTK_WINDOW(window),

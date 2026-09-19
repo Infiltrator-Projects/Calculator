@@ -103,6 +103,7 @@ HFONT g_ui_bold_font = nullptr;
 HFONT g_title_font = nullptr;
 HFONT g_result_font = nullptr;
 HFONT g_small_font = nullptr;
+std::vector<HANDLE> g_private_font_handles;
 
 HBRUSH g_background_brush = nullptr;
 HBRUSH g_panel_brush = nullptr;
@@ -246,6 +247,34 @@ const wchar_t* ui_font_family() {
 
 const wchar_t* brand_font_family() {
     return L"MB Corpo A Title Cond WEB";
+}
+
+bool register_font_resource(int resource_id) {
+    HRSRC resource = FindResourceW(
+        g_instance, MAKEINTRESOURCEW(resource_id), RT_RCDATA);
+    if (resource == nullptr) return false;
+
+    HGLOBAL loaded = LoadResource(g_instance, resource);
+    if (loaded == nullptr) return false;
+
+    const DWORD size = SizeofResource(g_instance, resource);
+    const void* bytes = LockResource(loaded);
+    if (bytes == nullptr || size == 0U) return false;
+
+    DWORD registered_count = 0;
+    HANDLE handle = AddFontMemResourceEx(
+        const_cast<void*>(bytes), size, nullptr, &registered_count);
+    if (handle == nullptr || registered_count == 0U) return false;
+
+    g_private_font_handles.push_back(handle);
+    return true;
+}
+
+bool register_bundled_fonts() {
+    return
+        register_font_resource(CALCULATOR_FONT_RESOURCE_REGULAR) &&
+        register_font_resource(CALCULATOR_FONT_RESOURCE_BOLD) &&
+        register_font_resource(CALCULATOR_FONT_RESOURCE_CONDENSED);
 }
 
 HFONT make_font(HWND window, int point_size, int weight, const wchar_t* family) {
@@ -1269,6 +1298,10 @@ void destroy_resources() {
     if (g_title_font != nullptr) DeleteObject(g_title_font);
     if (g_result_font != nullptr) DeleteObject(g_result_font);
     if (g_small_font != nullptr) DeleteObject(g_small_font);
+    for (HANDLE handle : g_private_font_handles) {
+        if (handle != nullptr) RemoveFontMemResourceEx(handle);
+    }
+    g_private_font_handles.clear();
     if (g_background_brush != nullptr) DeleteObject(g_background_brush);
     if (g_panel_brush != nullptr) DeleteObject(g_panel_brush);
     if (g_input_brush != nullptr) DeleteObject(g_input_brush);
@@ -1280,6 +1313,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     g_instance = instance;
 
     SetProcessDPIAware();
+
+    if (!register_bundled_fonts()) {
+        destroy_resources();
+        return 1;
+    }
 
     INITCOMMONCONTROLSEX controls{
         sizeof(INITCOMMONCONTROLSEX),

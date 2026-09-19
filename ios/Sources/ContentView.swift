@@ -143,11 +143,11 @@ struct ContentView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Calculator")
-                    .font(.system(size: 29, weight: .regular))
+                    .font(CalculatorTypography.display(29, relativeTo: .title))
                     .foregroundStyle(palette.title)
 
                 Text("PRECISION CALCULATOR")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(CalculatorTypography.bold(9, relativeTo: .caption2))
                     .tracking(1.2)
                     .foregroundStyle(palette.subtle)
             }
@@ -165,7 +165,7 @@ struct ContentView: View {
                 }
             } label: {
                 Image(systemName: "circle.lefthalf.filled")
-                    .font(.system(size: 17, weight: .semibold))
+                    .imageScale(.medium)
                     .frame(width: 42, height: 38)
             }
             .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
@@ -175,7 +175,7 @@ struct ContentView: View {
                 model.showingHistory = true
             } label: {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 17, weight: .semibold))
+                    .imageScale(.medium)
                     .frame(width: 42, height: 38)
             }
             .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
@@ -191,7 +191,7 @@ struct ContentView: View {
                         model.selectMode(mode)
                     }
                 }
-                .font(.system(size: 12, weight: .bold))
+                .font(CalculatorTypography.bold(12, relativeTo: .caption))
                 .foregroundStyle(
                     model.mode == mode
                         ? palette.primaryText
@@ -228,7 +228,7 @@ struct ContentView: View {
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .multilineTextAlignment(.trailing)
-            .font(.system(size: 15))
+            .font(CalculatorTypography.regular(15, relativeTo: .body))
             .foregroundStyle(palette.muted)
             .padding(.horizontal, 12)
             .frame(minHeight: 42)
@@ -243,7 +243,7 @@ struct ContentView: View {
             .onSubmit { model.calculate() }
 
             Text(model.display)
-                .font(.system(size: 46, weight: .regular, design: .rounded))
+                .font(CalculatorTypography.display(46, relativeTo: .largeTitle))
                 .foregroundStyle(palette.title)
                 .lineLimit(1)
                 .minimumScaleFactor(0.42)
@@ -251,7 +251,7 @@ struct ContentView: View {
                 .padding(.top, 4)
 
             Text(model.status)
-                .font(.system(size: 9, weight: .bold))
+                .font(CalculatorTypography.bold(9, relativeTo: .caption2))
                 .tracking(0.9)
                 .foregroundStyle(
                     model.display == "Error"
@@ -295,7 +295,7 @@ struct ContentView: View {
 
     private var footer: some View {
         Text("Keyboard ready · Variables, memory and history retained")
-            .font(.system(size: 9))
+            .font(CalculatorTypography.regular(9, relativeTo: .caption2))
             .foregroundStyle(palette.subtle)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -329,7 +329,7 @@ private struct CalculatorKey: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: kind == .equals ? 19 : 16, weight: .semibold))
+                .font(CalculatorTypography.bold(kind == .equals ? 19 : 16, relativeTo: .body))
                 .frame(maxWidth: .infinity, minHeight: 54)
                 .contentShape(Rectangle())
         }
@@ -428,7 +428,7 @@ private struct HistoryView: View {
 
                 ScrollView {
                     Text(history)
-                        .font(.system(size: 15, design: .monospaced))
+                        .font(CalculatorTypography.regular(15, relativeTo: .body))
                         .foregroundStyle(palette.text)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(18)

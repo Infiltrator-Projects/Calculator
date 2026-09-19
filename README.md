@@ -6,7 +6,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
 
-**Current source version:** 0.1.28  
+**Current source version:** 0.1.29  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.3  
 **Design contract:** shared Design v1  
@@ -88,15 +88,15 @@ The calculation core links against `InfiltratrCommon::Portable` from the exact r
 
 ## Typography
 
-Calculator's desktop typography is restricted to the three established MB Corpo faces used by the software family. Calculator does not deliberately select a generic fourth family such as Sans or Segoe UI.
+Calculator-owned text is restricted to the same three established MB Corpo faces on Linux, Windows and iPhone. There is no deliberate generic fourth text family such as Sans or Segoe UI.
 
-The project does **not** redistribute proprietary MB Corpo font binaries. The three approved local font files and roles are:
+The three approved font files and roles are:
 
 - `mb_corpo_s_regular.ttf` — `MB Corpo S Title WEB` regular interface text;
 - `mb_corpo_s_bold.ttf` — `MB Corpo S Title WEB` bold interface text, actions and emphasis;
 - `mb_corpo_a_cond_regular.ttf` — `MB Corpo A Title Cond WEB` product and display titles.
 
-Linux and Windows request only those MB Corpo roles; the regular/bold distinction is expressed with the real 400/700 weights rather than a synthetic semibold face.
+Release builds obtain the immutable MBLINK font archive pinned at commit `aa161e7…`, verify the archive and all three individual TTF hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
 
 ## Build
 
