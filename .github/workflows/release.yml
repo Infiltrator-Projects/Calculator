@@ -550,7 +550,7 @@ jobs:
     needs: [linux, windows, publish]
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Refresh and verify Package Repository
@@ -577,22 +577,22 @@ jobs:
               echo "::warning::Immediate APT dispatch failed; waiting for the repository safety refresh."
             fi
           else
-            echo "::warning::APT dispatch token is unavailable; waiting for the repository safety refresh."
+            echo "APT dispatch token is unavailable; using the repository five-minute safety refresh."
           fi
 
           catalogue='https://infiltrator-projects.github.io/Infiltrator-Repository/catalogue/apps.json'
-          for attempt in $(seq 1 72); do
+          for attempt in $(seq 1 120); do
             if curl -fsS --retry 2 --retry-delay 1 "$catalogue?release=$RELEASE_SHA&attempt=$attempt" \
               | jq -e --arg id "$APP_ID" --arg version "$VERSION" \
                 '.[] | select(.id == $id and .version == $version)' >/dev/null; then
               echo "APT repository advertises $APP_ID $VERSION."
               exit 0
             fi
-            echo "Waiting for APT publication of $APP_ID $VERSION ($attempt/72)..."
+            echo "Waiting for APT publication of $APP_ID $VERSION ($attempt/120)..."
             sleep 10
           done
 
-          echo "::error::The central APT repository did not advertise $APP_ID $VERSION within 12 minutes."
+          echo "::error::The central APT repository did not advertise $APP_ID $VERSION within 20 minutes."
           exit 1
 
 
