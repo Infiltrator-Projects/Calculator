@@ -2,10 +2,23 @@
 #include "../src/ui/calculator_ui_contract.hpp"
 #include "../src/ui/calculator_theme.hpp"
 
-#include <cassert>
+#include <iostream>
 #include <string_view>
 
 using namespace calculator::ui;
+
+namespace {
+int failures = 0;
+
+void check(bool condition, const char* expression) {
+    if (!condition) {
+        std::cerr << "FAIL: " << expression << '\n';
+        ++failures;
+    }
+}
+
+#define CHECK(expression) check(static_cast<bool>(expression), #expression)
+} // namespace
 
 int main() {
     static_assert(kStandardMemory.size() == 4);
@@ -40,45 +53,50 @@ int main() {
     const auto& night = resolved_palette(ThemeMode::Night, false);
     const auto& day = resolved_palette(ThemeMode::Day, true);
     const auto& system_night = resolved_palette(ThemeMode::System, true);
-    assert(night.background_rgb == 0x050608);
-    assert(night.panel_rgb == 0x101318);
-    assert(day.background_rgb == 0xF4F5F7);
-    assert(day.panel_rgb == 0xFFFFFF);
-    assert(system_night.background_rgb == night.background_rgb);
-    assert(theme_mode_name(ThemeMode::System) == "System");
-    assert(theme_mode_name(ThemeMode::Day) == "Day");
-    assert(theme_mode_name(ThemeMode::Night) == "Night");
-    assert(next_theme_mode(ThemeMode::System) == ThemeMode::Day);
-    assert(next_theme_mode(ThemeMode::Day) == ThemeMode::Night);
-    assert(next_theme_mode(ThemeMode::Night) == ThemeMode::System);
+    CHECK(night.background_rgb == 0x050608);
+    CHECK(night.panel_rgb == 0x101318);
+    CHECK(day.background_rgb == 0xF4F5F7);
+    CHECK(day.panel_rgb == 0xFFFFFF);
+    CHECK(system_night.background_rgb == night.background_rgb);
+    CHECK(theme_mode_name(ThemeMode::System) == "System");
+    CHECK(theme_mode_name(ThemeMode::Day) == "Day");
+    CHECK(theme_mode_name(ThemeMode::Night) == "Night");
+    CHECK(next_theme_mode(ThemeMode::System) == ThemeMode::Day);
+    CHECK(next_theme_mode(ThemeMode::Day) == ThemeMode::Night);
+    CHECK(next_theme_mode(ThemeMode::Night) == ThemeMode::System);
 
-    assert(mode_name(Mode::Standard) == "Standard");
-    assert(mode_name(Mode::Scientific) == "Scientific");
-    assert(mode_name(Mode::Programmer) == "Programmer");
+    CHECK(mode_name(Mode::Standard) == "Standard");
+    CHECK(mode_name(Mode::Scientific) == "Scientific");
+    CHECK(mode_name(Mode::Programmer) == "Programmer");
 
-    assert(kStandardMemory[0].command == Command::MemoryClear);
-    assert(kStandardMemory[1].command == Command::MemoryRecall);
-    assert(kStandardMemory[2].command == Command::MemoryAdd);
-    assert(kStandardMemory[3].command == Command::MemorySubtract);
+    CHECK(kStandardMemory[0].command == Command::MemoryClear);
+    CHECK(kStandardMemory[1].command == Command::MemoryRecall);
+    CHECK(kStandardMemory[2].command == Command::MemoryAdd);
+    CHECK(kStandardMemory[3].command == Command::MemorySubtract);
 
-    assert(kStandardKeypad.front().label == "%");
-    assert(kStandardKeypad.back().command == Command::Equals);
-    assert(kScientificKeypad.front().command == Command::ToggleDegrees);
-    assert(kScientificKeypad.back().command == Command::Equals);
-    assert(kProgrammerKeypad.front().command == Command::BaseBin);
-    assert(kProgrammerKeypad.back().command == Command::HexF);
+    CHECK(kStandardKeypad.front().label == "%");
+    CHECK(kStandardKeypad.back().command == Command::Equals);
+    CHECK(kScientificKeypad.front().command == Command::ToggleDegrees);
+    CHECK(kScientificKeypad.back().command == Command::Equals);
+    CHECK(kProgrammerKeypad.front().command == Command::BaseBin);
+    CHECK(kProgrammerKeypad.back().command == Command::HexF);
 
-    assert(insertion_text(Command::Divide) == "/");
-    assert(insertion_text(Command::Multiply) == "*");
-    assert(insertion_text(Command::Subtract) == "-");
-    assert(insertion_text(Command::Add) == "+");
-    assert(insertion_text(Command::ShiftLeft) == "<<");
-    assert(insertion_text(Command::ShiftRight) == ">>");
+    CHECK(insertion_text(Command::Divide) == "/");
+    CHECK(insertion_text(Command::Multiply) == "*");
+    CHECK(insertion_text(Command::Subtract) == "-");
+    CHECK(insertion_text(Command::Add) == "+");
+    CHECK(insertion_text(Command::ShiftLeft) == "<<");
+    CHECK(insertion_text(Command::ShiftRight) == ">>");
 
-    assert(is_programmer_selector(Command::BaseHex));
-    assert(is_programmer_selector(Command::Width64));
-    assert(is_programmer_selector(Command::ToggleSigned));
-    assert(!is_programmer_selector(Command::Equals));
+    CHECK(is_programmer_selector(Command::BaseHex));
+    CHECK(is_programmer_selector(Command::Width64));
+    CHECK(is_programmer_selector(Command::ToggleSigned));
+    CHECK(!is_programmer_selector(Command::Equals));
 
+    if (failures != 0) {
+        std::cerr << failures << " UI contract test(s) failed\n";
+        return 1;
+    }
+    std::cout << "UI contract tests passed\n";
     return 0;
 }
