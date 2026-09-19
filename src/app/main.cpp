@@ -450,13 +450,15 @@ GtkWidget* new_grid() {
     return grid;
 }
 
-void fill_grid(GtkWidget* grid, const ButtonSpec* specs, std::size_t count) {
+void fill_grid(
+    GtkWidget* grid, const ButtonSpec* specs, std::size_t count,
+    bool vertical_expand = false) {
     for (std::size_t index = 0; index < count; ++index) {
         const int row = static_cast<int>(index / 4U);
         const int column = static_cast<int>(index % 4U);
-        gtk_grid_attach(
-            GTK_GRID(grid), calc_button(specs[index]),
-            column, row, 1, 1);
+        GtkWidget* button = calc_button(specs[index]);
+        gtk_widget_set_vexpand(button, vertical_expand);
+        gtk_grid_attach(GTK_GRID(grid), button, column, row, 1, 1);
     }
 }
 
@@ -699,6 +701,7 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(display), status_label);
 
     standard_panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+    gtk_widget_set_vexpand(standard_panel, TRUE);
     gtk_box_append(GTK_BOX(calculator_column), standard_panel);
 
     GtkWidget* memory_strip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -708,11 +711,13 @@ void activate(GtkApplication* app, gpointer) {
     }
 
     GtkWidget* standard_grid = new_grid();
+    gtk_widget_set_vexpand(standard_grid, TRUE);
     gtk_box_append(GTK_BOX(standard_panel), standard_grid);
     fill_grid(
         standard_grid,
         calculator::ui::kStandardKeypad.data(),
-        calculator::ui::kStandardKeypad.size());
+        calculator::ui::kStandardKeypad.size(),
+        true);
 
     scientific_grid = new_grid();
     gtk_box_append(GTK_BOX(calculator_column), scientific_grid);

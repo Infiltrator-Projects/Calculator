@@ -19,6 +19,9 @@ for needle in (
     "constexpr int kStandardWindowHeight = 520;",
     "constexpr int kExtendedWindowHeight = 610;",
     "preferred_window_height(Mode::Standard)",
+    "gtk_widget_set_vexpand(standard_panel, TRUE);",
+    "gtk_widget_set_vexpand(standard_grid, TRUE);",
+    "calculator::ui::kStandardKeypad.size(),\n        true);",
 ):
     assert needle in linux, f"Linux compact/MB typography contract missing: {needle}"
 

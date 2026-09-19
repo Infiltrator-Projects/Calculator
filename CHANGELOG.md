@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.34 — 2026-09-19
+
+- Removed the dead vertical strip below the Linux Standard keypad by allowing the Standard panel, grid and keypad rows to consume the window's shared 520px allocation.
+- Kept the shared desktop geometry contract intact rather than reintroducing a Linux-only undersized window exception.
+- Added a regression guard for the Standard vertical-fill contract.
+
 ## 0.1.33 — 2026-09-19
 
 - Replaced the Linux Calculator artwork with the shared non-automotive Infiltrator icon language: dark graphite field, #72dcff cyan linework and a simplified calculator glyph.
