@@ -32,11 +32,11 @@ for forbidden in (
     )
 
 for needle in (
-    "desktop_preferred_height(Mode::Standard)",
-    "desktop_preferred_height(Mode::Scientific)",
-    "desktop_preferred_height(Mode::Programmer)",
+    "desktop_preferred_height(mode)",
     "desktop_minimum_height(",
-    "resize_main_for_mode",
+    "resize_main_for_mode(window, Mode::Standard)",
+    "resize_main_for_mode(window, Mode::Scientific)",
+    "resize_main_for_mode(window, Mode::Programmer)",
 ):
     assert needle in windows, f"Windows mode-aware geometry missing: {needle}"
 
