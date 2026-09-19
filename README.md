@@ -137,6 +137,6 @@ The packaged form is a generic Debian package suitable for the Package Repositor
 
 ## Licence
 
-Copyright © 2026 Shannon Smith.
+Copyright © 2016–2026 Shannon Smith.
 
 Calculator is licensed under the GNU General Public License version 3 or, at your option, any later version (`GPL-3.0-or-later`).
