@@ -6,6 +6,11 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.33 — 2026-09-19
+
+- Replaced the Linux Calculator artwork with the shared non-automotive Infiltrator icon language: dark graphite field, #72dcff cyan linework and a simplified calculator glyph.
+- Kept the same project-owned SVG wired through the desktop launcher and Linux Mint Software Manager package alias.
+
 ## 0.1.32 — 2026-09-19
 
 - Bound Programmer-mode recursive parsing so excessively nested parentheses or unary operators fail deterministically with `expression nesting too deep` instead of risking native stack exhaustion.

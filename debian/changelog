@@ -1,3 +1,11 @@
+infiltrator-calculator (0.1.33) unstable; urgency=medium
+
+  * Replace the Linux application icon with the shared non-automotive Infiltrator icon language.
+  * Use the same dark graphite field, #72dcff cyan linework and simplified glyph style as the InfiltratorFS catalogue identity.
+  * Keep the project-owned icon installed under both the desktop and Linux Mint Software Manager aliases.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 22:30:00 +1000
+
 infiltrator-calculator (0.1.32) unstable; urgency=medium
 
   * Bound recursive Programmer parsing for nested parentheses and unary operators.
