@@ -114,7 +114,7 @@ if(CALCULATOR_BUILD_DESKTOP)
     endif()
 
     install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
-    install(FILES LICENSE DESTINATION share/doc/infiltrator-calc OPTIONAL)
+    install(FILES LICENSE DESTINATION share/doc/infiltrator-calculator OPTIONAL)
 endif()
 
 add_executable(calculator-test
