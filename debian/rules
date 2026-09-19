@@ -9,3 +9,9 @@ override_dh_auto_configure:
 
 override_dh_auto_test:
 	ctest --test-dir build --output-on-failure
+
+# Linux Mint Software Manager resolves APT icons from local package-name aliases.
+override_dh_install:
+	dh_install
+	install -D -m 0644 debian/infiltrator-calc.svg \
+		"$(CURDIR)/debian/infiltrator-calculator/usr/share/app-install/icons/infiltrator-calculator.svg"

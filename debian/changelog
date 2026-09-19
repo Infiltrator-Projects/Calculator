@@ -1,3 +1,11 @@
+infiltrator-calculator (0.1.30) unstable; urgency=medium
+
+  * Install the Calculator artwork under the exact Debian package-name alias used by Linux Mint Software Manager.
+  * Keep the icon owned by the Calculator package; no shared icon helper package is required.
+  * Verify the package-name icon alias in release CI.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 19:15:00 +1000
+
 infiltrator-calculator (0.1.29) unstable; urgency=medium
 
   * Enforce the three approved MB Corpo text faces across Linux, Windows and iPhone.

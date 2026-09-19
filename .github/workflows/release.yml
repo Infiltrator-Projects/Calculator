@@ -78,6 +78,7 @@ jobs:
           grep -qx './usr/bin/infiltrator-calc' package-files.txt
           grep -qx './usr/share/applications/infiltrator-calc.desktop' package-files.txt
           grep -qx './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg' package-files.txt
+          grep -qx './usr/share/app-install/icons/infiltrator-calculator.svg' package-files.txt
           grep -qx './usr/share/metainfo/infiltrator-calculator.metainfo.xml' package-files.txt
           grep -qx './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_a_cond_regular.ttf' package-files.txt
           grep -qx './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_s_bold.ttf' package-files.txt
