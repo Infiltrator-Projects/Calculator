@@ -82,3 +82,12 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** Common 1.19.7 now supplies decimal-token parsing, native design metrics, typography identity and font-asset provenance. Unary/scientific mathematics and history/session presentation are Calculator semantics and therefore have one Calculator-owned implementation.
 
 **Consequence.** The C/C++ split remains intentional: Common stays C11 infrastructure; Calculator state, parsers and domain logic stay C++17; native shells remain procedural adapters without acquiring mathematical/session ownership.
+
+
+## ADR-011 — Common 1.19.8 is consumed through the existing public boundary
+
+**Decision.** Calculator pins immutable Common 1.19.8 at commit `3bfcb6f76ca44ac33bc2fee54fb114caa0eca5f9` and continues to use only published Common APIs.
+
+**Rationale.** Common 1.19.8 removes duplicated implementation mechanics inside Common without changing its public ABI. Calculator already consumes the relevant product-neutral contracts: decimal-token parsing, theme/palette, structural metrics, typography identity and font-asset provenance. Reaching into Common's new private ASCII or POSIX helpers would make the dependency less stable, not more complete.
+
+**Consequence.** Calculator receives the 1.19.8 implementation improvements everywhere Common is built, while Standard/Scientific/Programmer semantics, session state, history policy, controller behaviour and native platform adaptation remain in their correct Calculator-owned layers.

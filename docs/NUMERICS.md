@@ -30,7 +30,7 @@ The primary representation authority is IEEE 754 / ISO/IEC 60559. The project cu
 
 ## Decimal token conversion
 
-Calculator owns expression grammar and decides when a numeric operand is expected. Common 1.19.7 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
+Calculator owns expression grammar and decides when a numeric operand is expected. Common 1.19.8 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
 
 Calculator therefore no longer carries a private decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned.
 

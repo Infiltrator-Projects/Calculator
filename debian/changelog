@@ -1,3 +1,13 @@
+infiltrator-calculator (0.1.37) unstable; urgency=medium
+
+  * Advance Calculator to immutable Infiltratr Common 1.19.8.
+  * Keep the established public Common boundary; 1.19.8 changes implementation internals, not public ABI.
+  * Strengthen regression coverage against private Common-header coupling.
+  * Rebuild Linux, Windows and iPhone from the exact Common 1.19.8 revision.
+  * Preserve Calculator-specific Standard, Scientific and Programmer semantics unchanged.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 23:54:00 +1000
+
 infiltrator-calculator (0.1.36) unstable; urgency=medium
 
   * Advance the shared foundation to immutable Infiltratr Common 1.19.7.

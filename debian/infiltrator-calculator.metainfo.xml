@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.37" date="2026-09-19">
+      <description>
+        <p>Rebuild Calculator against immutable Common 1.19.8 while preserving the established public ownership boundary and all calculator behaviour.</p>
+      </description>
+    </release>
     <release version="0.1.36" date="2026-09-19">
       <description>
         <p>Deepen Common 1.19.7 reuse, centralise scientific/unary semantics and history rendering, and tighten platform/domain ownership boundaries.</p>

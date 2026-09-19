@@ -39,7 +39,7 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 `src/core/calculator.*` owns the binary64 expression domain used by Scientific calculations and reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation.
 
-Calculator decides where the expression grammar expects a number, then Common 1.19.7's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
+Calculator decides where the expression grammar expects a number, then Common 1.19.8's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
 
 Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
@@ -91,7 +91,9 @@ SwiftUI owns touch-native composition, platform appearance observation and prese
 
 ## Common boundary
 
-Common is an exact git submodule dependency. Common 1.19.7 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette, structural rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts while deliberately retaining its stricter no-fallback font policy.
+Common is an exact git submodule dependency. Common 1.19.8 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette, structural rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts while deliberately retaining its stricter no-fallback font policy.
+
+Common 1.19.8 does not add a new Calculator-facing API; its value here is that the same pinned public contracts now sit on a less duplicated Common implementation. Calculator must not include Common private headers such as its internal ASCII/read helpers, because doing so would reverse the intended ownership boundary.
 
 Calculator owns expression grammar, immediate-calculator behaviour, Programmer-mode width semantics, calculator state, command semantics and calculator-specific layout. Code is moved into Common only when it has a stable product-neutral contract and a demonstrated shared consumer.
 

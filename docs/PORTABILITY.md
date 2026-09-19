@@ -36,7 +36,7 @@ External or cross-language boundaries should use explicit-width types where bit 
 
 ## Locale and text boundaries
 
-Numeric expression syntax is locale-independent. Common 1.19.7's cursor-based decimal-token parser owns token conversion directly, so Calculator does not carry a second numeric scanner or depend on the host process locale.
+Numeric expression syntax is locale-independent. Common 1.19.8's cursor-based decimal-token parser owns token conversion directly, so Calculator does not carry a second numeric scanner or depend on the host process locale.
 
 User-interface text and platform font rendering may vary by locale/platform, but locale must not silently change the meaning of Calculator's decimal grammar, operators or Programmer radices.
 

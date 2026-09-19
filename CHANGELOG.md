@@ -6,6 +6,14 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.37 — 2026-09-19
+
+- Advance the exact shared foundation from Common 1.19.7 to immutable Common 1.19.8.
+- Retain the existing public Common API boundary because 1.19.8 is an ABI-compatible internal-consolidation release rather than an API expansion.
+- Re-run the Calculator/Common ownership audit and confirm no private Common implementation headers or Calculator-specific semantics should be pulled across the boundary.
+- Strengthen the Common integration regression so Calculator is pinned to the exact 1.19.8 release commit and consumes only published Common interfaces.
+- Preserve all Standard, Scientific, Programmer, history, typography, platform and packaging behaviour while rebuilding every release target against Common 1.19.8.
+
 ## 0.1.36 — 2026-09-19
 
 - Advance Calculator to immutable Common 1.19.7 and replace its private decimal-token scanner with Common's exact locale-independent token parser.
