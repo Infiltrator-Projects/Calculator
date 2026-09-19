@@ -66,6 +66,7 @@ jobs:
           mkdir -p dist/linux
           cp ../infiltrator-calculator_${{ steps.version.outputs.version }}_amd64.deb "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
           dpkg-deb --info "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
+          test "$(dpkg-deb -f "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb" Package)" = "infiltrator-calculator"
 
       - name: Upload Linux package
         uses: actions/upload-artifact@v4
