@@ -9,6 +9,23 @@ ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
 ios_bridge = Path("ios/Bridge/CalculatorBridge.mm").read_text(encoding="utf-8")
 ios_project = Path("ios/project.yml").read_text(encoding="utf-8")
 
+for needle in (
+    'constexpr const char* kUiFont = "Sans";',
+    'constexpr const char* kBrandFont = "Sans";',
+    "constexpr int kStandardWindowHeight = 480;",
+    "constexpr int kExtendedWindowHeight = 610;",
+    "preferred_window_height(Mode::Standard)",
+):
+    assert needle in linux, f"Linux compact/native typography contract missing: {needle}"
+
+for forbidden in (
+    "MB Corpo S Title WEB",
+    "MB Corpo A Title Cond WEB",
+):
+    assert forbidden not in linux, (
+        f"Linux UI reintroduced a bundled display font override: {forbidden}"
+    )
+
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
     assert '../ui/calculator_ui_controller.hpp' in source, (
         f"{name} does not consume the shared calculator UI controller"
