@@ -1,3 +1,11 @@
+infiltrator-calculator (0.1.24) unstable; urgency=medium
+
+  * Move the Debian/APT package identity from infiltrator-calc to infiltrator-calculator.
+  * Preserve the Calculator product name, existing executable/configuration identities, Windows executable and iOS bundle identity.
+  * Migrate existing infiltrator-calc installations through the central repository transition package.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 13:02:00 +1000
+
 infiltrator-calc (0.1.23) unstable; urgency=medium
 
   * Fix GTK history dock visibility at normal startup size.
