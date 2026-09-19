@@ -259,24 +259,16 @@ void show_history(GtkWidget*, gpointer) {
     gtk_widget_set_vexpand(scroll, TRUE);
     gtk_box_append(GTK_BOX(root), scroll);
 
-    GtkWidget* list = gtk_list_box_new();
-    gtk_widget_add_css_class(list, "history-list");
-    gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), list);
-
-    for (auto it = controller.session().history().rbegin();
-         it != controller.session().history().rend(); ++it) {
-        const std::string text =
-            it->input + "\n" +
-            (it->result.ok
-                 ? calculator::format_value(it->result.value)
-                 : ("Error: " + it->result.error));
-
-        GtkWidget* row = gtk_label_new(text.c_str());
-        gtk_label_set_xalign(GTK_LABEL(row), 0.0F);
-        gtk_widget_add_css_class(row, "history-row");
-        gtk_list_box_append(GTK_LIST_BOX(list), row);
-    }
+    GtkWidget* history_view = gtk_text_view_new();
+    gtk_widget_add_css_class(history_view, "history-text");
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(history_view), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(history_view), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(history_view), GTK_WRAP_WORD_CHAR);
+    GtkTextBuffer* history_buffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(history_view));
+    const std::string history = controller.history_text();
+    gtk_text_buffer_set_text(history_buffer, history.c_str(), -1);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), history_view);
 
     GtkWidget* clear = gtk_button_new_with_label("Clear History");
     gtk_widget_add_css_class(clear, "toolbar-button");

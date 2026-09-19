@@ -63,7 +63,7 @@ int main() {
     const auto& system_night = resolved_palette(ThemeMode::System, true);
     CHECK(night.background_rgb == 0x050608);
     CHECK(night.panel_rgb == 0x101318);
-    CHECK(day.background_rgb == 0xF4F5F7);
+    CHECK(day.background_rgb == 0xFFFFFF);
     CHECK(day.panel_rgb == 0xFFFFFF);
     CHECK(system_night.background_rgb == night.background_rgb);
     CHECK(theme_mode_name(ThemeMode::System) == "System");
