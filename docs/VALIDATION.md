@@ -1,25 +1,53 @@
 # Validation
 
-## Evidence model
+## Purpose
 
-Compilation, deterministic regression tests, platform integration and human visual/interaction testing prove different things.
+Validation distinguishes implemented behaviour from behaviour that has actually been demonstrated. Compilation, deterministic numerical tests, native runtime checks, Simulator builds and physical-device observation prove different things.
 
-## Automated gates
+## Automated evidence
 
-- .github/workflows/release.yml
+The repository currently uses:
 
-tests/ covers the calculator engine, session model, programmer behaviour, desktop layout, UI contract and shared controller. Release automation builds the supported platform outputs from the same source.
+- `.github/workflows/release.yml`
 
-## Manual/environment evidence
+The `tests/` tree covers expression grammar, Standard immediate semantics, Programmer width/radix behaviour, session state, desktop UI contracts/controller behaviour and source-level cross-platform ownership rules.
 
-Signed iPhone installation requires external Apple signing credentials. Visual/platform integration on physical devices and native Windows/Linux desktops remains a real-environment check beyond core unit tests.
+Release automation additionally:
 
-Manual evidence supplements automation and should record the platform/environment actually observed.
+- builds and tests the shared core on supported build hosts;
+- builds the native Windows application and runs a Win32 runtime/keypad smoke path;
+- builds the GTK/Linux target and Debian package;
+- compiles the iPhone application for iOS Simulator;
+- compiles the unsigned ARM64 iPhoneOS target;
+- verifies expected release assets and checksums; and
+- verifies Package Repository publication for the Debian package.
+
+Automated checks should cover ordinary behaviour, boundary/error cases and release/package contracts appropriate to the affected domain.
+
+## What platform evidence proves
+
+A successful iOS Simulator build proves that the Swift/Objective-C++/C++ application compiles for the Simulator environment. It is not evidence of physical-iPhone installation, signing, provisioning, hardware behaviour or App Store acceptance.
+
+A successful unsigned iPhoneOS build proves device-architecture compilation. It is not an installable signed release and must not be described as one.
+
+The Windows runtime smoke path demonstrates selected native window/control interactions on the CI environment; it does not exhaustively prove visual behaviour at every DPI, theme or desktop configuration.
+
+Linux build/tests and layout contracts demonstrate compiled GTK behaviour and deterministic layout rules. They do not replace observation of real compositor, font, theme and allocation behaviour. Reproducible GTK layout defects should gain permanent regression protection where practical.
+
+## Manual and environment-dependent evidence
+
+Physical-device installation, signing/provisioning, platform accessibility, visual layout across real DPI/theme/font combinations and interaction behaviour that hosted CI cannot faithfully reproduce require explicit native-environment testing.
+
+Manual evidence supplements automation and should record the platform, environment and behaviour actually observed. Simulator, mocked, fixture or compile-only evidence must not be promoted into stronger claims.
 
 ## Release criterion
 
-The exact source intended for release/publication must pass required automated checks, and generated/package artifacts must correspond to that source identity.
+The exact revision intended for release must pass the required automated gates. Published assets must derive from that revision, checksums must cover the published payloads, and documentation must not advertise known-failing, removed or merely planned behaviour as supported.
 
 ## Regression rule
 
-Reproducible defects should gain permanent automated coverage at the narrowest layer that captures the original failure.
+Every reproducible defect should gain the narrowest useful permanent regression when practical. Tests are part of the product contract rather than disposable scaffolding.
+
+## Limits
+
+The validation system is evidence, not a proof of all possible numerical or platform behaviour. It does not establish correctness for untested mathematical domains, atypical floating-point implementations, every native UI environment or unsigned iPhone installation.

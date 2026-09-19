@@ -1,6 +1,6 @@
 # Decisions
 
-This file records durable architectural choices for Calculator.
+This file records durable architectural choices for Calculator. `docs/DESIGN.md` explains project-wide rationale; this file preserves choices that future work should not casually reverse.
 
 ## ADR-001 — One calculator application, multiple selectable modes
 
@@ -56,4 +56,20 @@ This file records durable architectural choices for Calculator.
 
 **Rationale.** Forcing one toolkit abstraction over every platform would reduce native quality without improving mathematical consistency.
 
-**Consequence.** Parity tests focus on commands, state and layout contracts rather than byte-identical UI implementations.
+**Consequence.** Parity tests focus on commands, state and ownership contracts rather than byte-identical UI implementations.
+
+## ADR-008 — Compatibility identifiers survive user-facing renames
+
+**Decision.** Stable runtime/configuration identifiers remain when changing them would break settings, application identity or installed upgrade continuity.
+
+**Rationale.** Product naming and compatibility identity solve different problems. A cleaner internal name is not an improvement if it needlessly strands user state or installed packages.
+
+**Consequence.** The visible product, repository and release assets are Calculator, while documented legacy executable/configuration or bundle identifiers may remain compatibility-only until an explicit migration replaces them safely.
+
+## ADR-009 — Numeric domains are explicit rather than hidden behind one representation
+
+**Decision.** Standard/Scientific currently use binary64 real values, while Programmer mode uses explicit fixed-width integer bit patterns. Future exact-decimal, arbitrary-precision or complex capabilities should introduce an appropriate domain instead of pretending binary64 has semantics it does not.
+
+**Rationale.** Representation is part of numerical correctness. Formatting cannot turn an inexact representation into an exact domain.
+
+**Consequence.** New mathematical capability must state its representation, error model and validation strategy before it is treated as production behaviour.
