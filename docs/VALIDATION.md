@@ -15,6 +15,7 @@ The `tests/` tree covers expression grammar, Standard immediate semantics, Progr
 Every `main` push and manual workflow dispatch runs the cross-platform verification jobs. Release publication remains gated to explicit `Release ...` commits. Verification:
 
 - builds and tests the shared core on supported build hosts;
+- runs the portable Calculator core/controller tests under Clang AddressSanitizer and UndefinedBehaviorSanitizer;
 - builds the native Windows application and runs a Win32 runtime/keypad smoke path;
 - builds the GTK/Linux target and Debian package;
 - compiles the iPhone application for iOS Simulator;

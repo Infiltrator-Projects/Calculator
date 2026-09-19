@@ -500,8 +500,41 @@ jobs:
           path: dist/ios/calculator_*_ios-device-unsigned.zip
           if-no-files-found: error
 
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout source and Common dependency
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Configure Clang ASan and UBSan build
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-sanitizers \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCALCULATOR_BUILD_DESKTOP=OFF \
+            -DINFILTRATR_COMMON_BUILD_SHARED=OFF \
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+
+      - name: Build and test with sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          set -euo pipefail
+          cmake --build build-sanitizers --parallel
+          ctest --test-dir build-sanitizers --output-on-failure
+
   publish:
-    needs: [linux, windows, ios]
+    needs: [linux, windows, ios, sanitizers]
     if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
     runs-on: ubuntu-latest
     timeout-minutes: 10
