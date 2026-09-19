@@ -1,7 +1,13 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Calculator Architecture
+# Architecture
 
 Calculator is structured so that calculation semantics are independent of any graphical toolkit. The architecture separates mathematical domains, session state, calculator interaction state, shared product-neutral infrastructure and platform rendering.
+
+## First-principles design
+
+Calculator begins with explicit mathematical and interaction contracts rather than treating another calculator application as the specification. Conventional calculator behaviour, numerical standards, platform conventions and mature implementations are evidence to examine; Calculator retains ownership of the semantics it exposes.
+
+First principles does not mean reimplementing every mechanism. The C++ standard library, native platform toolkits and pinned Common are used where their documented contracts are the stronger engineering choice. Dependencies provide mechanisms; Calculator-specific arithmetic, parser, mode and interaction policy remain Calculator-owned.
 
 ## Architectural drivers
 
@@ -90,9 +96,9 @@ Calculator owns expression grammar, immediate-calculator behaviour, Programmer-m
 
 ## Numerical representation
 
-The current real-number domain is IEEE-754 binary64 (`double`). This is sufficient for the current Standard and Scientific feature set and maps efficiently to platform math libraries.
+Standard and Scientific currently use the binary64 real-number domain; Programmer uses explicit fixed-width integer bit patterns. Representation is part of the contract rather than an implementation detail hidden by formatting.
 
-Binary64 is not treated as the final answer for every future capability. Exact integer, arbitrary-precision, complex or unit-aware domains should be introduced as distinct representations when their correctness requirements justify them rather than being simulated through formatting around `double`.
+The detailed numerical model, parser semantics, evidence hierarchy, display policy and cross-platform expectations are maintained in [NUMERICS.md](NUMERICS.md). Cross-platform representation and ABI assumptions are maintained in [PORTABILITY.md](PORTABILITY.md).
 
 ## Error model
 
@@ -102,9 +108,30 @@ Platform shells translate those results into presentation state; they do not rei
 
 ## Verification and release boundary
 
-The test suite covers the expression grammar, immediate semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI builds both Simulator and unsigned ARM64 device applications.
+The test suite covers the expression grammar, immediate semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI compiles both the Simulator and unsigned ARM64 device targets; the Simulator is test evidence, not a public release artifact.
 
-A release is published only after Linux, Windows and iOS jobs succeed from the same source revision. The Debian package is then verified through the Package Repository publication path.
+A release is published only after Linux, Windows and iOS jobs succeed from the same source revision. Public release assets are derived from that revision, and the Debian package is then verified through the Package Repository publication path. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
+
+## Compatibility and runtime identity
+
+The user-facing product and repository are Calculator. Runtime/configuration identifiers that would break installed upgrades, persisted settings or application identity may intentionally retain compatibility naming.
+
+Compatibility identity is not branding. A migration is justified only when it preserves or deliberately transforms existing user state and package continuity. This distinction is recorded in [DECISIONS.md](DECISIONS.md) and [PORTABILITY.md](PORTABILITY.md).
+
+## Security and trust model
+
+Calculator parses local expression/variable text and platform configuration as external input. Malformed syntax, numeric overflow/domain failure and unsupported Programmer input must remain contained calculation failures rather than causing undefined behaviour or host command execution.
+
+The product has no project-owned privileged daemon or network service. Platform shells own local preference and native UI integration; the portable core must not acquire platform authority merely because a frontend supplies input.
+
+Release integrity is part of the trust boundary: published artifacts must derive from the exact qualified source revision and must match the release checksum set.
+
+## Specialist documents
+
+- [NUMERICS.md](NUMERICS.md) — numeric domains, parser/percentage semantics, evidence basis and precision/error expectations.
+- [PORTABILITY.md](PORTABILITY.md) — platform, representation, locale, ABI and compatibility boundaries.
+- [UI_PARITY.md](UI_PARITY.md) — shared desktop interaction ownership and iPhone parity boundary.
+- [VALIDATION.md](VALIDATION.md) — automated, native-environment and release evidence limits.
 
 ## Design rule
 

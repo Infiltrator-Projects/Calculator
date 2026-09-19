@@ -58,24 +58,11 @@ The calculator also provides reusable variables, bounded calculation history and
 
 Desktop controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Features are considered complete only when implementation, tests and documented behaviour agree.
 
-## Planned capability families
+## Architecture summary
 
-The architecture is intended to grow into:
+Linux and Windows consume the same Calculator-owned desktop UI contract and controller: modes, button order, commands, logical sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. iPhone retains native SwiftUI touch composition while sharing the calculation/session/programmer engines and Common Design v1 semantics.
 
-- Engineering mode and specialised engineering calculators;
-- exact integer and wider numeric domains where useful;
-- mathematical and physical constants;
-- unit conversion;
-- ICT/network calculations;
-- storage and filesystem calculations;
-- date/time and epoch calculations;
-- statistics, graphing and equation solving;
-- complex and arbitrary-precision mathematics where justified; and
-- Project-specific engineering calculators.
-
-The application is intentionally being built as one calculator with selectable modes rather than as separate calculator applications.
-
-The Linux and Windows desktop shells consume the same Calc-owned UI contract and controller: the same modes, button order, commands, desktop sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. Compact, regular and wide desktop states are shared; wide layouts dock calculation history beside the keypad. Platform code owns only toolkit mechanics such as widgets, HWND/GDI rendering, DPI and native window integration. iPhone keeps native SwiftUI touch sizing while sharing the calculation core and shared Design v1 visual language.
+Detailed ownership, numerical, portability and validation contracts are maintained under [docs/](docs/README.md).
 
 ## Release platforms
 
@@ -83,7 +70,7 @@ Releases are multi-platform by default. The same versioned source is built and t
 
 - Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `infiltrator-calculator`);
 - Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
-- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI publishes an iOS Simulator bundle and an unsigned device bundle for build verification.
+- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes only the unsigned ARM64 device bundle as the release artifact.
 
 A signed installable `.ipa` requires an Apple signing identity and provisioning profile. Those credentials are deliberately not stored in the repository. Once signing is configured, the same Xcode target is ready to archive and export as an `.ipa`.
 
@@ -139,7 +126,7 @@ ios/
 └── project.yml          Reproducible XcodeGen project definition
 
 tests/                   Core, session, UI-contract and cross-platform regression tests
-docs/                    Maintained architecture, design and implementation documentation
+docs/                    Architecture, design, numerics, portability and validation contracts
 ```
 
 ## Release direction
