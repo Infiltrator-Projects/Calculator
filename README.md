@@ -84,7 +84,7 @@ The user-facing product name is **Calculator**. The Debian/APT package identity 
 
 Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
-The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.3 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.19.3`, so a stale or mismatched submodule fails configuration instead of silently building. Linux and Windows consume the Common theme C API directly; the iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
+The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.3 gitlink. CMake verifies both the checked-out Common `VERSION` and, in repository builds, the exact immutable `de7251ce…` 1.19.3 commit, so a stale or same-version/wrong-revision submodule fails configuration instead of silently building. Linux and Windows consume the Common theme C API directly; the iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
 
 ## Typography
 

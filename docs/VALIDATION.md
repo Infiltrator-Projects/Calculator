@@ -12,7 +12,7 @@ The repository currently uses:
 
 The `tests/` tree covers expression grammar, Standard immediate semantics, Programmer width/radix behaviour, session state, desktop UI contracts/controller behaviour and source-level cross-platform ownership rules.
 
-Release automation additionally:
+Every `main` push and manual workflow dispatch runs the cross-platform verification jobs. Release publication remains gated to explicit `Release ...` commits. Verification:
 
 - builds and tests the shared core on supported build hosts;
 - builds the native Windows application and runs a Win32 runtime/keypad smoke path;

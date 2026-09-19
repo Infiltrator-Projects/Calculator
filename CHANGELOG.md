@@ -4,6 +4,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 ## Unreleased
 
+- Harden Common 1.19.3 integration by checking the exact immutable dependency commit in repository builds.
+- Run Linux, Windows and iPhone verification on every main-branch change instead of only release commits.
+- Keep the iPhone Common source list aligned with Common's full Portable source set.
+- Correct the Debian install manifest after the package-identity rename and verify desktop/icon payloads.
+- Remove obsolete repository-rename automation.
+
 - Documentation governance aligned with the other maintained applications.
 - Numerical semantics, portability and evidence boundaries are now documented explicitly.
 - Historical release detail remains in immutable tags and GitHub Releases instead of being duplicated in the current tree.

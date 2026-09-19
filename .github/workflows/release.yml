@@ -1,4 +1,4 @@
-name: Release
+name: Verify and release
 
 on:
   push:
@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   linux:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -46,6 +45,9 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Calculator version: $version"
 
+      - name: Verify Common integration contract
+        run: python3 tests/test_common_contract.py
+
       - name: Verify compact Linux desktop layout
         run: python3 tests/test_desktop_layout.py
 
@@ -65,8 +67,12 @@ jobs:
           dpkg-buildpackage -us -uc -b
           mkdir -p dist/linux
           cp ../infiltrator-calculator_${{ steps.version.outputs.version }}_amd64.deb "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
-          dpkg-deb --info "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
-          test "$(dpkg-deb -f "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb" Package)" = "infiltrator-calculator"
+          package="dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
+          dpkg-deb --info "$package"
+          test "$(dpkg-deb -f "$package" Package)" = "infiltrator-calculator"
+          dpkg-deb --fsys-tarfile "$package" | tar -tf - | grep -qx './usr/bin/infiltrator-calc'
+          dpkg-deb --fsys-tarfile "$package" | tar -tf - | grep -qx './usr/share/applications/infiltrator-calc.desktop'
+          dpkg-deb --fsys-tarfile "$package" | tar -tf - | grep -qx './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg'
 
       - name: Upload Linux package
         uses: actions/upload-artifact@v4
@@ -76,7 +82,6 @@ jobs:
           if-no-files-found: error
 
   windows:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -406,7 +411,6 @@ jobs:
 
 
   ios:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'Release ')
     runs-on: macos-latest
     timeout-minutes: 30
 
@@ -596,48 +600,3 @@ jobs:
           echo "::error::The central APT repository did not advertise $APP_ID $VERSION within 20 minutes."
           exit 1
 
-
-  repository-rename:
-    needs: [apt-publication]
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ') && github.repository == 'Infiltrator-Projects/Infiltrator-Calc'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Rename GitHub repository to Calculator
-        env:
-          ADMIN_TOKEN: ${{ secrets.APT_REPOSITORY_DISPATCH_TOKEN }}
-          DEFAULT_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          endpoint="https://api.github.com/repos/${GITHUB_REPOSITORY}"
-          payload='{"name":"Calculator"}'
-
-          try_token() {
-            local token="$1"
-            local label="$2"
-            [[ -n "$token" ]] || return 1
-            code="$(curl -sS -o response.json -w '%{http_code}' \
-              --request PATCH \
-              --header "Authorization: Bearer $token" \
-              --header "Accept: application/vnd.github+json" \
-              --header "X-GitHub-Api-Version: 2022-11-28" \
-              --data "$payload" \
-              "$endpoint")"
-            if [[ "$code" == "200" ]]; then
-              echo "Repository renamed with $label: $(jq -r .full_name response.json)"
-              return 0
-            fi
-            echo "::warning::$label could not rename repository (HTTP $code): $(jq -r '.message // "unknown error"' response.json 2>/dev/null || echo unknown)"
-            return 1
-          }
-
-          if try_token "${ADMIN_TOKEN:-}" "stored cross-repository credential"; then
-            exit 0
-          fi
-          if try_token "${DEFAULT_TOKEN:-}" "GitHub Actions token"; then
-            exit 0
-          fi
-
-          echo "::warning::No available workflow credential has repository-administration permission."

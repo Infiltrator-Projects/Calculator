@@ -22,10 +22,38 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
+set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.3")
+set(INFILTRATR_COMMON_EXPECTED_COMMIT "de7251ce12ed176048df1bad05ef7e4d0db7e9ec")
+
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/VERSION" INFILTRATR_COMMON_VERSION)
 string(STRIP "${INFILTRATR_COMMON_VERSION}" INFILTRATR_COMMON_VERSION)
-if(NOT INFILTRATR_COMMON_VERSION STREQUAL "1.19.3")
-    message(FATAL_ERROR "Calculator requires Common 1.19.3; found ${INFILTRATR_COMMON_VERSION}")
+if(NOT INFILTRATR_COMMON_VERSION STREQUAL INFILTRATR_COMMON_EXPECTED_VERSION)
+    message(FATAL_ERROR
+        "Calculator requires Common ${INFILTRATR_COMMON_EXPECTED_VERSION}; "
+        "found ${INFILTRATR_COMMON_VERSION}")
+endif()
+
+# A source archive has no Git metadata, so VERSION is the strongest check
+# available there. In a normal repository checkout, also require the immutable
+# release commit so a same-version but wrong submodule revision cannot build.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+    find_package(Git REQUIRED)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common"
+                rev-parse HEAD
+        RESULT_VARIABLE INFILTRATR_COMMON_GIT_RESULT
+        OUTPUT_VARIABLE INFILTRATR_COMMON_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(NOT INFILTRATR_COMMON_GIT_RESULT EQUAL 0 OR
+       NOT INFILTRATR_COMMON_COMMIT STREQUAL INFILTRATR_COMMON_EXPECTED_COMMIT)
+        message(FATAL_ERROR
+            "Calculator requires Common commit "
+            "${INFILTRATR_COMMON_EXPECTED_COMMIT}; found "
+            "${INFILTRATR_COMMON_COMMIT}")
+    endif()
 endif()
 
 add_subdirectory(src/infiltratr-common)
