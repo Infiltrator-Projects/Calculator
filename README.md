@@ -2,6 +2,8 @@
 
 # Calculator
 
+**Project copyright:** © 2000–2026 Shannon Smith
+
 Calculator is a native cross-platform calculator for the software family, with first-class Linux, Windows and iPhone interfaces.
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
