@@ -56,7 +56,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     endif()
 endif()
 
-add_subdirectory(src/infiltratr-common)
+# Common is an implementation dependency, not part of Calculator's install
+# surface. EXCLUDE_FROM_ALL keeps unreferenced Common targets and install rules
+# out of Calculator packages while calculator-core still pulls Portable in.
+add_subdirectory(src/infiltratr-common EXCLUDE_FROM_ALL)
 
 add_library(calculator-core STATIC
     src/core/calculator.cpp

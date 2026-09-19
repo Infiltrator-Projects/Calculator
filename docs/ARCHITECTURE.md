@@ -136,3 +136,8 @@ Release integrity is part of the trust boundary: published artifacts must derive
 ## Design rule
 
 A calculation rule must have one authoritative implementation. If a platform shell needs to reproduce mathematical or calculator-state logic in order to render a control, the abstraction boundary is wrong and should be corrected before adding another copy.
+
+
+## Packaging boundary
+
+Common is a build/link dependency only. Calculator adds it with `EXCLUDE_FROM_ALL`; Calculator packages must not install Common libraries, headers or CMake metadata.

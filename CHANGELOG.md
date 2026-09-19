@@ -8,6 +8,7 @@ This changelog records user-visible, compatibility, architecture and validation 
 - Run Linux, Windows and iPhone verification on every main-branch change instead of only release commits.
 - Keep the iPhone Common source list aligned with Common's full Portable source set.
 - Correct the Debian install manifest after the package-identity rename and verify desktop/icon payloads.
+- Keep Common as a build/link dependency only so Calculator packages do not leak Common libraries, headers or CMake metadata.
 - Remove obsolete repository-rename automation.
 
 - Documentation governance aligned with the other maintained applications.
