@@ -64,7 +64,7 @@ jobs:
           chmod +x debian/rules
           dpkg-buildpackage -us -uc -b
           mkdir -p dist/linux
-          cp ../infiltrator-calc_${{ steps.version.outputs.version }}_amd64.deb "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
+          cp ../infiltrator-calculator_${{ steps.version.outputs.version }}_amd64.deb "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
           dpkg-deb --info "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
 
       - name: Upload Linux package
