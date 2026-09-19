@@ -10,7 +10,7 @@ The repository currently uses:
 
 - `.github/workflows/release.yml`
 
-The `tests/` tree covers expression grammar, Standard immediate semantics, Programmer width/radix behaviour, session state, desktop UI contracts/controller behaviour and source-level cross-platform ownership rules.
+The `tests/` tree covers expression grammar and nesting limits, Standard immediate semantics, Programmer width/radix behaviour, session state, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
 
 Every `main` push and manual workflow dispatch runs the cross-platform verification jobs. Release publication remains gated to explicit `Release ...` commits. Verification:
 
@@ -18,9 +18,9 @@ Every `main` push and manual workflow dispatch runs the cross-platform verificat
 - runs the portable Calculator core/controller tests under Clang AddressSanitizer and UndefinedBehaviorSanitizer;
 - builds the native Windows application and runs a Win32 runtime/keypad smoke path;
 - builds the GTK/Linux target and Debian package;
-- compiles the iPhone application for iOS Simulator;
+- compiles the iPhone application for iOS Simulator through the shared C++ controller and verifies AppIcon metadata;
 - compiles the unsigned ARM64 iPhoneOS target;
-- verifies expected release assets and checksums; and
+- verifies expected binary assets plus a deterministic source bundle containing the exact Common checkout, and checksums all published payloads; and
 - verifies Package Repository publication for the Debian package.
 
 Automated checks should cover ordinary behaviour, boundary/error cases and release/package contracts appropriate to the affected domain.
@@ -43,7 +43,7 @@ Manual evidence supplements automation and should record the platform, environme
 
 ## Release criterion
 
-The exact revision intended for release must pass the required automated gates. Published assets must derive from that revision, checksums must cover the published payloads, and documentation must not advertise known-failing, removed or merely planned behaviour as supported.
+The exact revision intended for release must pass the required automated gates. Published assets must derive from that revision, checksums must cover every published project payload, and the project source bundle must contain the exact Common dependency used for the build. Documentation must not advertise known-failing, removed or merely planned behaviour as supported.
 
 ## Regression rule
 

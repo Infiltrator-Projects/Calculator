@@ -4,9 +4,9 @@
 
 Calculator is a native cross-platform calculator for the software family, with first-class Linux, Windows and iPhone interfaces.
 
-The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral UI contract/controller defines calculator layout, commands and interaction state once for the desktop shells.
+The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.1.29  
+**Current source version:** 0.1.31  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.3  
 **Design contract:** shared Design v1  
@@ -54,13 +54,13 @@ Calculator has three explicitly switchable modes presented as a visible mode str
 - Scientific — expression/order-of-operations evaluation, trigonometric, inverse trigonometric, logarithmic, exponential and related functions with degree/radian control; and
 - Programmer — binary, octal, decimal and hexadecimal integer arithmetic, bitwise operations, shifts, complement, 8/16/32/64-bit widths, and unsigned/signed display. Width controls are explicitly labelled W8, W16, W32 and W64 so they do not conflict with numeric keypad entry.
 
-The calculator also provides reusable variables, bounded calculation history and a shared calculation-session layer above the parser. Variables can be assigned directly with expressions such as `x=42` and reused in subsequent calculations.
+The calculator also provides reusable variables, bounded calculation history and a shared calculation-session layer above the parser. Scientific expressions can assign reusable variables such as `x=42`; the built-in constants `pi` and `e` are reserved and cannot be overwritten. Standard mode remains deliberately confined to immediate-calculator grammar rather than silently falling through to Scientific parsing.
 
-Desktop controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Features are considered complete only when implementation, tests and documented behaviour agree.
+Controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Features are considered complete only when implementation, tests and documented behaviour agree.
 
 ## Architecture summary
 
-Linux and Windows consume the same Calculator-owned desktop UI contract and controller: modes, button order, commands, logical sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. iPhone retains native SwiftUI touch composition while sharing the calculation/session/programmer engines and Common Design v1 semantics.
+Linux and Windows consume the same Calculator-owned UI contract and controller: modes, button order, commands, logical desktop sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. iPhone retains native SwiftUI touch composition, but its Objective-C++ bridge routes expression edits and calculator commands through the same C++ controller instead of maintaining a second calculator state machine.
 
 Detailed ownership, numerical, portability and validation contracts are maintained under [docs/](docs/README.md).
 
@@ -70,7 +70,8 @@ Releases are multi-platform by default. The same versioned source is built and t
 
 - Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `infiltrator-calculator`);
 - Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
-- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes only the unsigned ARM64 device bundle as the release artifact.
+- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes only the unsigned ARM64 device bundle as the release artifact;
+- Source: `calculator_<version>_source.tar.gz`, a deterministic source bundle containing Calculator and the exact checked-out Common dependency used by the release.
 
 A signed installable `.ipa` requires an Apple signing identity and provisioning profile. Those credentials are deliberately not stored in the repository. Once signing is configured, the same Xcode target is ready to archive and export as an `.ipa`.
 
@@ -118,7 +119,7 @@ On Debian-family systems the initial development dependencies are the standard C
 src/
 ├── app/                 Native GTK/Linux and Win32/Windows platform shells
 ├── core/                Portable calculation engine, session state and Programmer engine
-├── ui/                  Shared desktop UI contract, controller and theme adapter
+├── ui/                  Shared command/controller contract, desktop metrics and theme adapter
 └── infiltratr-common/   Exact shared Common gitlink
 
 ios/

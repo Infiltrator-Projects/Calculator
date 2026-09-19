@@ -15,6 +15,7 @@ namespace {
 
 constexpr double kPi = 3.141592653589793238462643383279502884;
 constexpr double kE = 2.718281828459045235360287471352662498;
+constexpr std::size_t kMaxParseDepth = 256;
 
 enum class DecimalTokenStatus {
     None,
@@ -113,6 +114,7 @@ private:
     std::string_view input_;
     const Variables& variables_;
     std::size_t position_ = 0;
+    std::size_t recursion_depth_ = 0;
     std::string error_;
 
     Result fail(const char* message) {
@@ -158,9 +160,18 @@ private:
     }
 
     double parse_unary() {
-        if (consume('+')) return parse_unary();
-        if (consume('-')) return -parse_unary();
-        return parse_power();
+        if (recursion_depth_ >= kMaxParseDepth) {
+            error_ = "expression nesting too deep";
+            return 0.0;
+        }
+
+        ++recursion_depth_;
+        double value = 0.0;
+        if (consume('+')) value = parse_unary();
+        else if (consume('-')) value = -parse_unary();
+        else value = parse_power();
+        --recursion_depth_;
+        return value;
     }
 
     double parse_power() {

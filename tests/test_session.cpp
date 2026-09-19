@@ -17,6 +17,14 @@ int main(){
     expect_value(calculator::evaluate("width * height",variables),2073600.0,"variables");
     expect_value(calculator::evaluate("sqrt(width^2 + height^2)",variables),std::sqrt(1920.0*1920.0+1080.0*1080.0),"variable expression");
 
+    calculator::Session reserved;
+    const auto pi_assignment = reserved.evaluate("pi=3");
+    if(pi_assignment.ok || pi_assignment.error!="cannot assign reserved constant") fail("pi assignment should be rejected");
+    const auto e_assignment = reserved.evaluate("e=4");
+    if(e_assignment.ok || e_assignment.error!="cannot assign reserved constant") fail("e assignment should be rejected");
+    reserved.set_variable("pi", 99.0);
+    if(reserved.variable("pi").has_value()) fail("set_variable should reject pi");
+
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");

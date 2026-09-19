@@ -58,6 +58,8 @@ Postfix `%` divides a value by 100 in expression mode. Factorial accepts non-neg
 
 The current function set delegates elementary transcendental operations to the C++ standard math library. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
 
+Recursive grammar descent is explicitly bounded. Expressions whose nesting exceeds the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
+
 ## Standard immediate semantics
 
 Standard mode is intentionally not the Scientific grammar. Binary operations are committed left-to-right as entered, matching conventional immediate desktop-calculator interaction.
@@ -78,7 +80,7 @@ Programmer semantics should be validated with exact integer expectations rather 
 
 ## Constants and elementary functions
 
-`pi` and `e` are current built-in constants. Trigonometric, inverse-trigonometric, hyperbolic, logarithmic, exponential, root and absolute-value functions use the C++ standard math implementation over the binary64 domain.
+`pi` and `e` are current built-in constants and are reserved identifiers: variable assignment cannot replace them. Trigonometric, inverse-trigonometric, hyperbolic, logarithmic, exponential, root and absolute-value functions use the C++ standard math implementation over the binary64 domain.
 
 The project does not claim bit-for-bit transcendental equality across different standard libraries. Regression tests should use mathematically justified tolerances for real-valued functions while exact parser/Programmer contracts use exact comparisons where appropriate.
 
@@ -94,7 +96,7 @@ Platform shells must not introduce independent numeric formatting rules that cha
 
 ## Errors and unavailable results
 
-Malformed syntax, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures.
+Malformed syntax, excessive parser nesting, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, attempts to assign reserved constants, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures.
 
 A plausible substitute result is not an acceptable fallback. If a requested future numeric domain cannot establish a justified value under its contract, unsupported/error is preferable to invented precision.
 

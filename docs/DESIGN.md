@@ -37,13 +37,13 @@ Calculator-specific semantics stay local even when they could technically be gen
 
 Linux uses GTK4, Windows uses native Win32 and iPhone uses SwiftUI. Native shells are retained because windowing, DPI, accessibility, system appearance and input behaviour are platform concerns.
 
-The desktop shells share a platform-neutral UI contract/controller where the interaction model is genuinely common. iPhone shares the calculation core but retains a touch-native view model rather than inheriting desktop layout assumptions.
+All three shells share the platform-neutral Calculator controller where command/state behaviour is genuinely common. Linux and Windows also share desktop layout metrics and button definitions; iPhone retains touch-native SwiftUI composition rather than inheriting desktop geometry.
 
 ## Visual design
 
 System, Day and Night are the supported appearance modes. Common owns the Day/Night semantic palette; each operating system owns detection of the current System appearance and the mechanics of rendering it.
 
-MB Corpo fonts are a preferred local presentation resource, not a runtime dependency. The application must remain fully usable with the platform fallback font stack, and proprietary font binaries are not redistributed.
+Calculator-owned text uses exactly three canonical MB Corpo faces: S Regular, S Bold and A Condensed Regular. Release builds package or embed the exact hash-verified resources on Linux, Windows and iPhone. A missing or mismatched required face is an explicit build/startup failure rather than permission to introduce a fourth fallback family.
 
 ## Evolution criteria
 

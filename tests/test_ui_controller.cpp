@@ -49,6 +49,19 @@ int main() {
     controller.dispatch(Command::Equals);
     assert(controller.state().result == "110");
 
+    controller.set_expression("sqrt(9)");
+    controller.dispatch(Command::Equals);
+    assert(controller.state().fault);
+    assert(controller.state().result.rfind("Error:", 0) == 0);
+    assert(!controller.session().history().empty());
+    assert(controller.session().history().back().input == "sqrt(9)");
+
+    controller.set_mode(Mode::Scientific);
+    controller.set_expression("sqrt(9)");
+    controller.dispatch(Command::Equals);
+    assert(controller.state().result == "3");
+    controller.set_mode(Mode::Standard);
+
     controller.set_expression("6");
     assert(controller.command_enabled(Command::MemoryAdd));
     controller.dispatch(Command::MemoryAdd);

@@ -161,6 +161,11 @@ std::wstring window_text(HWND window) {
 }
 
 int window_dpi(HWND window) {
+    if (window != nullptr) {
+        const UINT dpi = GetDpiForWindow(window);
+        if (dpi != 0U) return static_cast<int>(dpi);
+    }
+
     HDC dc = GetDC(window);
     int dpi = 96;
     if (dc != nullptr) {
@@ -293,6 +298,29 @@ void apply_font(HWND control, HFONT font) {
     if (control != nullptr && font != nullptr) {
         SendMessageW(control, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
     }
+}
+
+void delete_font(HFONT& font) {
+    if (font != nullptr) {
+        DeleteObject(font);
+        font = nullptr;
+    }
+}
+
+void rebuild_fonts(HWND window) {
+    delete_font(g_ui_font);
+    delete_font(g_ui_bold_font);
+    delete_font(g_title_font);
+    delete_font(g_result_font);
+    delete_font(g_small_font);
+
+    const wchar_t* ui_family = ui_font_family();
+    const wchar_t* brand_family = brand_font_family();
+    g_ui_font = make_font(window, 10, FW_NORMAL, ui_family);
+    g_ui_bold_font = make_font(window, 10, FW_BOLD, ui_family);
+    g_title_font = make_font(window, 18, FW_NORMAL, brand_family);
+    g_result_font = make_font(window, 32, FW_NORMAL, brand_family);
+    g_small_font = make_font(window, 8, FW_BOLD, ui_family);
 }
 
 void apply_nonclient_theme(HWND window) {
@@ -1072,6 +1100,28 @@ void create_controls(HWND window) {
     update_mode_ui();
 }
 
+void apply_fonts_to_controls() {
+    apply_font(g_title, g_title_font);
+    apply_font(g_subtitle, g_small_font);
+    apply_font(g_theme_button, g_ui_bold_font);
+    apply_font(g_history_button, g_ui_bold_font);
+    apply_font(g_expression, g_ui_font);
+    apply_font(g_result, g_result_font);
+    apply_font(g_status, g_small_font);
+    apply_font(g_footer, g_small_font);
+    apply_font(g_history_dock, g_ui_font);
+    apply_font(g_history_edit, g_ui_font);
+
+    for (HWND button : g_mode_buttons) apply_font(button, g_ui_bold_font);
+    for (HWND button : g_standard_buttons) apply_font(button, g_ui_bold_font);
+    for (HWND button : g_scientific_buttons) apply_font(button, g_ui_bold_font);
+    for (HWND button : g_programmer_buttons) apply_font(button, g_ui_bold_font);
+
+    if (g_history_window != nullptr) {
+        apply_font(GetDlgItem(g_history_window, kIdHistoryClear), g_ui_bold_font);
+    }
+}
+
 LRESULT CALLBACK history_proc(HWND window, UINT message,
                               WPARAM wparam, LPARAM lparam) {
     switch (message) {
@@ -1172,6 +1222,23 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         layout_main(window);
         InvalidateRect(window, nullptr, TRUE);
         return 0;
+
+    case WM_DPICHANGED: {
+        const auto* suggested = reinterpret_cast<const RECT*>(lparam);
+        if (suggested != nullptr) {
+            SetWindowPos(
+                window, nullptr,
+                suggested->left, suggested->top,
+                suggested->right - suggested->left,
+                suggested->bottom - suggested->top,
+                SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+        rebuild_fonts(window);
+        apply_fonts_to_controls();
+        layout_main(window);
+        InvalidateRect(window, nullptr, TRUE);
+        return 0;
+    }
 
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
@@ -1293,11 +1360,11 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
 }
 
 void destroy_resources() {
-    if (g_ui_font != nullptr) DeleteObject(g_ui_font);
-    if (g_ui_bold_font != nullptr) DeleteObject(g_ui_bold_font);
-    if (g_title_font != nullptr) DeleteObject(g_title_font);
-    if (g_result_font != nullptr) DeleteObject(g_result_font);
-    if (g_small_font != nullptr) DeleteObject(g_small_font);
+    delete_font(g_ui_font);
+    delete_font(g_ui_bold_font);
+    delete_font(g_title_font);
+    delete_font(g_result_font);
+    delete_font(g_small_font);
     for (HANDLE handle : g_private_font_handles) {
         if (handle != nullptr) RemoveFontMemResourceEx(handle);
     }
@@ -1312,7 +1379,10 @@ void destroy_resources() {
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     g_instance = instance;
 
-    SetProcessDPIAware();
+    if (!SetProcessDpiAwarenessContext(
+            DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
+        SetProcessDPIAware();
+    }
 
     if (!register_bundled_fonts()) {
         destroy_resources();
@@ -1329,13 +1399,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     resolve_theme();
     recreate_theme_brushes();
 
-    const wchar_t* ui_family = ui_font_family();
-    const wchar_t* brand_family = brand_font_family();
-    g_ui_font = make_font(nullptr, 10, FW_NORMAL, ui_family);
-    g_ui_bold_font = make_font(nullptr, 10, FW_BOLD, ui_family);
-    g_title_font = make_font(nullptr, 18, FW_NORMAL, brand_family);
-    g_result_font = make_font(nullptr, 32, FW_NORMAL, brand_family);
-    g_small_font = make_font(nullptr, 8, FW_BOLD, ui_family);
+    rebuild_fonts(nullptr);
 
     WNDCLASSEXW main_class{};
     main_class.cbSize = sizeof(main_class);
@@ -1343,12 +1407,21 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     main_class.lpfnWndProc = main_proc;
     main_class.hInstance = instance;
     main_class.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
-    main_class.hIcon = LoadIconW(nullptr, MAKEINTRESOURCEW(32512));
+    main_class.hIcon =
+        LoadIconW(instance, MAKEINTRESOURCEW(CALCULATOR_ICON_RESOURCE));
+    if (main_class.hIcon == nullptr) {
+        destroy_resources();
+        return 1;
+    }
     // Background painting is handled by the window procedures so the brush
     // can be recreated safely when the user switches theme at runtime.
     main_class.hbrBackground = nullptr;
     main_class.lpszClassName = kMainClass;
-    main_class.hIconSm = main_class.hIcon;
+    main_class.hIconSm = static_cast<HICON>(
+        LoadImageW(
+            instance, MAKEINTRESOURCEW(CALCULATOR_ICON_RESOURCE),
+            IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR));
+    if (main_class.hIconSm == nullptr) main_class.hIconSm = main_class.hIcon;
 
     WNDCLASSEXW history_class = main_class;
     history_class.lpfnWndProc = history_proc;

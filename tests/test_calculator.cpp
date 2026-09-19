@@ -117,6 +117,14 @@ int main() {
     expect_error("171!");
     expect_error("madeup(1)");
 
+    std::string deeply_nested(300, '(');
+    deeply_nested += "1";
+    deeply_nested.append(300, ')');
+    const auto deep_result = calculator::evaluate(deeply_nested);
+    if (deep_result.ok || deep_result.error != "expression nesting too deep") {
+        fail("deeply nested expression should fail deterministically");
+    }
+
     // All graphical shells consume the same display-formatting contract.
     if (calculator::format_value(1.0 / 3.0) !=
         "0.333333333333333") {

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Desktop UI Parity Contract
+# UI Parity Contract
 
-Calculator has one desktop interaction model rendered by two native desktop shells. Linux GTK and Windows Win32 are platform adapters, not independent calculator implementations.
+Calculator has one interaction state machine rendered by three native shells. Linux GTK and Windows Win32 consume it directly; iPhone SwiftUI reaches it through a thin Objective-C++ bridge. None is an independent calculator implementation.
 
 ## Shared ownership
 
@@ -15,7 +15,7 @@ Calculator has one desktop interaction model rendered by two native desktop shel
 
 `src/ui/calculator_ui_controller.*` owns:
 
-- active desktop mode;
+- active calculator mode;
 - expression, result and status state;
 - DEG/RAD state;
 - Programmer radix, width and signedness;
@@ -39,15 +39,15 @@ Platform code owns only System appearance detection, persistence of the user's t
 
 ## iPhone boundary
 
-iPhone is intentionally not forced through the desktop layout/controller abstraction. SwiftUI owns touch-native view composition and its local presentation state, while the Objective-C++ bridge reuses the shared calculation/session/programmer engines.
+iPhone is not forced through desktop geometry, but it does use the same Calculator controller. SwiftUI owns touch-native view composition and platform presentation; the Objective-C++ bridge forwards expression edits, mode selection and key commands to the controller and snapshots the resulting state.
 
 For appearance, SwiftUI resolves System light/dark state but retrieves Day/Night semantic values from Common through the bridge. It must not contain a second hard-coded Common palette.
 
-This is semantic parity rather than pixel/layout parity: calculation rules and shared design tokens remain authoritative, while native touch interaction remains an iPhone concern.
+This is semantic parity rather than pixel/layout parity: calculator state and command rules have one authoritative implementation, while native touch composition remains an iPhone concern.
 
 ## Regression enforcement
 
-`tests/test_desktop_layout.py` fails if a desktop shell stops consuming the shared contract/controller, reintroduces local calculator layout/state ownership, or if iPhone reintroduces a private Common theme palette.
+`tests/test_desktop_layout.py` fails if a desktop shell stops consuming the shared contract/controller, reintroduces local calculator layout/state ownership, if iPhone bypasses the shared controller, or if iPhone reintroduces a private Common theme palette.
 
 `calculator-ui-contract` validates the canonical desktop button/layout definition.
 

@@ -65,17 +65,10 @@ DispatchResult Controller::backspace(std::size_t cursor) {
 }
 
 bool Controller::current_value(double& value) {
-    Result result;
-    if (state_.mode == Mode::Standard) {
-        result = evaluate_immediate(state_.expression);
-        if (!result.ok) {
-            result = calculator::evaluate(
-                state_.expression, session_.variables());
-        }
-    } else {
-        result = calculator::evaluate(
-            state_.expression, session_.variables());
-    }
+    const Result result =
+        state_.mode == Mode::Standard
+            ? evaluate_immediate(state_.expression)
+            : calculator::evaluate(state_.expression, session_.variables());
 
     if (!result.ok) {
         state_.result = "Error: " + result.error;
@@ -127,12 +120,8 @@ void Controller::calculate_programmer() {
 }
 
 void Controller::calculate_standard() {
-    Result result = evaluate_immediate(state_.expression);
-    if (result.ok) {
-        session_.record_history(state_.expression, result);
-    } else {
-        result = session_.evaluate(state_.expression);
-    }
+    const Result result = evaluate_immediate(state_.expression);
+    session_.record_history(state_.expression, result);
 
     if (!result.ok) {
         state_.result = "Error: " + result.error;
@@ -345,8 +334,7 @@ bool Controller::expression_has_value() const {
     }
 
     if (state_.mode == Mode::Standard) {
-        Result result = evaluate_immediate(state_.expression);
-        if (result.ok) return true;
+        return evaluate_immediate(state_.expression).ok;
     }
 
     return calculator::evaluate(

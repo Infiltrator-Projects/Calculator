@@ -16,6 +16,10 @@ bool valid_identifier(const std::string& name) {
     return true;
 }
 
+bool reserved_identifier(const std::string& name) {
+    return name == "pi" || name == "e";
+}
+
 std::optional<std::string> assignment_name(const std::string& input, std::string& expression) {
     std::size_t left = 0;
     while (left < input.size() && std::isspace(static_cast<unsigned char>(input[left]))) ++left;
@@ -39,6 +43,13 @@ Session::Session(std::size_t history_limit) : history_limit_(history_limit) {
 Result Session::evaluate(const std::string& input) {
     std::string expression;
     const auto assignment = assignment_name(input, expression);
+
+    if (assignment && reserved_identifier(*assignment)) {
+        Result result{false, 0.0, "cannot assign reserved constant"};
+        record_history(input, result);
+        return result;
+    }
+
     Result result = calculator::evaluate(assignment ? expression : input, variables_);
 
     if (result.ok && assignment) {
@@ -70,7 +81,9 @@ double Session::memory_recall() const noexcept { return memory_; }
 bool Session::memory_empty() const noexcept { return !memory_set_; }
 
 void Session::set_variable(std::string name, double value) {
-    if (valid_identifier(name)) variables_[std::move(name)] = value;
+    if (valid_identifier(name) && !reserved_identifier(name)) {
+        variables_[std::move(name)] = value;
+    }
 }
 
 std::optional<double> Session::variable(const std::string& name) const {

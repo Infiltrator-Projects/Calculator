@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">Infiltrator Calc</title>
-  <desc id="desc">Magenta calculator icon with a white mathematical symbol</desc>
+  <title id="title">Calculator</title>
+  <desc id="desc">Calculator application icon</desc>
   <rect x="8" y="8" width="112" height="112" rx="24" fill="#d63ad6"/>
   <rect x="28" y="24" width="72" height="80" rx="10" fill="#fff" opacity=".96"/>
   <rect x="38" y="34" width="52" height="16" rx="4" fill="#3b2b3b"/>

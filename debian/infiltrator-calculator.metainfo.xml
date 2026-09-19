@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.31" date="2026-09-19">
+      <description>
+        <p>Unify calculator interaction across Linux, Windows and iPhone, harden parser boundaries, repair desktop geometry and DPI handling, and add native Windows/iPhone artwork.</p>
+      </description>
+    </release>
     <release version="0.1.29" date="2026-09-19">
       <description>
         <p>Enforce the three canonical MB Corpo text faces across Linux, Windows and iPhone while keeping Standard mode compact.</p>

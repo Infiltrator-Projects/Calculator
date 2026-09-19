@@ -6,7 +6,7 @@ Calculator is portable at its calculation and interaction contracts rather than 
 
 ## Language and interface policy
 
-The shared calculation/session/UI-contract code targets C++17. Linux uses GTK4, Windows uses native Win32/MSVC, and iPhone uses SwiftUI with an Objective-C++ bridge.
+The shared calculation/session/controller code targets C++17. Linux uses GTK4, Windows uses native Win32/MSVC, and iPhone uses SwiftUI with an Objective-C++ bridge.
 
 Introducing another language/runtime requires a concrete technical advantage that the current C++/native-platform architecture cannot reasonably provide. Portability does not mean selecting the lowest-common-denominator toolkit.
 
@@ -14,9 +14,9 @@ Portable calculation interfaces must not expose GTK widgets, HWNDs, Swift object
 
 ## Platform boundary
 
-The shared core owns arithmetic, expression grammar, session state and Programmer semantics. The shared desktop controller owns desktop command/state behaviour.
+The shared core owns arithmetic, expression grammar, session state and Programmer semantics. The shared controller owns calculator command/state behaviour on Linux, Windows and iPhone; the desktop contract additionally owns desktop button order and logical geometry.
 
-Linux owns GTK widgets, CSS, Linux theme/font integration and window mechanics. Windows owns HWND/GDI, DPI conversion, Registry-backed preferences and Windows message handling. iPhone owns SwiftUI composition, platform appearance observation and touch-native interaction.
+Linux owns GTK widgets, CSS, Linux theme/font integration and window mechanics. Windows owns HWND/GDI, per-monitor DPI mapping, Registry-backed preferences and Windows message handling. iPhone owns SwiftUI composition, platform appearance observation and touch-native presentation.
 
 A platform may adapt shared state for native presentation; it must not reinterpret the mathematics.
 
@@ -44,9 +44,9 @@ Strings crossing Objective-C++/Swift and native desktop boundaries must use the 
 
 ## iPhone bridge
 
-`CalculatorBridge` is the language boundary between Swift and the C++ engines. It converts platform values into Calculator-owned inputs/results and exposes Common semantic palette values to Swift.
+`CalculatorBridge` is the language boundary between Swift and the C++ controller. It converts Swift expression/mode/key operations into controller operations, snapshots controller state for presentation, and exposes Common semantic palette values to Swift.
 
-SwiftUI owns touch layout and System appearance resolution. The bridge must not become a parallel implementation of arithmetic or session semantics.
+SwiftUI owns touch layout and System appearance resolution. The bridge is deliberately thin: it must not implement arithmetic, memory, history, Programmer or mode semantics independently.
 
 An iOS Simulator build proves Simulator-target compatibility. An unsigned iPhoneOS build proves device-architecture compilation. Neither substitutes for signed physical-device installation evidence.
 
@@ -60,7 +60,7 @@ Portability requires equivalent interaction/state ownership, not pixel-identical
 
 Common owns Day/Night semantic design values. Each platform owns System-theme detection and native rendering.
 
-Preferred MB Corpo fonts are optional local resources. Missing proprietary fonts must degrade to documented native fallback fonts rather than make Calculator unusable. Font binaries are not a portable runtime dependency.
+Calculator-owned text is restricted to three canonical MB Corpo faces: S Regular, S Bold and A Condensed Regular. Release builds bundle or embed those exact hash-verified font resources on every platform. Missing or mismatched Calculator fonts are a build/startup failure; silently substituting a fourth font family is outside the product contract.
 
 ## Compatibility and installed identity
 
@@ -83,7 +83,7 @@ A portable change should preserve these properties:
 - real-number representation assumptions remain explicit;
 - fixed-width Programmer behaviour does not rely on undefined signed overflow;
 - numeric grammar remains locale-independent;
-- Objective-C++/Swift adaptation does not duplicate calculation rules;
-- native DPI/theme/font behaviour stays a presentation concern;
+- Objective-C++/Swift adaptation routes commands through the shared controller rather than duplicating calculation rules;
+- native DPI/theme/font behaviour stays a presentation concern, with Windows using per-monitor DPI awareness;
 - compatibility identifiers change only through a deliberate migration; and
 - another native frontend could consume the domain contracts without copying an existing platform shell.

@@ -177,14 +177,26 @@ if(CALCULATOR_BUILD_DESKTOP)
                CALCULATOR_FONT_S_BOLD_RC "${CALCULATOR_FONT_S_BOLD_RC}")
         string(REPLACE "\\" "\\\\"
                CALCULATOR_FONT_A_COND_REGULAR_RC "${CALCULATOR_FONT_A_COND_REGULAR_RC}")
+        set(CALCULATOR_WINDOWS_ICON
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/calculator.ico")
+        if(NOT EXISTS "${CALCULATOR_WINDOWS_ICON}")
+            message(FATAL_ERROR "Calculator Windows icon is missing")
+        endif()
+        file(TO_NATIVE_PATH
+             "${CALCULATOR_WINDOWS_ICON}" CALCULATOR_WINDOWS_ICON_RC)
+        string(REPLACE "\\" "\\\\"
+               CALCULATOR_WINDOWS_ICON_RC "${CALCULATOR_WINDOWS_ICON_RC}")
+
         set(CALCULATOR_WINDOWS_FONT_RC
             "${CMAKE_CURRENT_BINARY_DIR}/calculator-fonts.rc")
         file(WRITE "${CALCULATOR_WINDOWS_FONT_RC}"
+            "1001 ICON \"${CALCULATOR_WINDOWS_ICON_RC}\"\n"
             "1101 RCDATA \"${CALCULATOR_FONT_S_REGULAR_RC}\"\n"
             "1102 RCDATA \"${CALCULATOR_FONT_S_BOLD_RC}\"\n"
             "1103 RCDATA \"${CALCULATOR_FONT_A_COND_REGULAR_RC}\"\n")
         target_sources(infiltrator-calc PRIVATE "${CALCULATOR_WINDOWS_FONT_RC}")
         target_compile_definitions(infiltrator-calc PRIVATE
+            CALCULATOR_ICON_RESOURCE=1001
             CALCULATOR_FONT_RESOURCE_REGULAR=1101
             CALCULATOR_FONT_RESOURCE_BOLD=1102
             CALCULATOR_FONT_RESOURCE_CONDENSED=1103)

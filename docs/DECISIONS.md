@@ -18,21 +18,21 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Platform shells translate controls to shared commands/state rather than implementing calculation rules.
 
-## ADR-003 — Desktop interaction is shared; rendering remains native
+## ADR-003 — Interaction state is shared; rendering remains native
 
-**Decision.** Linux and Windows share the desktop layout/command/controller contract while GTK4 and Win32 remain native shells.
+**Decision.** Linux, Windows and iPhone share the Calculator command/controller state machine. Linux and Windows additionally share desktop layout metrics while GTK4, Win32 and SwiftUI remain native shells.
 
-**Rationale.** Behavioural parity does not require a cross-platform widget toolkit.
+**Rationale.** Behavioural parity does not require a cross-platform widget toolkit, but calculator semantics should still have one owner.
 
-**Consequence.** Toolkits own widgets, DPI and window integration; Calculator owns control ordering, enabled state and command meaning.
+**Consequence.** Toolkits own widgets, DPI and window integration; Calculator owns control ordering where applicable, enabled state, mode state and command meaning.
 
-## ADR-004 — iPhone stays native SwiftUI over the same core
+## ADR-004 — iPhone stays native SwiftUI over the shared controller
 
-**Decision.** iPhone uses SwiftUI with an Objective-C++ bridge to the C++ calculation engine.
+**Decision.** iPhone uses SwiftUI with an Objective-C++ bridge to the same C++ controller used by the desktop shells.
 
-**Rationale.** Touch layout should follow iPhone conventions while mathematical semantics remain common.
+**Rationale.** Touch layout should follow iPhone conventions while calculator interaction and mathematical semantics remain common.
 
-**Consequence.** iPhone may have different physical layout metrics without becoming a separate calculator implementation.
+**Consequence.** iPhone may have different physical layout metrics without becoming a separate calculator implementation or a second state machine.
 
 ## ADR-005 — Common owns product-family theme semantics
 

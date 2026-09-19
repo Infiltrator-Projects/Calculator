@@ -1,56 +1,76 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #import "CalculatorBridge.h"
 
-#include "../../src/core/programmer.hpp"
-#include "../../src/core/session.hpp"
+#include "../../src/ui/calculator_ui_controller.hpp"
 
 #include <infiltratr/design.h>
 
-#include <cmath>
-#include <cstdint>
+#include <array>
 #include <string>
+#include <string_view>
 
 namespace {
 
 using calculator::IntegerWidth;
 using calculator::ProgrammerBase;
-using calculator::Session;
+using calculator::ui::ButtonSpec;
+using calculator::ui::Controller;
+using calculator::ui::Mode;
 
 NSString *to_ns(const std::string& value) {
     return [NSString stringWithUTF8String:value.c_str()];
 }
 
-NSDictionary *numeric_result(bool ok, double value, const std::string& error) {
-    return @{
-        @"ok": @(ok),
-        @"value": @(value),
-        @"display": ok ? to_ns(calculator::format_value(value)) : @"0",
-        @"error": to_ns(error)
-    };
+template <std::size_t N>
+const ButtonSpec *find_in(const std::array<ButtonSpec, N>& specs,
+                          std::string_view label) {
+    for (const auto& spec : specs) {
+        if (spec.label == label) return &spec;
+    }
+    return nullptr;
 }
 
-ProgrammerBase programmer_base(NSInteger base) {
+const ButtonSpec *find_spec(const Controller& controller,
+                            std::string_view label) {
+    switch (controller.state().mode) {
+    case Mode::Standard:
+        if (const auto *memory =
+                find_in(calculator::ui::kStandardMemory, label)) {
+            return memory;
+        }
+        return find_in(calculator::ui::kStandardKeypad, label);
+    case Mode::Scientific:
+        return find_in(calculator::ui::kScientificKeypad, label);
+    case Mode::Programmer:
+        return find_in(calculator::ui::kProgrammerKeypad, label);
+    }
+    return nullptr;
+}
+
+NSInteger base_value(ProgrammerBase base) {
     switch (base) {
-    case 2: return ProgrammerBase::Binary;
-    case 8: return ProgrammerBase::Octal;
-    case 16: return ProgrammerBase::Hexadecimal;
-    default: return ProgrammerBase::Decimal;
+    case ProgrammerBase::Binary: return 2;
+    case ProgrammerBase::Octal: return 8;
+    case ProgrammerBase::Decimal: return 10;
+    case ProgrammerBase::Hexadecimal: return 16;
     }
+    return 10;
 }
 
-IntegerWidth integer_width(NSInteger width) {
+NSInteger width_value(IntegerWidth width) {
     switch (width) {
-    case 8: return IntegerWidth::Bits8;
-    case 16: return IntegerWidth::Bits16;
-    case 32: return IntegerWidth::Bits32;
-    default: return IntegerWidth::Bits64;
+    case IntegerWidth::Bits8: return 8;
+    case IntegerWidth::Bits16: return 16;
+    case IntegerWidth::Bits32: return 32;
+    case IntegerWidth::Bits64: return 64;
     }
+    return 64;
 }
 
 } // namespace
 
 @interface CalculatorBridge ()
-@property(nonatomic, assign) void *sessionHandle;
+@property(nonatomic, assign) void *controllerHandle;
 @end
 
 @implementation CalculatorBridge
@@ -89,139 +109,71 @@ IntegerWidth integer_width(NSInteger width) {
 - (instancetype)init {
     self = [super init];
     if (self) {
-        self.sessionHandle = new Session();
+        self.controllerHandle = new Controller();
     }
     return self;
 }
 
 - (void)dealloc {
-    delete static_cast<Session *>(self.sessionHandle);
-    self.sessionHandle = nullptr;
+    delete static_cast<Controller *>(self.controllerHandle);
+    self.controllerHandle = nullptr;
 }
 
-- (Session *)session {
-    return static_cast<Session *>(self.sessionHandle);
+- (Controller *)controller {
+    return static_cast<Controller *>(self.controllerHandle);
 }
 
-- (NSDictionary *)evaluate:(NSString *)expression {
-    const auto result = [self session]->evaluate(expression.UTF8String ?: "");
-    return numeric_result(result.ok, result.value, result.error);
-}
-
-- (NSDictionary *)applyUnary:(NSString *)operation
-                  expression:(NSString *)expression {
-    const auto source = [self session]->evaluate(expression.UTF8String ?: "");
-    if (!source.ok) return numeric_result(false, 0.0, source.error);
-
-    double value = source.value;
-    const std::string op = operation.UTF8String ?: "";
-
-    if (op == "±") {
-        value = -value;
-    } else if (op == "x²") {
-        value *= value;
-    } else if (op == "√") {
-        if (value < 0.0) return numeric_result(false, 0.0, "domain error");
-        value = std::sqrt(value);
-    } else if (op == "1/x") {
-        if (value == 0.0) return numeric_result(false, 0.0, "division by zero");
-        value = 1.0 / value;
-    } else {
-        return numeric_result(false, 0.0, "unknown unary operation");
-    }
-
-    return numeric_result(std::isfinite(value), value,
-                          std::isfinite(value) ? "" : "non-finite result");
-}
-
-- (NSDictionary *)applyScientific:(NSString *)operation
-                       expression:(NSString *)expression
-                          degrees:(BOOL)degrees {
-    const auto source = [self session]->evaluate(expression.UTF8String ?: "");
-    if (!source.ok) return numeric_result(false, 0.0, source.error);
-
-    const std::string op = operation.UTF8String ?: "";
-    constexpr double pi = 3.14159265358979323846;
-    double value = source.value;
-    double argument = value;
-
-    if (degrees && (op == "sin" || op == "cos" || op == "tan")) {
-        argument = value * pi / 180.0;
-    }
-
-    if (op == "sin") value = std::sin(argument);
-    else if (op == "cos") value = std::cos(argument);
-    else if (op == "tan") value = std::tan(argument);
-    else if (op == "asin") {
-        value = std::asin(value);
-        if (degrees) value = value * 180.0 / pi;
-    } else if (op == "acos") {
-        value = std::acos(value);
-        if (degrees) value = value * 180.0 / pi;
-    } else if (op == "atan") {
-        value = std::atan(value);
-        if (degrees) value = value * 180.0 / pi;
-    } else if (op == "ln") value = std::log(value);
-    else if (op == "log") value = std::log10(value);
-    else if (op == "exp") value = std::exp(value);
-    else if (op == "abs") value = std::fabs(value);
-    else return numeric_result(false, 0.0, "unknown scientific operation");
-
-    if (!std::isfinite(value)) return numeric_result(false, 0.0, "domain error");
-    return numeric_result(true, value, "");
-}
-
-- (NSDictionary *)evaluateProgrammer:(NSString *)expression
-                                base:(NSInteger)base
-                               width:(NSInteger)width
-                       signedDisplay:(BOOL)signedDisplay {
-    const auto selectedBase = programmer_base(base);
-    const auto selectedWidth = integer_width(width);
-    const auto result = calculator::evaluate_programmer(
-        expression.UTF8String ?: "", selectedBase, selectedWidth);
-
-    if (!result.ok) {
-        return @{
-            @"ok": @NO,
-            @"value": @0,
-            @"display": @"0",
-            @"error": to_ns(result.error)
-        };
-    }
-
-    const std::string formatted = calculator::format_programmer(
-        result.value, selectedBase, selectedWidth, signedDisplay);
-
+- (NSDictionary *)snapshot {
+    const auto& state = [self controller]->state();
     return @{
-        @"ok": @YES,
-        @"value": @(result.value),
-        @"display": to_ns(formatted),
-        @"error": @""
+        @"mode": @(static_cast<NSInteger>(state.mode)),
+        @"expression": to_ns(state.expression),
+        @"display": to_ns(state.result),
+        @"status": to_ns(state.status),
+        @"fault": @(state.fault),
+        @"degrees": @(state.degrees),
+        @"programmerBase": @(base_value(state.programmer_base)),
+        @"programmerWidth": @(width_value(state.programmer_width)),
+        @"programmerSigned": @(state.programmer_signed)
     };
 }
 
-- (void)memoryClear {
-    [self session]->memory_clear();
+- (void)setExpression:(NSString *)expression {
+    [self controller]->set_expression(expression.UTF8String ?: "");
 }
 
-- (void)memoryAdd:(double)value {
-    [self session]->memory_add(value);
+- (void)selectMode:(NSInteger)mode {
+    switch (mode) {
+    case 1:
+        [self controller]->set_mode(Mode::Scientific);
+        break;
+    case 2:
+        [self controller]->set_mode(Mode::Programmer);
+        break;
+    default:
+        [self controller]->set_mode(Mode::Standard);
+        break;
+    }
 }
 
-- (void)memorySubtract:(double)value {
-    [self session]->memory_subtract(value);
+- (void)pressKey:(NSString *)key {
+    Controller *controller = [self controller];
+    const std::string label = key.UTF8String ?: "";
+    const ButtonSpec *spec = find_spec(*controller, label);
+    if (spec != nullptr) {
+        controller->dispatch(spec->command, Controller::kEnd);
+    }
 }
 
-- (double)memoryRecall {
-    return [self session]->memory_recall();
-}
-
-- (NSString *)formatValue:(double)value {
-    return to_ns(calculator::format_value(value));
+- (BOOL)isKeyEnabled:(NSString *)key {
+    Controller *controller = [self controller];
+    const std::string label = key.UTF8String ?: "";
+    const ButtonSpec *spec = find_spec(*controller, label);
+    return spec != nullptr && controller->command_enabled(spec->command);
 }
 
 - (NSString *)historyText {
-    const auto& history = [self session]->history();
+    const auto& history = [self controller]->session().history();
     if (history.empty()) return @"No calculations yet.";
 
     std::string out;
@@ -244,7 +196,7 @@ IntegerWidth integer_width(NSInteger width) {
 }
 
 - (void)clearHistory {
-    [self session]->clear_history();
+    [self controller]->clear_history();
 }
 
 @end

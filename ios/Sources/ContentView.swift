@@ -223,7 +223,10 @@ struct ContentView: View {
         VStack(spacing: 8) {
             TextField(
                 "Enter an expression or variable assignment",
-                text: $model.expression
+                text: Binding(
+                    get: { model.expression },
+                    set: { model.setExpression($0) }
+                )
             )
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
@@ -254,7 +257,7 @@ struct ContentView: View {
                 .font(CalculatorTypography.bold(9, relativeTo: .caption2))
                 .tracking(0.9)
                 .foregroundStyle(
-                    model.display == "Error"
+                    model.fault
                         ? palette.fault
                         : palette.subtle
                 )

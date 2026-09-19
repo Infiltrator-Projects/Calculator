@@ -1,3 +1,14 @@
+infiltrator-calculator (0.1.31) unstable; urgency=medium
+
+  * Route iPhone interaction through the shared C++ controller, restoring Standard immediate arithmetic and contextual percentage parity.
+  * Keep Standard mode isolated from Scientific grammar, reject writes to pi/e, and bound recursive expression nesting.
+  * Bring Linux Standard geometry back inside the shared minimum-size contract.
+  * Add a native Windows application icon, an iPhone AppIcon set, and per-monitor DPI-v2 handling on Windows.
+  * Align the strict three-font policy, release metadata and licensing dates across code and documentation.
+  * Publish a deterministic source bundle containing the exact Common dependency with every release.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 21:17:00 +1000
+
 infiltrator-calculator (0.1.30) unstable; urgency=medium
 
   * Install the Calculator artwork under the exact Debian package-name alias used by Linux Mint Software Manager.

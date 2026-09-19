@@ -24,12 +24,11 @@ The design is guided by five constraints:
 The principal dependency direction is:
 
 ```text
-Linux GTK shell ─┐
-Windows Win32 ───┼─> desktop UI contract/controller ─> Session ─> expression core
-                 │                                      └──────> Programmer core
-iPhone SwiftUI ──┴─> Objective-C++ bridge ─────────────> Session / Programmer core
+Linux GTK shell ────────┐
+Windows Win32 shell ────┼─> UI contract/controller ─> Session ─> expression core
+iPhone SwiftUI + bridge ─┘                             └──────> Programmer core
 
-Calculator core / desktop theme adapter / iOS bridge ─> Infiltratr Common
+Calculator core / theme adapters / iOS bridge ─> Infiltratr Common
 ```
 
 Higher layers may adapt lower-layer state for presentation. Lower layers must not depend on GTK, Win32, SwiftUI or other platform UI APIs.
@@ -64,13 +63,13 @@ The session delegates mathematical evaluation to the core. It does not implement
 
 History is bounded by construction so an indefinitely running UI cannot grow it without limit. Variables, memory and history are currently session state rather than durable user data.
 
-## Desktop interaction layer
+## Shared interaction layer
 
-`src/ui/calculator_ui_contract.hpp` is the declarative desktop interaction contract. It defines mode names, commands, button labels/roles/order, shared logical layout metrics and responsive layout classes.
+`src/ui/calculator_ui_contract.hpp` defines the Calculator command vocabulary and canonical button specifications. It also owns desktop-only logical layout metrics and responsive layout classes.
 
-`src/ui/calculator_ui_controller.*` owns desktop calculator interaction state and command dispatch. GTK and Win32 render the controller state and return user commands to it; they must not maintain competing calculator state machines.
+`src/ui/calculator_ui_controller.*` owns calculator interaction state and command dispatch across all three platforms. GTK and Win32 render it directly; the iPhone Objective-C++ bridge exposes its state and command surface to SwiftUI. Platform code must not maintain competing calculator state machines.
 
-The shared metrics are logical desktop units. GTK consumes them through its layout system; Win32 maps them through DPI-aware platform scaling.
+The shared desktop metrics remain logical units. GTK consumes them through its layout system; Win32 maps them through per-monitor DPI-aware platform scaling. SwiftUI does not consume those desktop geometry values.
 
 ## Platform shells
 
@@ -84,9 +83,9 @@ The shared metrics are logical desktop units. GTK consumes them through its layo
 
 ### iPhone
 
-The iPhone interface is native SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary between Swift and the shared C++ core.
+The iPhone interface is native SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary between Swift and the shared C++ controller.
 
-The iPhone does not use the desktop UI controller because desktop layout/cursor mechanics are not an appropriate abstraction for a touch-native SwiftUI interface. It does, however, reuse the calculation/session/programmer engines and obtains the canonical Common Day/Night palette through the bridge. Swift owns only the platform interaction adaptation and System appearance resolution.
+SwiftUI owns touch-native composition, platform appearance observation and presentation. Expression edits, mode changes, command enablement, memory/history state and calculator operations are routed through the same C++ controller used by the desktop shells. The bridge also exposes the canonical Common Day/Night palette. Desktop geometry and cursor mechanics remain desktop concerns and are not imposed on SwiftUI.
 
 ## Common boundary
 
@@ -108,9 +107,9 @@ Platform shells translate those results into presentation state; they do not rei
 
 ## Verification and release boundary
 
-The test suite covers the expression grammar, immediate semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI compiles both the Simulator and unsigned ARM64 device targets; the Simulator is test evidence, not a public release artifact.
+The test suite covers the expression grammar, bounded parser depth, immediate semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI compiles both the Simulator and unsigned ARM64 device targets; the Simulator is test evidence, not a public release artifact.
 
-A release is published only after Linux, Windows and iOS jobs succeed from the same source revision. Public release assets are derived from that revision, and the Debian package is then verified through the Package Repository publication path. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
+A release is published only after Linux, Windows and iOS jobs succeed from the same source revision. Public binaries and a deterministic source bundle containing the exact Common checkout are derived from that revision, and the Debian package is then verified through the Package Repository publication path. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
 
 ## Compatibility and runtime identity
 

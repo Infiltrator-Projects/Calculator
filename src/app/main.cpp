@@ -56,7 +56,7 @@ bool effective_dark_theme = true;
 constexpr const char* kUiFont = "MB Corpo S Title WEB";
 constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";
 
-constexpr int kStandardWindowHeight = 480;
+constexpr int kStandardWindowHeight = 520;
 constexpr int kExtendedWindowHeight = 610;
 
 int preferred_window_height(Mode mode) {

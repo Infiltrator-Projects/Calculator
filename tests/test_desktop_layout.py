@@ -16,7 +16,7 @@ cmake = Path("CMakeLists.txt").read_text(encoding="utf-8")
 for needle in (
     'constexpr const char* kUiFont = "MB Corpo S Title WEB";',
     'constexpr const char* kBrandFont = "MB Corpo A Title Cond WEB";',
-    "constexpr int kStandardWindowHeight = 480;",
+    "constexpr int kStandardWindowHeight = 520;",
     "constexpr int kExtendedWindowHeight = 610;",
     "preferred_window_height(Mode::Standard)",
 ):
@@ -186,9 +186,13 @@ for needle in (
     assert needle in ios_bridge, f"iPhone Common theme bridge missing: {needle}"
 
 for needle in (
+    "../src/ui/calculator_ui_controller.cpp",
+    "../src/ui/calculator_ui_controller.hpp",
+    "../src/ui/calculator_ui_contract.hpp",
     "../src/infiltratr-common/src/core.c",
     "../src/infiltratr-common/src/design.c",
     "../src/infiltratr-common/include",
+    "ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon",
 ):
     assert needle in ios_project, f"iPhone Common build integration missing: {needle}"
 
@@ -223,3 +227,30 @@ assert "CALCULATOR_FONT_RESOURCE_BOLD=1102" in cmake
 assert "CALCULATOR_FONT_RESOURCE_CONDENSED=1103" in cmake
 assert "AddFontMemResourceEx" in windows
 assert "refusing silent font substitution" in linux
+
+for needle in (
+    "DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2",
+    "GetDpiForWindow",
+    "WM_DPICHANGED",
+    "CALCULATOR_ICON_RESOURCE",
+):
+    assert needle in windows, f"Windows DPI/icon contract missing: {needle}"
+
+assert "CALCULATOR_ICON_RESOURCE=1001" in cmake
+assert "assets/windows/calculator.ico" in cmake
+assert Path("assets/windows/calculator.ico").is_file()
+assert Path("ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json").is_file()
+assert Path("ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png").is_file()
+
+for forbidden in (
+    "applyUnary",
+    "applyScientific",
+    "evaluateProgrammer",
+    "memoryAdd",
+    "memorySubtract",
+):
+    assert forbidden not in ios_bridge, (
+        f"iPhone bridge reintroduced calculator semantics: {forbidden}"
+    )
+assert "calculator_ui_controller.hpp" in ios_bridge
+assert "Controller" in ios_bridge

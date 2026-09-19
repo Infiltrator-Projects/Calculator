@@ -27,6 +27,9 @@ targets:
       - path: ../src/core/session.hpp
       - path: ../src/core/programmer.cpp
       - path: ../src/core/programmer.hpp
+      - path: ../src/ui/calculator_ui_controller.cpp
+      - path: ../src/ui/calculator_ui_controller.hpp
+      - path: ../src/ui/calculator_ui_contract.hpp
       - path: ../src/infiltratr-common/src/core.c
       - path: ../src/infiltratr-common/src/arithmetic.c
       - path: ../src/infiltratr-common/src/config.c
@@ -46,6 +49,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Calculator
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIAppFonts:
           - mb_corpo_a_cond_regular.ttf
           - mb_corpo_s_bold.ttf

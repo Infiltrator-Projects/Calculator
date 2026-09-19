@@ -362,8 +362,8 @@ jobs:
                 [CalcSmoke]::GetObject($fontHandle, $fontSize, [ref]$font) -eq 0) {
               throw 'Windows title font could not be inspected'
             }
-            if ($font.lfFaceName -notin @('Segoe UI', 'MB Corpo A Title Cond WEB')) {
-              throw "Unexpected Windows title font fallback: $($font.lfFaceName)"
+            if ($font.lfFaceName -ne 'MB Corpo A Title Cond WEB') {
+              throw "Windows did not use the required MB Corpo title font: $($font.lfFaceName)"
             }
 
             Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, theme cycling, compact memory strip, mode switching and 3+3 functional path correct, title font $($font.lfFaceName)."
@@ -475,7 +475,8 @@ jobs:
           test -n "$app"
           test -d "$app"
 
-          echo "iOS Simulator build verified: $app"
+          plutil -extract CFBundleIcons xml1 -o - "$app/Info.plist" >/dev/null
+          echo "iOS Simulator build verified with AppIcon metadata: $app"
 
       - name: Build unsigned iPhone device app
         run: |
@@ -549,6 +550,12 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Checkout release source and Common dependency
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
       - name: Download Linux package
         uses: actions/download-artifact@v4
         with:
@@ -567,6 +574,28 @@ jobs:
           name: calculator-ios
           path: dist/ios
 
+      - name: Build deterministic source bundle
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/calculator-source/Calculator-${VERSION}"
+          rm -rf "$RUNNER_TEMP/calculator-source"
+          mkdir -p "$root" dist/source
+          rsync -a \
+            --exclude='.git' \
+            --exclude='build-*' \
+            --exclude='dist' \
+            ./ "$root/"
+          epoch="$(git show -s --format=%ct "$GITHUB_SHA")"
+          find "$root" -exec touch -h -d "@$epoch" {} +
+          tar --sort=name \
+            --mtime="@$epoch" \
+            --owner=0 --group=0 --numeric-owner \
+            -C "$(dirname "$root")" \
+            -cf - "$(basename "$root")" \
+            | gzip -n > "dist/source/calculator_${VERSION}_source.tar.gz"
+
       - name: Verify cross-platform release assets
         env:
           VERSION: ${{ needs.linux.outputs.version }}
@@ -575,11 +604,15 @@ jobs:
           test -f "dist/linux/calculator_${VERSION}_amd64.deb"
           test -f "dist/windows/calculator_${VERSION}_windows_x64.exe"
           test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip"
+          test -f "dist/source/calculator_${VERSION}_source.tar.gz"
+          cp LICENSE dist/LICENSE.txt
 
           sha256sum \
             "dist/linux/calculator_${VERSION}_amd64.deb" \
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
             "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
+            "dist/source/calculator_${VERSION}_source.tar.gz" \
+            "dist/LICENSE.txt" \
             > dist/SHA256SUMS.txt
 
       - name: Publish immutable cross-platform GitHub release
@@ -592,6 +625,8 @@ jobs:
             "dist/linux/calculator_${VERSION}_amd64.deb" \
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
             "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
+            "dist/source/calculator_${VERSION}_source.tar.gz" \
+            "dist/LICENSE.txt" \
             "dist/SHA256SUMS.txt" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
