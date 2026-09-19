@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.infiltratorprojects.Calculator</id>
+  <name>Calculator</name>
+  <summary>Native cross-platform calculator</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <description>
+    <p>
+      Calculator is a native desktop calculator with Standard, Scientific and
+      Programmer modes over a shared portable calculation core.
+    </p>
+    <p>
+      The Linux desktop application uses GTK4 and integrates with the system
+      application menu, icon theme and Software Manager through AppStream.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">infiltrator-calc.desktop</launchable>
+  <provides>
+    <binary>infiltrator-calc</binary>
+  </provides>
+  <icon type="stock">infiltrator-calc</icon>
+
+  <categories>
+    <category>Utility</category>
+    <category>Calculator</category>
+  </categories>
+
+  <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
+
+  <releases>
+    <release version="0.1.26" date="2026-09-19">
+      <description>
+        <p>Add AppStream metadata so Linux software centres can associate the Calculator package with its desktop application and icon.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1"/>
+</component>

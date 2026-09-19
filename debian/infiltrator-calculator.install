@@ -1,2 +1,3 @@
 debian/infiltrator-calc.desktop usr/share/applications
 debian/infiltrator-calc.svg usr/share/icons/hicolor/scalable/apps
+debian/infiltrator-calculator.metainfo.xml usr/share/metainfo

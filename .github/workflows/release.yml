@@ -26,6 +26,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            appstream \
             build-essential \
             cmake \
             debhelper-compat \
@@ -51,6 +52,9 @@ jobs:
       - name: Verify compact Linux desktop layout
         run: python3 tests/test_desktop_layout.py
 
+      - name: Validate AppStream metadata
+        run: appstreamcli validate debian/infiltrator-calculator.metainfo.xml
+
       - name: Build and test on Linux
         run: |
           set -euo pipefail
@@ -74,6 +78,7 @@ jobs:
           grep -qx './usr/bin/infiltrator-calc' package-files.txt
           grep -qx './usr/share/applications/infiltrator-calc.desktop' package-files.txt
           grep -qx './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg' package-files.txt
+          grep -qx './usr/share/metainfo/infiltrator-calculator.metainfo.xml' package-files.txt
           if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' package-files.txt; then
             echo "::error::Calculator package leaked Common development/runtime payloads."
             cat package-files.txt
