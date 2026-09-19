@@ -8,7 +8,7 @@ The project is deliberately larger in ambition than a four-function calculator, 
 
 **Current source version:** 0.1.24  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Common 1.19.2  
+**Shared foundation:** Common 1.19.3  
 **Design contract:** shared Design v1  
 **Licence:** GPL-3.0-or-later
 
@@ -44,7 +44,7 @@ use.
 
 ## Appearance
 
-Calculator supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.2. Platform code owns only theme detection, persistence and native rendering.
+Calculator supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System delegates light/dark choice to the host platform; Day and Night consume the canonical semantic palettes from Common 1.19.3. Platform code owns only theme detection, persistence and native rendering.
 
 ## Current capabilities
 
@@ -84,7 +84,7 @@ The user-facing product name is **Calculator**. The Debian/APT package identity 
 
 Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
-The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.2 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.19.2`, so a stale or mismatched submodule fails configuration instead of silently building. Linux and Windows consume the Common theme C API directly; the iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
+The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.3 gitlink. CMake verifies the checked-out Common `VERSION` is exactly `1.19.3`, so a stale or mismatched submodule fails configuration instead of silently building. Linux and Windows consume the Common theme C API directly; the iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
 
 ## Typography
 
