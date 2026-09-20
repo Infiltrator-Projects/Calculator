@@ -1,4 +1,4 @@
-infiltrator-calc (0.2.3) unstable; urgency=medium
+infiltrator-calculator (0.2.3) unstable; urgency=medium
 
   * Add a first-class persistent Linux unit-conversion picker.
   * Pin Mint replacement validation to GNOME Calculator 41.1.
