@@ -35,7 +35,7 @@ int main(){
     const auto roots=evaluate(AdvancedTool::EquationSolver,"x^2-2;0;2");
     check(roots.ok&&roots.output.find("1.414213")!=std::string::npos,"equation root");
 
-    check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"30/100"),"exact decimal fraction");
+    check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"3/10"),"exact decimal fraction");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"0.3"),"exact decimal presentation");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"1/3"),"1/3"),"exact rational division");
 
