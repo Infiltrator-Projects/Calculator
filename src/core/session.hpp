@@ -71,6 +71,8 @@ public:
     std::optional<FunctionDefinition> function(const std::string& name) const;
     const Functions& functions() const noexcept;
     bool remove_function(const std::string& name);
+    std::string function_definitions_text() const;
+    bool load_function_definitions_text(std::string_view text);
 
     const std::deque<HistoryEntry>& history() const noexcept;
     std::size_t history_count() const noexcept;

@@ -83,6 +83,14 @@ void Controller::clear_history() noexcept {
     session_.clear_history();
 }
 
+std::string Controller::function_definitions_text() const {
+    return session_.function_definitions_text();
+}
+
+bool Controller::load_function_definitions_text(std::string_view text) {
+    return session_.load_function_definitions_text(text);
+}
+
 std::vector<AdditionalResult> Controller::additional_results() const {
     if (state_.expression.empty()) return {};
 
@@ -151,6 +159,46 @@ std::string Controller::programmer_representations_text() const {
         return "Programmer mode is not active.";
     }
     return additional_results_text();
+}
+
+std::vector<bool> Controller::programmer_bits() const {
+    const unsigned width = static_cast<unsigned>(state_.programmer_width);
+    std::uint64_t value = 0U;
+    if (!state_.expression.empty()) {
+        const ProgrammerResult result = evaluate_programmer(
+            state_.expression, state_.programmer_base,
+            state_.programmer_width);
+        if (!result.ok) return {};
+        value = result.value;
+    }
+    std::vector<bool> bits(width, false);
+    for (unsigned bit = 0; bit < width; ++bit) {
+        bits[bit] = ((value >> bit) & 1ULL) != 0U;
+    }
+    return bits;
+}
+
+bool Controller::toggle_programmer_bit(unsigned bit) {
+    if (state_.mode != Mode::Programmer) return false;
+    const unsigned width = static_cast<unsigned>(state_.programmer_width);
+    if (bit >= width) return false;
+
+    std::uint64_t value = 0U;
+    if (!state_.expression.empty()) {
+        const ProgrammerResult result = evaluate_programmer(
+            state_.expression, state_.programmer_base,
+            state_.programmer_width);
+        if (!result.ok) return false;
+        value = result.value;
+    }
+    value ^= (1ULL << bit);
+    state_.expression = format_programmer(
+        value, state_.programmer_base, state_.programmer_width, false);
+    state_.result = format_programmer(
+        value, state_.programmer_base, state_.programmer_width,
+        state_.programmer_signed);
+    set_status(programmer_status_text());
+    return true;
 }
 
 std::string Controller::scientific_status_text() const {

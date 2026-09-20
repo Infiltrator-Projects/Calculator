@@ -62,6 +62,10 @@ public:
     std::vector<AdditionalResult> additional_results() const;
     std::string additional_results_text() const;
     std::string programmer_representations_text() const;
+    std::vector<bool> programmer_bits() const;
+    bool toggle_programmer_bit(unsigned bit);
+    std::string function_definitions_text() const;
+    bool load_function_definitions_text(std::string_view text);
 
     std::string button_label(
         Command command, std::string_view fallback) const;

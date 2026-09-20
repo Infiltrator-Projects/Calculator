@@ -241,6 +241,20 @@ int main() {
     CHECK(representations.find("OCT  377") != std::string::npos);
     CHECK(representations.find("BIN  1111 1111") != std::string::npos);
 
+    controller.dispatch(Command::AllClear);
+    controller.dispatch(Command::Width8);
+    controller.dispatch(Command::BaseHex);
+    CHECK(controller.programmer_bits().size() == 8U);
+    CHECK(controller.toggle_programmer_bit(7U));
+    CHECK(controller.state().expression == "80");
+    CHECK(controller.programmer_bits()[7]);
+    CHECK(controller.toggle_programmer_bit(0U));
+    CHECK(controller.state().expression == "81");
+    CHECK(controller.programmer_bits()[0]);
+    CHECK(!controller.toggle_programmer_bit(8U));
+    controller.set_mode(Mode::Standard);
+    CHECK(!controller.toggle_programmer_bit(0U));
+
     // Keep the hot input path comfortably inside an interactive frame budget.
     // The threshold is deliberately much looser than normal native C++ cost:
     // it detects an order-of-magnitude regression without timing micro-noise.

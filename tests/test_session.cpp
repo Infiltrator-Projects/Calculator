@@ -73,6 +73,23 @@ int main(){
        functions.function("double").has_value())
         fail("custom function removal failed");
 
+    const std::string persisted_functions =
+        functions.function_definitions_text();
+    calculator::Session restored_functions;
+    if(!restored_functions.load_function_definitions_text(
+           persisted_functions))
+        fail("custom function persistence load failed");
+    expect_value(restored_functions.evaluate("hyp2(6;8)"),100.0,
+                 "persisted multi-argument function");
+    expect_value(restored_functions.evaluate("quad(5)"),20.0,
+                 "persisted nested function");
+    const std::string before_bad_load =
+        restored_functions.function_definitions_text();
+    if(restored_functions.load_function_definitions_text("bad(x;x)=x\n"))
+        fail("malformed persisted functions should be rejected");
+    if(restored_functions.function_definitions_text()!=before_bad_load)
+        fail("failed function load should be transactional");
+
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");

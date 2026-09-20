@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include <utility>
 
 namespace calculator {
@@ -234,6 +235,59 @@ std::optional<FunctionDefinition> Session::function(
 const Functions& Session::functions() const noexcept { return functions_; }
 bool Session::remove_function(const std::string& name) {
     return functions_.erase(name) != 0U;
+}
+
+std::string Session::function_definitions_text() const {
+    std::vector<std::string> names;
+    names.reserve(functions_.size());
+    for (const auto& item : functions_) names.push_back(item.first);
+    std::sort(names.begin(), names.end());
+
+    auto single_line = [](std::string value) {
+        for (char& ch : value) {
+            if (ch == '\n' || ch == '\r') ch = ' ';
+        }
+        return value;
+    };
+
+    std::ostringstream out;
+    for (const auto& name : names) {
+        const auto it = functions_.find(name);
+        if (it == functions_.end()) continue;
+        const auto& definition = it->second;
+        out << name << '(';
+        for (std::size_t index = 0; index < definition.parameters.size(); ++index) {
+            if (index != 0U) out << ';';
+            out << definition.parameters[index];
+        }
+        out << ")=" << single_line(definition.expression);
+        if (!definition.description.empty()) {
+            out << '@' << single_line(definition.description);
+        }
+        out << '\n';
+    }
+    return out.str();
+}
+
+bool Session::load_function_definitions_text(std::string_view text) {
+    Functions loaded;
+    std::size_t begin = 0;
+    while (begin <= text.size()) {
+        const std::size_t newline = text.find('\n', begin);
+        const std::size_t end =
+            newline == std::string_view::npos ? text.size() : newline;
+        const std::string line = trim_copy(text.substr(begin, end - begin));
+        if (!line.empty()) {
+            std::string error;
+            const auto parsed = function_definition(line, error);
+            if (!parsed || !error.empty()) return false;
+            loaded[parsed->name] = parsed->definition;
+        }
+        if (newline == std::string_view::npos) break;
+        begin = newline + 1U;
+    }
+    functions_ = std::move(loaded);
+    return true;
 }
 
 const std::deque<HistoryEntry>& Session::history() const noexcept { return history_; }
