@@ -591,7 +591,8 @@ void show_advanced_tools(GtkWidget*, gpointer) {
     gtk_widget_set_hexpand(state->input, TRUE);
     gtk_box_append(GTK_BOX(input_row), state->input);
 
-    GtkWidget* run = toolbar_button("Run");
+    GtkWidget* run = gtk_button_new_with_label("Run");
+    gtk_widget_add_css_class(run, "toolbar-button");
     gtk_box_append(GTK_BOX(input_row), run);
 
     GtkWidget* scroll = gtk_scrolled_window_new();
