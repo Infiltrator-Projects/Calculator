@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <string>
 
 namespace {
@@ -179,6 +180,29 @@ int main() {
     }
     if (calculator::format_engineering_value(0.0) != "0e+00") {
         fail("engineering formatter zero wrong output");
+    }
+    if (calculator::format_engineering_value(-0.00123) !=
+        "-1.23e-03") {
+        fail("engineering formatter negative value wrong output");
+    }
+    const std::string denormal_engineering =
+        calculator::format_engineering_value(
+            std::numeric_limits<double>::denorm_min());
+    if (denormal_engineering.find("e-324") == std::string::npos ||
+        denormal_engineering.find("inf") != std::string::npos ||
+        denormal_engineering.find("nan") != std::string::npos) {
+        fail("engineering formatter subnormal boundary wrong output");
+    }
+    const std::string maximum_engineering =
+        calculator::format_engineering_value(
+            std::numeric_limits<double>::max());
+    if (maximum_engineering.find("e+306") == std::string::npos ||
+        maximum_engineering.find("inf") != std::string::npos) {
+        fail("engineering formatter maximum finite boundary wrong output");
+    }
+    if (calculator::format_engineering_value(999.9999999996) !=
+        "1e+03") {
+        fail("engineering formatter decimal carry boundary wrong output");
     }
 
     if (failures != 0) {

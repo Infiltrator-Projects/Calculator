@@ -25,10 +25,14 @@ bool close_to_reference(double actual, double expected) {
     if (actual == expected) return true;
     if (!std::isfinite(actual) || !std::isfinite(expected)) return false;
 
-    const double scale = std::max(1.0, std::fabs(expected));
-    const double tolerance =
+    const double scale =
+        std::max(std::fabs(actual), std::fabs(expected));
+    const double relative_tolerance =
         32.0 * std::numeric_limits<double>::epsilon() * scale;
-    return std::fabs(actual - expected) <= tolerance;
+    const double subnormal_tolerance =
+        32.0 * std::numeric_limits<double>::denorm_min();
+    return std::fabs(actual - expected) <=
+           std::max(relative_tolerance, subnormal_tolerance);
 }
 
 enum class OracleFunction {
@@ -42,7 +46,15 @@ enum class OracleFunction {
     Cbrt,
     Ln,
     Log10,
-    Exp
+    Exp,
+    TwoPower,
+    TenPower,
+    Sinh,
+    Cosh,
+    Tanh,
+    Asinh,
+    Acosh,
+    Atanh
 };
 
 double mpfr_reference(OracleFunction function, double input) {
@@ -64,6 +76,14 @@ double mpfr_reference(OracleFunction function, double input) {
     case OracleFunction::Ln: mpfr_log(y, x, MPFR_RNDN); break;
     case OracleFunction::Log10: mpfr_log10(y, x, MPFR_RNDN); break;
     case OracleFunction::Exp: mpfr_exp(y, x, MPFR_RNDN); break;
+    case OracleFunction::TwoPower: mpfr_exp2(y, x, MPFR_RNDN); break;
+    case OracleFunction::TenPower: mpfr_ui_pow(y, 10UL, x, MPFR_RNDN); break;
+    case OracleFunction::Sinh: mpfr_sinh(y, x, MPFR_RNDN); break;
+    case OracleFunction::Cosh: mpfr_cosh(y, x, MPFR_RNDN); break;
+    case OracleFunction::Tanh: mpfr_tanh(y, x, MPFR_RNDN); break;
+    case OracleFunction::Asinh: mpfr_asinh(y, x, MPFR_RNDN); break;
+    case OracleFunction::Acosh: mpfr_acosh(y, x, MPFR_RNDN); break;
+    case OracleFunction::Atanh: mpfr_atanh(y, x, MPFR_RNDN); break;
     }
 
     const double result = mpfr_get_d(y, MPFR_RNDN);
@@ -86,6 +106,14 @@ calculator::RealFunction calculator_function(OracleFunction function) {
     case OracleFunction::Ln: return RealFunction::Ln;
     case OracleFunction::Log10: return RealFunction::Log10;
     case OracleFunction::Exp: return RealFunction::Exp;
+    case OracleFunction::TwoPower: return RealFunction::TwoPower;
+    case OracleFunction::TenPower: return RealFunction::TenPower;
+    case OracleFunction::Sinh: return RealFunction::Sinh;
+    case OracleFunction::Cosh: return RealFunction::Cosh;
+    case OracleFunction::Tanh: return RealFunction::Tanh;
+    case OracleFunction::Asinh: return RealFunction::Asinh;
+    case OracleFunction::Acosh: return RealFunction::Acosh;
+    case OracleFunction::Atanh: return RealFunction::Atanh;
     }
     return RealFunction::Abs;
 }
@@ -103,6 +131,14 @@ std::string_view name(OracleFunction function) {
     case OracleFunction::Ln: return "ln";
     case OracleFunction::Log10: return "log10";
     case OracleFunction::Exp: return "exp";
+    case OracleFunction::TwoPower: return "exp2";
+    case OracleFunction::TenPower: return "exp10";
+    case OracleFunction::Sinh: return "sinh";
+    case OracleFunction::Cosh: return "cosh";
+    case OracleFunction::Tanh: return "tanh";
+    case OracleFunction::Asinh: return "asinh";
+    case OracleFunction::Acosh: return "acosh";
+    case OracleFunction::Atanh: return "atanh";
     }
     return "unknown";
 }
@@ -146,6 +182,17 @@ int main() {
         -20.0, -10.0, -1.0, -0.1, 0.0,
         0.1, 1.0, 10.0, 20.0
     };
+    constexpr std::array<double, 9> power_exponent{
+        -300.0, -100.0, -10.0, -1.0, 0.0,
+        1.0, 10.0, 100.0, 300.0
+    };
+    constexpr std::array<double, 7> acosh_domain{
+        1.0, 1.000001, 1.1, 2.0, 10.0, 1.0e3, 1.0e6
+    };
+    constexpr std::array<double, 9> atanh_domain{
+        -0.99, -0.9, -0.5, -0.1, 0.0,
+        0.1, 0.5, 0.9, 0.99
+    };
 
     check_values(OracleFunction::Sin, general);
     check_values(OracleFunction::Cos, general);
@@ -158,6 +205,14 @@ int main() {
     check_values(OracleFunction::Ln, positive);
     check_values(OracleFunction::Log10, positive);
     check_values(OracleFunction::Exp, exponent);
+    check_values(OracleFunction::TwoPower, power_exponent);
+    check_values(OracleFunction::TenPower, power_exponent);
+    check_values(OracleFunction::Sinh, general);
+    check_values(OracleFunction::Cosh, general);
+    check_values(OracleFunction::Tanh, general);
+    check_values(OracleFunction::Asinh, general);
+    check_values(OracleFunction::Acosh, acosh_domain);
+    check_values(OracleFunction::Atanh, atanh_domain);
 
     if (failures != 0) {
         std::cerr << failures << " MPFR oracle test(s) failed\n";

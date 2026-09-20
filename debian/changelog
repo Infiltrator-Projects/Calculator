@@ -1,3 +1,13 @@
+infiltrator-calculator (0.1.43) unstable; urgency=medium
+
+  * Harden engineering notation at binary64 subnormal and maximum boundaries.
+  * Preserve exponent carry before engineering mantissa rearrangement.
+  * Expand Additional Results boundary regressions.
+  * Extend the 256-bit MPFR oracle across hyperbolic and power functions.
+  * Tighten tiny-value MPFR comparison tolerance.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 16:45:00 +1000
+
 infiltrator-calculator (0.1.42) unstable; urgency=medium
 
   * Add shared Additional Results for Standard and Scientific modes.

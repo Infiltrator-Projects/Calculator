@@ -188,6 +188,14 @@ int main() {
     CHECK(scientific_details.find("Engineering  9e+00") !=
           std::string::npos);
 
+    controller.set_expression("5e-324");
+    const auto subnormal_details = controller.additional_results();
+    CHECK(subnormal_details.size() == 3);
+    CHECK(subnormal_details[2].label == "Engineering");
+    CHECK(subnormal_details[2].value.find("e-324") != std::string::npos);
+    CHECK(subnormal_details[2].value.find("inf") == std::string::npos);
+    CHECK(subnormal_details[2].value.find("nan") == std::string::npos);
+
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseHex);
     controller.dispatch(Command::Width8);

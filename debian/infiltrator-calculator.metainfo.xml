@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.43" date="2026-09-20">
+      <description>
+        <p>Harden engineering notation at binary64 boundaries and expand independent high-precision numerical validation.</p>
+      </description>
+    </release>
     <release version="0.1.42" date="2026-09-20">
       <description>
         <p>Add shared Additional Results with decimal, scientific and engineering representations across Linux, Windows and iPhone.</p>

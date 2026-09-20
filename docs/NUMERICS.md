@@ -139,4 +139,8 @@ Engineering notation is a presentation of the existing finite binary64 result, n
 
 For example, `12345` is presented as `12.345e+03` and `0.00123` as `1.23e-03`. The canonical decimal and scientific representations remain available alongside it in Additional Results.
 
+The engineering formatter derives its mantissa and exponent from one rounded scientific representation instead of computing a decimal scale with `pow(10, exponent)`. This keeps the smallest finite binary64 subnormals representable instead of underflowing an intermediate scale to zero, and it lets decimal rounding carry across engineering exponent boundaries before the mantissa is rearranged.
+
+Boundary regressions cover zero, signed finite values, the smallest positive subnormal, the largest finite binary64 value and a mantissa-rounding carry into the next engineering exponent.
+
 Additional Results never implies additional precision. Until an exact or arbitrary-precision domain is explicitly introduced, all Standard/Scientific rows describe the same binary64 value.

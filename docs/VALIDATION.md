@@ -57,7 +57,7 @@ The validation system is evidence, not a proof of all possible numerical or plat
 
 ## Independent numerical oracle
 
-Release CI can enable `CALCULATOR_ENABLE_MPFR_ORACLE_TESTS`. The resulting test links only the test executable to MPFR, evaluates representative trigonometric, inverse-trigonometric, root, logarithmic and exponential inputs at 256-bit precision, rounds the reference to binary64 and compares Calculator's shared-core result within a tight floating-point tolerance. MPFR is therefore evidence, not a shipped runtime dependency or a second production calculation engine.
+Release CI can enable `CALCULATOR_ENABLE_MPFR_ORACLE_TESTS`. The resulting test links only the test executable to MPFR, evaluates representative trigonometric, inverse-trigonometric, hyperbolic, inverse-hyperbolic, root, logarithmic and e/2/10 exponential inputs at 256-bit precision, rounds the reference to binary64 and compares Calculator's shared-core result within a tight scale-aware tolerance. The tolerance no longer normalises tiny values to a unit scale; subnormal comparisons retain a denormal floor so a gross zero/subnormal mismatch cannot pass simply because both values are small. MPFR is therefore evidence, not a shipped runtime dependency or a second production calculation engine.
 
 ## Semantic appearance and focus regression
 

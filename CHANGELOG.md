@@ -6,6 +6,14 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.43 — 2026-09-20
+
+- Harden engineering notation so the smallest binary64 subnormals never pass through an underflowing decimal scale.
+- Derive engineering mantissas from one rounded scientific representation so carry across a 10^3 boundary is handled before presentation.
+- Add core and shared Additional Results regressions for negative values, subnormal values, the largest finite binary64 value and exponent-boundary rounding.
+- Expand the independent 256-bit MPFR oracle to cover hyperbolic/inverse-hyperbolic functions plus base-2 and base-10 exponentials.
+- Tighten MPFR comparison tolerance so very small expected values are not implicitly compared against a unit-scale error budget.
+
 ## 0.1.42 — 2026-09-20
 
 - Add a shared Additional Results model above the calculation engines so platform shells render representations instead of deriving their own mathematics.

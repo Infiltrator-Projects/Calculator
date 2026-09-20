@@ -481,24 +481,89 @@ std::string format_engineering_value(double value) {
     if (!std::isfinite(value)) return "0";
     if (value == 0.0) return "0e+00";
 
-    const int exponent = static_cast<int>(
-        std::floor(std::log10(std::fabs(value))));
+    // Derive engineering notation from one rounded scientific representation
+    // instead of scaling by pow(10, exponent). This keeps the smallest
+    // binary64 subnormals representable and lets decimal rounding carry across
+    // an engineering exponent boundary before the mantissa is rearranged.
+    char scientific_buffer[96] = {};
+    const auto scientific_converted = std::to_chars(
+        scientific_buffer, scientific_buffer + sizeof(scientific_buffer),
+        value, std::chars_format::scientific, 11);
+    if (scientific_converted.ec != std::errc{}) return "0";
+
+    const std::string scientific(
+        scientific_buffer, scientific_converted.ptr);
+    const std::size_t exponent_pos = scientific.find('e');
+    if (exponent_pos == std::string::npos ||
+        exponent_pos + 2U >= scientific.size()) {
+        return "0";
+    }
+
+    const char exponent_sign_char = scientific[exponent_pos + 1U];
+    if (exponent_sign_char != '+' && exponent_sign_char != '-') return "0";
+
+    unsigned exponent_magnitude = 0;
+    const char* exponent_begin =
+        scientific.data() + exponent_pos + 2U;
+    const char* exponent_end = scientific.data() + scientific.size();
+    const auto exponent_converted = std::from_chars(
+        exponent_begin, exponent_end, exponent_magnitude);
+    if (exponent_converted.ec != std::errc{} ||
+        exponent_converted.ptr != exponent_end) {
+        return "0";
+    }
+
+    const int scientific_exponent =
+        exponent_sign_char == '-'
+            ? -static_cast<int>(exponent_magnitude)
+            : static_cast<int>(exponent_magnitude);
+    int engineering_remainder = scientific_exponent % 3;
+    if (engineering_remainder < 0) engineering_remainder += 3;
     const int engineering_exponent =
-        exponent >= 0
-            ? (exponent / 3) * 3
-            : -(((-exponent + 2) / 3) * 3);
+        scientific_exponent - engineering_remainder;
 
-    const double scale = std::pow(10.0, engineering_exponent);
-    const double mantissa = value / scale;
+    const std::string scientific_mantissa =
+        scientific.substr(0, exponent_pos);
+    const bool negative =
+        !scientific_mantissa.empty() && scientific_mantissa.front() == '-';
+    const std::size_t mantissa_begin = negative ? 1U : 0U;
 
-    char mantissa_buffer[64] = {};
-    const auto mantissa_converted = std::to_chars(
-        mantissa_buffer, mantissa_buffer + sizeof(mantissa_buffer),
-        mantissa, std::chars_format::general, 12);
-    if (mantissa_converted.ec != std::errc{}) return "0";
+    std::string digits;
+    digits.reserve(scientific_mantissa.size());
+    for (std::size_t i = mantissa_begin;
+         i < scientific_mantissa.size(); ++i) {
+        if (scientific_mantissa[i] != '.') {
+            digits.push_back(scientific_mantissa[i]);
+        }
+    }
+    if (digits.empty()) return "0";
 
-    std::string formatted(
-        mantissa_buffer, mantissa_converted.ptr);
+    const std::size_t integer_digits =
+        1U + static_cast<std::size_t>(engineering_remainder);
+    if (digits.size() < integer_digits) {
+        digits.append(integer_digits - digits.size(), '0');
+    }
+
+    std::string mantissa;
+    if (negative) mantissa.push_back('-');
+    mantissa.append(digits.data(), integer_digits);
+    if (digits.size() > integer_digits) {
+        mantissa.push_back('.');
+        mantissa.append(
+            digits.data() + integer_digits,
+            digits.size() - integer_digits);
+    }
+
+    if (mantissa.find('.') != std::string::npos) {
+        while (!mantissa.empty() && mantissa.back() == '0') {
+            mantissa.pop_back();
+        }
+        if (!mantissa.empty() && mantissa.back() == '.') {
+            mantissa.pop_back();
+        }
+    }
+
+    std::string formatted = mantissa;
     formatted += 'e';
     formatted += engineering_exponent < 0 ? '-' : '+';
 
@@ -509,12 +574,12 @@ std::string format_engineering_value(double value) {
     if (absolute_exponent < 10U) formatted += '0';
 
     char exponent_buffer[16] = {};
-    const auto exponent_converted = std::to_chars(
+    const auto engineering_exponent_converted = std::to_chars(
         exponent_buffer, exponent_buffer + sizeof(exponent_buffer),
         absolute_exponent);
-    if (exponent_converted.ec != std::errc{}) return "0";
+    if (engineering_exponent_converted.ec != std::errc{}) return "0";
     formatted.append(
-        exponent_buffer, exponent_converted.ptr);
+        exponent_buffer, engineering_exponent_converted.ptr);
     return formatted;
 }
 
