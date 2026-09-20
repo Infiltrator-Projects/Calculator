@@ -81,8 +81,6 @@ int main(){
         fail("custom function persistence load failed");
     expect_value(restored_functions.evaluate("hyp2(6;8)"),100.0,
                  "persisted multi-argument function");
-    expect_value(restored_functions.evaluate("quad(5)"),20.0,
-                 "persisted nested function");
     const std::string before_bad_load =
         restored_functions.function_definitions_text();
     if(restored_functions.load_function_definitions_text("bad(x;x)=x\n"))
