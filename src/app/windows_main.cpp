@@ -31,6 +31,7 @@ constexpr int kIdBases = 1003;
 constexpr int kIdModeStandard = 1010;
 constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
+constexpr int kIdResult = 1020;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 constexpr int kIdHistoryList = 3002;
@@ -1133,8 +1134,12 @@ void create_controls(HWND window) {
 
     g_result = CreateWindowExW(
         0, L"EDIT", L"0",
-        WS_CHILD | WS_VISIBLE | ES_RIGHT | ES_READONLY | ES_AUTOHSCROLL,
-        0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+        WS_CHILD | WS_VISIBLE | ES_RIGHT | ES_READONLY |
+            ES_AUTOHSCROLL | ES_NOHIDESEL,
+        0, 0, 0, 0, window,
+        reinterpret_cast<HMENU>(
+            static_cast<INT_PTR>(kIdResult)),
+        g_instance, nullptr);
     apply_control_theme(g_result);
     g_status = CreateWindowExW(0, L"STATIC", L"READY",
                                WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_NOPREFIX,
