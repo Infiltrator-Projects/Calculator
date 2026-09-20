@@ -58,3 +58,10 @@ Windows CI adds native runtime smoke tests for control creation and interaction.
 ## Parity definition
 
 Parity means that shared behaviour has one authoritative owner and each platform renders or adapts that behaviour without redefining it. It does not require identical platform widgets, typography rasterisation, window metrics or touch/desktop interaction mechanics.
+
+
+## Advanced Tools parity
+
+All three release shells expose the same twelve-item Tools catalogue from `calculator::tools::catalog()` and call `calculator::tools::evaluate()` for results. Platform code must not reproduce engineering formulae, unit factors, CIDR arithmetic, statistics, root finding, exact arithmetic or complex arithmetic.
+
+Linux uses a GTK workbench and Cairo graph rendering. Windows uses a native Win32 workbench and GDI graph rendering. iPhone uses a SwiftUI sheet and Canvas graph rendering through the Objective-C++ bridge. These presentations may differ in layout, but tool names, prompts/examples, evaluation semantics, text results and graph samples originate in the shared core.

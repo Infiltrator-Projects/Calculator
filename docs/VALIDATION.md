@@ -62,3 +62,10 @@ Release CI can enable `CALCULATOR_ENABLE_MPFR_ORACLE_TESTS`. The resulting test 
 ## Semantic appearance and focus regression
 
 Common 1.19.10 adds explicit semantic roles for heading, summary, kicker, detail/note, status borders, hover accents and warning states. Calculator regression tests assert those fields exist in the exact pinned Common public contract and that GTK, Win32 and SwiftUI consume the roles that match Calculator semantics. Desktop focus treatment is also checked at source-contract level so keyboard-visible focus is not accidentally removed during visual refactoring.
+
+
+## Advanced Tools validation
+
+`calculator-advanced-tools-test` exercises every released tool family: engineering formulae, dimensional and temperature conversion, IPv4/CIDR, RAID and cluster allocation, leap-day civil dates, constants, descriptive statistics, graph sampling, real root solving, exact decimal/rational arithmetic, arbitrary-precision powers/factorial and complex arithmetic/error handling.
+
+The cross-platform source contract additionally requires native Tools surfaces and graph renderers on GTK, Win32 and SwiftUI and requires the iPhone target to compile the same `advanced_tools.cpp` implementation. Native shells are therefore tested for ownership/parity while the mathematical/domain expectations remain portable core tests.

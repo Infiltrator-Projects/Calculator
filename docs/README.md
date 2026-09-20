@@ -31,3 +31,6 @@ Code and tests remain authoritative for executable behaviour. Immutable tags/rel
 When a change moves an ownership boundary, support boundary, numerical contract, compatibility identity, validation claim or major design decision, update the corresponding canonical document in the same change.
 
 Avoid copying the same capability/status statement into several files. Historical release detail belongs in Git tags/releases; implementation commentary belongs near the owning code/tests unless it establishes a maintained cross-cutting contract.
+
+
+- [TOOLS.md](TOOLS.md) — user-facing Advanced Tools catalogue, command forms, examples, numeric domains and limits.

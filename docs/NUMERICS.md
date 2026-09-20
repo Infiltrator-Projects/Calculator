@@ -144,3 +144,32 @@ The engineering formatter derives its mantissa and exponent from one rounded sci
 Boundary regressions cover zero, signed finite values, the smallest positive subnormal, the largest finite binary64 value and a mantissa-rounding carry into the next engineering exponent.
 
 Additional Results never implies additional precision. Until an exact or arbitrary-precision domain is explicitly introduced, all Standard/Scientific rows describe the same binary64 value.
+
+
+## Advanced tool numeric domains
+
+The Tools workbench deliberately uses more than one numeric representation.
+
+Engineering, dimensional conversion, statistics, graphing, real equation solving and complex arithmetic use finite binary64 values and reject malformed or non-finite inputs. Unit conversion is dimension-checked before applying scale/offset transformations; temperature conversions use affine transformations rather than multiplicative factors alone.
+
+Network IPv4/CIDR operations use exact 32-bit address arithmetic and 64-bit address counts. Storage allocation calculations use checked 64-bit integer arithmetic for byte/cluster counts and long-double intermediates only for human capacity conversion.
+
+Civil-date operations validate Gregorian dates in years 1 through 9999 and use integer day-number transforms. Unix conversion is explicitly UTC and requires the documented `YYYY-MM-DDTHH:MM:SSZ` form.
+
+### Exact decimal/rational arithmetic
+
+Exact Decimal parses decimal literals directly into integer numerator / power-of-ten denominator pairs. Addition, subtraction, multiplication and division operate on those integer ratios, so `0.1 + 0.2` is represented exactly as `3/10`, not as a rounded binary64 approximation. A terminating decimal projection is emitted when the resulting denominator is a power of ten. Results are bounded by the maintained 20,000-digit safety ceiling.
+
+### Arbitrary-precision integer arithmetic
+
+Arbitrary Precision is an integer domain implemented with base-10^9 limbs. It supports signed `+`, `-`, `*`, right-associative non-negative integer powers, parentheses and factorial through 1000. It does not pretend integer division is exact when it has not been requested as part of the contract. Results are capped at 20,000 decimal digits to bound memory and run time.
+
+### Complex arithmetic
+
+Complex values are explicit `real,imaginary` pairs. The current workbench supports add/subtract/multiply/divide, conjugate, magnitude, argument and polar reporting. Components are binary64; division by zero is an explicit failure.
+
+### Graphing and equation solving
+
+Graphing evaluates the existing Scientific grammar with a supplied `x` variable over 2..4096 evenly spaced samples. Invalid/non-finite samples are retained as discontinuity markers rather than connected through by the renderer.
+
+Equation solving searches a caller-specified real interval with deterministic segmentation and safeguarded bisection on validated sign changes. Returned candidates are re-evaluated before admission and deduplicated. The solver is a real numerical root finder, not a symbolic algebra system; absence of a validated root in the interval is reported explicitly.

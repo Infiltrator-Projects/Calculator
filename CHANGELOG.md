@@ -6,6 +6,19 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.0 — 2026-09-20
+
+- Complete the twelve previously planned capability families in one shared Advanced Tools engine.
+- Add engineering/electrical, dimensional unit, ICT/network, storage/filesystem and civil date/time calculators.
+- Add a broader mathematical/physical constant catalogue and make its ASCII names available in Scientific expressions.
+- Add descriptive statistics, shared graph sampling with native GTK/Win32/SwiftUI graph rendering, and deterministic real equation solving.
+- Add exact decimal/rational arithmetic that never passes decimal literals through binary64.
+- Add bounded arbitrary-precision signed integer arithmetic with powers and factorial.
+- Add explicit complex-number arithmetic, magnitude/phase and conjugation.
+- Add native Tools workbenches on Linux, Windows and iPhone over the same shared catalogue/evaluator.
+- Add cross-platform ownership regressions and portable tests spanning every advanced tool family.
+- Add maintained Tools, architecture, numerical, parity and validation documentation.
+
 ## 0.1.43 — 2026-09-20
 
 - Harden engineering notation so the smallest binary64 subnormals never pass through an underflowing decimal scale.

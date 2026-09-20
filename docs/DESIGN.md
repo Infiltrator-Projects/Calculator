@@ -57,3 +57,12 @@ Where behaviour is important enough to document as a contract, it should also be
 Primary calculation stays visually dominant. Secondary representations belong in an on-demand Additional Results surface rather than being permanently inserted into the keypad or display card. This follows the project's compact-window rule and gives future exact/unit/symbolic representations a stable home.
 
 The platform shell may choose native presentation mechanics, but labels and values come from the shared Controller. Programmer's existing Bases surface is the domain-specific form of the same representation model.
+
+
+## Advanced Tools workbench
+
+The twelve extended calculation families live behind one on-demand Tools surface instead of adding permanent keypad rows. This preserves the compact primary calculator while keeping engineering, conversion, network, storage, date/time, statistics, graph/equation, exact, arbitrary-precision and complex capabilities directly accessible.
+
+The workbench is not a terminal. Each native shell provides a tool selector, an explicit prompt, an editable example/input control, a Run action, selectable output and graph rendering where applicable. The small command grammar belongs to each tool domain and is documented in TOOLS.md. Evaluation remains in shared C++; platform code owns only controls and graph drawing.
+
+Graphing follows the same rule as Additional Results: one shared mathematical result, native presentation. The shared core samples the expression and marks discontinuities; GTK/Cairo, Win32/GDI and SwiftUI/Canvas render that point sequence without re-evaluating the expression.

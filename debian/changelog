@@ -1,3 +1,14 @@
+infiltrator-calculator (0.2.0) unstable; urgency=medium
+
+  * Complete all twelve planned advanced calculator capability families.
+  * Add engineering, conversion, ICT/network, storage and date/time tools.
+  * Add constants, statistics, graphing and equation solving.
+  * Add exact decimal, arbitrary-precision and complex-number domains.
+  * Add native Tools workbenches and graph rendering on Linux, Windows and iPhone.
+  * Add comprehensive portable/domain and cross-platform parity regressions.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 17:45:00 +1000
+
 infiltrator-calculator (0.1.43) unstable; urgency=medium
 
   * Harden engineering notation at binary64 subnormal and maximum boundaries.

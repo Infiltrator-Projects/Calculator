@@ -7,18 +7,33 @@ This is a direction document, not a dated promise. The released source and tests
 - maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture, including stateful Scientific 2nd/HYP/angle/notation controls, fixed-width Programmer rotate/NAND/NOR operations and shared Additional Results representations
 - preserve native GTK4, Win32 and SwiftUI interfaces without duplicating calculation semantics
 - keep numerical edge behaviour, cross-platform parity and exact Common integration protected by regression tests
+- maintain the shared Advanced Tools engine and the native Linux, Windows and iPhone workbenches over the same domain contracts and graph samples
 
-## Near-term priorities
+## Completed capability families
 
-- strengthen numerical reference evidence and cross-platform boundary testing as mathematical features evolve, including extending the MPFR oracle and Additional Results invariants
+Calculator 0.2.0 completes the previously listed feature families:
+
+- engineering calculator functions
+- unit conversion
+- ICT/network calculations
+- storage/filesystem calculations
+- date/time calculations
+- broader mathematical and physical constants
+- descriptive statistics
+- graphing
+- real equation solving
+- exact-decimal/rational arithmetic
+- arbitrary-precision integer arithmetic
+- complex-number arithmetic
+
+These are implemented in the shared C++ core, exercised by deterministic tests and exposed through native Tools workbenches on all three release platforms. Graph rendering is platform-native while graph sampling remains shared.
+
+## Continuing priorities
+
+- strengthen numerical reference evidence and cross-platform boundary testing as mathematical features evolve
 - improve accessibility and native interaction quality without weakening shared calculator semantics
+- expand individual tool catalogues only when their units, numeric domain and validation rules are explicit
 - continue consolidating genuinely generic mechanisms into Common only when its contract remains at least as strong as Calculator's local implementation
-
-## Longer-term direction
-
-- add engineering, unit, ICT/network, storage/filesystem and date/time calculators when their domains and validation rules are explicit
-- add broader constants, statistics, graphing and equation solving when they can be represented and tested without weakening numerical clarity
-- introduce exact-decimal, arbitrary-precision or complex domains when a supported capability has a correctness requirement that binary64 cannot satisfy cleanly
 
 ## Admission rule
 

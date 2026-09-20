@@ -28,6 +28,7 @@ Linux GTK shell ────────┐
 Windows Win32 shell ────┼─> UI contract/controller ─> Session ─> expression core
 iPhone SwiftUI + bridge ─┘                             └──────> Programmer core
 
+Advanced Tools ───────────────────────────────> expression core (graph/root evaluation)
 Calculator core / theme adapters / iOS bridge ─> Infiltratr Common
 ```
 
@@ -52,6 +53,14 @@ Standard mode deliberately uses a separate immediate evaluator. Binary operators
 `src/core/programmer.*` owns fixed-width integer calculation. Values are represented as bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Arithmetic overflow wraps by masking to that width; this is intentional Programmer-mode behaviour rather than an unchecked error in the general arithmetic domain. NAND/NOR and ROL/ROR live in the same width-aware layer, so masking and rotate-count semantics are portable and testable.
 
 Signedness affects decimal presentation of the resulting bit pattern. It does not create a separate stored numeric representation.
+
+### Advanced tool domains
+
+`src/core/advanced_tools.*` owns the twelve non-keypad calculation families. It is a portable C++ layer over explicit domain contracts rather than a platform helper: engineering formulae, dimensional unit conversion, IPv4/CIDR and transfer calculations, storage/filesystem calculations, civil-date arithmetic, constants, descriptive statistics, graph sampling, real root solving, exact decimal/rational arithmetic, arbitrary-precision integer arithmetic and complex arithmetic.
+
+Graphing and equation solving reuse the Scientific expression evaluator with a supplied `x` variable; they do not carry a second expression grammar. Graph sampling is shared, while each shell renders the resulting point sequence natively. Exact decimal arithmetic uses decimal literals as exact rationals rather than converting them through binary64. Arbitrary precision is a separate integer domain with an explicit 20,000-digit safety ceiling. Complex arithmetic is an explicit pair-of-binary64 domain and is not silently mixed into the ordinary real parser.
+
+The Tools workbench is intentionally on-demand. It keeps the main Standard/Scientific/Programmer keypads compact while giving all three platform shells the same catalogue, prompt/example metadata, evaluation results and graph points.
 
 ## Session layer
 
@@ -132,6 +141,7 @@ Release integrity is part of the trust boundary: published artifacts must derive
 ## Specialist documents
 
 - [NUMERICS.md](NUMERICS.md) — numeric domains, parser/percentage semantics, evidence basis and precision/error expectations.
+- [TOOLS.md](TOOLS.md) — Advanced Tools catalogue, input grammar, domains and validation rules.
 - [PORTABILITY.md](PORTABILITY.md) — platform, representation, locale, ABI and compatibility boundaries.
 - [UI_PARITY.md](UI_PARITY.md) — shared desktop interaction ownership and iPhone parity boundary.
 - [VALIDATION.md](VALIDATION.md) — automated, native-environment and release evidence limits.
