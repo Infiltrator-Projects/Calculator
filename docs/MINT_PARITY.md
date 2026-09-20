@@ -23,6 +23,8 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - direct click/touch Programmer bit toggling in the Linux representations view while preserving shared fixed-width semantics;
 - persistent Linux result-presentation preferences for Automatic, Fixed, Scientific and Engineering output, decimal-place control, thousands grouping and trailing-zero presentation;
 - persistent Cinnamon/GTK desktop mode and window size without forcing legacy absolute window positioning under Wayland;
+- persistent Scientific angle unit plus Programmer radix, word width and signed-display state, matching the useful semantic settings GNOME Calculator restores;
+- persisted user variables under the XDG data directory, alongside the already-persisted reusable function definitions;
 - a dependency-light console calculator, `infiltrator-calc-cli`, covering the Mint/GNOME `gcalccmd` one-shot and interactive workflows while sharing the same expression/session engine and persisted custom functions;
 - native GTK expression undo/redo enabled explicitly through the GTK4 editable contract, retaining familiar Ctrl+Z/Ctrl+Shift+Z editing behaviour;
 - a first-class Linux unit-conversion picker with dimension/source/target selectors, live conversion, one-click swapping and persisted pair selection.

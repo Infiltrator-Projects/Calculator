@@ -1,8 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "session.hpp"
 
+#include <infiltratr/token.h>
+
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -226,6 +230,65 @@ std::optional<double> Session::variable(const std::string& name) const {
 }
 
 const Variables& Session::variables() const noexcept { return variables_; }
+
+std::string Session::variables_text() const {
+    std::vector<std::string> names;
+    names.reserve(variables_.size());
+    for (const auto& item : variables_) {
+        if (item.first != "_") names.push_back(item.first);
+    }
+    std::sort(names.begin(), names.end());
+
+    std::ostringstream out;
+    out << std::setprecision(std::numeric_limits<double>::max_digits10);
+    for (const auto& name : names) {
+        const auto it = variables_.find(name);
+        if (it == variables_.end() || !std::isfinite(it->second)) continue;
+        out << name << '=' << it->second << '\n';
+    }
+    return out.str();
+}
+
+bool Session::load_variables_text(std::string_view text) {
+    Variables loaded;
+    std::size_t begin = 0;
+    while (begin <= text.size()) {
+        const std::size_t newline = text.find('\n', begin);
+        const std::size_t end =
+            newline == std::string_view::npos ? text.size() : newline;
+        const std::string line = trim_copy(text.substr(begin, end - begin));
+        if (!line.empty()) {
+            const std::size_t equals = line.find('=');
+            if (equals == std::string::npos) return false;
+            const std::string name = trim_copy(
+                std::string_view(line).substr(0, equals));
+            const std::string value_text = trim_copy(
+                std::string_view(line).substr(equals + 1U));
+            if (!valid_identifier(name) || reserved_identifier(name) ||
+                name == "_" || value_text.empty()) {
+                return false;
+            }
+
+            const char* cursor = value_text.data();
+            double value = 0.0;
+            if (!infiltratr_parse_double_token(&cursor, true, &value) ||
+                cursor != value_text.data() + value_text.size() ||
+                !std::isfinite(value)) {
+                return false;
+            }
+            loaded[name] = value;
+        }
+        if (newline == std::string_view::npos) break;
+        begin = newline + 1U;
+    }
+
+    const auto last = variables_.find("_");
+    std::optional<double> last_value;
+    if (last != variables_.end()) last_value = last->second;
+    variables_ = std::move(loaded);
+    if (last_value) variables_["_"] = *last_value;
+    return true;
+}
 
 std::optional<FunctionDefinition> Session::function(
     const std::string& name) const {

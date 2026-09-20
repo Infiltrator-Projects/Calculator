@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4 — 2026-09-20
+
+- Persist user-defined variables under the Calculator XDG data directory with transactional validation and round-trip-safe binary64 text.
+- Restore Scientific angle units and Programmer radix, word width and signed-display state across Linux launches.
+- Add shared Session/Controller persistence contracts and regression tests instead of implementing semantic state in the GTK shell.
+- Close two further GNOME Calculator 41.1 replacement gaps discovered by reading its settings and MathVariables source.
+
 ## 0.2.3 — 2026-09-20
 
 - Pin replacement validation to Linux Mint 22.3's actual `gnome-calculator 1:41.1+mint1+wilma` baseline and upstream GNOME 41.1 source revision.

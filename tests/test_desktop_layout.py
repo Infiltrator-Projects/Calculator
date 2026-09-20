@@ -519,3 +519,7 @@ assert 'conversion_dimension' in linux
 assert 'conversion_from' in linux
 assert 'conversion_to' in linux
 assert 'Swap source and target units' in linux
+
+# Mint/GNOME-class state persistence includes calculator semantics, not only geometry.
+for needle in ('angle-unit', 'programmer-base', 'programmer-width', 'programmer-signed', 'load_user_variables', 'save_user_variables'):
+    assert needle in linux, f'Linux persistent calculator state missing: {needle}'

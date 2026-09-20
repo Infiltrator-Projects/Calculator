@@ -30,6 +30,7 @@ Calculator 0.2.0 completes the previously listed feature families:
 - Mint-compatible Linux keyboard accelerators for clear, scientific entry, Programmer bases and history navigation
 - unbounded default calculation history, while retaining an optional bounded session contract for embedded/test use
 - a first-class Linux conversion surface with persistent dimension/source/target selection and live conversion
+- persistent Linux user variables and calculator semantic state (angle unit plus Programmer radix/width/signed mode)
 
 These are implemented in the shared C++ core, exercised by deterministic tests and exposed through native Tools workbenches on all three release platforms. Graph rendering is platform-native while graph sampling remains shared.
 

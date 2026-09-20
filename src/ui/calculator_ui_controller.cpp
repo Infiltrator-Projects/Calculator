@@ -27,6 +27,22 @@ void Controller::set_mode(Mode mode) {
     }
 }
 
+void Controller::set_angle_unit(AngleUnit unit) {
+    state_.angle_unit = unit;
+    if (state_.mode == Mode::Scientific) set_status(scientific_status_text());
+}
+
+void Controller::set_programmer_context(
+    ProgrammerBase base, IntegerWidth width, bool signed_display) {
+    state_.programmer_base = base;
+    state_.programmer_width = width;
+    state_.programmer_signed = signed_display;
+    if (state_.mode == Mode::Programmer) {
+        set_status(programmer_status_text());
+        if (!state_.expression.empty()) calculate_programmer(false);
+    }
+}
+
 std::string Controller::history_text(std::size_t limit,
                                      std::string_view newline) const {
     return session_.history_text(limit, newline);
@@ -91,6 +107,14 @@ std::string Controller::function_definitions_text() const {
 
 bool Controller::load_function_definitions_text(std::string_view text) {
     return session_.load_function_definitions_text(text);
+}
+
+std::string Controller::variables_text() const {
+    return session_.variables_text();
+}
+
+bool Controller::load_variables_text(std::string_view text) {
+    return session_.load_variables_text(text);
 }
 
 std::vector<AdditionalResult> Controller::additional_results() const {

@@ -89,6 +89,10 @@ int main() {
 
     controller.set_mode(Mode::Scientific);
     CHECK(controller.state().status == "SCIENTIFIC · DEG");
+    controller.set_angle_unit(calculator::AngleUnit::Gradians);
+    CHECK(controller.state().angle_unit == calculator::AngleUnit::Gradians);
+    CHECK(controller.state().status == "SCIENTIFIC · GRAD");
+    controller.set_angle_unit(calculator::AngleUnit::Degrees);
     controller.set_expression("2+3*4");
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "14");
@@ -166,6 +170,12 @@ int main() {
     controller.set_display_preferences({});
 
     controller.set_mode(Mode::Programmer);
+    controller.set_programmer_context(
+        calculator::ProgrammerBase::Octal,
+        calculator::IntegerWidth::Bits16, true);
+    CHECK(controller.state().programmer_base == calculator::ProgrammerBase::Octal);
+    CHECK(controller.state().programmer_width == calculator::IntegerWidth::Bits16);
+    CHECK(controller.state().programmer_signed);
     controller.dispatch(Command::BaseBin);
     CHECK(!controller.command_enabled(Command::Digit2));
     CHECK(!controller.command_enabled(Command::Digit9));
@@ -195,6 +205,9 @@ int main() {
     auto backspace = controller.dispatch(Command::Backspace, 2);
     CHECK(controller.state().expression == "13");
     CHECK(backspace.cursor == 1);
+
+    CHECK(controller.load_variables_text("saved=42\n"));
+    CHECK(controller.variables_text().find("saved=42") != std::string::npos);
 
     controller.clear_history();
     CHECK(controller.history_text() == "No calculations yet.");

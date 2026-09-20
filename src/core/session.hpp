@@ -69,6 +69,8 @@ public:
     void set_variable(std::string name, double value);
     std::optional<double> variable(const std::string& name) const;
     const Variables& variables() const noexcept;
+    std::string variables_text() const;
+    bool load_variables_text(std::string_view text);
 
     std::optional<FunctionDefinition> function(const std::string& name) const;
     const Functions& functions() const noexcept;

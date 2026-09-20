@@ -88,6 +88,27 @@ int main(){
     if(restored_functions.function_definitions_text()!=before_bad_load)
         fail("failed function load should be transactional");
 
+    calculator::Session persisted_variables;
+    expect_value(persisted_variables.evaluate("alpha=0.1"),0.1,
+                 "persist variable alpha");
+    expect_value(persisted_variables.evaluate("zeta=1e100"),1e100,
+                 "persist variable zeta");
+    const std::string variable_text = persisted_variables.variables_text();
+    if(variable_text.find("alpha=")==std::string::npos ||
+       variable_text.find("zeta=")==std::string::npos ||
+       variable_text.find("_=")!=std::string::npos)
+        fail("variable persistence text wrong");
+    calculator::Session variable_restore;
+    if(!variable_restore.load_variables_text(variable_text))
+        fail("variable persistence load failed");
+    expect_value(variable_restore.evaluate("alpha*10"),1.0,
+                 "restored variable value");
+    const std::string before_bad_variables = variable_restore.variables_text();
+    if(variable_restore.load_variables_text("pi=3\n"))
+        fail("reserved persisted variable should be rejected");
+    if(variable_restore.variables_text()!=before_bad_variables)
+        fail("failed variable load should be transactional");
+
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");

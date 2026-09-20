@@ -1,3 +1,10 @@
+infiltrator-calculator (0.2.4) unstable; urgency=medium
+
+  * Persist user variables and semantic calculator settings on Linux.
+  * Restore angle unit and Programmer radix/width/signed state.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 20:12:00 +1000
+
 infiltrator-calculator (0.2.3) unstable; urgency=medium
 
   * Add a first-class persistent Linux unit-conversion picker.

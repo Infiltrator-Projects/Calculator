@@ -65,6 +65,9 @@ public:
 
     void set_expression(std::string expression);
     void set_mode(Mode mode);
+    void set_angle_unit(AngleUnit unit);
+    void set_programmer_context(
+        ProgrammerBase base, IntegerWidth width, bool signed_display);
     std::string history_text(
         std::size_t limit = 50,
         std::string_view newline = "\n") const;
@@ -80,6 +83,8 @@ public:
     bool toggle_programmer_bit(unsigned bit);
     std::string function_definitions_text() const;
     bool load_function_definitions_text(std::string_view text);
+    std::string variables_text() const;
+    bool load_variables_text(std::string_view text);
 
     const DisplayPreferences& display_preferences() const noexcept {
         return display_preferences_;

@@ -120,6 +120,41 @@ ThemeMode load_theme_mode() {
 }
 
 bool user_functions_loaded = false;
+bool user_variables_loaded = false;
+
+void load_user_variables() {
+    if (user_variables_loaded) return;
+    user_variables_loaded = true;
+    gchar* path = g_build_filename(
+        g_get_user_data_dir(), "infiltrator-calc", "variables", nullptr);
+    gchar* contents = nullptr;
+    gsize length = 0;
+    if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
+        if (!controller.load_variables_text(
+                std::string_view(contents, length))) {
+            g_printerr(
+                "Calculator ignored malformed variables data at %s\n", path);
+        }
+    }
+    g_free(contents);
+    g_free(path);
+}
+
+void save_user_variables() {
+    gchar* directory = g_build_filename(
+        g_get_user_data_dir(), "infiltrator-calc", nullptr);
+    if (g_mkdir_with_parents(directory, 0700) == 0) {
+        gchar* path = g_build_filename(directory, "variables", nullptr);
+        const std::string text = controller.variables_text();
+        if (!g_file_set_contents(
+                path, text.data(), static_cast<gssize>(text.size()), nullptr)) {
+            g_printerr(
+                "Calculator could not persist variables to %s\n", path);
+        }
+        g_free(path);
+    }
+    g_free(directory);
+}
 
 void load_user_functions() {
     if (user_functions_loaded) return;
@@ -253,6 +288,12 @@ struct DesktopState {
     int width = calculator::ui::kDesktopMetrics.default_width;
     int height = calculator::ui::desktop_preferred_height(Mode::Standard);
     Mode selected_mode = Mode::Standard;
+    calculator::AngleUnit angle_unit = calculator::AngleUnit::Degrees;
+    calculator::ProgrammerBase programmer_base =
+        calculator::ProgrammerBase::Decimal;
+    calculator::IntegerWidth programmer_width =
+        calculator::IntegerWidth::Bits64;
+    bool programmer_signed = false;
 };
 
 DesktopState load_desktop_state() {
@@ -277,6 +318,35 @@ DesktopState load_desktop_state() {
                 mode <= static_cast<gint>(Mode::Programmer)) {
                 state.selected_mode = static_cast<Mode>(mode);
             }
+        }
+        if (g_key_file_has_key(key, "Calculator", "angle-unit", nullptr)) {
+            const gint angle = g_key_file_get_integer(
+                key, "Calculator", "angle-unit", nullptr);
+            if (angle >= static_cast<gint>(calculator::AngleUnit::Degrees) &&
+                angle <= static_cast<gint>(calculator::AngleUnit::Gradians)) {
+                state.angle_unit = static_cast<calculator::AngleUnit>(angle);
+            }
+        }
+        if (g_key_file_has_key(key, "Calculator", "programmer-base", nullptr)) {
+            const gint base = g_key_file_get_integer(
+                key, "Calculator", "programmer-base", nullptr);
+            if (base >= static_cast<gint>(calculator::ProgrammerBase::Binary) &&
+                base <= static_cast<gint>(calculator::ProgrammerBase::Hexadecimal)) {
+                state.programmer_base =
+                    static_cast<calculator::ProgrammerBase>(base);
+            }
+        }
+        if (g_key_file_has_key(key, "Calculator", "programmer-width", nullptr)) {
+            const gint width = g_key_file_get_integer(
+                key, "Calculator", "programmer-width", nullptr);
+            if (width == 8 || width == 16 || width == 32 || width == 64) {
+                state.programmer_width =
+                    static_cast<calculator::IntegerWidth>(width);
+            }
+        }
+        if (g_key_file_has_key(key, "Calculator", "programmer-signed", nullptr)) {
+            state.programmer_signed = g_key_file_get_boolean(
+                key, "Calculator", "programmer-signed", nullptr);
         }
     }
     g_key_file_unref(key);
@@ -308,6 +378,18 @@ void save_desktop_state(GtkWidget* window) {
     g_key_file_set_integer(
         key, "Window", "mode",
         static_cast<gint>(controller.state().mode));
+    g_key_file_set_integer(
+        key, "Calculator", "angle-unit",
+        static_cast<gint>(controller.state().angle_unit));
+    g_key_file_set_integer(
+        key, "Calculator", "programmer-base",
+        static_cast<gint>(controller.state().programmer_base));
+    g_key_file_set_integer(
+        key, "Calculator", "programmer-width",
+        static_cast<gint>(controller.state().programmer_width));
+    g_key_file_set_boolean(
+        key, "Calculator", "programmer-signed",
+        controller.state().programmer_signed);
 
     gsize length = 0;
     gchar* data = g_key_file_to_data(key, &length, nullptr);
@@ -323,6 +405,7 @@ void save_desktop_state(GtkWidget* window) {
 
 gboolean on_main_close_request(GtkWindow* window, gpointer) {
     save_desktop_state(GTK_WIDGET(window));
+    save_user_variables();
     save_user_functions();
     save_display_preferences();
     return FALSE;
@@ -1343,6 +1426,7 @@ void on_activate(GtkEntry*) {
         Command::Equals,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
+    save_user_variables();
     save_user_functions();
 }
 
@@ -1358,7 +1442,8 @@ void on_button_clicked(GtkButton*, gpointer data) {
         spec->command,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
-    if (spec->command == Command::Equals) save_user_functions();
+    if (spec->command == Command::Equals) save_user_variables();
+    save_user_functions();
     gtk_widget_grab_focus(expression_entry);
 }
 
@@ -1759,9 +1844,15 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
+    load_user_variables();
     load_user_functions();
     load_display_preferences();
     const DesktopState desktop_state = load_desktop_state();
+    controller.set_angle_unit(desktop_state.angle_unit);
+    controller.set_programmer_context(
+        desktop_state.programmer_base,
+        desktop_state.programmer_width,
+        desktop_state.programmer_signed);
     controller.set_mode(desktop_state.selected_mode);
 
     if (!font_family_available(ui_font()) ||
@@ -1966,6 +2057,7 @@ int main(int argc, char** argv) {
     const int status_code =
         g_application_run(G_APPLICATION(app), argc, argv);
 
+    save_user_variables();
     save_user_functions();
     if (css_provider) g_object_unref(css_provider);
     g_object_unref(app);

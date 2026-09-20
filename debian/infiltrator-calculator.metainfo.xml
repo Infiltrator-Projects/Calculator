@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.4" date="2026-09-20">
+      <description>
+        <p>Persist user variables, Scientific angle units and Programmer radix, width and signed-display state to strengthen Linux Mint/GNOME Calculator replacement parity.</p>
+      </description>
+    </release>
     <release version="0.2.3" date="2026-09-20">
       <description>
         <p>Add a first-class persistent Linux unit converter and pin replacement validation to the exact Linux Mint 22.3 GNOME Calculator 41.1 baseline.</p>
