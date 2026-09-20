@@ -28,10 +28,67 @@ constexpr std::array<std::string_view, 24> kBuiltinFunctions{{
 }};
 
 std::string normalize_expression_spelling(std::string_view input) {
+    const auto subscript_digit = [](std::string_view remaining,
+                                    int& digit,
+                                    std::size_t& bytes) {
+        static constexpr std::array<std::pair<std::string_view, int>, 10> map{{
+            {"₀", 0}, {"₁", 1}, {"₂", 2}, {"₃", 3}, {"₄", 4},
+            {"₅", 5}, {"₆", 6}, {"₇", 7}, {"₈", 8}, {"₉", 9}
+        }};
+        for (const auto& [symbol, value] : map) {
+            if (remaining.substr(0, symbol.size()) == symbol) {
+                digit = value;
+                bytes = symbol.size();
+                return true;
+            }
+        }
+        return false;
+    };
+
     std::string normalized;
     normalized.reserve(input.size() + 8U);
     for (std::size_t i = 0; i < input.size();) {
         const auto remaining = input.substr(i);
+        if (remaining.substr(0, std::string_view("log").size()) == "log") {
+            std::size_t cursor = 3U;
+            std::string base;
+            int digit = 0;
+            std::size_t bytes = 0U;
+            while (cursor < remaining.size() &&
+                   subscript_digit(remaining.substr(cursor), digit, bytes)) {
+                base.push_back(static_cast<char>('0' + digit));
+                cursor += bytes;
+            }
+            if (!base.empty()) {
+                normalized += "log";
+                normalized += base;
+                i += cursor;
+                continue;
+            }
+        }
+
+        int root_digit = 0;
+        std::size_t root_bytes = 0U;
+        if (subscript_digit(remaining, root_digit, root_bytes)) {
+            std::size_t cursor = root_bytes;
+            std::string degree(1, static_cast<char>('0' + root_digit));
+            int next_digit = 0;
+            std::size_t next_bytes = 0U;
+            while (cursor < remaining.size() &&
+                   subscript_digit(
+                       remaining.substr(cursor), next_digit, next_bytes)) {
+                degree.push_back(static_cast<char>('0' + next_digit));
+                cursor += next_bytes;
+            }
+            if (remaining.substr(cursor, std::string_view("√").size()) == "√") {
+                normalized += "root";
+                normalized += degree;
+                normalized.push_back(' ');
+                i += cursor + std::string_view("√").size();
+                continue;
+            }
+        }
+
         if (remaining.substr(0, std::string_view("×").size()) == "×") {
             normalized.push_back('*');
             i += std::string_view("×").size();
@@ -402,6 +459,56 @@ private:
     }
 
     double apply_function(const std::string& name, double x) {
+        const auto positive_integer_suffix =
+            [](std::string_view text, std::string_view prefix,
+               unsigned& value) {
+                if (!text.starts_with(prefix) ||
+                    text.size() == prefix.size()) return false;
+                unsigned parsed = 0U;
+                for (std::size_t i = prefix.size(); i < text.size(); ++i) {
+                    const char ch = text[i];
+                    if (ch < '0' || ch > '9') return false;
+                    if (parsed > 1000000U) return false;
+                    parsed = parsed * 10U +
+                             static_cast<unsigned>(ch - '0');
+                }
+                value = parsed;
+                return true;
+            };
+
+        unsigned dynamic_parameter = 0U;
+        if (positive_integer_suffix(name, "log", dynamic_parameter)) {
+            if (dynamic_parameter <= 1U || x <= 0.0) {
+                error_ = "function domain error";
+                return 0.0;
+            }
+            const double value =
+                std::log(x) / std::log(static_cast<double>(dynamic_parameter));
+            if (!std::isfinite(value)) {
+                error_ = "function domain error";
+                return 0.0;
+            }
+            return value;
+        }
+        if (positive_integer_suffix(name, "root", dynamic_parameter)) {
+            if (dynamic_parameter == 0U) {
+                error_ = "function domain error";
+                return 0.0;
+            }
+            if (x < 0.0 && (dynamic_parameter % 2U) == 0U) {
+                error_ = "function domain error";
+                return 0.0;
+            }
+            const double magnitude = std::pow(
+                std::fabs(x), 1.0 / static_cast<double>(dynamic_parameter));
+            const double value = x < 0.0 ? -magnitude : magnitude;
+            if (!std::isfinite(value)) {
+                error_ = "function domain error";
+                return 0.0;
+            }
+            return value;
+        }
+
         if (name == "frac") return x - std::trunc(x);
         if (name == "int") return std::trunc(x);
         if (name == "round") return std::round(x);
@@ -663,8 +770,19 @@ bool is_builtin_function_name(std::string_view name) noexcept {
     for (const auto function_name : kBuiltinFunctions) {
         if (function_name == name) return true;
     }
-    return name == "exp2" || name == "exp10" ||
-           name == "floor" || name == "ceil";
+    if (name == "exp2" || name == "exp10" ||
+        name == "floor" || name == "ceil") return true;
+
+    const auto numbered = [name](std::string_view prefix) {
+        if (!name.starts_with(prefix) || name.size() == prefix.size()) {
+            return false;
+        }
+        for (std::size_t i = prefix.size(); i < name.size(); ++i) {
+            if (name[i] < '0' || name[i] > '9') return false;
+        }
+        return true;
+    };
+    return numbered("log") || numbered("root");
 }
 
 Result apply_real_function(RealFunction function, double value,

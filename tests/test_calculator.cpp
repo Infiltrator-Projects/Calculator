@@ -228,6 +228,13 @@ int main() {
     expect_value("sqrt 49", 7.0);
     expect_value("sin⁻¹ 0.5", 3.14159265358979323846 / 6.0);
     expect_value("sinh⁻¹ 0", 0.0);
+    expect_value("log₂ 32", 5.0);
+    expect_value("log16 256", 2.0);
+    expect_value("₃√27", 3.0);
+    expect_value("root5 32", 2.0);
+    expect_value("₃√−8", -2.0);
+    expect_error("root2(-1)");
+    expect_error("log1 10");
     expect_error("|1+2");
     expect_error("abs⁻¹ 2");
 
