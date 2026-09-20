@@ -1627,6 +1627,7 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(calculator_column), display);
 
     expression_entry = gtk_entry_new();
+    gtk_editable_set_enable_undo(GTK_EDITABLE(expression_entry), TRUE);
     gtk_entry_set_placeholder_text(GTK_ENTRY(expression_entry), "Expression");
     gtk_widget_add_css_class(expression_entry, "expression");
     gtk_entry_set_alignment(GTK_ENTRY(expression_entry), 1);
