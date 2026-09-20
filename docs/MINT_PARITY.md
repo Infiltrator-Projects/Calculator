@@ -38,12 +38,34 @@ Additional Results presents decimal, scientific and engineering representations 
 
 ## Remaining parity work
 
-The following GNOME Calculator 41.1 capabilities remain meaningful comparison targets rather than being falsely claimed complete:
+There is now one required GNOME Calculator 41.1 replacement target:
 
-- live network-backed currency conversion with cached/offline behaviour and an explicit privacy/off switch;
-- an integrated arbitrary-precision real/complex Scientific value domain comparable to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools;
+- an integrated arbitrary-precision real/complex Scientific value domain comparable in mathematical capability to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools.
 
-These items are treated as real engineering work. They are not considered complete merely because another Calculator tool can approximate the same end result.
+Currency conversion is deliberately **not** part of the replacement target. Live network-backed currency rates add privacy, freshness and service-dependency concerns that are outside Calculator's required system-calculator role. The absence of currency conversion must therefore not be counted as a Mint-parity defect.
+
+### Required arbitrary-precision Scientific work
+
+The remaining target is not satisfied by exposing separate Exact Decimal, Arbitrary Precision or Complex tools. Scientific mode itself must gain a first-class high-precision numeric value domain.
+
+The implementation should:
+
+- keep the expression/session/controller architecture shared across Linux, Windows and iPhone;
+- support arbitrary-precision real values directly in ordinary Scientific expressions;
+- support complex values directly in the same Scientific expression domain where mathematically meaningful;
+- cover arithmetic, powers, roots, logarithmic/exponential functions, trigonometric and inverse/hyperbolic functions without silently reducing intermediate values to binary64;
+- preserve exact/fixed-width Programmer semantics as a separate integer domain;
+- retain Standard mode's deliberate desktop-calculator interaction semantics unless a precision improvement can be introduced without changing those semantics;
+- use a proven arbitrary-precision mathematical implementation for transcendental and complex behaviour rather than attempting an unvalidated hand-written replacement;
+- keep platform shells free of duplicated numerical logic;
+- add independent high-precision oracle/regression coverage across huge, tiny, complex and branch/domain boundary cases;
+- document precision selection, rounding behaviour, error/domain handling and conversion between real/complex/high-precision and display representations.
+
+The preferred engineering direction is a contained MPFR/MPC-backed value layer (or an equivalently rigorous implementation) behind Calculator's shared C++ core. Any new dependency must remain isolated from the native UI shells and justified by correctness rather than convenience.
+
+### Completion criteria
+
+This final Mint replacement item is complete only when ordinary Scientific expressions can perform arbitrary-precision real and complex calculations directly, the shared controller/session preserves those values without binary64 truncation, Linux/Windows/iPhone expose the same semantics, and release CI proves the numerical boundary behaviour. Separate tool access does not satisfy this criterion.
 
 ## Validation rule
 

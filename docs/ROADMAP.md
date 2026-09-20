@@ -34,8 +34,30 @@ Calculator 0.2.0 completes the previously listed feature families:
 
 These are implemented in the shared C++ core, exercised by deterministic tests and exposed through native Tools workbenches on all three release platforms. Graph rendering is platform-native while graph sampling remains shared.
 
+## Final Mint replacement target
+
+The only remaining required Linux Mint / GNOME Calculator 41.1 parity item is an **integrated arbitrary-precision real/complex Scientific value domain**.
+
+This is a core numeric-architecture change, not another Tools entry. Scientific expressions must be able to carry high-precision real and complex values through arithmetic and transcendental operations without reducing intermediate values to binary64. The existing Exact Decimal, Arbitrary Precision and Complex tools remain useful specialist surfaces, but they do not complete this requirement by themselves.
+
+The preferred direction is a rigorously contained MPFR/MPC-backed value layer, or an equivalently proven implementation, behind the shared C++ expression/session/controller architecture. Native GTK4, Win32 and SwiftUI shells must continue to render shared results rather than owning mathematical semantics.
+
+Completion requires:
+
+- direct high-precision real and complex Scientific expression evaluation;
+- high-precision arithmetic, powers, roots, logarithmic/exponential, trigonometric, inverse and hyperbolic operations where defined;
+- explicit precision, rounding, domain/error and real/complex promotion rules;
+- no silent binary64 truncation in the Scientific calculation path;
+- preserved fixed-width Programmer semantics and deliberate Standard interaction semantics;
+- cross-platform parity through the shared controller/session;
+- independent numerical regression/oracle evidence for huge, tiny, complex and branch/domain boundary cases;
+- maintained architecture, numerics and validation documentation matching the released implementation.
+
+Live currency conversion is an explicit non-goal and must not block Mint replacement completeness.
+
 ## Continuing priorities
 
+- complete and validate the integrated arbitrary-precision real/complex Scientific value domain
 - strengthen numerical reference evidence and cross-platform boundary testing as mathematical features evolve
 - improve accessibility and native interaction quality without weakening shared calculator semantics
 - expand individual tool catalogues only when their units, numeric domain and validation rules are explicit
