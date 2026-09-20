@@ -288,12 +288,12 @@ struct DesktopState {
     int width = calculator::ui::kDesktopMetrics.default_width;
     int height = calculator::ui::desktop_preferred_height(Mode::Standard);
     Mode selected_mode = Mode::Standard;
-    calculator::AngleUnit angle_unit = calculator::AngleUnit::Degrees;
-    calculator::ProgrammerBase programmer_base =
-        calculator::ProgrammerBase::Decimal;
-    calculator::IntegerWidth programmer_width =
-        calculator::IntegerWidth::Bits64;
-    bool programmer_signed = false;
+    int angle_code = static_cast<int>(calculator::AngleUnit::Degrees);
+    int programmer_base_code =
+        static_cast<int>(calculator::ProgrammerBase::Decimal);
+    int programmer_width_code =
+        static_cast<int>(calculator::IntegerWidth::Bits64);
+    bool programmer_signed_flag = false;
 };
 
 DesktopState load_desktop_state() {
@@ -324,7 +324,7 @@ DesktopState load_desktop_state() {
                 key, "Calculator", "angle-unit", nullptr);
             if (angle >= static_cast<gint>(calculator::AngleUnit::Degrees) &&
                 angle <= static_cast<gint>(calculator::AngleUnit::Gradians)) {
-                state.angle_unit = static_cast<calculator::AngleUnit>(angle);
+                state.angle_code = angle;
             }
         }
         if (g_key_file_has_key(key, "Calculator", "programmer-base", nullptr)) {
@@ -332,20 +332,18 @@ DesktopState load_desktop_state() {
                 key, "Calculator", "programmer-base", nullptr);
             if (base >= static_cast<gint>(calculator::ProgrammerBase::Binary) &&
                 base <= static_cast<gint>(calculator::ProgrammerBase::Hexadecimal)) {
-                state.programmer_base =
-                    static_cast<calculator::ProgrammerBase>(base);
+                state.programmer_base_code = base;
             }
         }
         if (g_key_file_has_key(key, "Calculator", "programmer-width", nullptr)) {
             const gint width = g_key_file_get_integer(
                 key, "Calculator", "programmer-width", nullptr);
             if (width == 8 || width == 16 || width == 32 || width == 64) {
-                state.programmer_width =
-                    static_cast<calculator::IntegerWidth>(width);
+                state.programmer_width_code = width;
             }
         }
         if (g_key_file_has_key(key, "Calculator", "programmer-signed", nullptr)) {
-            state.programmer_signed = g_key_file_get_boolean(
+            state.programmer_signed_flag = g_key_file_get_boolean(
                 key, "Calculator", "programmer-signed", nullptr);
         }
     }
@@ -1848,11 +1846,14 @@ void activate(GtkApplication* app, gpointer) {
     load_user_functions();
     load_display_preferences();
     const DesktopState desktop_state = load_desktop_state();
-    controller.set_angle_unit(desktop_state.angle_unit);
+    controller.set_angle_unit(
+        static_cast<calculator::AngleUnit>(desktop_state.angle_code));
     controller.set_programmer_context(
-        desktop_state.programmer_base,
-        desktop_state.programmer_width,
-        desktop_state.programmer_signed);
+        static_cast<calculator::ProgrammerBase>(
+            desktop_state.programmer_base_code),
+        static_cast<calculator::IntegerWidth>(
+            desktop_state.programmer_width_code),
+        desktop_state.programmer_signed_flag);
     controller.set_mode(desktop_state.selected_mode);
 
     if (!font_family_available(ui_font()) ||
