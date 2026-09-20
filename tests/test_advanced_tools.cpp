@@ -21,13 +21,14 @@ int main(){
     check(contains(evaluate(AdvancedTool::UnitConversion,"32 F C"),"0 C"),"temperature conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 pc ly"),"3.261"),"parsec light-year conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 st lb"),"14"),"stone pounds conversion");
-    check(contains(evaluate(AdvancedTool::UnitConversion,"491.67 R C"),"0 C"),"rankine conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"491.67 R K"),"273.15 K"),"rankine conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 GHz MHz"),"1000 MHz"),"frequency conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 week day"),"7 day"),"duration conversion");
     check(contains(evaluate(AdvancedTool::Network,"subnet 192.168.10.42/24"),"Network  192.168.10.0"),"subnet network");
     check(contains(evaluate(AdvancedTool::Network,"cidr 254"),"/24"),"cidr sizing");
     check(contains(evaluate(AdvancedTool::Storage,"raid 5 6 4 TiB"),"20"),"raid capacity");
     check(contains(evaluate(AdvancedTool::Storage,"clusters 4097 4096"),"Slack bytes  4095"),"cluster slack");
+    check(contains(evaluate(AdvancedTool::Storage,"convert 1 YiB ZiB"),"1024 ZiB"),"yobibyte storage conversion");
     check(contains(evaluate(AdvancedTool::DateTime,"diff 2026-09-20 2026-09-21"),"Days  1"),"date diff");
     check(contains(evaluate(AdvancedTool::DateTime,"add 2024-02-28 1"),"2024-02-29"),"date leap add");
     check(contains(evaluate(AdvancedTool::Constants,"c0"),"2.99792458"),"constant c");

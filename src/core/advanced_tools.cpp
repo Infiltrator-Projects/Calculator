@@ -415,15 +415,17 @@ ToolResult network_tool(std::string_view input) {
 }
 
 struct StorageUnit { std::string_view name; long double bytes; };
-constexpr std::array<StorageUnit, 27> kStorageUnits{{
+constexpr std::array<StorageUnit, 35> kStorageUnits{{
     {"bit",0.125L},{"nibble",0.5L},{"B",1.0L},
     {"kbit",125.0L},{"kB",1000.0L},{"Kibit",128.0L},{"KiB",1024.0L},
     {"Mbit",125000.0L},{"MB",1000000.0L},{"Mibit",131072.0L},{"MiB",1048576.0L},
     {"Gbit",125000000.0L},{"GB",1000000000.0L},{"Gibit",134217728.0L},{"GiB",1073741824.0L},
     {"Tbit",125000000000.0L},{"TB",1000000000000.0L},{"Tibit",137438953472.0L},{"TiB",1099511627776.0L},
     {"Pbit",125000000000000.0L},{"PB",1000000000000000.0L},{"Pibit",140737488355328.0L},{"PiB",1125899906842624.0L},
-    {"EB",1000000000000000000.0L},{"EiB",1152921504606846976.0L},
-    {"ZB",1000000000000000000000.0L},{"ZiB",1180591620717411303424.0L}
+    {"Ebit",125000000000000000.0L},{"EB",1000000000000000000.0L},{"Eibit",144115188075855872.0L},{"EiB",1152921504606846976.0L},
+    {"Zbit",125000000000000000000.0L},{"ZB",1000000000000000000000.0L},{"Zibit",147573952589676412928.0L},{"ZiB",1180591620717411303424.0L},
+    {"Ybit",125000000000000000000000.0L},{"YB",1000000000000000000000000.0L},
+    {"Yibit",151115727451828646838272.0L},{"YiB",1208925819614629174706176.0L}
 }};
 const StorageUnit* storage_unit(std::string_view name) {
     for (const auto& unit : kStorageUnits) if (unit.name == name) return &unit;
@@ -530,7 +532,11 @@ ToolResult datetime_tool(std::string_view input) {
         int y1,m1,d1,y2,m2,d2;
         if(f.size()!=3U||!parse_date(f[1],y1,m1,d1)||!parse_date(f[2],y2,m2,d2))
             return failure("Usage: diff YYYY-MM-DD YYYY-MM-DD");
-        const auto delta=days_from_civil(y2,m2,d2)-days_from_civil(y1,m1,d1);
+        const auto delta =
+            days_from_civil(
+                y2, static_cast<unsigned>(m2), static_cast<unsigned>(d2)) -
+            days_from_civil(
+                y1, static_cast<unsigned>(m1), static_cast<unsigned>(d1));
         const auto absdays=delta<0?-delta:delta;
         return success("Days  "+std::to_string(delta)+
                        "\nAbsolute  "+std::to_string(absdays)+
@@ -878,7 +884,9 @@ public:
     bool to_u32(std::uint32_t& out) const {
         if(negative()||limbs_.size()>2U)return false;
         std::uint64_t v=0;for(std::size_t i=limbs_.size();i>0;--i)v=v*kBase+limbs_[i-1];
-        if(v>std::numeric_limits<std::uint32_t>::max())return false;out=static_cast<std::uint32_t>(v);return true;
+        if (v > std::numeric_limits<std::uint32_t>::max()) return false;
+        out = static_cast<std::uint32_t>(v);
+        return true;
     }
     friend BigInt operator+(const BigInt&a,const BigInt&b){
         if(a.negative_==b.negative_){BigInt r=add_abs(a,b);r.negative_=a.negative_;return r;}

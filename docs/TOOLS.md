@@ -39,7 +39,7 @@ Example: `subnet 192.168.10.42/24`.
 
 ## Storage / filesystem
 
-- `convert value FROM TO` for bits/nibbles, decimal B through ZB and binary KiB through ZiB
+- `convert value FROM TO` for bits/nibbles, decimal B through YB and binary KiB through YiB
 - `raid LEVEL disks size-per-disk unit` for RAID 0/1/5/6/10
 - `clusters file-bytes cluster-bytes` for allocation and slack
 
