@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.1.40  
+**Current source version:** 0.1.41  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.10  
 **Design contract:** shared Design v1  
@@ -46,7 +46,7 @@ use.
 
 ## Appearance
 
-Calculator supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System detects the host light/dark preference and resolves it to the exact Common Day or Night palette; Day is the white Infiltrator palette and Night is the MB graphite/black palette with the canonical blue accent. Platform code owns only theme detection, persistence and native rendering.
+Calculator supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System detects the host light/dark preference and resolves it to the exact Common Day or Night palette; Day is the white Infiltrator palette and Night is the MB graphite/black palette with the canonical blue accent. Platform code owns only theme detection, persistence and native rendering. Calculator consumes Common 1.19.10's semantic heading, summary, kicker, detail/note, status-border, focus/hover and warning roles where those meanings apply instead of collapsing the richer design contract into a few generic colours.
 
 ## Current capabilities
 
@@ -58,7 +58,7 @@ Calculator has three explicitly switchable modes presented as a visible mode str
 
 The calculator also provides reusable variables, bounded structured calculation history with exact Programmer-mode context and recall, explicit MC/MR/MS/M+/M− memory controls and a shared calculation-session layer above the parser. Scientific expressions can assign reusable variables such as `x=42`; the built-in constants `pi` and `e` are reserved and cannot be overwritten. Standard mode remains deliberately confined to immediate-calculator grammar rather than silently falling through to Scientific parsing.
 
-Controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Features are considered complete only when implementation, tests and documented behaviour agree.
+Controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Result text is selectable on Linux, Windows and iPhone, keyboard focus is visibly indicated on desktop controls, and native accessibility semantics remain attached to platform controls. Features are considered complete only when implementation, tests and documented behaviour agree.
 
 ## Architecture summary
 
@@ -115,7 +115,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
+On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. MPFR is optional for ordinary builds; release CI enables the dedicated high-precision numerical oracle with `-DCALCULATOR_ENABLE_MPFR_ORACLE_TESTS=ON` and `libmpfr-dev`. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
 
 ## Project structure
 

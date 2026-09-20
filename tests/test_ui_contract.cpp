@@ -63,8 +63,16 @@ int main() {
     const auto& system_night = resolved_palette(ThemeMode::System, true);
     CHECK(night.background_rgb == 0x050608);
     CHECK(night.panel_rgb == 0x101318);
+    CHECK(night.titlebar_rgb == 0x202125);
+    CHECK(night.heading_rgb == 0xE7EBEE);
+    CHECK(night.status_border_rgb == 0x3B4147);
+    CHECK(night.accent_hover_rgb == 0x25B8F0);
     CHECK(day.background_rgb == 0xFFFFFF);
     CHECK(day.panel_rgb == 0xFFFFFF);
+    CHECK(day.titlebar_rgb == 0xECEFF2);
+    CHECK(day.heading_rgb == 0x111418);
+    CHECK(day.status_border_rgb == 0xC7CDD3);
+    CHECK(day.accent_hover_rgb == 0x25B8F0);
     CHECK(system_night.background_rgb == night.background_rgb);
     CHECK(theme_mode_name(ThemeMode::System) == "System");
     CHECK(theme_mode_name(ThemeMode::Day) == "Day");

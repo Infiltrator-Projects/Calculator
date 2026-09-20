@@ -4,8 +4,19 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 ## Unreleased
 
-- Advance the exact shared foundation from Common 1.19.8 to released Common 1.19.10 at `33e69c0a462b56d388881d89c4eb49f72fa0b0fe`, retaining the public Common-only boundary and gaining the complete current semantic appearance contract.
+No unreleased changes.
+
+## 0.1.41 — 2026-09-20
+
+- Release the exact Common 1.19.10 dependency already reviewed on main and consume its expanded semantic appearance roles rather than flattening them back to older generic colours.
+- Use Common heading, summary, kicker, detail/note, status-border, accent-hover, selected-summary and warning roles where they match Calculator semantics on GTK, Win32 and SwiftUI.
+- Use Common's explicit titlebar, heading and status-border roles for native Windows non-client rendering.
+- Make the Windows result field read-only/selectable so copy workflows now match Linux and iPhone without introducing a second result model.
+- Replace the native Windows dotted focus rectangle with a DPI-aware two-pixel semantic accent focus ring and add matching GTK focus treatment.
+- Strengthen iPhone calculator-key accessibility with explicit labels/selection state while preserving native SwiftUI controls.
+- Add an opt-in MPFR 256-bit CI oracle and enable it in the Linux release build to compare transcendental Calculator results against an independent high-precision reference.
 - Standardise the Linux application artwork on the non-automotive Infiltrator family: graphite tile and canonical `#00ADEF` linework instead of the older lighter cyan.
+- Extend Common/design and cross-platform regressions so future releases cannot silently drop the 1.19.10 semantic palette or the new copy/focus contracts.
 
 ## 0.1.40 — 2026-09-20
 

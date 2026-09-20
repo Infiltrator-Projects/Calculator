@@ -173,6 +173,30 @@ for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
         assert needle in source, f"{name} theme support missing: {needle}"
 
 for needle in (
+    "heading_rgb",
+    "summary_rgb",
+    "status_border_rgb",
+    "accent_hover_rgb",
+    "warning_muted_rgb",
+    "warning_border_rgb",
+    "outline:2px solid",
+):
+    assert needle in linux, f"Linux Common 1.19.10 semantic role missing: {needle}"
+
+for needle in (
+    "titlebar_rgb",
+    "heading_rgb",
+    "status_border_rgb",
+    "accent_hover_rgb",
+    "selected_summary_rgb",
+    "warning_muted_rgb",
+    "warning_border_rgb",
+    "ES_READONLY",
+    "control == g_result",
+):
+    assert needle in windows, f"Windows Common/copy semantic role missing: {needle}"
+
+for needle in (
     "ThemePreference",
     "case system",
     "case day",
@@ -217,6 +241,33 @@ for needle in (
     "content_padding",
 ):
     assert needle in ios_bridge, f"iPhone Common theme bridge missing: {needle}"
+
+for needle in (
+    "titlebar_rgb",
+    "heading_rgb",
+    "summary_rgb",
+    "status_border_rgb",
+    "accent_hover_rgb",
+    "selected_summary_rgb",
+    "warning_muted_rgb",
+    "warning_border_rgb",
+):
+    assert needle in ios_bridge, f"iPhone Common 1.19.10 palette bridge missing: {needle}"
+
+for needle in (
+    "palette.heading",
+    "palette.summary",
+    "palette.kicker",
+    "palette.detailLabel",
+    "palette.note",
+    "palette.statusBorder",
+    "palette.accentHover",
+    "palette.selectedSummary",
+    "palette.warningMuted",
+    "palette.warningBorder",
+    ".accessibilityLabel(title)",
+):
+    assert needle in ios, f"iPhone Common/accessibility semantic usage missing: {needle}"
 
 for needle in (
     "../src/ui/calculator_ui_controller.cpp",

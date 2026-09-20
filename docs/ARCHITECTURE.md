@@ -151,3 +151,10 @@ Common is a build/link dependency only. Calculator adds it with `EXCLUDE_FROM_AL
 History is a bounded domain model rather than a platform-owned text log. Each entry records its Calculator mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, fixed width and signed-display context so recall is deterministic even for values that cannot be represented exactly by binary64.
 
 The shared Controller exposes newest-first history access and recall. Platform shells render and select those entries but do not reconstruct mode state or reinterpret history themselves. Wide desktop history docking remains a non-interactive summary; explicit recall is handled by the dedicated history surface.
+
+
+## Common 1.19.10 semantic presentation boundary
+
+Calculator treats Common's semantic design palette as data, not as a product-specific widget implementation. Native shells resolve the same Common Day/Night structure and map only semantically relevant roles: headings/results, summaries/input text, kicker/detail/note text, status borders, selected summaries, warning states and focus/hover accents. Connection-specific roles remain unused because Calculator has no connection concept; consuming every field mechanically would weaken rather than strengthen the ownership model.
+
+Windows additionally consumes Common's titlebar and status-border roles for DWM non-client rendering. GTK and Win32 expose keyboard-visible focus using the shared accent-hover role, while SwiftUI keeps native focus/accessibility behaviour and receives explicit key labels/selection state.

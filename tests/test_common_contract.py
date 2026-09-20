@@ -55,6 +55,28 @@ missing = sorted(
 )
 assert not missing, f"Calculator calls APIs absent from Common public headers: {missing}"
 
+design_header = (COMMON / "include" / "infiltratr" / "design.h").read_text(
+    encoding="utf-8"
+)
+for field in (
+    "titlebar_rgb",
+    "heading_rgb",
+    "summary_rgb",
+    "kicker_rgb",
+    "detail_label_rgb",
+    "note_rgb",
+    "status_border_rgb",
+    "accent_foreground_rgb",
+    "accent_hover_rgb",
+    "selected_summary_rgb",
+    "warning_muted_rgb",
+    "warning_border_rgb",
+    "success_border_rgb",
+):
+    assert field in design_header, (
+        f"Common 1.19.10 semantic palette field missing from public ABI: {field}"
+    )
+
 # Calculator must consume Common through its published surface only. Common
 # 1.19.10 deliberately consolidated several internal helpers; importing those
 # private headers would couple Calculator to implementation detail rather than
@@ -116,6 +138,26 @@ for key in (
 design_contract = json.loads(
     (COMMON / "design" / "infiltrator-design-v1.json").read_text(encoding="utf-8")
 )
+for palette_name in ("day", "night"):
+    semantic_palette = design_contract["theme"]["palettes"][palette_name]
+    for role in (
+        "titlebar",
+        "heading",
+        "summary",
+        "kicker",
+        "detail_label",
+        "note",
+        "status_border",
+        "accent_hover",
+        "selected_summary",
+        "warning_muted",
+        "warning_border",
+        "success_border",
+    ):
+        assert role in semantic_palette, (
+            f"Common 1.19.10 {palette_name} palette missing semantic role: {role}"
+        )
+
 canonical_fonts = design_contract["typography"]["font_files"]
 ios_project_text = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
 ios_typography_text = (

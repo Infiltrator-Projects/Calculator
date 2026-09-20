@@ -18,6 +18,7 @@ Every `main` push and manual workflow dispatch runs the cross-platform verificat
 - runs the portable Calculator core/controller tests under Clang AddressSanitizer and UndefinedBehaviorSanitizer;
 - builds the native Windows application and runs a Win32 runtime/keypad smoke path;
 - builds the GTK/Linux target and Debian package;
+- enables a Linux-only MPFR 256-bit oracle that compares representative transcendental results against an independent high-precision reference without adding MPFR to Calculator's runtime;
 - compiles the iPhone application for iOS Simulator through the shared C++ controller and verifies AppIcon metadata;
 - compiles the unsigned ARM64 iPhoneOS target;
 - verifies expected binary assets plus a deterministic source bundle containing the exact Common checkout, and checksums all published payloads; and
@@ -52,3 +53,12 @@ Every reproducible defect should gain the narrowest useful permanent regression 
 ## Limits
 
 The validation system is evidence, not a proof of all possible numerical or platform behaviour. It does not establish correctness for untested mathematical domains, atypical floating-point implementations, every native UI environment or unsigned iPhone installation.
+
+
+## Independent numerical oracle
+
+Release CI can enable `CALCULATOR_ENABLE_MPFR_ORACLE_TESTS`. The resulting test links only the test executable to MPFR, evaluates representative trigonometric, inverse-trigonometric, root, logarithmic and exponential inputs at 256-bit precision, rounds the reference to binary64 and compares Calculator's shared-core result within a tight floating-point tolerance. MPFR is therefore evidence, not a shipped runtime dependency or a second production calculation engine.
+
+## Semantic appearance and focus regression
+
+Common 1.19.10 adds explicit semantic roles for heading, summary, kicker, detail/note, status borders, hover accents and warning states. Calculator regression tests assert those fields exist in the exact pinned Common public contract and that GTK, Win32 and SwiftUI consume the roles that match Calculator semantics. Desktop focus treatment is also checked at source-contract level so keyboard-visible focus is not accidentally removed during visual refactoring.

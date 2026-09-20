@@ -70,6 +70,17 @@ COLORREF to_colorref(std::uint32_t rgb) {
 #define kSurfaceHover to_colorref(g_theme_palette.surface_hover_rgb)
 #define kOperationHover to_colorref(g_theme_palette.operation_hover_rgb)
 #define kEqualsHover to_colorref(g_theme_palette.equals_hover_rgb)
+#define kTitlebar to_colorref(g_theme_palette.titlebar_rgb)
+#define kHeading to_colorref(g_theme_palette.heading_rgb)
+#define kSummary to_colorref(g_theme_palette.summary_rgb)
+#define kKicker to_colorref(g_theme_palette.kicker_rgb)
+#define kDetailLabel to_colorref(g_theme_palette.detail_label_rgb)
+#define kNote to_colorref(g_theme_palette.note_rgb)
+#define kStatusBorder to_colorref(g_theme_palette.status_border_rgb)
+#define kAccentHover to_colorref(g_theme_palette.accent_hover_rgb)
+#define kSelectedSummary to_colorref(g_theme_palette.selected_summary_rgb)
+#define kWarningMuted to_colorref(g_theme_palette.warning_muted_rgb)
+#define kWarningBorder to_colorref(g_theme_palette.warning_border_rgb)
 
 using calculator::ui::ButtonRole;
 using calculator::ui::ButtonSpec;
@@ -339,9 +350,9 @@ void apply_nonclient_theme(HWND window) {
         GetProcAddress(module, "DwmSetWindowAttribute"));
     if (set_attribute != nullptr) {
         BOOL dark = g_effective_dark_theme ? TRUE : FALSE;
-        COLORREF caption = kBackground;
-        COLORREF text = kTitle;
-        COLORREF border = kNeutralAccent;
+        COLORREF caption = kTitlebar;
+        COLORREF text = kHeading;
+        COLORREF border = kStatusBorder;
         (void)set_attribute(window, 20U, &dark, sizeof(dark));
         (void)set_attribute(window, 35U, &caption, sizeof(caption));
         (void)set_attribute(window, 36U, &text, sizeof(text));
@@ -604,14 +615,14 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
             border = kBackground;
         } else {
             fill = selected ? kSelection : kSurface;
-            text = selected ? kTitle : kMuted;
-            border = selected ? kNeutralAccent : kBorder;
+            text = selected ? kSelectedSummary : kMuted;
+            border = selected ? kAccentHover : kBorder;
         }
         break;
     case ButtonKind::Clear:
         fill = kCard;
-        text = kWarning;
-        border = kWarning;
+        text = kWarningMuted;
+        border = kWarningBorder;
         break;
     case ButtonKind::Equals:
         fill = kButtonBackground;
@@ -651,6 +662,12 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
         case ButtonKind::Toolbar:
             fill = kSurfaceHover;
             break;
+        }
+        if (kind != ButtonKind::Equals && kind != ButtonKind::Clear) {
+            border = kAccentHover;
+        } else if (kind == ButtonKind::Clear) {
+            border = kWarning;
+            text = kWarning;
         }
     }
 
@@ -695,8 +712,20 @@ LRESULT draw_button(const DRAWITEMSTRUCT* item) {
     if (old_font != nullptr) SelectObject(item->hDC, old_font);
 
     if ((item->itemState & ODS_FOCUS) != 0U) {
-        InflateRect(&rect, -sx(g_main, 4), -sx(g_main, 4));
-        DrawFocusRect(item->hDC, &rect);
+        InflateRect(&rect, -sx(g_main, 3), -sx(g_main, 3));
+        HPEN focus_pen = CreatePen(
+            PS_SOLID, std::max(1, sx(g_main, 2)), kAccentHover);
+        HGDIOBJ old_focus_pen = SelectObject(item->hDC, focus_pen);
+        HGDIOBJ old_focus_brush =
+            SelectObject(item->hDC, GetStockObject(HOLLOW_BRUSH));
+        const int focus_radius = static_cast<int>(
+            calculator::ui::design_metrics().small_radius);
+        RoundRect(
+            item->hDC, rect.left, rect.top, rect.right, rect.bottom,
+            sx(g_main, focus_radius), sx(g_main, focus_radius));
+        SelectObject(item->hDC, old_focus_brush);
+        SelectObject(item->hDC, old_focus_pen);
+        DeleteObject(focus_pen);
     }
 
     return TRUE;
@@ -1102,9 +1131,11 @@ void create_controls(HWND window) {
         0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     apply_control_theme(g_expression);
 
-    g_result = CreateWindowExW(0, L"STATIC", L"0",
-                               WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_NOPREFIX,
-                               0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+    g_result = CreateWindowExW(
+        0, L"EDIT", L"0",
+        WS_CHILD | WS_VISIBLE | ES_RIGHT | ES_READONLY | ES_AUTOHSCROLL,
+        0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+    apply_control_theme(g_result);
     g_status = CreateWindowExW(0, L"STATIC", L"READY",
                                WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_NOPREFIX,
                                0, 0, 0, 0, window, nullptr, g_instance, nullptr);
@@ -1413,7 +1444,12 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
     case WM_CTLCOLOREDIT: {
         HDC dc = reinterpret_cast<HDC>(wparam);
         HWND control = reinterpret_cast<HWND>(lparam);
-        SetTextColor(dc, kMuted);
+        if (control == g_result) {
+            SetTextColor(dc, kHeading);
+            SetBkColor(dc, kPanel);
+            return reinterpret_cast<LRESULT>(g_panel_brush);
+        }
+        SetTextColor(dc, control == g_history_dock ? kDetailLabel : kSummary);
         if (control == g_history_dock) {
             SetBkColor(dc, kPanel);
             return reinterpret_cast<LRESULT>(g_panel_brush);
@@ -1427,15 +1463,23 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         HWND control = reinterpret_cast<HWND>(lparam);
 
         SetBkMode(dc, TRANSPARENT);
-        if (control == g_title || control == g_result) {
-            SetTextColor(dc, kTitle);
+        if (control == g_result) {
+            SetTextColor(dc, kHeading);
+            SetBkMode(dc, OPAQUE);
+            SetBkColor(dc, kPanel);
+            return reinterpret_cast<LRESULT>(g_panel_brush);
+        }
+        if (control == g_title) {
+            SetTextColor(dc, kHeading);
         } else if (control == g_status) {
-            SetTextColor(dc, g_status_fault ? kFault : kSubtle);
+            SetTextColor(dc, g_status_fault ? kFault : kNote);
+        } else if (control == g_subtitle) {
+            SetTextColor(dc, kKicker);
         } else {
-            SetTextColor(dc, kSubtle);
+            SetTextColor(dc, kDetailLabel);
         }
 
-        if (control == g_result || control == g_status) {
+        if (control == g_status) {
             SetBkMode(dc, OPAQUE);
             SetBkColor(dc, kPanel);
             return reinterpret_cast<LRESULT>(g_panel_brush);
@@ -1455,7 +1499,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         const int card_radius = static_cast<int>(
             calculator::ui::design_metrics().card_radius);
         draw_panel(dc, g_mode_rect, kSurface, kBorder, card_radius);
-        draw_panel(dc, g_display_rect, kPanel, kBorder, card_radius);
+        draw_panel(dc, g_display_rect, kPanel, kStatusBorder, card_radius);
         EndPaint(window, &ps);
         return 0;
     }

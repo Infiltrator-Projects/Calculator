@@ -1,3 +1,15 @@
+infiltrator-calculator (0.1.41) unstable; urgency=medium
+
+  * Release Calculator against immutable Infiltratr Common 1.19.10.
+  * Consume the expanded Common semantic palette on GTK, Win32 and iPhone.
+  * Use Common titlebar and status-border roles in native Windows rendering.
+  * Make the Windows result field selectable for normal copy workflows.
+  * Add stronger keyboard focus treatment and iPhone key accessibility semantics.
+  * Add an MPFR-backed high-precision release-CI numerical oracle.
+  * Publish the standardised graphite and #00ADEF Calculator artwork.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 15:25:00 +1000
+
 infiltrator-calculator (0.1.40) unstable; urgency=medium
 
   * Add simultaneous BIN/OCT/DEC/HEX Programmer representations.

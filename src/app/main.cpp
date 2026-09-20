@@ -565,7 +565,6 @@ void apply_css(GtkWidget* window) {
     const std::string primary = hex_colour(p.button_background_rgb);
     const std::string primary_text = hex_colour(p.button_foreground_rgb);
     const std::string selected = hex_colour(p.selection_background_rgb);
-    const std::string selection_text = hex_colour(p.selection_foreground_rgb);
     const std::string neutral = hex_colour(p.neutral_accent_rgb);
     const std::string warning = hex_colour(p.warning_rgb);
     const std::string fault = hex_colour(p.fault_rgb);
@@ -574,6 +573,16 @@ void apply_css(GtkWidget* window) {
     const std::string surface_hover = hex_colour(p.surface_hover_rgb);
     const std::string operation_hover = hex_colour(p.operation_hover_rgb);
     const std::string equals_hover = hex_colour(p.equals_hover_rgb);
+    const std::string heading = hex_colour(p.heading_rgb);
+    const std::string summary = hex_colour(p.summary_rgb);
+    const std::string kicker = hex_colour(p.kicker_rgb);
+    const std::string detail_label = hex_colour(p.detail_label_rgb);
+    const std::string note = hex_colour(p.note_rgb);
+    const std::string status_border = hex_colour(p.status_border_rgb);
+    const std::string accent_hover = hex_colour(p.accent_hover_rgb);
+    const std::string selected_summary = hex_colour(p.selected_summary_rgb);
+    const std::string warning_muted = hex_colour(p.warning_muted_rgb);
+    const std::string warning_border = hex_colour(p.warning_border_rgb);
 
     const std::string css =
         "*{font-family:\"" + ui + "\";font-weight:400}"
@@ -581,47 +590,47 @@ void apply_css(GtkWidget* window) {
         ".shell{padding:" + std::to_string(metrics.shell_padding) + "px}"
         ".calculator-column{background:" + background + "}"
         ".header{margin-bottom:0}"
-        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + title + "}"
+        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + heading + "}"
         ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
             "border-radius:" + std::to_string(design.control_radius) + "px;min-height:28px;padding:0 " +
             std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700}"
-        ".toolbar-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
+        ".toolbar-button:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + "}"
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
             std::to_string(design.compact_spacing / 2U) + "px}"
-        ".mode-tab{background:transparent;color:" + subtle + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
+        ".mode-tab{background:transparent;color:" + kicker + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "min-height:28px;font-size:11px;font-weight:700;padding:0 8px}"
         ".mode-tab:hover{background:" + surface_hover + ";color:" + text + "}"
         ".mode-tab.selected{background:" + primary + ";color:" + primary_text + "}"
-        ".display{background:" + panel + ";border:1px solid " + border + ";border-radius:" +
+        ".display{background:" + panel + ";border:1px solid " + status_border + ";border-radius:" +
             std::to_string(design.card_radius) + "px;padding:" +
             std::to_string(design.control_spacing) + "px}"
-        ".expression{background:" + input + ";color:" + muted + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
+        ".expression{background:" + input + ";color:" + summary + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none}"
         ".expression:focus{border:0;outline:none;box-shadow:none}"
-        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + title + ";padding-top:2px}"
-        ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + subtle + "}"
+        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + heading + ";padding-top:2px}"
+        ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + note + "}"
         ".status.fault{color:" + fault + "}"
         ".calc-button{border:1px solid " + border + ";border-radius:" +
             std::to_string(design.control_radius) + "px;min-height:" +
             std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0}"
         ".calc-button:disabled{opacity:.38}"
         ".calc-button.number{background:" + card + ";color:" + title + "}"
-        ".calc-button.number:hover{background:" + card_hover + ";border-color:" + neutral + "}"
+        ".calc-button.number:hover{background:" + card_hover + ";border-color:" + accent_hover + "}"
         ".calc-button.operation{background:" + operation + ";color:" + text + "}"
-        ".calc-button.operation:hover{background:" + operation_hover + ";border-color:" + neutral + "}"
+        ".calc-button.operation:hover{background:" + operation_hover + ";border-color:" + accent_hover + "}"
         ".calc-button.utility{background:" + surface + ";color:" + muted + ";font-size:12px}"
-        ".calc-button.utility:hover{background:" + surface_hover + ";color:" + title + ";border-color:" + neutral + "}"
-        ".calc-button.utility.selected{background:" + selected + ";color:" + selection_text + ";border-color:" + neutral + "}"
+        ".calc-button.utility:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + "}"
+        ".calc-button.utility.selected{background:" + selected + ";color:" + selected_summary + ";border-color:" + accent_hover + "}"
         ".calc-button.memory-button{background:transparent;color:" + muted + ";border-color:transparent;"
             "border-radius:" + std::to_string(design.small_radius) + "px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:11px}"
         ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent}"
-        ".calc-button.clear{background:" + card + ";color:" + warning + "}"
-        ".calc-button.clear:hover{background:" + card_hover + ";border-color:" + warning + "}"
+        ".calc-button.clear{background:" + card + ";color:" + warning_muted + ";border-color:" + warning_border + "}"
+        ".calc-button.clear:hover{background:" + card_hover + ";color:" + warning + ";border-color:" + warning + "}"
         ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:15px;font-weight:700}"
         ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + "}"
         ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px;padding:" +
             std::to_string(design.control_spacing) + "px}"
-        ".history-text{background:" + panel + ";color:" + text + ";font-size:12px}"
+        ".history-text{background:" + panel + ";color:" + detail_label + ";font-size:12px}"
         ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px}"
         ".history-row{background:" + card + ";padding:" +
             std::to_string(design.control_spacing) +
@@ -629,7 +638,9 @@ void apply_css(GtkWidget* window) {
             std::to_string(design.control_radius) +
             "px;color:" + text + ";font-size:12px;text-align:left}"
         ".history-row:hover{background:" + card_hover +
-            ";border-color:" + neutral + "}"
+            ";border-color:" + accent_hover + "}"
+        ".calc-button:focus,.toolbar-button:focus,.mode-tab:focus{outline:2px solid " +
+            accent_hover + ";outline-offset:1px}"
         ".compact .brand-title{font-size:17px}"
         ".compact .display{padding:7px}"
         ".compact .calc-button{min-height:30px;font-size:13px}"

@@ -60,6 +60,18 @@ private struct CalculatorPalette {
     let surfaceHover: Color
     let operationHover: Color
     let equalsHover: Color
+    let heading: Color
+    let summary: Color
+    let kicker: Color
+    let detailLabel: Color
+    let note: Color
+    let statusBorder: Color
+    let accentForeground: Color
+    let accentHover: Color
+    let selectedSummary: Color
+    let warningMuted: Color
+    let warningBorder: Color
+    let successBorder: Color
 
     init(dark: Bool) {
         let common = CalculatorBridge.themePalette(dark: dark)
@@ -92,6 +104,18 @@ private struct CalculatorPalette {
         surfaceHover = colour("surfaceHover")
         operationHover = colour("operationHover")
         equalsHover = colour("equalsHover")
+        heading = colour("heading")
+        summary = colour("summary")
+        kicker = colour("kicker")
+        detailLabel = colour("detailLabel")
+        note = colour("note")
+        statusBorder = colour("statusBorder")
+        accentForeground = colour("accentForeground")
+        accentHover = colour("accentHover")
+        selectedSummary = colour("selectedSummary")
+        warningMuted = colour("warningMuted")
+        warningBorder = colour("warningBorder")
+        successBorder = colour("successBorder")
     }
 
 }
@@ -173,12 +197,12 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Calculator")
                     .font(CalculatorTypography.display(29, relativeTo: .title))
-                    .foregroundStyle(palette.title)
+                    .foregroundStyle(palette.heading)
 
                 Text("PRECISION CALCULATOR")
                     .font(CalculatorTypography.bold(9, relativeTo: .caption2))
                     .tracking(1.2)
-                    .foregroundStyle(palette.subtle)
+                    .foregroundStyle(palette.kicker)
             }
 
             Spacer()
@@ -236,7 +260,7 @@ struct ContentView: View {
                 .foregroundStyle(
                     model.mode == mode
                         ? palette.primaryText
-                        : palette.subtle
+                        : palette.kicker
                 )
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .background(
@@ -273,7 +297,7 @@ struct ContentView: View {
             .autocorrectionDisabled()
             .multilineTextAlignment(.trailing)
             .font(CalculatorTypography.regular(15, relativeTo: .body))
-            .foregroundStyle(palette.muted)
+            .foregroundStyle(palette.summary)
             .padding(.horizontal, 12)
             .frame(minHeight: 42)
             .background(
@@ -288,7 +312,7 @@ struct ContentView: View {
 
             Text(model.display)
                 .font(CalculatorTypography.display(46, relativeTo: .largeTitle))
-                .foregroundStyle(palette.title)
+                .foregroundStyle(palette.heading)
                 .lineLimit(1)
                 .minimumScaleFactor(0.42)
                 .textSelection(.enabled)
@@ -302,7 +326,7 @@ struct ContentView: View {
                 .foregroundStyle(
                     model.fault
                         ? palette.fault
-                        : palette.subtle
+                        : palette.note
                 )
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -314,7 +338,7 @@ struct ContentView: View {
                 .fill(palette.panel)
                 .overlay(
                     RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
-                        .stroke(palette.border, lineWidth: 1)
+                        .stroke(palette.statusBorder, lineWidth: 1)
                 )
         )
     }
@@ -344,7 +368,7 @@ struct ContentView: View {
     private var footer: some View {
         Text("Keyboard ready · Variables, memory and history retained")
             .font(CalculatorTypography.regular(9, relativeTo: .caption2))
-            .foregroundStyle(palette.subtle)
+            .foregroundStyle(palette.detailLabel)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -393,6 +417,8 @@ private struct CalculatorKey: View {
         )
         .opacity(enabled ? 1.0 : 0.32)
         .disabled(!enabled)
+        .accessibilityLabel(title)
+        .accessibilityValue(Text(selected ? "Selected" : ""))
     }
 
     private var background: Color {
@@ -408,15 +434,16 @@ private struct CalculatorKey: View {
 
     private var foreground: Color {
         switch kind {
-        case .clear: return palette.warning
+        case .clear: return palette.warningMuted
         case .equals: return palette.primaryText
-        case .utility: return selected ? palette.title : palette.muted
+        case .utility: return selected ? palette.selectedSummary : palette.muted
         case .number, .operation: return palette.text
         }
     }
 
     private var border: Color {
-        if selected { return palette.neutralAccent }
+        if selected { return palette.accentHover }
+        if kind == .clear { return palette.warningBorder }
         if kind == .equals { return palette.primary }
         return palette.border
     }
@@ -445,7 +472,12 @@ private struct CalculatorToolbarButtonStyle: ButtonStyle {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
-                            .stroke(palette.border, lineWidth: 1)
+                            .stroke(
+                                configuration.isPressed
+                                    ? palette.accentHover
+                                    : palette.border,
+                                lineWidth: 1
+                            )
                     )
             )
     }
@@ -521,7 +553,7 @@ private struct HistoryView: View {
                 if entries.isEmpty {
                     Text("No calculations yet.")
                         .font(CalculatorTypography.regular(15, relativeTo: .body))
-                        .foregroundStyle(palette.subtle)
+                        .foregroundStyle(palette.summary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {

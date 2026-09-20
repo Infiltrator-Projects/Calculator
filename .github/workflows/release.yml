@@ -33,6 +33,7 @@ jobs:
             dpkg-dev \
             g++ \
             libgtk-4-dev \
+            libmpfr-dev \
             pkg-config
 
       - name: Verify release version
@@ -60,7 +61,8 @@ jobs:
           set -euo pipefail
           cmake -S . -B build-linux \
             -DCMAKE_BUILD_TYPE=Release \
-            -DINFILTRATR_COMMON_BUILD_SHARED=OFF
+            -DINFILTRATR_COMMON_BUILD_SHARED=OFF \
+            -DCALCULATOR_ENABLE_MPFR_ORACLE_TESTS=ON
           cmake --build build-linux --parallel
           ctest --test-dir build-linux --output-on-failure
 
@@ -344,19 +346,26 @@ jobs:
             Start-Sleep -Milliseconds 100
 
             $sixVisible = $false
+            $resultClass = ''
             foreach ($hwnd in $children) {
               if (-not [CalcSmoke]::IsWindowVisible($hwnd)) { continue }
               $name = [System.Text.StringBuilder]::new(64)
               $text = [System.Text.StringBuilder]::new(128)
               [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
               [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
-              if ($name.ToString() -ieq 'Static' -and $text.ToString() -ceq '6') {
+              $className = $name.ToString()
+              if (($className -ieq 'Static' -or $className -ieq 'Edit') -and
+                  $text.ToString() -ceq '6') {
                 $sixVisible = $true
+                $resultClass = $className
                 break
               }
             }
             if (-not $sixVisible) {
               throw 'Windows UI arithmetic smoke test failed: 3 + 3 did not display 6'
+            }
+            if ($resultClass -ine 'Edit') {
+              throw "Windows result copy surface regressed: expected read-only Edit, got '$resultClass'"
             }
 
             $title = [IntPtr]::Zero

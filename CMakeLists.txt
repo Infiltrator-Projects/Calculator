@@ -8,6 +8,10 @@ project(Calculator VERSION "${CALCULATOR_VERSION}" LANGUAGES C CXX)
 include(CTest)
 
 option(CALCULATOR_BUILD_DESKTOP "Build the GTK desktop application" ON)
+option(
+    CALCULATOR_ENABLE_MPFR_ORACLE_TESTS
+    "Compare Calculator transcendental results with a high-precision MPFR oracle"
+    OFF)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -274,4 +278,27 @@ add_executable(calculator-ui-controller-test
 )
 target_link_libraries(calculator-ui-controller-test PRIVATE calculator-ui)
 add_test(NAME calculator-ui-controller COMMAND calculator-ui-controller-test)
+
+if(CALCULATOR_ENABLE_MPFR_ORACLE_TESTS)
+    find_path(CALCULATOR_MPFR_INCLUDE_DIR mpfr.h REQUIRED)
+    find_library(CALCULATOR_MPFR_LIBRARY NAMES mpfr REQUIRED)
+    add_executable(calculator-mpfr-oracle-test
+        tests/test_mpfr_oracle.cpp
+    )
+    target_include_directories(
+        calculator-mpfr-oracle-test PRIVATE
+        "${CALCULATOR_MPFR_INCLUDE_DIR}")
+    target_link_libraries(
+        calculator-mpfr-oracle-test PRIVATE
+        calculator-core
+        "${CALCULATOR_MPFR_LIBRARY}")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(
+            calculator-mpfr-oracle-test PRIVATE
+            -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
+    endif()
+    add_test(
+        NAME calculator-mpfr-oracle
+        COMMAND calculator-mpfr-oracle-test)
+endif()
 

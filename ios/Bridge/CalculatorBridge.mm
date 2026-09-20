@@ -111,7 +111,22 @@ NSInteger angle_value(calculator::AngleUnit unit) {
         @"cardHover": @(palette->card_hover_rgb),
         @"surfaceHover": @(palette->surface_hover_rgb),
         @"operationHover": @(palette->operation_hover_rgb),
-        @"equalsHover": @(palette->equals_hover_rgb)
+        @"equalsHover": @(palette->equals_hover_rgb),
+        @"titlebar": @(palette->titlebar_rgb),
+        @"connection": @(palette->connection_rgb),
+        @"connectionBorder": @(palette->connection_border_rgb),
+        @"heading": @(palette->heading_rgb),
+        @"summary": @(palette->summary_rgb),
+        @"kicker": @(palette->kicker_rgb),
+        @"detailLabel": @(palette->detail_label_rgb),
+        @"note": @(palette->note_rgb),
+        @"statusBorder": @(palette->status_border_rgb),
+        @"accentForeground": @(palette->accent_foreground_rgb),
+        @"accentHover": @(palette->accent_hover_rgb),
+        @"selectedSummary": @(palette->selected_summary_rgb),
+        @"warningMuted": @(palette->warning_muted_rgb),
+        @"warningBorder": @(palette->warning_border_rgb),
+        @"successBorder": @(palette->success_border_rgb)
     };
 }
 
