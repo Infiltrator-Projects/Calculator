@@ -9,6 +9,7 @@
 #include <commctrl.h>
 
 #include "../ui/calculator_ui_controller.hpp"
+#include "../core/advanced_tools.hpp"
 #include "../ui/calculator_theme.hpp"
 
 #include <algorithm>
@@ -24,11 +25,13 @@ namespace {
 
 constexpr wchar_t kMainClass[] = L"CalculatorWindow";
 constexpr wchar_t kHistoryClass[] = L"CalculatorHistoryWindow";
+constexpr wchar_t kToolsClass[] = L"CalculatorToolsWindow";
 
 constexpr int kIdHistory = 1001;
 constexpr int kIdTheme = 1002;
 constexpr int kIdBases = 1003;
 constexpr int kIdResults = 1004;
+constexpr int kIdTools = 1005;
 constexpr int kIdModeStandard = 1010;
 constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
@@ -36,6 +39,10 @@ constexpr int kIdResult = 1020;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 constexpr int kIdHistoryList = 3002;
+constexpr int kIdToolSelector = 4001;
+constexpr int kIdToolInput = 4002;
+constexpr int kIdToolRun = 4003;
+constexpr int kIdToolOutput = 4004;
 
 using calculator::ui::ThemeMode;
 using calculator::ui::ThemePalette;
@@ -97,6 +104,7 @@ HWND g_main = nullptr;
 HWND g_title = nullptr;
 HWND g_subtitle = nullptr;
 HWND g_history_button = nullptr;
+HWND g_tools_button = nullptr;
 HWND g_results_button = nullptr;
 HWND g_bases_button = nullptr;
 HWND g_theme_button = nullptr;
@@ -108,6 +116,12 @@ HWND g_mode_buttons[3] = {nullptr, nullptr, nullptr};
 HWND g_history_window = nullptr;
 HWND g_history_edit = nullptr;
 HWND g_history_dock = nullptr;
+HWND g_tools_window = nullptr;
+HWND g_tool_selector = nullptr;
+HWND g_tool_prompt = nullptr;
+HWND g_tool_input = nullptr;
+HWND g_tool_output = nullptr;
+calculator::tools::ToolResult g_tool_result;
 HWND g_hover_button = nullptr;
 
 std::vector<HWND> g_standard_buttons;
@@ -543,6 +557,20 @@ void refresh_history() {
     }
 }
 
+void show_tools() {
+    if (g_tools_window != nullptr && IsWindow(g_tools_window)) {
+        ShowWindow(g_tools_window, SW_SHOWNORMAL);
+        SetForegroundWindow(g_tools_window);
+        return;
+    }
+
+    g_tools_window = CreateWindowExW(
+        WS_EX_TOOLWINDOW, kToolsClass, L"Advanced Calculator Tools",
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN,
+        CW_USEDEFAULT, CW_USEDEFAULT, sx(g_main, 760), sx(g_main, 700),
+        g_main, nullptr, g_instance, nullptr);
+}
+
 void show_history() {
     if (g_history_window != nullptr && IsWindow(g_history_window)) {
         refresh_history();
@@ -559,8 +587,8 @@ void show_history() {
 }
 
 ButtonKind button_kind(int id, const ButtonSpec* spec) {
-    if (id == kIdHistory || id == kIdTheme ||
-        id == kIdBases || id == kIdResults)
+    if (id == kIdHistory || id == kIdTheme || id == kIdTools ||
+        id == kIdBases || id == kIdResults || id == kIdToolRun)
         return ButtonKind::Toolbar;
     if (id == kIdModeStandard || id == kIdModeScientific ||
         id == kIdModeProgrammer) return ButtonKind::Mode;
@@ -972,7 +1000,7 @@ void layout_main(HWND window) {
     const bool show_bases =
         g_controller.state().mode == Mode::Programmer;
     const int toolbar_count =
-        (responsive.dock_history ? 1 : 2) + 1;
+        (responsive.dock_history ? 1 : 2) + 2;
     const int title_right =
         calc_right - toolbar_count * toolbar_width -
         (toolbar_count > 0 ? toolbar_count * gap : 0);
@@ -990,6 +1018,12 @@ void layout_main(HWND window) {
             toolbar_width, toolbar_height, TRUE);
         ++toolbar_slot;
     }
+    MoveWindow(
+        g_tools_button,
+        calc_right - (toolbar_slot + 1) * toolbar_width -
+            toolbar_slot * gap,
+        y, toolbar_width, toolbar_height, TRUE);
+    ++toolbar_slot;
     HWND extra_button =
         show_bases ? g_bases_button : g_results_button;
     MoveWindow(
@@ -1139,6 +1173,7 @@ void apply_theme(bool persist) {
 
     apply_theme_to_window(g_main);
     apply_theme_to_window(g_history_window);
+    apply_theme_to_window(g_tools_window);
     if (persist) save_theme_mode();
 }
 
@@ -1150,6 +1185,7 @@ void create_controls(HWND window) {
                                  WS_CHILD | SS_LEFT,
                                  0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_theme_button = create_button(window, kIdTheme, L"System", g_ui_bold_font);
+    g_tools_button = create_button(window, kIdTools, L"Tools", g_ui_bold_font);
     g_results_button = create_button(window, kIdResults, L"Results", g_ui_bold_font);
     g_bases_button = create_button(window, kIdBases, L"Bases", g_ui_bold_font);
     g_history_button = create_button(window, kIdHistory, L"History", g_ui_bold_font);
@@ -1251,6 +1287,7 @@ void apply_fonts_to_controls() {
     apply_font(g_title, g_title_font);
     apply_font(g_subtitle, g_small_font);
     apply_font(g_theme_button, g_ui_bold_font);
+    apply_font(g_tools_button, g_ui_bold_font);
     apply_font(g_results_button, g_ui_bold_font);
     apply_font(g_bases_button, g_ui_bold_font);
     apply_font(g_history_button, g_ui_bold_font);
@@ -1374,6 +1411,308 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
     return DefWindowProcW(window, message, wparam, lparam);
 }
 
+void update_tool_window_prompt() {
+    if (g_tool_selector == nullptr || g_tool_prompt == nullptr ||
+        g_tool_input == nullptr) {
+        return;
+    }
+    const LRESULT selected =
+        SendMessageW(g_tool_selector, CB_GETCURSEL, 0, 0);
+    const auto& catalog = calculator::tools::catalog();
+    const std::size_t index =
+        selected == CB_ERR
+            ? 0U
+            : std::min<std::size_t>(
+                  static_cast<std::size_t>(selected), catalog.size() - 1U);
+    const auto& item = catalog[index];
+    std::string prompt(item.prompt);
+    prompt += "\r\nExample: ";
+    prompt += item.example;
+    SetWindowTextW(g_tool_prompt, utf8_to_wide(prompt).c_str());
+    SetWindowTextW(
+        g_tool_input,
+        utf8_to_wide(std::string(item.example)).c_str());
+}
+
+void run_selected_tool(HWND window) {
+    if (g_tool_selector == nullptr || g_tool_input == nullptr ||
+        g_tool_output == nullptr) {
+        return;
+    }
+    const LRESULT selected =
+        SendMessageW(g_tool_selector, CB_GETCURSEL, 0, 0);
+    const auto& catalog = calculator::tools::catalog();
+    const std::size_t index =
+        selected == CB_ERR
+            ? 0U
+            : std::min<std::size_t>(
+                  static_cast<std::size_t>(selected), catalog.size() - 1U);
+    g_tool_result = calculator::tools::evaluate(
+        catalog[index].tool,
+        wide_to_utf8(window_text(g_tool_input)));
+    const std::string text = g_tool_result.ok
+        ? g_tool_result.output
+        : "Error: " + g_tool_result.error;
+    SetWindowTextW(g_tool_output, utf8_to_wide(text).c_str());
+    SendMessageW(window, WM_SIZE, 0, 0);
+    InvalidateRect(window, nullptr, TRUE);
+}
+
+RECT tool_graph_rect(HWND window) {
+    RECT client{};
+    GetClientRect(window, &client);
+    if (g_tool_result.points.empty()) return RECT{};
+    const int margin = sx(window, 16);
+    const int graph_height = sx(window, 220);
+    return RECT{
+        margin,
+        std::max(margin, client.bottom - margin - graph_height),
+        std::max(margin, client.right - margin),
+        std::max(margin, client.bottom - margin)};
+}
+
+void paint_tool_graph(HWND window, HDC dc) {
+    if (g_tool_result.points.empty()) return;
+    RECT rect = tool_graph_rect(window);
+    if (rect.right <= rect.left || rect.bottom <= rect.top) return;
+
+    draw_panel(
+        dc, rect, kPanel, kStatusBorder,
+        static_cast<int>(calculator::ui::design_metrics().card_radius));
+
+    bool have = false;
+    double xmin = 0.0, xmax = 0.0, ymin = 0.0, ymax = 0.0;
+    for (const auto& point : g_tool_result.points) {
+        if (!point.valid) continue;
+        if (!have) {
+            xmin = xmax = point.x;
+            ymin = ymax = point.y;
+            have = true;
+        } else {
+            xmin = std::min(xmin, point.x);
+            xmax = std::max(xmax, point.x);
+            ymin = std::min(ymin, point.y);
+            ymax = std::max(ymax, point.y);
+        }
+    }
+    if (!have) return;
+    if (xmin == xmax) { xmin -= 1.0; xmax += 1.0; }
+    if (ymin == ymax) { ymin -= 1.0; ymax += 1.0; }
+
+    InflateRect(&rect, -sx(window, 12), -sx(window, 12));
+    const double width = std::max(1, rect.right - rect.left);
+    const double height = std::max(1, rect.bottom - rect.top);
+    auto px = [&](double x) {
+        return rect.left + static_cast<int>(
+            (x - xmin) / (xmax - xmin) * width);
+    };
+    auto py = [&](double y) {
+        return rect.top + static_cast<int>(
+            (ymax - y) / (ymax - ymin) * height);
+    };
+
+    HPEN axis_pen = CreatePen(PS_SOLID, 1, kStatusBorder);
+    HGDIOBJ old_pen = SelectObject(dc, axis_pen);
+    if (xmin <= 0.0 && xmax >= 0.0) {
+        MoveToEx(dc, px(0.0), rect.top, nullptr);
+        LineTo(dc, px(0.0), rect.bottom);
+    }
+    if (ymin <= 0.0 && ymax >= 0.0) {
+        MoveToEx(dc, rect.left, py(0.0), nullptr);
+        LineTo(dc, rect.right, py(0.0));
+    }
+    SelectObject(dc, old_pen);
+    DeleteObject(axis_pen);
+
+    HPEN graph_pen = CreatePen(
+        PS_SOLID, std::max(1, sx(window, 2)), kAccentHover);
+    old_pen = SelectObject(dc, graph_pen);
+    bool drawing = false;
+    for (const auto& point : g_tool_result.points) {
+        if (!point.valid) {
+            drawing = false;
+            continue;
+        }
+        const int x = px(point.x);
+        const int y = py(point.y);
+        if (!drawing) {
+            MoveToEx(dc, x, y, nullptr);
+            drawing = true;
+        } else {
+            LineTo(dc, x, y);
+        }
+    }
+    SelectObject(dc, old_pen);
+    DeleteObject(graph_pen);
+}
+
+void layout_tool_window(HWND window) {
+    RECT client{};
+    GetClientRect(window, &client);
+    const int margin = sx(window, 16);
+    const int gap = sx(window, 10);
+    const int row = sx(window, 34);
+    int y = margin;
+
+    MoveWindow(
+        g_tool_selector, margin, y,
+        std::max(0, client.right - margin * 2), row, TRUE);
+    y += row + gap;
+
+    MoveWindow(
+        g_tool_prompt, margin, y,
+        std::max(0, client.right - margin * 2), sx(window, 58), TRUE);
+    y += sx(window, 58) + gap;
+
+    const int run_width = sx(window, 86);
+    MoveWindow(
+        g_tool_input, margin, y,
+        std::max(0, client.right - margin * 2 - run_width - gap),
+        row, TRUE);
+    MoveWindow(
+        GetDlgItem(window, kIdToolRun),
+        std::max(margin, client.right - margin - run_width),
+        y, run_width, row, TRUE);
+    y += row + gap;
+
+    const int graph_height =
+        g_tool_result.points.empty() ? 0 : sx(window, 220) + gap;
+    const int output_height =
+        std::max(sx(window, 120),
+                 client.bottom - margin - y - graph_height);
+    MoveWindow(
+        g_tool_output, margin, y,
+        std::max(0, client.right - margin * 2),
+        output_height, TRUE);
+}
+
+LRESULT CALLBACK tools_proc(HWND window, UINT message,
+                            WPARAM wparam, LPARAM lparam) {
+    switch (message) {
+    case WM_CREATE: {
+        apply_nonclient_theme(window);
+        const auto& catalog = calculator::tools::catalog();
+
+        g_tool_selector = CreateWindowExW(
+            0, L"COMBOBOX", L"",
+            WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_VSCROLL |
+                CBS_DROPDOWNLIST,
+            0, 0, 0, 0, window,
+            reinterpret_cast<HMENU>(
+                static_cast<INT_PTR>(kIdToolSelector)),
+            g_instance, nullptr);
+        for (const auto& item : catalog) {
+            const std::wstring name =
+                utf8_to_wide(std::string(item.name));
+            SendMessageW(
+                g_tool_selector, CB_ADDSTRING, 0,
+                reinterpret_cast<LPARAM>(name.c_str()));
+        }
+        SendMessageW(g_tool_selector, CB_SETCURSEL, 0, 0);
+
+        g_tool_prompt = CreateWindowExW(
+            0, L"STATIC", L"",
+            WS_CHILD | WS_VISIBLE | SS_LEFT,
+            0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+
+        g_tool_input = CreateWindowExW(
+            WS_EX_CLIENTEDGE, L"EDIT", L"",
+            WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
+            0, 0, 0, 0, window,
+            reinterpret_cast<HMENU>(
+                static_cast<INT_PTR>(kIdToolInput)),
+            g_instance, nullptr);
+
+        (void)create_button(
+            window, kIdToolRun, L"Run", g_ui_bold_font);
+
+        g_tool_output = CreateWindowExW(
+            WS_EX_CLIENTEDGE, L"EDIT", L"",
+            WS_CHILD | WS_VISIBLE | WS_VSCROLL |
+                ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY,
+            0, 0, 0, 0, window,
+            reinterpret_cast<HMENU>(
+                static_cast<INT_PTR>(kIdToolOutput)),
+            g_instance, nullptr);
+
+        for (HWND control :
+             {g_tool_selector, g_tool_prompt, g_tool_input, g_tool_output}) {
+            apply_control_theme(control);
+            apply_font(control, g_ui_font);
+        }
+        update_tool_window_prompt();
+        layout_tool_window(window);
+        return 0;
+    }
+    case WM_SIZE:
+        layout_tool_window(window);
+        return 0;
+
+    case WM_COMMAND:
+        if (LOWORD(wparam) == kIdToolSelector &&
+            HIWORD(wparam) == CBN_SELCHANGE) {
+            g_tool_result = {};
+            SetWindowTextW(g_tool_output, L"");
+            update_tool_window_prompt();
+            layout_tool_window(window);
+            InvalidateRect(window, nullptr, TRUE);
+            return 0;
+        }
+        if (LOWORD(wparam) == kIdToolRun) {
+            run_selected_tool(window);
+            return 0;
+        }
+        break;
+
+    case WM_CTLCOLORSTATIC: {
+        HDC dc = reinterpret_cast<HDC>(wparam);
+        SetTextColor(dc, kDetailLabel);
+        SetBkColor(dc, kBackground);
+        return reinterpret_cast<LRESULT>(g_background_brush);
+    }
+    case WM_CTLCOLOREDIT: {
+        HDC dc = reinterpret_cast<HDC>(wparam);
+        SetTextColor(dc, kSummary);
+        SetBkColor(dc, kInput);
+        return reinterpret_cast<LRESULT>(g_input_brush);
+    }
+    case WM_DRAWITEM:
+        if (draw_button(
+                reinterpret_cast<const DRAWITEMSTRUCT*>(lparam))) {
+            return TRUE;
+        }
+        break;
+
+    case WM_ERASEBKGND:
+        return 1;
+
+    case WM_PAINT: {
+        PAINTSTRUCT ps{};
+        HDC dc = BeginPaint(window, &ps);
+        RECT client{};
+        GetClientRect(window, &client);
+        FillRect(dc, &client, g_background_brush);
+        paint_tool_graph(window, dc);
+        EndPaint(window, &ps);
+        return 0;
+    }
+    case WM_CLOSE:
+        DestroyWindow(window);
+        return 0;
+    case WM_DESTROY:
+        g_tools_window = nullptr;
+        g_tool_selector = nullptr;
+        g_tool_prompt = nullptr;
+        g_tool_input = nullptr;
+        g_tool_output = nullptr;
+        g_tool_result = {};
+        return 0;
+    default:
+        break;
+    }
+    return DefWindowProcW(window, message, wparam, lparam);
+}
+
 LRESULT CALLBACK main_proc(HWND window, UINT message,
                            WPARAM wparam, LPARAM lparam) {
     switch (message) {
@@ -1431,6 +1770,10 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         const int id = LOWORD(wparam);
         if (id == kIdHistory) {
             show_history();
+            return 0;
+        }
+        if (id == kIdTools) {
+            show_tools();
             return 0;
         }
         if (id == kIdTheme) {
@@ -1642,8 +1985,13 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     history_class.lpfnWndProc = history_proc;
     history_class.lpszClassName = kHistoryClass;
 
+    WNDCLASSEXW tools_class = main_class;
+    tools_class.lpfnWndProc = tools_proc;
+    tools_class.lpszClassName = kToolsClass;
+
     if (RegisterClassExW(&main_class) == 0 ||
-        RegisterClassExW(&history_class) == 0) {
+        RegisterClassExW(&history_class) == 0 ||
+        RegisterClassExW(&tools_class) == 0) {
         destroy_resources();
         return 1;
     }
