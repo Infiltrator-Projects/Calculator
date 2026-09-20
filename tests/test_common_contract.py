@@ -6,8 +6,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ROOT / "src" / "infiltratr-common"
-EXPECTED_VERSION = "1.19.8"
-EXPECTED_COMMIT = "3bfcb6f76ca44ac33bc2fee54fb114caa0eca5f9"
+EXPECTED_VERSION = "1.19.10"
+EXPECTED_COMMIT = "33e69c0a462b56d388881d89c4eb49f72fa0b0fe"
 
 assert (COMMON / "VERSION").read_text(encoding="utf-8").strip() == EXPECTED_VERSION
 
@@ -56,7 +56,7 @@ missing = sorted(
 assert not missing, f"Calculator calls APIs absent from Common public headers: {missing}"
 
 # Calculator must consume Common through its published surface only. Common
-# 1.19.8 deliberately consolidated several internal helpers; importing those
+# 1.19.10 deliberately consolidated several internal helpers; importing those
 # private headers would couple Calculator to implementation detail rather than
 # the immutable public contract.
 private_common_headers = (
@@ -80,7 +80,7 @@ for required in (
     "infiltratr_design_metrics",
     "infiltratr_typography",
 ):
-    assert required in calls, f"Calculator is not consuming Common 1.19.8 {required}"
+    assert required in calls, f"Calculator is not consuming Common 1.19.10 {required}"
 
 typography_assets = (
     COMMON / "cmake" / "InfiltratrTypographyAssets.cmake"

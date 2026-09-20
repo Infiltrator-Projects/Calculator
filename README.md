@@ -10,7 +10,7 @@ The project is deliberately larger in ambition than a four-function calculator, 
 
 **Current source version:** 0.1.40  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
-**Shared foundation:** Common 1.19.8  
+**Shared foundation:** Common 1.19.10  
 **Design contract:** shared Design v1  
 **Licence:** GPL-3.0-or-later
 
@@ -87,9 +87,9 @@ The user-facing product name is **Calculator**. The Debian/APT package identity 
 
 Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
 
-Common 1.19.8 is an internal-consolidation release with unchanged public ABI. Calculator therefore keeps the same proven public Common boundary while gaining the refactored shared parser/ASCII/checked-size implementation underneath it. No Calculator-domain semantics are moved into Common merely to increase reuse.
+Common 1.19.10 is the released shared presentation and infrastructure baseline. Calculator keeps its proven domain boundary while consuming the complete Day/Night semantic palette, canonical typography/metrics, parser and checked infrastructure through Common rather than maintaining local copies. No Calculator-domain semantics are moved into Common merely to increase reuse.
 
-The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.8 gitlink. CMake verifies both the checked-out Common `VERSION` and, in repository builds, the exact immutable `3bfcb6f7…` 1.19.8 commit, so a stale or same-version/wrong-revision submodule fails configuration instead of silently building. Calculator now consumes Common's exact decimal-token parser, native semantic palette, structural design metrics and typography identity rather than maintaining private copies of those product-neutral contracts. The iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
+The calculation core links against `InfiltratrCommon::Portable` from the exact released Common 1.19.10 gitlink. CMake verifies both the checked-out Common `VERSION` and, in repository builds, the exact immutable `33e69c0a…` 1.19.10 commit, so a stale or same-version/wrong-revision submodule fails configuration instead of silently building. Calculator now consumes Common's exact decimal-token parser, native semantic palette, structural design metrics and typography identity rather than maintaining private copies of those product-neutral contracts. The iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
 
 ## Typography
 
@@ -101,7 +101,7 @@ The three approved font files and roles are:
 - `mb_corpo_s_bold.ttf` — `MB Corpo S Title WEB` bold interface text, actions and emphasis;
 - `mb_corpo_a_cond_regular.ttf` — `MB Corpo A Title Cond WEB` product and display titles.
 
-Common 1.19.8 owns the canonical MB Corpo family names, role weights, filenames and immutable first-party archive provenance. Calculator deliberately applies Common's permitted strict no-fallback policy: release builds fetch the exact Common-declared archive, verify its archive/file hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
+Common 1.19.10 owns the canonical MB Corpo family names, role weights, filenames and immutable first-party archive provenance. Calculator deliberately applies Common's permitted strict no-fallback policy: release builds fetch the exact Common-declared archive, verify its archive/file hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
 
 ## Build
 

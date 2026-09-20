@@ -4,7 +4,8 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 ## Unreleased
 
-No unreleased changes.
+- Advance the exact shared foundation from Common 1.19.8 to released Common 1.19.10 at `33e69c0a462b56d388881d89c4eb49f72fa0b0fe`, retaining the public Common-only boundary and gaining the complete current semantic appearance contract.
+- Standardise the Linux application artwork on the non-automotive Infiltrator family: graphite tile and canonical `#00ADEF` linework instead of the older lighter cyan.
 
 ## 0.1.40 — 2026-09-20
 
