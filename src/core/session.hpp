@@ -68,6 +68,10 @@ public:
     std::optional<double> variable(const std::string& name) const;
     const Variables& variables() const noexcept;
 
+    std::optional<FunctionDefinition> function(const std::string& name) const;
+    const Functions& functions() const noexcept;
+    bool remove_function(const std::string& name);
+
     const std::deque<HistoryEntry>& history() const noexcept;
     std::size_t history_count() const noexcept;
     std::optional<HistoryEntry> history_from_newest(
@@ -82,6 +86,7 @@ private:
     double memory_ = 0.0;
     bool memory_set_ = false;
     Variables variables_;
+    Functions functions_;
     std::deque<HistoryEntry> history_;
 };
 

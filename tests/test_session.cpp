@@ -39,6 +39,40 @@ int main(){
     if(unlimited.history_count()!=150U)
         fail("default history should be unbounded");
 
+    calculator::Session functions;
+    const auto define_double =
+        functions.evaluate("double(x)=x*2 @ Double a value");
+    if(!define_double.ok || define_double.display!="Function defined: double")
+        fail("single-argument function definition failed");
+    expect_value(functions.evaluate("double(21)"),42.0,"custom function call");
+    expect_value(functions.evaluate("double 5"),10.0,"custom prefix function call");
+    const auto double_def=functions.function("double");
+    if(!double_def || double_def->parameters.size()!=1U ||
+       double_def->description!="Double a value")
+        fail("custom function metadata wrong");
+
+    const auto define_hyp =
+        functions.evaluate("hyp2(a;b)=a*a+b*b");
+    if(!define_hyp.ok) fail("multi-argument function definition failed");
+    expect_value(functions.evaluate("hyp2(3;4)"),25.0,"multi-argument function");
+    if(functions.evaluate("hyp2(3)").ok)
+        fail("custom function wrong arity should fail");
+
+    if(functions.evaluate("sin(x)=x").ok)
+        fail("reserved built-in function definition should fail");
+    if(functions.evaluate("bad(x;x)=x").ok)
+        fail("duplicate custom parameters should fail");
+
+    functions.evaluate("quad(x)=double(double(x))");
+    expect_value(functions.evaluate("quad(3)"),12.0,"nested custom function");
+    functions.evaluate("loop(x)=loop(x)");
+    const auto recursive=functions.evaluate("loop(1)");
+    if(recursive.ok || recursive.error!="function recursion too deep")
+        fail("recursive custom function must be bounded");
+    if(!functions.remove_function("double") ||
+       functions.function("double").has_value())
+        fail("custom function removal failed");
+
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");

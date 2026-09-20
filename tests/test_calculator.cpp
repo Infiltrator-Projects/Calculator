@@ -231,6 +231,13 @@ int main() {
     expect_error("|1+2");
     expect_error("abs⁻¹ 2");
 
+    calculator::Functions custom_functions;
+    custom_functions["triple"] = {{"x"}, "x*3", "Triple a value"};
+    const auto triple = calculator::evaluate(
+        "triple(7)", calculator::Variables{}, custom_functions);
+    if(!triple.ok || std::abs(triple.value-21.0)>1e-12)
+        fail("direct custom-function evaluation failed");
+
     const auto random_value = calculator::evaluate("rand");
     if (!random_value.ok || random_value.value < 0.0 ||
         random_value.value >= 1.0) {

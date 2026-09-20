@@ -1,11 +1,26 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "session.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <utility>
 
 namespace calculator {
 namespace {
+
+std::string trim_copy(std::string_view text) {
+    std::size_t begin = 0;
+    while (begin < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[begin]))) {
+        ++begin;
+    }
+    std::size_t end = text.size();
+    while (end > begin &&
+           std::isspace(static_cast<unsigned char>(text[end - 1U]))) {
+        --end;
+    }
+    return std::string(text.substr(begin, end - begin));
+}
 
 bool valid_identifier(const std::string& name) {
     if (name.empty()) return false;
@@ -39,11 +54,102 @@ std::optional<std::string> assignment_name(const std::string& input, std::string
     return name;
 }
 
+
+struct ParsedFunctionDefinition {
+    std::string name;
+    FunctionDefinition definition;
+};
+
+std::optional<ParsedFunctionDefinition> function_definition(
+    const std::string& input, std::string& error) {
+    const std::size_t equals = input.find('=');
+    if (equals == std::string::npos) return std::nullopt;
+
+    const std::string left = trim_copy(
+        std::string_view(input).substr(0, equals));
+    const std::size_t open = left.find('(');
+    if (open == std::string::npos) return std::nullopt;
+    const std::size_t close = left.rfind(')');
+    if (close == std::string::npos || close != left.size() - 1U ||
+        open == 0U || open > close) {
+        error = "invalid function definition";
+        return std::nullopt;
+    }
+
+    ParsedFunctionDefinition parsed;
+    parsed.name = trim_copy(std::string_view(left).substr(0, open));
+    if (!valid_identifier(parsed.name) || reserved_identifier(parsed.name)) {
+        error = "invalid or reserved function name";
+        return std::nullopt;
+    }
+
+    const std::string parameters_text =
+        left.substr(open + 1U, close - open - 1U);
+    std::size_t cursor = 0;
+    while (cursor < parameters_text.size()) {
+        const std::size_t separator = parameters_text.find(';', cursor);
+        const std::size_t end =
+            separator == std::string::npos
+                ? parameters_text.size() : separator;
+        const std::string parameter = trim_copy(
+            std::string_view(parameters_text).substr(cursor, end - cursor));
+        if (!valid_identifier(parameter) || reserved_identifier(parameter)) {
+            error = "invalid or reserved function parameter";
+            return std::nullopt;
+        }
+        if (std::find(
+                parsed.definition.parameters.begin(),
+                parsed.definition.parameters.end(),
+                parameter) != parsed.definition.parameters.end()) {
+            error = "duplicate function parameter";
+            return std::nullopt;
+        }
+        parsed.definition.parameters.push_back(parameter);
+        if (separator == std::string::npos) break;
+        cursor = separator + 1U;
+        if (cursor == parameters_text.size()) {
+            error = "empty function parameter";
+            return std::nullopt;
+        }
+    }
+
+    std::string right = input.substr(equals + 1U);
+    const std::size_t description = right.find('@');
+    if (description != std::string::npos) {
+        parsed.definition.description = trim_copy(
+            std::string_view(right).substr(description + 1U));
+        right.resize(description);
+    }
+    parsed.definition.expression = trim_copy(right);
+    if (parsed.definition.expression.empty()) {
+        error = "empty function expression";
+        return std::nullopt;
+    }
+
+    return parsed;
+}
+
 } // namespace
 
 Session::Session(std::size_t history_limit) : history_limit_(history_limit) {}
 
 Result Session::evaluate(const std::string& input) {
+    std::string definition_error;
+    const auto definition = function_definition(input, definition_error);
+    if (!definition_error.empty()) {
+        Result result{false, 0.0, definition_error};
+        record_history(input, result, HistoryKind::Scientific);
+        return result;
+    }
+    if (definition) {
+        functions_[definition->name] = definition->definition;
+        Result result{
+            true, 0.0, {},
+            "Function defined: " + definition->name};
+        record_history(input, result, HistoryKind::Scientific);
+        return result;
+    }
+
     std::string expression;
     const auto assignment = assignment_name(input, expression);
 
@@ -53,7 +159,8 @@ Result Session::evaluate(const std::string& input) {
         return result;
     }
 
-    Result result = calculator::evaluate(assignment ? expression : input, variables_);
+    Result result = calculator::evaluate(
+        assignment ? expression : input, variables_, functions_);
 
     if (result.ok) {
         if (assignment) variables_[*assignment] = result.value;
@@ -67,7 +174,9 @@ Result Session::evaluate(const std::string& input) {
 void Session::record_history(std::string input, const Result& result,
                              HistoryKind kind, HistoryContext context) {
     const std::string output = result.ok
-        ? calculator::format_value(result.value)
+        ? (result.display.empty()
+            ? calculator::format_value(result.value)
+            : result.display)
         : ("Error: " + result.error);
     record_history_text(
         std::move(input), output, result.ok, kind, context);
@@ -115,6 +224,18 @@ std::optional<double> Session::variable(const std::string& name) const {
 }
 
 const Variables& Session::variables() const noexcept { return variables_; }
+
+std::optional<FunctionDefinition> Session::function(
+    const std::string& name) const {
+    const auto it = functions_.find(name);
+    if (it == functions_.end()) return std::nullopt;
+    return it->second;
+}
+const Functions& Session::functions() const noexcept { return functions_; }
+bool Session::remove_function(const std::string& name) {
+    return functions_.erase(name) != 0U;
+}
+
 const std::deque<HistoryEntry>& Session::history() const noexcept { return history_; }
 std::size_t Session::history_count() const noexcept { return history_.size(); }
 

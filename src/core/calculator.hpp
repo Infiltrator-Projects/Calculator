@@ -5,10 +5,18 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 namespace calculator {
 
 using Variables = std::unordered_map<std::string, double>;
+
+struct FunctionDefinition {
+    std::vector<std::string> parameters;
+    std::string expression;
+    std::string description;
+};
+using Functions = std::unordered_map<std::string, FunctionDefinition>;
 
 struct ConstantInfo {
     std::string_view name;
@@ -24,6 +32,9 @@ struct Result {
     bool ok = false;
     double value = 0.0;
     std::string error;
+    // Optional user-facing result text for successful non-numeric session
+    // operations such as defining a reusable function.
+    std::string display;
 };
 
 enum class AngleUnit {
@@ -69,6 +80,8 @@ std::string format_engineering_value(double value);
 
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);
+Result evaluate(const std::string& expression, const Variables& variables,
+                const Functions& functions);
 
 // Standard calculator semantics: apply binary operations from left to right.
 // Contextual percentages follow conventional desktop-calculator behaviour

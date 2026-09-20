@@ -398,7 +398,8 @@ void Controller::calculate() {
         return;
     }
 
-    state_.result = format_real(result.value);
+    state_.result =
+        result.display.empty() ? format_real(result.value) : result.display;
     set_status(scientific_status_text());
 }
 

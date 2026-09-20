@@ -17,6 +17,7 @@ namespace {
 constexpr double kPi = 3.141592653589793238462643383279502884;
 constexpr double kE = 2.718281828459045235360287471352662498;
 constexpr std::size_t kMaxParseDepth = 256;
+constexpr std::size_t kMaxFunctionDepth = 64;
 
 constexpr std::array<std::string_view, 24> kBuiltinFunctions{{
     "frac", "int", "round", "sgn",
@@ -138,8 +139,11 @@ DecimalTokenStatus parse_decimal_token(std::string_view input,
 // -(2^2), while 2^-2 remains valid.
 class Parser {
 public:
-    Parser(std::string_view input, const Variables& variables)
-        : input_(input), variables_(variables) {}
+    Parser(std::string_view input, const Variables& variables,
+           const Functions* functions = nullptr,
+           std::size_t function_depth = 0)
+        : input_(input), variables_(variables), functions_(functions),
+          function_depth_(function_depth) {}
 
     Result run() {
         skip_space();
@@ -155,6 +159,8 @@ public:
 private:
     std::string_view input_;
     const Variables& variables_;
+    const Functions* functions_ = nullptr;
+    std::size_t function_depth_ = 0;
     std::size_t position_ = 0;
     std::size_t recursion_depth_ = 0;
     std::string error_;
@@ -365,6 +371,33 @@ private:
         return result;
     }
 
+    double apply_custom_function(
+        const std::string& name, const FunctionDefinition& definition,
+        const std::vector<double>& arguments) {
+        if (arguments.size() != definition.parameters.size()) {
+            error_ = "wrong function argument count";
+            return 0.0;
+        }
+        if (function_depth_ >= kMaxFunctionDepth) {
+            error_ = "function recursion too deep";
+            return 0.0;
+        }
+
+        Variables scoped = variables_;
+        for (std::size_t i = 0; i < arguments.size(); ++i) {
+            scoped[definition.parameters[i]] = arguments[i];
+        }
+
+        Parser nested(
+            definition.expression, scoped, functions_, function_depth_ + 1U);
+        const Result result = nested.run();
+        if (!result.ok) {
+            error_ = result.error;
+            return 0.0;
+        }
+        return result.value;
+    }
+
     double apply_function(const std::string& name, double x) {
         if (name == "frac") return x - std::trunc(x);
         if (name == "int") return std::trunc(x);
@@ -454,11 +487,42 @@ private:
                 }
             }
 
+            const FunctionDefinition* custom = nullptr;
+            if (functions_) {
+                const auto fit = functions_->find(name);
+                if (fit != functions_->end()) custom = &fit->second;
+            }
+
             if (consume('(')) {
+                if (custom) {
+                    std::vector<double> arguments;
+                    skip_space();
+                    if (!consume(')')) {
+                        while (error_.empty()) {
+                            arguments.push_back(parse_expression());
+                            if (consume(')')) break;
+                            if (!consume(';')) {
+                                error_ =
+                                    "expected ';' or ')' in function arguments";
+                                break;
+                            }
+                        }
+                    }
+                    if (!error_.empty()) return 0.0;
+                    return apply_custom_function(name, *custom, arguments);
+                }
+
                 const double argument = parse_expression();
-                if (!consume(')') && error_.empty()) error_ = "missing closing parenthesis";
+                if (!consume(')') && error_.empty())
+                    error_ = "missing closing parenthesis";
                 if (!error_.empty()) return 0.0;
                 return apply_function(function_name, argument);
+            }
+            if (custom && custom->parameters.size() == 1U) {
+                const double argument = parse_unary();
+                if (!error_.empty()) return 0.0;
+                return apply_custom_function(
+                    name, *custom, std::vector<double>{argument});
             }
             if (is_builtin_function_name(function_name)) {
                 const double argument = parse_unary();
@@ -838,6 +902,12 @@ Result evaluate(const std::string& expression) {
 Result evaluate(const std::string& expression, const Variables& variables) {
     const std::string normalized = normalize_expression_spelling(expression);
     return Parser(normalized, variables).run();
+}
+
+Result evaluate(const std::string& expression, const Variables& variables,
+                const Functions& functions) {
+    const std::string normalized = normalize_expression_spelling(expression);
+    return Parser(normalized, variables, &functions).run();
 }
 
 Result evaluate_immediate(const std::string& expression) {
