@@ -213,6 +213,24 @@ int main() {
     expect_value("int(-3.75)", -3.0);
     expect_value("round(2.6)", 3.0);
     expect_value("sgn(-9)", -1.0);
+
+    // GNOME/Mint-class keyboard syntax accepted by the shared parser.
+    expect_value("7−3×2", 1.0);
+    expect_value("8÷4", 2.0);
+    expect_value("2π", 2.0 * 3.14159265358979323846);
+    expect_value("τ/2", 3.14159265358979323846);
+    expect_value("√81", 9.0);
+    expect_value("|−12.5|", 12.5);
+    expect_value("5²", 25.0);
+    expect_value("2¹⁰", 1024.0);
+    expect_value("2⁻³", 0.125);
+    expect_value("sin 0", 0.0);
+    expect_value("sqrt 49", 7.0);
+    expect_value("sin⁻¹ 0.5", 3.14159265358979323846 / 6.0);
+    expect_value("sinh⁻¹ 0", 0.0);
+    expect_error("|1+2");
+    expect_error("abs⁻¹ 2");
+
     const auto random_value = calculator::evaluate("rand");
     if (!random_value.ok || random_value.value < 0.0 ||
         random_value.value >= 1.0) {

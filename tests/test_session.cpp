@@ -31,6 +31,8 @@ int main(){
     if(reserved.variable("c").has_value()) fail("constant alias should be reserved");
     if(reserved.evaluate("_=1").ok) fail("last-result variable assignment should be rejected");
     if(reserved.evaluate("rand=1").ok) fail("random variable assignment should be rejected");
+    if(reserved.evaluate("sin=1").ok) fail("built-in function assignment should be rejected");
+    if(reserved.evaluate("sqrt=1").ok) fail("root function assignment should be rejected");
 
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");

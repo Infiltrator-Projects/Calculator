@@ -18,6 +18,45 @@ constexpr double kPi = 3.141592653589793238462643383279502884;
 constexpr double kE = 2.718281828459045235360287471352662498;
 constexpr std::size_t kMaxParseDepth = 256;
 
+constexpr std::array<std::string_view, 24> kBuiltinFunctions{{
+    "frac", "int", "round", "sgn",
+    "sin", "cos", "tan", "asin", "acos", "atan",
+    "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+    "sqrt", "cbrt", "square", "cube",
+    "ln", "log", "exp", "abs"
+}};
+
+std::string normalize_expression_spelling(std::string_view input) {
+    std::string normalized;
+    normalized.reserve(input.size() + 8U);
+    for (std::size_t i = 0; i < input.size();) {
+        const auto remaining = input.substr(i);
+        if (remaining.substr(0, std::string_view("×").size()) == "×") {
+            normalized.push_back('*');
+            i += std::string_view("×").size();
+        } else if (remaining.substr(0, std::string_view("÷").size()) == "÷") {
+            normalized.push_back('/');
+            i += std::string_view("÷").size();
+        } else if (remaining.substr(0, std::string_view("−").size()) == "−") {
+            normalized.push_back('-');
+            i += std::string_view("−").size();
+        } else if (remaining.substr(0, std::string_view("π").size()) == "π") {
+            normalized += "pi";
+            i += std::string_view("π").size();
+        } else if (remaining.substr(0, std::string_view("τ").size()) == "τ") {
+            normalized += "tau";
+            i += std::string_view("τ").size();
+        } else if (remaining.substr(0, std::string_view("√").size()) == "√") {
+            normalized += "sqrt ";
+            i += std::string_view("√").size();
+        } else {
+            normalized.push_back(input[i]);
+            ++i;
+        }
+    }
+    return normalized;
+}
+
 constexpr std::array<ConstantInfo, 17> kConstants{{
     {"pi", "π", kPi, ""},
     {"e", "euler", kE, ""},
@@ -43,6 +82,16 @@ const ConstantInfo* lookup_constant(std::string_view name) noexcept {
         if (constant.name == name || constant.alias == name) return &constant;
     }
     return nullptr;
+}
+
+std::string inverse_function_name(std::string_view name) {
+    if (name == "sin") return "asin";
+    if (name == "cos") return "acos";
+    if (name == "tan") return "atan";
+    if (name == "sinh") return "asinh";
+    if (name == "cosh") return "acosh";
+    if (name == "tanh") return "atanh";
+    return {};
 }
 
 enum class DecimalTokenStatus {
@@ -243,12 +292,59 @@ private:
         return left;
     }
 
+    bool consume_superscript_digit(int& digit) {
+        static constexpr std::array<std::pair<std::string_view, int>, 10> digits{{
+            {"⁰", 0}, {"¹", 1}, {"²", 2}, {"³", 3}, {"⁴", 4},
+            {"⁵", 5}, {"⁶", 6}, {"⁷", 7}, {"⁸", 8}, {"⁹", 9}
+        }};
+        for (const auto& [symbol, value] : digits) {
+            if (consume_text(symbol)) {
+                digit = value;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool parse_superscript_exponent(double& exponent) {
+        const std::size_t saved = position_;
+        const bool negative = consume_text("⁻");
+        int digit = 0;
+        bool any = false;
+        int value = 0;
+        while (consume_superscript_digit(digit)) {
+            any = true;
+            if (value > 100000000) {
+                position_ = saved;
+                return false;
+            }
+            value = value * 10 + digit;
+        }
+        if (!any) {
+            position_ = saved;
+            return false;
+        }
+        exponent = negative ? -static_cast<double>(value)
+                            : static_cast<double>(value);
+        return true;
+    }
+
     double parse_postfix() {
         double value = parse_primary();
         while (error_.empty()) {
-            if (consume('%')) value /= 100.0;
-            else if (consume('!')) value = factorial(value);
-            else break;
+            if (consume('%')) {
+                value /= 100.0;
+            } else if (consume('!')) {
+                value = factorial(value);
+            } else {
+                double exponent = 0.0;
+                if (!parse_superscript_exponent(exponent)) break;
+                value = std::pow(value, exponent);
+                if (!std::isfinite(value)) {
+                    error_ = "invalid power result";
+                    return 0.0;
+                }
+            }
         }
         return value;
     }
@@ -322,6 +418,14 @@ private:
             if (!consume(')') && error_.empty()) error_ = "missing closing parenthesis";
             return value;
         }
+        if (consume('|')) {
+            const double value = parse_expression();
+            if (!consume('|') && error_.empty()) {
+                error_ = "missing closing absolute-value bar";
+                return 0.0;
+            }
+            return std::fabs(value);
+        }
 
         if (position_ < input_.size() &&
             (std::isalpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) {
@@ -340,11 +444,26 @@ private:
                 }());
                 return std::generate_canonical<double, 53>(engine);
             }
+
+            std::string function_name = name;
+            if (consume_text("⁻¹")) {
+                function_name = inverse_function_name(name);
+                if (function_name.empty()) {
+                    error_ = "inverse notation requires a trigonometric function";
+                    return 0.0;
+                }
+            }
+
             if (consume('(')) {
                 const double argument = parse_expression();
                 if (!consume(')') && error_.empty()) error_ = "missing closing parenthesis";
                 if (!error_.empty()) return 0.0;
-                return apply_function(name, argument);
+                return apply_function(function_name, argument);
+            }
+            if (is_builtin_function_name(function_name)) {
+                const double argument = parse_unary();
+                if (!error_.empty()) return 0.0;
+                return apply_function(function_name, argument);
             }
             const auto it = variables_.find(name);
             if (it == variables_.end()) { error_ = "unknown variable"; return 0.0; }
@@ -471,6 +590,14 @@ private:
 
 const std::array<ConstantInfo, 17>& constant_catalog() noexcept {
     return kConstants;
+}
+
+bool is_builtin_function_name(std::string_view name) noexcept {
+    for (const auto function_name : kBuiltinFunctions) {
+        if (function_name == name) return true;
+    }
+    return name == "exp2" || name == "exp10" ||
+           name == "floor" || name == "ceil";
 }
 
 Result apply_real_function(RealFunction function, double value,
@@ -704,15 +831,18 @@ std::string format_engineering_value(double value) {
 
 Result evaluate(const std::string& expression) {
     static const Variables empty_variables;
-    return Parser(expression, empty_variables).run();
+    const std::string normalized = normalize_expression_spelling(expression);
+    return Parser(normalized, empty_variables).run();
 }
 
 Result evaluate(const std::string& expression, const Variables& variables) {
-    return Parser(expression, variables).run();
+    const std::string normalized = normalize_expression_spelling(expression);
+    return Parser(normalized, variables).run();
 }
 
 Result evaluate_immediate(const std::string& expression) {
-    return ImmediateParser(expression).run();
+    const std::string normalized = normalize_expression_spelling(expression);
+    return ImmediateParser(normalized).run();
 }
 
 } // namespace calculator

@@ -17,7 +17,8 @@ bool valid_identifier(const std::string& name) {
 }
 
 bool reserved_identifier(const std::string& name) {
-    if (name == "_" || name == "rand") return true;
+    if (name == "_" || name == "rand" ||
+        is_builtin_function_name(name)) return true;
     for (const auto& constant : constant_catalog()) {
         if (constant.name == name || constant.alias == name) return true;
     }

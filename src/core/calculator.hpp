@@ -18,6 +18,7 @@ struct ConstantInfo {
 };
 
 const std::array<ConstantInfo, 17>& constant_catalog() noexcept;
+bool is_builtin_function_name(std::string_view name) noexcept;
 
 struct Result {
     bool ok = false;
