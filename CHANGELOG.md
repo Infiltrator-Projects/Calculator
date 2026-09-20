@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 — 2026-09-20
+
+- Fix the Linux Advanced Tools title-bar close action so it closes only the Tools workbench and never terminates the Calculator application.
+- Give the GTK Tools workbench explicit secondary-window ownership, reuse it when reopened and destroy it with the main Calculator window.
+- Extend mature GNOME Calculator parity work with broader expression/unit coverage and keyboard expression handling already present on current main.
+- Add a cross-platform source regression guard for the Linux Tools window lifecycle while retaining the already-correct Win32 close behaviour.
+
 ## 0.2.1 — 2026-09-20
 
 - Reset Scientific F-E notation on Clear and protect the behaviour with shared-controller regression coverage.
