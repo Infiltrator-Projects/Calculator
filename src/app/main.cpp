@@ -44,6 +44,7 @@ GtkWidget* results_button = nullptr;
 GtkWidget* bases_button = nullptr;
 GtkWidget* theme_button = nullptr;
 GtkWidget* main_window = nullptr;
+GtkWidget* tools_window = nullptr;
 GtkWidget* history_dock = nullptr;
 GtkWidget* history_text = nullptr;
 GtkWidget* calculator_column = nullptr;
@@ -543,12 +544,29 @@ void on_tool_run(GtkButton*, gpointer data) {
 }
 
 void show_advanced_tools(GtkWidget*, gpointer) {
-    GtkWidget* window = gtk_window_new();
+    if (tools_window) {
+        gtk_window_present(GTK_WINDOW(tools_window));
+        return;
+    }
+
+    GtkApplication* app =
+        main_window
+            ? gtk_window_get_application(GTK_WINDOW(main_window))
+            : nullptr;
+    GtkWidget* window =
+        app ? gtk_application_window_new(app) : gtk_window_new();
+    tools_window = window;
+    g_object_add_weak_pointer(
+        G_OBJECT(window),
+        reinterpret_cast<gpointer*>(&tools_window));
+
     gtk_window_set_title(GTK_WINDOW(window), "Calculator Tools");
     gtk_window_set_default_size(GTK_WINDOW(window), 720, 620);
+    gtk_window_set_hide_on_close(GTK_WINDOW(window), TRUE);
     if (main_window) {
         gtk_window_set_transient_for(
             GTK_WINDOW(window), GTK_WINDOW(main_window));
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(window), TRUE);
     }
 
     auto* state = new ToolWindowState();
