@@ -17,6 +17,7 @@ bool valid_identifier(const std::string& name) {
 }
 
 bool reserved_identifier(const std::string& name) {
+    if (name == "_" || name == "rand") return true;
     for (const auto& constant : constant_catalog()) {
         if (constant.name == name || constant.alias == name) return true;
     }
@@ -55,8 +56,9 @@ Result Session::evaluate(const std::string& input) {
 
     Result result = calculator::evaluate(assignment ? expression : input, variables_);
 
-    if (result.ok && assignment) {
-        variables_[*assignment] = result.value;
+    if (result.ok) {
+        if (assignment) variables_[*assignment] = result.value;
+        variables_["_"] = result.value;
     }
 
     record_history(input, result, HistoryKind::Scientific);

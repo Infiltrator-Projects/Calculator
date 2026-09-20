@@ -6,6 +6,7 @@
 #include <cctype>
 #include <charconv>
 #include <cmath>
+#include <random>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -128,6 +129,56 @@ private:
         return false;
     }
 
+    bool consume_text(std::string_view text) {
+        skip_space();
+        if (position_ + text.size() > input_.size() ||
+            input_.substr(position_, text.size()) != text) {
+            return false;
+        }
+        position_ += text.size();
+        return true;
+    }
+
+    bool consume_keyword(std::string_view keyword) {
+        skip_space();
+        if (position_ + keyword.size() > input_.size() ||
+            input_.substr(position_, keyword.size()) != keyword) {
+            return false;
+        }
+        const std::size_t end = position_ + keyword.size();
+        if (end < input_.size() &&
+            (std::isalnum(static_cast<unsigned char>(input_[end])) ||
+             input_[end] == '_')) {
+            return false;
+        }
+        position_ = end;
+        return true;
+    }
+
+    bool starts_implicit_factor() {
+        skip_space();
+        if (position_ >= input_.size()) return false;
+        const unsigned char next =
+            static_cast<unsigned char>(input_[position_]);
+        if (input_[position_] == '(' || std::isalpha(next) ||
+            input_[position_] == '_') {
+            return true;
+        }
+        if (std::isdigit(next) || input_[position_] == '.') {
+            std::size_t previous = position_;
+            while (previous > 0U &&
+                   std::isspace(static_cast<unsigned char>(
+                       input_[previous - 1U]))) {
+                --previous;
+            }
+            if (previous > 0U) {
+                const char prior = input_[previous - 1U];
+                return prior == ')' || prior == '!' || prior == '%';
+            }
+        }
+        return false;
+    }
+
     double parse_expression() {
         double left = parse_term();
         while (error_.empty()) {
@@ -141,12 +192,27 @@ private:
     double parse_term() {
         double left = parse_unary();
         while (error_.empty()) {
-            if (consume('*')) left *= parse_unary();
-            else if (consume('/')) {
+            if (consume('*')) {
+                left *= parse_unary();
+            } else if (consume('/')) {
                 const double right = parse_unary();
-                if (right == 0.0) { error_ = "division by zero"; return 0.0; }
+                if (right == 0.0) {
+                    error_ = "division by zero";
+                    return 0.0;
+                }
                 left /= right;
-            } else break;
+            } else if (consume_keyword("mod")) {
+                const double right = parse_unary();
+                if (right == 0.0) {
+                    error_ = "modulus by zero";
+                    return 0.0;
+                }
+                left = std::fmod(left, right);
+            } else if (starts_implicit_factor()) {
+                left *= parse_unary();
+            } else {
+                break;
+            }
         }
         return left;
     }
@@ -168,7 +234,8 @@ private:
 
     double parse_power() {
         double left = parse_postfix();
-        if (error_.empty() && consume('^')) {
+        if (error_.empty() &&
+            (consume('^') || consume_text("**"))) {
             const double right = parse_unary();
             left = std::pow(left, right);
             if (!std::isfinite(left)) error_ = "invalid power result";
@@ -203,6 +270,15 @@ private:
     }
 
     double apply_function(const std::string& name, double x) {
+        if (name == "frac") return x - std::trunc(x);
+        if (name == "int") return std::trunc(x);
+        if (name == "round") return std::round(x);
+        if (name == "sgn") {
+            if (x < 0.0) return -1.0;
+            if (x > 0.0) return 1.0;
+            return 0.0;
+        }
+
         RealFunction function = RealFunction::Abs;
         if (name == "sin") function = RealFunction::Sin;
         else if (name == "cos") function = RealFunction::Cos;
@@ -252,6 +328,17 @@ private:
             const std::string name = parse_identifier();
             if (const ConstantInfo* constant = lookup_constant(name)) {
                 return constant->value;
+            }
+            if (name == "rand") {
+                static thread_local std::mt19937_64 engine([] {
+                    std::random_device source;
+                    const std::uint64_t high =
+                        static_cast<std::uint64_t>(source()) << 32U;
+                    const std::uint64_t low =
+                        static_cast<std::uint64_t>(source());
+                    return high ^ low;
+                }());
+                return std::generate_canonical<double, 53>(engine);
             }
             if (consume('(')) {
                 const double argument = parse_expression();

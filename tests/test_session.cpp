@@ -29,10 +29,13 @@ int main(){
         fail("broader constant assignment should be rejected");
     reserved.set_variable("c", 99.0);
     if(reserved.variable("c").has_value()) fail("constant alias should be reserved");
+    if(reserved.evaluate("_=1").ok) fail("last-result variable assignment should be rejected");
+    if(reserved.evaluate("rand=1").ok) fail("random variable assignment should be rejected");
 
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");
+    expect_value(session.evaluate("_ + 1"),21.0,"last result variable");
 
     session.memory_clear();
     if(!session.memory_empty()) fail("cleared memory should be empty");
