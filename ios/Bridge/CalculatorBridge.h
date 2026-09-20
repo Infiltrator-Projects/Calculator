@@ -18,6 +18,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)additionalResultsText;
 - (NSString *)programmerRepresentationsText;
 
+- (NSArray<NSDictionary *> *)advancedToolCatalog;
+- (NSDictionary *)evaluateAdvancedToolAtIndex:(NSInteger)index
+                                      input:(NSString *)input
+    NS_SWIFT_NAME(evaluateAdvancedTool(index:input:));
+
 - (NSString *)historyText;
 - (NSArray<NSDictionary *> *)historyEntries;
 - (BOOL)recallHistoryAtIndex:(NSInteger)index
