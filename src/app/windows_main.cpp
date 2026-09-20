@@ -32,6 +32,7 @@ constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
+constexpr int kIdHistoryList = 3002;
 
 using calculator::ui::ThemeMode;
 using calculator::ui::ThemePalette;
@@ -461,7 +462,23 @@ std::wstring history_text() {
 void refresh_history() {
     const std::wstring text = history_text();
     if (g_history_edit != nullptr) {
-        SetWindowTextW(g_history_edit, text.c_str());
+        SendMessageW(g_history_edit, LB_RESETCONTENT, 0, 0);
+        const std::size_t count = g_controller.history_count();
+        if (count == 0) {
+            SendMessageW(
+                g_history_edit, LB_ADDSTRING, 0,
+                reinterpret_cast<LPARAM>(L"No calculations yet."));
+        } else {
+            for (std::size_t index = 0; index < count; ++index) {
+                const auto entry = g_controller.history_entry(index);
+                if (!entry) continue;
+                const std::wstring row = utf8_to_wide(
+                    entry->input + "    = " + entry->output);
+                SendMessageW(
+                    g_history_edit, LB_ADDSTRING, 0,
+                    reinterpret_cast<LPARAM>(row.c_str()));
+            }
+        }
     }
     if (g_history_dock != nullptr) {
         SetWindowTextW(g_history_dock, text.c_str());
@@ -1162,10 +1179,13 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
     case WM_CREATE: {
         apply_nonclient_theme(window);
         g_history_edit = CreateWindowExW(
-            0, L"EDIT", L"",
-            WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE |
-                ES_READONLY | ES_AUTOVSCROLL,
-            0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+            0, L"LISTBOX", L"",
+            WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP |
+                LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
+            0, 0, 0, 0, window,
+            reinterpret_cast<HMENU>(
+                static_cast<INT_PTR>(kIdHistoryList)),
+            g_instance, nullptr);
         apply_control_theme(g_history_edit);
         apply_font(g_history_edit, g_ui_font);
 
@@ -1198,6 +1218,22 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
             refresh_history();
             return 0;
         }
+        if (LOWORD(wparam) == kIdHistoryList &&
+            HIWORD(wparam) == LBN_DBLCLK &&
+            g_history_edit != nullptr) {
+            const LRESULT selected = SendMessageW(
+                g_history_edit, LB_GETCURSEL, 0, 0);
+            if (selected != LB_ERR &&
+                g_controller.recall_history(
+                    static_cast<std::size_t>(selected))) {
+                render_state();
+                resize_main_for_mode(
+                    g_main, g_controller.state().mode);
+                layout_main(g_main);
+                SetFocus(g_expression);
+            }
+            return 0;
+        }
         break;
     case WM_CTLCOLORSTATIC: {
         HDC dc = reinterpret_cast<HDC>(wparam);
@@ -1206,6 +1242,12 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
         return reinterpret_cast<LRESULT>(g_background_brush);
     }
     case WM_CTLCOLOREDIT: {
+        HDC dc = reinterpret_cast<HDC>(wparam);
+        SetTextColor(dc, kText);
+        SetBkColor(dc, kInput);
+        return reinterpret_cast<LRESULT>(g_input_brush);
+    }
+    case WM_CTLCOLORLISTBOX: {
         HDC dc = reinterpret_cast<HDC>(wparam);
         SetTextColor(dc, kText);
         SetBkColor(dc, kInput);

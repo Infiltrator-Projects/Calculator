@@ -144,3 +144,10 @@ A calculation rule must have one authoritative implementation. If a platform she
 ## Packaging boundary
 
 Common is a build/link dependency only. Calculator adds it with `EXCLUDE_FROM_ALL`; Calculator packages must not install Common libraries, headers or CMake metadata.
+
+
+## Structured history and recall
+
+History is a bounded domain model rather than a platform-owned text log. Each entry records its Calculator mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, fixed width and signed-display context so recall is deterministic even for values that cannot be represented exactly by binary64.
+
+The shared Controller exposes newest-first history access and recall. Platform shells render and select those entries but do not reconstruct mode state or reinterpret history themselves. Wide desktop history docking remains a non-interactive summary; explicit recall is handled by the dedicated history surface.

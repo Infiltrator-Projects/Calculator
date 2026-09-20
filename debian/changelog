@@ -1,3 +1,13 @@
+infiltrator-calculator (0.1.39) unstable; urgency=medium
+
+  * Add structured cross-platform calculation history and exact recall.
+  * Preserve Programmer radix, width and signed context in history entries.
+  * Record Programmer results without lossy binary64 conversion.
+  * Add GTK, Win32 and iPhone history recall interactions.
+  * Add regression coverage for bounded history and replay state.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 12:15:00 +1000
+
 infiltrator-calculator (0.1.38) unstable; urgency=medium
 
   * Expand Scientific mode with 2nd/HYP layers, DEG/RAD/GRAD and F-E notation.

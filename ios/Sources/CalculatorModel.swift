@@ -27,6 +27,14 @@ enum CalcMode: String, CaseIterable, Identifiable {
     }
 }
 
+struct CalculatorHistoryRow: Identifiable {
+    let id: Int
+    let mode: Int
+    let input: String
+    let output: String
+    let ok: Bool
+}
+
 @MainActor
 final class CalculatorModel: ObservableObject {
     @Published var mode: CalcMode = .standard
@@ -117,6 +125,30 @@ final class CalculatorModel: ObservableObject {
 
     func historyText() -> String {
         bridge.historyText()
+    }
+
+    func historyEntries() -> [CalculatorHistoryRow] {
+        guard let raw = bridge.historyEntries() as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let index = (item["index"] as? NSNumber)?.intValue,
+                  let mode = (item["mode"] as? NSNumber)?.intValue,
+                  let input = item["input"] as? String,
+                  let output = item["output"] as? String,
+                  let ok = (item["ok"] as? NSNumber)?.boolValue
+            else {
+                return nil
+            }
+            return CalculatorHistoryRow(
+                id: index, mode: mode, input: input, output: output, ok: ok)
+        }
+    }
+
+    func recallHistory(_ index: Int) {
+        if bridge.recallHistory(at: index) {
+            sync()
+        }
     }
 
     func clearHistory() {

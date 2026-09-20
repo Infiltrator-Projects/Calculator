@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.39" date="2026-09-20">
+      <description>
+        <p>Add structured, recallable calculation history across Linux, Windows and iPhone, including exact Programmer-mode context.</p>
+      </description>
+    </release>
     <release version="0.1.38" date="2026-09-20">
       <description>
         <p>Expand Scientific and Programmer capability with stateful 2nd/HYP/angle/notation controls, rotate and NAND/NOR operators, and explicit memory store while preserving cross-platform parity.</p>

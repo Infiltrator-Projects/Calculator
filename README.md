@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.1.38  
+**Current source version:** 0.1.39  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.8  
 **Design contract:** shared Design v1  
@@ -56,7 +56,7 @@ Calculator has three explicitly switchable modes presented as a visible mode str
 - Scientific — expression/order-of-operations evaluation, trigonometric and inverse/hyperbolic trigonometric functions, logarithmic/exponential functions, roots and powers, factorial/percentage operations, DEG/RAD/GRAD angle units, a 2nd-function layer and F-E scientific-notation display switching; and
 - Programmer — binary, octal, decimal and hexadecimal fixed-width integer arithmetic, complement, AND/OR/XOR/NAND/NOR, shifts, rotate-left/right, 8/16/32/64-bit widths, and unsigned/signed display. Width controls are explicitly labelled W8, W16, W32 and W64 so they do not conflict with numeric keypad entry.
 
-The calculator also provides reusable variables, bounded calculation history, explicit MC/MR/MS/M+/M− memory controls and a shared calculation-session layer above the parser. Scientific expressions can assign reusable variables such as `x=42`; the built-in constants `pi` and `e` are reserved and cannot be overwritten. Standard mode remains deliberately confined to immediate-calculator grammar rather than silently falling through to Scientific parsing.
+The calculator also provides reusable variables, bounded structured calculation history with exact Programmer-mode context and recall, explicit MC/MR/MS/M+/M− memory controls and a shared calculation-session layer above the parser. Scientific expressions can assign reusable variables such as `x=42`; the built-in constants `pi` and `e` are reserved and cannot be overwritten. Standard mode remains deliberately confined to immediate-calculator grammar rather than silently falling through to Scientific parsing.
 
 Controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Features are considered complete only when implementation, tests and documented behaviour agree.
 

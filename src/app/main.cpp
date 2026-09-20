@@ -263,16 +263,62 @@ void show_history(GtkWidget*, gpointer) {
     gtk_widget_set_vexpand(scroll, TRUE);
     gtk_box_append(GTK_BOX(root), scroll);
 
-    GtkWidget* history_view = gtk_text_view_new();
-    gtk_widget_add_css_class(history_view, "history-text");
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(history_view), FALSE);
-    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(history_view), FALSE);
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(history_view), GTK_WRAP_WORD_CHAR);
-    GtkTextBuffer* history_buffer =
-        gtk_text_view_get_buffer(GTK_TEXT_VIEW(history_view));
-    const std::string history = controller.history_text();
-    gtk_text_buffer_set_text(history_buffer, history.c_str(), -1);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), history_view);
+    GtkWidget* list = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_widget_add_css_class(list, "history-list");
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), list);
+
+    const std::size_t count = controller.history_count();
+    if (count == 0) {
+        GtkWidget* empty = gtk_label_new("No calculations yet.");
+        gtk_widget_add_css_class(empty, "history-row");
+        gtk_widget_set_halign(empty, GTK_ALIGN_START);
+        gtk_box_append(GTK_BOX(list), empty);
+    } else {
+        for (std::size_t index = 0; index < count; ++index) {
+            const auto entry = controller.history_entry(index);
+            if (!entry) continue;
+
+            std::string label = entry->input;
+            label += "\n= ";
+            label += entry->output;
+
+            GtkWidget* recall = gtk_button_new_with_label(label.c_str());
+            gtk_widget_add_css_class(recall, "history-row");
+            gtk_widget_set_halign(recall, GTK_ALIGN_FILL);
+            gtk_widget_set_hexpand(recall, TRUE);
+            gtk_widget_set_tooltip_text(
+                recall, "Recall this calculation into Calculator");
+            g_signal_connect(
+                recall, "clicked",
+                G_CALLBACK(+[](GtkButton*, gpointer data) {
+                    const auto encoded = GPOINTER_TO_UINT(data);
+                    if (encoded == 0U) return;
+                    const std::size_t index =
+                        static_cast<std::size_t>(encoded - 1U);
+                    if (!controller.recall_history(index)) return;
+
+                    render_state();
+                    if (main_window) {
+                        const auto& metrics =
+                            calculator::ui::kDesktopMetrics;
+                        const int current_width =
+                            gtk_widget_get_width(main_window);
+                        if (current_width < metrics.wide_threshold) {
+                            gtk_window_set_default_size(
+                                GTK_WINDOW(main_window),
+                                std::max(
+                                    current_width,
+                                    metrics.default_width),
+                                calculator::ui::desktop_preferred_height(
+                                    controller.state().mode));
+                        }
+                    }
+                    gtk_widget_grab_focus(expression_entry);
+                }),
+                GUINT_TO_POINTER(static_cast<guint>(index + 1U)));
+            gtk_box_append(GTK_BOX(list), recall);
+        }
+    }
 
     GtkWidget* clear = gtk_button_new_with_label("Clear History");
     gtk_widget_add_css_class(clear, "toolbar-button");
@@ -543,8 +589,13 @@ void apply_css(GtkWidget* window) {
             std::to_string(design.control_spacing) + "px}"
         ".history-text{background:" + panel + ";color:" + text + ";font-size:12px}"
         ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px}"
-        ".history-row{padding:" + std::to_string(design.control_spacing) +
-            "px;border-bottom:1px solid " + border + ";color:" + text + ";font-size:12px}"
+        ".history-row{background:" + card + ";padding:" +
+            std::to_string(design.control_spacing) +
+            "px;border:1px solid " + border + ";border-radius:" +
+            std::to_string(design.control_radius) +
+            "px;color:" + text + ";font-size:12px;text-align:left}"
+        ".history-row:hover{background:" + card_hover +
+            ";border-color:" + neutral + "}"
         ".compact .brand-title{font-size:17px}"
         ".compact .display{padding:7px}"
         ".compact .calc-button{min-height:30px;font-size:13px}"

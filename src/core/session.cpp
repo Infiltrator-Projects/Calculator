@@ -46,7 +46,7 @@ Result Session::evaluate(const std::string& input) {
 
     if (assignment && reserved_identifier(*assignment)) {
         Result result{false, 0.0, "cannot assign reserved constant"};
-        record_history(input, result);
+        record_history(input, result, HistoryKind::Scientific);
         return result;
     }
 
@@ -56,12 +56,24 @@ Result Session::evaluate(const std::string& input) {
         variables_[*assignment] = result.value;
     }
 
-    record_history(input, result);
+    record_history(input, result, HistoryKind::Scientific);
     return result;
 }
 
-void Session::record_history(std::string input, Result result) {
-    history_.push_back({std::move(input), std::move(result)});
+void Session::record_history(std::string input, const Result& result,
+                             HistoryKind kind, HistoryContext context) {
+    const std::string output = result.ok
+        ? calculator::format_value(result.value)
+        : ("Error: " + result.error);
+    record_history_text(
+        std::move(input), output, result.ok, kind, context);
+}
+
+void Session::record_history_text(std::string input, std::string output,
+                                  bool ok, HistoryKind kind,
+                                  HistoryContext context) {
+    history_.push_back(
+        {kind, context, std::move(input), std::move(output), ok});
     while (history_.size() > history_limit_) history_.pop_front();
 }
 
@@ -98,6 +110,13 @@ std::optional<double> Session::variable(const std::string& name) const {
 
 const Variables& Session::variables() const noexcept { return variables_; }
 const std::deque<HistoryEntry>& Session::history() const noexcept { return history_; }
+std::size_t Session::history_count() const noexcept { return history_.size(); }
+
+std::optional<HistoryEntry> Session::history_from_newest(
+    std::size_t index) const {
+    if (index >= history_.size()) return std::nullopt;
+    return history_[history_.size() - 1U - index];
+}
 
 std::string Session::history_text(std::size_t limit,
                                   std::string_view newline) const {
@@ -111,9 +130,7 @@ std::string Session::history_text(std::size_t limit,
         text += it->input;
         text.append(newline.data(), newline.size());
         text += "  = ";
-        text += it->result.ok
-                    ? calculator::format_value(it->result.value)
-                    : ("Error: " + it->result.error);
+        text += it->output;
         text.append(newline.data(), newline.size());
         text.append(newline.data(), newline.size());
     }

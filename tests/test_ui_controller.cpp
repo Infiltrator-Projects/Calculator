@@ -158,6 +158,44 @@ int main() {
 
     controller.clear_history();
     CHECK(controller.history_text() == "No calculations yet.");
+    CHECK(controller.history_count() == 0);
+
+    controller.set_mode(Mode::Standard);
+    controller.set_expression("7+5");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.history_count() == 1);
+    CHECK(controller.history_entry(0).has_value());
+    CHECK(controller.history_entry(0)->kind ==
+          calculator::HistoryKind::Standard);
+    CHECK(controller.history_entry(0)->output == "12");
+
+    controller.set_mode(Mode::Programmer);
+    controller.dispatch(Command::BaseHex);
+    controller.dispatch(Command::Width8);
+    controller.dispatch(Command::ToggleSigned);
+    controller.set_expression("FF");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.history_count() == 2);
+    CHECK(controller.history_entry(0)->kind ==
+          calculator::HistoryKind::Programmer);
+    CHECK(controller.history_entry(0)->output == "-1");
+
+    controller.set_mode(Mode::Standard);
+    CHECK(controller.recall_history(0));
+    CHECK(controller.state().mode == Mode::Programmer);
+    CHECK(controller.state().programmer_base ==
+          calculator::ProgrammerBase::Hexadecimal);
+    CHECK(controller.state().programmer_width ==
+          calculator::IntegerWidth::Bits8);
+    CHECK(controller.state().programmer_signed);
+    CHECK(controller.state().expression == "FF");
+    CHECK(controller.state().result == "-1");
+
+    CHECK(controller.recall_history(1));
+    CHECK(controller.state().mode == Mode::Standard);
+    CHECK(controller.state().expression == "7+5");
+    CHECK(controller.state().result == "12");
+    CHECK(!controller.recall_history(99));
 
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";

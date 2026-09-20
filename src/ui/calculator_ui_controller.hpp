@@ -6,6 +6,7 @@
 #include "calculator_ui_contract.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 

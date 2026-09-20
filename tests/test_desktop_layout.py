@@ -309,3 +309,31 @@ assert "history_text()" in ios_bridge
 assert "session().history()" not in ios_bridge
 assert "session().history()" not in linux
 assert "session().history()" not in windows
+
+for needle in (
+    "controller.history_count()",
+    "controller.history_entry(index)",
+    "controller.recall_history(index)",
+):
+    assert needle in linux, f"Linux structured history replay missing: {needle}"
+
+for needle in (
+    "LB_RESETCONTENT",
+    "LBS_NOTIFY",
+    "LBN_DBLCLK",
+    "g_controller.history_entry(index)",
+    "g_controller.recall_history(",
+):
+    assert needle in windows, f"Windows structured history replay missing: {needle}"
+
+for needle in (
+    "historyEntries()",
+    "recallHistoryAtIndex",
+):
+    assert needle in ios_bridge, f"iPhone structured history bridge missing: {needle}"
+
+for needle in (
+    "model.historyEntries()",
+    "model.recallHistory(entry.id)",
+):
+    assert needle in ios, f"iPhone structured history UI missing: {needle}"

@@ -17,6 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isKeyEnabled:(NSString *)key;
 
 - (NSString *)historyText;
+- (NSArray<NSDictionary *> *)historyEntries;
+- (BOOL)recallHistoryAtIndex:(NSInteger)index
+    NS_SWIFT_NAME(recallHistory(at:));
 - (void)clearHistory;
 
 @end

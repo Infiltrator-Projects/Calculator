@@ -13,9 +13,24 @@
 
 namespace calculator {
 
+enum class HistoryKind {
+    Standard,
+    Scientific,
+    Programmer
+};
+
+struct HistoryContext {
+    unsigned programmer_base = 10;
+    unsigned programmer_width = 64;
+    bool programmer_signed = false;
+};
+
 struct HistoryEntry {
+    HistoryKind kind = HistoryKind::Scientific;
+    HistoryContext context{};
     std::string input;
-    Result result;
+    std::string output;
+    bool ok = false;
 };
 
 // Process-local calculator state shared across evaluations. Session owns
@@ -39,13 +54,22 @@ public:
     // Distinguishes "never set/cleared" from a legitimate stored numeric zero.
     bool memory_empty() const noexcept;
 
-    void record_history(std::string input, Result result);
+    void record_history(
+        std::string input, const Result& result,
+        HistoryKind kind = HistoryKind::Scientific,
+        HistoryContext context = {});
+    void record_history_text(
+        std::string input, std::string output, bool ok,
+        HistoryKind kind, HistoryContext context = {});
 
     void set_variable(std::string name, double value);
     std::optional<double> variable(const std::string& name) const;
     const Variables& variables() const noexcept;
 
     const std::deque<HistoryEntry>& history() const noexcept;
+    std::size_t history_count() const noexcept;
+    std::optional<HistoryEntry> history_from_newest(
+        std::size_t index) const;
     std::string history_text(
         std::size_t limit = 50,
         std::string_view newline = "\n") const;

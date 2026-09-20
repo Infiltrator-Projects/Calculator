@@ -203,6 +203,35 @@ NSInteger angle_value(calculator::AngleUnit unit) {
     return to_ns([self controller]->history_text());
 }
 
+- (NSArray<NSDictionary *> *)historyEntries {
+    Controller *controller = [self controller];
+    NSMutableArray<NSDictionary *> *items = [NSMutableArray array];
+    const std::size_t count = controller->history_count();
+    for (std::size_t index = 0; index < count; ++index) {
+        const auto entry = controller->history_entry(index);
+        if (!entry) continue;
+
+        NSInteger mode = 1;
+        if (entry->kind == calculator::HistoryKind::Standard) mode = 0;
+        else if (entry->kind == calculator::HistoryKind::Programmer) mode = 2;
+
+        [items addObject:@{
+            @"index": @(static_cast<NSInteger>(index)),
+            @"mode": @(mode),
+            @"input": to_ns(entry->input),
+            @"output": to_ns(entry->output),
+            @"ok": @(entry->ok)
+        }];
+    }
+    return items;
+}
+
+- (BOOL)recallHistoryAtIndex:(NSInteger)index {
+    if (index < 0) return NO;
+    return [self controller]->recall_history(
+        static_cast<std::size_t>(index)) ? YES : NO;
+}
+
 - (void)clearHistory {
     [self controller]->clear_history();
 }

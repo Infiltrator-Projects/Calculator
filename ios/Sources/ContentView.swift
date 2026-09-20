@@ -439,7 +439,7 @@ private struct HistoryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var systemColorScheme
     @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
-    @State private var history = ""
+    @State private var entries: [CalculatorHistoryRow] = []
 
     private var themePreference: ThemePreference {
         ThemePreference(rawValue: themePreferenceRaw) ?? .system
@@ -458,23 +458,58 @@ private struct HistoryView: View {
             ZStack {
                 palette.background.ignoresSafeArea()
 
-                ScrollView {
-                    Text(history)
+                if entries.isEmpty {
+                    Text("No calculations yet.")
                         .font(CalculatorTypography.regular(15, relativeTo: .body))
-                        .foregroundStyle(palette.text)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .foregroundStyle(palette.subtle)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: sharedDesign.controlSpacing) {
+                            ForEach(entries) { entry in
+                                Button {
+                                    model.recallHistory(entry.id)
+                                    dismiss()
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(entry.input)
+                                            .font(CalculatorTypography.regular(14, relativeTo: .body))
+                                            .foregroundStyle(palette.text)
+                                            .lineLimit(2)
+                                        Text("= \(entry.output)")
+                                            .font(CalculatorTypography.bold(15, relativeTo: .body))
+                                            .foregroundStyle(entry.ok ? palette.title : palette.fault)
+                                            .lineLimit(2)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(sharedDesign.contentPadding)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                            .fill(palette.card)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                                    .stroke(palette.border, lineWidth: 1)
+                                            )
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(
+                                    "Recall \(entry.input), result \(entry.output)")
+                            }
+                        }
                         .padding(sharedDesign.sectionSpacing)
+                    }
                 }
-                .background(palette.panel)
             }
             .navigationTitle("Calculation History")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Clear") {
                         model.clearHistory()
-                        history = model.historyText()
+                        entries = model.historyEntries()
                     }
                     .foregroundStyle(palette.warning)
+                    .disabled(entries.isEmpty)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -483,6 +518,6 @@ private struct HistoryView: View {
             }
         }
         .preferredColorScheme(themePreference.preferredScheme)
-        .onAppear { history = model.historyText() }
+        .onAppear { entries = model.historyEntries() }
     }
 }

@@ -43,6 +43,9 @@ int main(){
     expect_value(session.evaluate("x + 5"),15.0,"history result");
     if(session.history().size()!=3) fail("history length wrong");
     if(session.history().back().input!="x + 5") fail("history input wrong");
+    if(session.history().back().output!="15") fail("history output wrong");
+    if(session.history().back().kind!=calculator::HistoryKind::Scientific)
+        fail("history kind wrong");
 
     session.evaluate("1+1");
     session.evaluate("2+2");
@@ -55,6 +58,22 @@ int main(){
         fail("history text second entry wrong");
     if(history_text.find("x + 5") != std::string::npos)
         fail("history text limit ignored");
+
+    calculator::HistoryContext programmer_context{};
+    programmer_context.programmer_base = 16;
+    programmer_context.programmer_width = 8;
+    programmer_context.programmer_signed = true;
+    session.record_history_text(
+        "FF", "-1", true, calculator::HistoryKind::Programmer,
+        programmer_context);
+    const auto newest = session.history_from_newest(0);
+    if(!newest || newest->output!="-1" ||
+       newest->kind!=calculator::HistoryKind::Programmer ||
+       newest->context.programmer_base!=16 ||
+       newest->context.programmer_width!=8 ||
+       !newest->context.programmer_signed)
+        fail("structured programmer history context wrong");
+    if(session.history_count()!=3) fail("history_count wrong");
 
     session.clear_history();
     if(!session.history().empty()) fail("history clear wrong");

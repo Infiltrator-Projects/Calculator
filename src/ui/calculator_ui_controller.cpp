@@ -30,6 +30,55 @@ std::string Controller::history_text(std::size_t limit,
     return session_.history_text(limit, newline);
 }
 
+std::size_t Controller::history_count() const noexcept {
+    return session_.history_count();
+}
+
+std::optional<HistoryEntry> Controller::history_entry(
+    std::size_t index_from_newest) const {
+    return session_.history_from_newest(index_from_newest);
+}
+
+bool Controller::recall_history(std::size_t index_from_newest) {
+    const auto entry = session_.history_from_newest(index_from_newest);
+    if (!entry) return false;
+
+    if (entry->kind == HistoryKind::Standard) {
+        state_.mode = Mode::Standard;
+    } else if (entry->kind == HistoryKind::Programmer) {
+        state_.mode = Mode::Programmer;
+        switch (entry->context.programmer_base) {
+        case 2: state_.programmer_base = ProgrammerBase::Binary; break;
+        case 8: state_.programmer_base = ProgrammerBase::Octal; break;
+        case 16: state_.programmer_base = ProgrammerBase::Hexadecimal; break;
+        default: state_.programmer_base = ProgrammerBase::Decimal; break;
+        }
+        switch (entry->context.programmer_width) {
+        case 8: state_.programmer_width = IntegerWidth::Bits8; break;
+        case 16: state_.programmer_width = IntegerWidth::Bits16; break;
+        case 32: state_.programmer_width = IntegerWidth::Bits32; break;
+        default: state_.programmer_width = IntegerWidth::Bits64; break;
+        }
+        state_.programmer_signed = entry->context.programmer_signed;
+    } else {
+        state_.mode = Mode::Scientific;
+    }
+
+    state_.expression = entry->input;
+    state_.result = entry->output;
+    state_.fault = !entry->ok;
+    if (!entry->ok) {
+        state_.status = "HISTORY · ERROR";
+    } else if (state_.mode == Mode::Programmer) {
+        state_.status = programmer_status_text();
+    } else if (state_.mode == Mode::Scientific) {
+        state_.status = scientific_status_text();
+    } else {
+        state_.status = "HISTORY RECALL";
+    }
+    return true;
+}
+
 void Controller::clear_history() noexcept {
     session_.clear_history();
 }
@@ -211,18 +260,42 @@ std::string Controller::programmer_status_text() const {
 }
 
 void Controller::calculate_programmer() {
-    std::uint64_t value = 0;
-    if (!current_programmer_value(value)) return;
+    const ProgrammerResult result = evaluate_programmer(
+        state_.expression, state_.programmer_base, state_.programmer_width);
+
+    HistoryContext context{};
+    switch (state_.programmer_base) {
+    case ProgrammerBase::Binary: context.programmer_base = 2; break;
+    case ProgrammerBase::Octal: context.programmer_base = 8; break;
+    case ProgrammerBase::Decimal: context.programmer_base = 10; break;
+    case ProgrammerBase::Hexadecimal: context.programmer_base = 16; break;
+    }
+    context.programmer_width =
+        static_cast<unsigned>(state_.programmer_width);
+    context.programmer_signed = state_.programmer_signed;
+
+    if (!result.ok) {
+        state_.result = "Error: " + result.error;
+        session_.record_history_text(
+            state_.expression, state_.result, false,
+            HistoryKind::Programmer, context);
+        set_status("PROGRAMMER ERROR", true);
+        return;
+    }
 
     state_.result = format_programmer(
-        value, state_.programmer_base,
+        result.value, state_.programmer_base,
         state_.programmer_width, state_.programmer_signed);
+    session_.record_history_text(
+        state_.expression, state_.result, true,
+        HistoryKind::Programmer, context);
     set_status(programmer_status_text());
 }
 
 void Controller::calculate_standard() {
     const Result result = evaluate_immediate(state_.expression);
-    session_.record_history(state_.expression, result);
+    session_.record_history(
+        state_.expression, result, HistoryKind::Standard);
 
     if (!result.ok) {
         state_.result = "Error: " + result.error;

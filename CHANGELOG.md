@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.39 — 2026-09-20
+
+- Replace presentation-only history with structured history entries carrying mode, exact rendered result and Programmer radix/width/signed context.
+- Record Programmer calculations and errors in the same bounded history model without converting 64-bit results through binary64.
+- Add history recall through the shared Controller so replay restores the originating calculator mode and exact Programmer context.
+- Make Linux history rows directly recallable, add native Win32 list selection/double-click recall, and expose structured recall in the iPhone history sheet.
+- Keep wide desktop history docking as a read-only summary while the dedicated history surface owns explicit recall interaction.
+- Add regression coverage for history ordering, bounds, exact Programmer context and cross-platform replay wiring.
+
 ## 0.1.38 — 2026-09-20
 
 - Expand Scientific mode without increasing its keypad row count: add 2nd and HYP layers, DEG/RAD/GRAD cycling and F-E scientific-notation display switching while preserving the existing direct constants/operators.
