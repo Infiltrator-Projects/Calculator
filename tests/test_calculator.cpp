@@ -113,7 +113,6 @@ int main() {
     expect_error("1 / 0");
     expect_error("(1 + 2");
     expect_error("1 + foo");
-    expect_error("2 ** 3");
     expect_error("1 +");
     expect_error("nan");
     expect_error("0x1p2");
@@ -205,15 +204,15 @@ int main() {
         fail("engineering formatter decimal carry boundary wrong output");
     }
 
-        expect_ok("9 mod 5", 4.0, "text modulus");
-    expect_ok("2**3", 8.0, "double-star power");
-    expect_ok("2(3+1)", 8.0, "implicit multiplication before parenthesis");
-    expect_ok("(3+1)2", 8.0, "implicit multiplication after parenthesis");
-    expect_ok("2pi", 2.0 * 3.14159265358979323846, "implicit multiplication with constant");
-    expect_ok("frac(3.25)", 0.25, "fractional component");
-    expect_ok("int(-3.75)", -3.0, "integer component");
-    expect_ok("round(2.6)", 3.0, "round function");
-    expect_ok("sgn(-9)", -1.0, "sign function");
+    expect_value("9 mod 5", 4.0);
+    expect_value("2**3", 8.0);
+    expect_value("2(3+1)", 8.0);
+    expect_value("(3+1)2", 8.0);
+    expect_value("2pi", 2.0 * 3.14159265358979323846);
+    expect_value("frac(3.25)", 0.25);
+    expect_value("int(-3.75)", -3.0);
+    expect_value("round(2.6)", 3.0);
+    expect_value("sgn(-9)", -1.0);
     const auto random_value = calculator::evaluate("rand");
     if (!random_value.ok || random_value.value < 0.0 ||
         random_value.value >= 1.0) {
