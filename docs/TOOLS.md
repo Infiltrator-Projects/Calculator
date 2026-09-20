@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Advanced Calculator Tools
 
-Calculator 0.2.0 exposes twelve extended calculation families through the **Tools** button on Linux, Windows and iPhone. The workbench is native on each platform, but the catalogue, prompts, examples, evaluation rules and graph samples come from one shared C++ implementation in `src/core/advanced_tools.*`.
+Calculator 0.3.0 exposes fourteen extended calculation families through the **Tools** button on Linux, Windows and iPhone. The workbench is native on each platform, but the catalogue, prompts, examples, evaluation rules and graph samples come from one shared C++ implementation in `src/core/advanced_tools.*`.
 
 The input field is a compact domain command, not a shell or scripting language. It never executes host commands.
 
@@ -25,7 +25,7 @@ Example: `ohm 12 2`.
 
 Form: `value FROM TO`.
 
-Dimensions are checked; conversion between unrelated dimensions is rejected. Supported groups include length, mass, temperature, area, volume, speed, pressure, energy, power and angle. Representative symbols include `m km cm mm in ft yd mi nmi`, `kg g lb oz`, `C F K`, `m2 ft2 acre ha`, `L galUS galUK`, `mps kph mph knot`, `Pa kPa bar psi atm`, `J kWh BTU`, `W kW hp`, and `deg rad grad`.
+Dimensions are checked; conversion between unrelated dimensions is rejected. Supported groups include length, mass, temperature, area, volume, speed, pressure, energy, power, duration, frequency and angle. In addition to the ordinary SI/US units, the catalogue covers GNOME Calculator 46-era replacements such as parsecs, light-years, astronomical/rack/cable/fathom units, Troy ounces, stone, Rankine, UK/US volume measures, mmHg/Torr, electron-volts, ergs, foot-pounds, centuries through nanoseconds and Hz through THz.
 
 Example: `100 km mi`.
 
@@ -39,7 +39,7 @@ Example: `subnet 192.168.10.42/24`.
 
 ## Storage / filesystem
 
-- `convert value FROM TO` for decimal B/kB/MB/GB/TB/PB and binary KiB/MiB/GiB/TiB/PiB
+- `convert value FROM TO` for bits/nibbles, decimal B through ZB and binary KiB through ZiB
 - `raid LEVEL disks size-per-disk unit` for RAID 0/1/5/6/10
 - `clusters file-bytes cluster-bytes` for allocation and slack
 
@@ -97,6 +97,18 @@ Complex values use `real,imaginary`.
 - `conj|abs|arg|polar a,b`
 
 Example: `mul 1,2 3,-4`.
+
+## Financial
+
+The Financial tool carries the mature desktop-calculator operations Ctrm, Ddb, Fv, Gpm, Pmt, Pv, Rate, Sln, Syd and Term. Interest rates are entered as decimal periodic rates (for example, 0.005 for 0.5% per period). Zero-rate annuity cases are handled explicitly rather than producing division-by-zero artefacts.
+
+Example: `pmt 250000 0.005 360`.
+
+## Number utilities
+
+The Number utilities tool covers textual modulus, prime factorization, GCD/LCM, permutations/combinations, arbitrary real n-th roots, Unicode character/code-point conversion and one's/two's complement at 8/16/32/64 bits.
+
+Scientific expressions additionally accept `mod`, `**` as a power spelling, implicit multiplication such as `2pi` and `2(3+1)`, `frac`, `int`, `round`, `sgn`, the previous-result variable `_`, and a `rand` value in [0,1).
 
 ## Ownership and validation
 

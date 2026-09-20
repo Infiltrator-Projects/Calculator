@@ -19,6 +19,11 @@ int main(){
     check(contains(evaluate(AdvancedTool::Engineering,"ohm 12 2"),"6e+00 ohm"),"engineering ohm");
     check(contains(evaluate(AdvancedTool::UnitConversion,"100 km mi"),"62.137"),"unit conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"32 F C"),"0 C"),"temperature conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 pc ly"),"3.261"),"parsec light-year conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 st lb"),"14"),"stone pounds conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"491.67 R C"),"0 C"),"rankine conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 GHz MHz"),"1000 MHz"),"frequency conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 week day"),"7 day"),"duration conversion");
     check(contains(evaluate(AdvancedTool::Network,"subnet 192.168.10.42/24"),"Network  192.168.10.0"),"subnet network");
     check(contains(evaluate(AdvancedTool::Network,"cidr 254"),"/24"),"cidr sizing");
     check(contains(evaluate(AdvancedTool::Storage,"raid 5 6 4 TiB"),"20"),"raid capacity");
@@ -54,6 +59,19 @@ int main(){
     check(contains(evaluate(AdvancedTool::Complex,"mul 1,2 3,-4"),"11 + 2i"),"complex multiply");
     check(!evaluate(AdvancedTool::Complex,"div 1,2 0,0").ok,"complex divide zero");
 
+    check(contains(evaluate(AdvancedTool::Financial,"pmt 250000 0.005 360"),"1498.87"),"financial payment");
+    check(contains(evaluate(AdvancedTool::Financial,"sln 10000 1000 9"),"1000"),"financial straight-line depreciation");
+    check(contains(evaluate(AdvancedTool::Financial,"gpm 80 0.2"),"100"),"financial gross margin");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"mod 9 5"),"4"),"utility modulus");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"factor 360"),"2 x 2 x 2 x 3 x 3 x 5"),"utility factorization");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"gcd 84 30"),"6"),"utility gcd");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"comb 10 3"),"120"),"utility combinations");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"root 3 -8"),"-2"),"utility nth root");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"char A"),"U+0041"),"utility character code");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"code U+20AC"),"€"),"utility unicode code");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"twos 1 8"),"255"),"utility twos complement");
+
+    check(calculator::tools::catalog().size()==14U,"expanded advanced tool catalogue");
     check(calculator::constant_catalog().size()>=16U,"constant catalogue");
     check(calculator::evaluate("tau").ok,"tau in scientific parser");
     check(calculator::evaluate("c0").ok,"c0 in scientific parser");

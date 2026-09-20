@@ -20,7 +20,9 @@ enum class AdvancedTool {
     EquationSolver,
     ExactDecimal,
     ArbitraryPrecision,
-    Complex
+    Complex,
+    Financial,
+    NumberUtilities
 };
 
 struct ToolDescriptor {
@@ -43,7 +45,7 @@ struct ToolResult {
     std::vector<GraphPoint> points;
 };
 
-const std::array<ToolDescriptor, 12>& catalog() noexcept;
+const std::array<ToolDescriptor, 14>& catalog() noexcept;
 const ToolDescriptor& descriptor(AdvancedTool tool) noexcept;
 ToolResult evaluate(AdvancedTool tool, std::string_view input);
 

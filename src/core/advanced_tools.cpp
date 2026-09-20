@@ -25,7 +25,7 @@ namespace {
 
 constexpr double kPi = 3.141592653589793238462643383279502884;
 
-constexpr std::array<ToolDescriptor, 12> kCatalog{{
+constexpr std::array<ToolDescriptor, 14> kCatalog{{
     {AdvancedTool::Engineering, "Engineering",
      "ohm V I | power V I | reactance-c Hz F | reactance-l Hz H | resonance H F | parallel R1,R2,... | three-phase V I PF | db ratio | db-power ratio",
      "ohm 12 2"},
@@ -61,7 +61,13 @@ constexpr std::array<ToolDescriptor, 12> kCatalog{{
      "2^256"},
     {AdvancedTool::Complex, "Complex numbers",
      "add|sub|mul|div a,b c,d | conj|abs|arg|polar a,b where a,b is real,imaginary.",
-     "mul 1,2 3,-4"}
+     "mul 1,2 3,-4"},
+    {AdvancedTool::Financial, "Financial",
+     "ctrm rate fv pv | ddb cost life period | fv payment rate periods | gpm cost margin | pmt principal rate periods | pv payment rate periods | rate fv pv periods | sln cost salvage life | syd cost salvage life period | term payment fv rate. Rates are decimals.",
+     "pmt 250000 0.005 360"},
+    {AdvancedTool::NumberUtilities, "Number utilities",
+     "mod a b | factor n | gcd a b | lcm a b | perm n r | comb n r | root n x | char UTF8 | code U+NNNN | ones value bits | twos value bits",
+     "factor 360"}
 }};
 
 ToolResult success(std::string text) {
@@ -239,23 +245,53 @@ struct Unit {
     double offset;
 };
 
-constexpr std::array<Unit, 54> kUnits{{
+constexpr std::array<Unit, 98> kUnits{{
     {"m","length",1.0,0.0},{"km","length",1000.0,0.0},{"cm","length",0.01,0.0},{"mm","length",0.001,0.0},
     {"um","length",1e-6,0.0},{"nm","length",1e-9,0.0},{"in","length",0.0254,0.0},{"ft","length",0.3048,0.0},
     {"yd","length",0.9144,0.0},{"mi","length",1609.344,0.0},{"nmi","length",1852.0,0.0},
+    {"pc","length",3.0856775814913673e16,0.0},{"ly","length",9.4607304725808e15,0.0},
+    {"au","length",149597870700.0,0.0},{"U","length",0.04445,0.0},{"cable","length",219.456,0.0},
+    {"fathom","length",1.8288,0.0},{"pt","length",0.0003527777777777778,0.0},
+
     {"kg","mass",1.0,0.0},{"g","mass",0.001,0.0},{"mg","mass",1e-6,0.0},{"lb","mass",0.45359237,0.0},
-    {"oz","mass",0.028349523125,0.0},{"t","mass",1000.0,0.0},
+    {"oz","mass",0.028349523125,0.0},{"t","mass",1000.0,0.0},{"ozt","mass",0.0311034768,0.0},
+    {"st","mass",6.35029318,0.0},
+
     {"C","temperature",1.0,273.15},{"F","temperature",5.0/9.0,255.3722222222222},{"K","temperature",1.0,0.0},
+    {"R","temperature",5.0/9.0,0.0},
+
     {"m2","area",1.0,0.0},{"km2","area",1e6,0.0},{"cm2","area",1e-4,0.0},{"ft2","area",0.09290304,0.0},
-    {"in2","area",0.00064516,0.0},{"acre","area",4046.8564224,0.0},{"ha","area",10000.0,0.0},
+    {"in2","area",0.00064516,0.0},{"yd2","area",0.83612736,0.0},{"mi2","area",2589988.110336,0.0},
+    {"acre","area",4046.8564224,0.0},{"ha","area",10000.0,0.0},
+
     {"m3","volume",1.0,0.0},{"L","volume",0.001,0.0},{"mL","volume",1e-6,0.0},{"galUS","volume",0.003785411784,0.0},
     {"galUK","volume",0.00454609,0.0},{"ft3","volume",0.028316846592,0.0},{"in3","volume",0.000016387064,0.0},
-    {"mps","speed",1.0,0.0},{"kph","speed",1.0/3.6,0.0},{"mph","speed",0.44704,0.0},{"knot","speed",0.5144444444444445,0.0},
+    {"cupUS","volume",0.0002365882365,0.0},{"pintUS","volume",0.000473176473,0.0},
+    {"quartUS","volume",0.000946352946,0.0},{"flozUS","volume",0.0000295735295625,0.0},
+    {"tbspUS","volume",0.00001478676478125,0.0},{"tspUS","volume",0.00000492892159375,0.0},
+    {"pintUK","volume",0.00056826125,0.0},{"quartUK","volume",0.0011365225,0.0},
+
+    {"mps","speed",1.0,0.0},{"kph","speed",1.0/3.6,0.0},{"mph","speed",0.44704,0.0},
+    {"knot","speed",0.5144444444444445,0.0},{"fps","speed",0.3048,0.0},
+
     {"Pa","pressure",1.0,0.0},{"kPa","pressure",1000.0,0.0},{"MPa","pressure",1e6,0.0},{"bar","pressure",100000.0,0.0},
     {"psi","pressure",6894.757293168,0.0},{"atm","pressure",101325.0,0.0},
+    {"mmHg","pressure",133.322387415,0.0},{"Torr","pressure",133.32236842105263,0.0},
+
     {"J","energy",1.0,0.0},{"kJ","energy",1000.0,0.0},{"Wh","energy",3600.0,0.0},{"kWh","energy",3.6e6,0.0},
     {"cal","energy",4.184,0.0},{"kcal","energy",4184.0,0.0},{"BTU","energy",1055.05585262,0.0},
-    {"W","power",1.0,0.0},{"kW","power",1000.0,0.0},{"hp","power",745.6998715822702,0.0}
+    {"eV","energy",1.602176634e-19,0.0},{"erg","energy",1e-7,0.0},{"ftlb","energy",1.3558179483314004,0.0},
+
+    {"W","power",1.0,0.0},{"kW","power",1000.0,0.0},{"hp","power",745.6998715822702,0.0},
+    {"BTUmin","power",17.584264210333333,0.0},
+
+    {"century","duration",3155760000.0,0.0},{"decade","duration",315576000.0,0.0},
+    {"yr","duration",31557600.0,0.0},{"month","duration",2629800.0,0.0},{"week","duration",604800.0,0.0},
+    {"day","duration",86400.0,0.0},{"h","duration",3600.0,0.0},{"min","duration",60.0,0.0},
+    {"s","duration",1.0,0.0},{"ms","duration",1e-3,0.0},{"us","duration",1e-6,0.0},{"ns","duration",1e-9,0.0},
+
+    {"Hz","frequency",1.0,0.0},{"kHz","frequency",1e3,0.0},{"MHz","frequency",1e6,0.0},
+    {"GHz","frequency",1e9,0.0},{"THz","frequency",1e12,0.0}
 }};
 
 const Unit* find_unit(std::string_view name) {
@@ -379,11 +415,15 @@ ToolResult network_tool(std::string_view input) {
 }
 
 struct StorageUnit { std::string_view name; long double bytes; };
-constexpr std::array<StorageUnit, 11> kStorageUnits{{
-    {"B",1.0L},{"kB",1000.0L},{"MB",1000000.0L},{"GB",1000000000.0L},
-    {"TB",1000000000000.0L},{"PB",1000000000000000.0L},
-    {"KiB",1024.0L},{"MiB",1048576.0L},{"GiB",1073741824.0L},
-    {"TiB",1099511627776.0L},{"PiB",1125899906842624.0L}
+constexpr std::array<StorageUnit, 27> kStorageUnits{{
+    {"bit",0.125L},{"nibble",0.5L},{"B",1.0L},
+    {"kbit",125.0L},{"kB",1000.0L},{"Kibit",128.0L},{"KiB",1024.0L},
+    {"Mbit",125000.0L},{"MB",1000000.0L},{"Mibit",131072.0L},{"MiB",1048576.0L},
+    {"Gbit",125000000.0L},{"GB",1000000000.0L},{"Gibit",134217728.0L},{"GiB",1073741824.0L},
+    {"Tbit",125000000000.0L},{"TB",1000000000000.0L},{"Tibit",137438953472.0L},{"TiB",1099511627776.0L},
+    {"Pbit",125000000000000.0L},{"PB",1000000000000000.0L},{"Pibit",140737488355328.0L},{"PiB",1125899906842624.0L},
+    {"EB",1000000000000000000.0L},{"EiB",1152921504606846976.0L},
+    {"ZB",1000000000000000000000.0L},{"ZiB",1180591620717411303424.0L}
 }};
 const StorageUnit* storage_unit(std::string_view name) {
     for (const auto& unit : kStorageUnits) if (unit.name == name) return &unit;
@@ -1108,6 +1148,379 @@ private:
     BigInt primary(){if(take('(')){BigInt v=expr();if(!take(')')&&err_.empty())err_="Missing closing parenthesis.";return v;}skip();const std::size_t start=pos_;while(pos_<in_.size()&&std::isdigit(static_cast<unsigned char>(in_[pos_])))++pos_;if(start==pos_){err_="Expected an integer.";return{};}BigInt v;if(!BigInt::parse(in_.substr(start,pos_-start),v))err_="Invalid or oversized integer.";return v;}
 };
 
+
+ToolResult financial_tool(std::string_view input) {
+    const auto f = split_ws(input);
+    if (f.empty()) return failure("Enter a financial operation.");
+
+    auto parse3 = [&](double& a, double& b, double& c) {
+        return f.size() == 4U &&
+               parse_double(f[1], a) &&
+               parse_double(f[2], b) &&
+               parse_double(f[3], c);
+    };
+
+    double a = 0.0, b = 0.0, c = 0.0, d = 0.0;
+    double result = 0.0;
+
+    if (f[0] == "ctrm") {
+        if (!parse3(a, b, c) || a <= -1.0 || a == 0.0 ||
+            b <= 0.0 || c <= 0.0) {
+            return failure("Usage: ctrm rate future-value present-value; rate must be > -1 and non-zero, values positive.");
+        }
+        result = std::log(b / c) / std::log1p(a);
+    } else if (f[0] == "ddb") {
+        if (!parse3(a, b, c) || a < 0.0 || b <= 0.0 ||
+            c < 1.0 || std::floor(c) != c || c > b) {
+            return failure("Usage: ddb cost life period; life positive and period an integer within life.");
+        }
+        double book = a;
+        for (std::uint64_t period = 0U;
+             period < static_cast<std::uint64_t>(c); ++period) {
+            result = book * 2.0 / b;
+            book -= result;
+        }
+    } else if (f[0] == "fv") {
+        if (!parse3(a, b, c) || c < 0.0 || b <= -1.0) {
+            return failure("Usage: fv payment rate periods; periods non-negative and rate > -1.");
+        }
+        result = b == 0.0 ? a * c
+                          : a * std::expm1(c * std::log1p(b)) / b;
+    } else if (f[0] == "gpm") {
+        if (f.size() != 3U || !parse_double(f[1], a) ||
+            !parse_double(f[2], b) || b >= 1.0) {
+            return failure("Usage: gpm cost margin; margin must be less than 1.");
+        }
+        result = a / (1.0 - b);
+    } else if (f[0] == "pmt") {
+        if (!parse3(a, b, c) || c <= 0.0 || b <= -1.0) {
+            return failure("Usage: pmt principal rate periods; periods positive and rate > -1.");
+        }
+        if (b == 0.0) {
+            result = a / c;
+        } else {
+            const double discount =
+                std::exp(-c * std::log1p(b));
+            result = a * b / (1.0 - discount);
+        }
+    } else if (f[0] == "pv") {
+        if (!parse3(a, b, c) || c < 0.0 || b <= -1.0) {
+            return failure("Usage: pv payment rate periods; periods non-negative and rate > -1.");
+        }
+        if (b == 0.0) {
+            result = a * c;
+        } else {
+            const double discount =
+                std::exp(-c * std::log1p(b));
+            result = a * (1.0 - discount) / b;
+        }
+    } else if (f[0] == "rate") {
+        if (!parse3(a, b, c) || a <= 0.0 || b <= 0.0 || c <= 0.0) {
+            return failure("Usage: rate future-value present-value periods; values and periods must be positive.");
+        }
+        result = std::expm1(std::log(a / b) / c);
+    } else if (f[0] == "sln") {
+        if (!parse3(a, b, c) || c <= 0.0) {
+            return failure("Usage: sln cost salvage life; life must be positive.");
+        }
+        result = (a - b) / c;
+    } else if (f[0] == "syd") {
+        if (f.size() != 5U ||
+            !parse_double(f[1], a) || !parse_double(f[2], b) ||
+            !parse_double(f[3], c) || !parse_double(f[4], d) ||
+            c <= 0.0 || d < 1.0 || d > c) {
+            return failure("Usage: syd cost salvage life period; period must be within positive life.");
+        }
+        result = (a - b) * (c - d + 1.0) /
+                 (c * (c + 1.0) / 2.0);
+    } else if (f[0] == "term") {
+        if (!parse3(a, b, c) || a == 0.0 || b < 0.0 || c <= -1.0) {
+            return failure("Usage: term payment future-value rate; payment non-zero, future value non-negative, rate > -1.");
+        }
+        if (c == 0.0) {
+            result = b / a;
+        } else {
+            const double inside = 1.0 + b * c / a;
+            if (inside <= 0.0) return failure("Financial term has no real solution for those values.");
+            result = std::log(inside) / std::log1p(c);
+        }
+    } else {
+        return failure("Unknown financial operation.");
+    }
+
+    if (!std::isfinite(result)) return failure("Financial result is non-finite.");
+    return success("Result  " + number(result));
+}
+
+bool parse_code_point(std::string_view text, std::uint32_t& value) {
+    int base = 10;
+    if (text.size() > 2U && text.substr(0, 2) == "U+") {
+        text.remove_prefix(2U);
+        base = 16;
+    } else if (text.size() > 2U && text.substr(0, 2) == "0x") {
+        text.remove_prefix(2U);
+        base = 16;
+    }
+    if (text.empty()) return false;
+    unsigned long parsed = 0UL;
+    const auto converted = std::from_chars(
+        text.data(), text.data() + text.size(), parsed, base);
+    if (converted.ec != std::errc{} ||
+        converted.ptr != text.data() + text.size() ||
+        parsed > 0x10ffffUL ||
+        (parsed >= 0xd800UL && parsed <= 0xdfffUL)) {
+        return false;
+    }
+    value = static_cast<std::uint32_t>(parsed);
+    return true;
+}
+
+bool decode_single_utf8(std::string_view text, std::uint32_t& code) {
+    if (text.empty()) return false;
+    const auto byte = [&](std::size_t index) {
+        return static_cast<unsigned char>(text[index]);
+    };
+    const unsigned char first = byte(0);
+    std::size_t length = 0U;
+    std::uint32_t value = 0U;
+    if (first < 0x80U) {
+        length = 1U;
+        value = first;
+    } else if ((first & 0xe0U) == 0xc0U) {
+        length = 2U;
+        value = first & 0x1fU;
+    } else if ((first & 0xf0U) == 0xe0U) {
+        length = 3U;
+        value = first & 0x0fU;
+    } else if ((first & 0xf8U) == 0xf0U) {
+        length = 4U;
+        value = first & 0x07U;
+    } else {
+        return false;
+    }
+    if (text.size() != length) return false;
+    for (std::size_t i = 1U; i < length; ++i) {
+        const unsigned char continuation = byte(i);
+        if ((continuation & 0xc0U) != 0x80U) return false;
+        value = (value << 6U) | (continuation & 0x3fU);
+    }
+    if ((length == 2U && value < 0x80U) ||
+        (length == 3U && value < 0x800U) ||
+        (length == 4U && value < 0x10000U) ||
+        value > 0x10ffffU ||
+        (value >= 0xd800U && value <= 0xdfffU)) {
+        return false;
+    }
+    code = value;
+    return true;
+}
+
+std::string encode_utf8(std::uint32_t code) {
+    std::string out;
+    if (code <= 0x7fU) {
+        out.push_back(static_cast<char>(code));
+    } else if (code <= 0x7ffU) {
+        out.push_back(static_cast<char>(0xc0U | (code >> 6U)));
+        out.push_back(static_cast<char>(0x80U | (code & 0x3fU)));
+    } else if (code <= 0xffffU) {
+        out.push_back(static_cast<char>(0xe0U | (code >> 12U)));
+        out.push_back(static_cast<char>(0x80U | ((code >> 6U) & 0x3fU)));
+        out.push_back(static_cast<char>(0x80U | (code & 0x3fU)));
+    } else {
+        out.push_back(static_cast<char>(0xf0U | (code >> 18U)));
+        out.push_back(static_cast<char>(0x80U | ((code >> 12U) & 0x3fU)));
+        out.push_back(static_cast<char>(0x80U | ((code >> 6U) & 0x3fU)));
+        out.push_back(static_cast<char>(0x80U | (code & 0x3fU)));
+    }
+    return out;
+}
+
+bool checked_permutation(std::uint64_t n, std::uint64_t r,
+                         std::uint64_t& result) {
+    if (r > n) return false;
+    result = 1U;
+    for (std::uint64_t i = 0U; i < r; ++i) {
+        const std::uint64_t factor = n - i;
+        if (factor != 0U &&
+            result > std::numeric_limits<std::uint64_t>::max() / factor) {
+            return false;
+        }
+        result *= factor;
+    }
+    return true;
+}
+
+bool checked_combination(std::uint64_t n, std::uint64_t r,
+                         std::uint64_t& result) {
+    if (r > n) return false;
+    r = std::min(r, n - r);
+    result = 1U;
+    for (std::uint64_t i = 1U; i <= r; ++i) {
+        std::uint64_t numerator = n - r + i;
+        std::uint64_t denominator = i;
+        const std::uint64_t first =
+            std::gcd(numerator, denominator);
+        numerator /= first;
+        denominator /= first;
+        const std::uint64_t second =
+            std::gcd(result, denominator);
+        result /= second;
+        denominator /= second;
+        if (numerator != 0U &&
+            result >
+                std::numeric_limits<std::uint64_t>::max() / numerator) {
+            return false;
+        }
+        result *= numerator;
+        if (denominator != 1U) result /= denominator;
+    }
+    return true;
+}
+
+ToolResult number_utilities_tool(std::string_view input) {
+    const auto f = split_ws(input);
+    if (f.empty()) return failure("Enter a number utility operation.");
+
+    if (f[0] == "mod") {
+        double a = 0.0, b = 0.0;
+        if (f.size() != 3U || !parse_double(f[1], a) ||
+            !parse_double(f[2], b) || b == 0.0) {
+            return failure("Usage: mod a b; divisor must be non-zero.");
+        }
+        return success("Remainder  " + number(std::fmod(a, b)));
+    }
+
+    if (f[0] == "factor") {
+        std::uint64_t value = 0U;
+        if (f.size() != 2U || !parse_u64(f[1], value) ||
+            value < 2U || value > 1000000000000ULL) {
+            return failure("Usage: factor integer from 2 through 1000000000000.");
+        }
+        std::uint64_t remaining = value;
+        std::vector<std::uint64_t> factors;
+        while ((remaining % 2U) == 0U) {
+            factors.push_back(2U);
+            remaining /= 2U;
+        }
+        for (std::uint64_t divisor = 3U;
+             divisor <= remaining / divisor;
+             divisor += 2U) {
+            while ((remaining % divisor) == 0U) {
+                factors.push_back(divisor);
+                remaining /= divisor;
+            }
+        }
+        if (remaining > 1U) factors.push_back(remaining);
+        std::ostringstream out;
+        out << "Prime factors  ";
+        for (std::size_t i = 0; i < factors.size(); ++i) {
+            if (i != 0U) out << " x ";
+            out << factors[i];
+        }
+        return success(out.str());
+    }
+
+    if (f[0] == "gcd" || f[0] == "lcm") {
+        std::uint64_t a = 0U, b = 0U;
+        if (f.size() != 3U || !parse_u64(f[1], a) ||
+            !parse_u64(f[2], b)) {
+            return failure("Usage: gcd|lcm non-negative-integer non-negative-integer.");
+        }
+        const std::uint64_t divisor = std::gcd(a, b);
+        if (f[0] == "gcd") {
+            return success("GCD  " + std::to_string(divisor));
+        }
+        if (a == 0U || b == 0U) return success("LCM  0");
+        const std::uint64_t reduced = a / divisor;
+        if (reduced > std::numeric_limits<std::uint64_t>::max() / b) {
+            return failure("LCM exceeds the 64-bit utility domain.");
+        }
+        return success("LCM  " + std::to_string(reduced * b));
+    }
+
+    if (f[0] == "perm" || f[0] == "comb") {
+        std::uint64_t n = 0U, r = 0U, result = 0U;
+        if (f.size() != 3U || !parse_u64(f[1], n) ||
+            !parse_u64(f[2], r) || r > n) {
+            return failure("Usage: perm|comb n r with 0 <= r <= n.");
+        }
+        const bool ok = f[0] == "perm"
+            ? checked_permutation(n, r, result)
+            : checked_combination(n, r, result);
+        if (!ok) return failure("Combinatorial result exceeds the 64-bit utility domain.");
+        return success(
+            std::string(f[0] == "perm" ? "Permutations  " : "Combinations  ") +
+            std::to_string(result));
+    }
+
+    if (f[0] == "root") {
+        std::uint64_t degree = 0U;
+        double value = 0.0;
+        if (f.size() != 3U || !parse_u64(f[1], degree) ||
+            degree == 0U || !parse_double(f[2], value)) {
+            return failure("Usage: root positive-integer-degree value.");
+        }
+        if (value < 0.0 && degree % 2U == 0U) {
+            return failure("Even root of a negative value has no real result.");
+        }
+        const double magnitude =
+            std::pow(std::fabs(value), 1.0 / static_cast<double>(degree));
+        const double result = value < 0.0 ? -magnitude : magnitude;
+        if (!std::isfinite(result)) return failure("Root result is non-finite.");
+        return success("Root  " + number(result));
+    }
+
+    if (f[0] == "char") {
+        if (f.size() != 2U) return failure("Usage: char single-UTF-8-character.");
+        std::uint32_t code = 0U;
+        if (!decode_single_utf8(f[1], code)) {
+            return failure("Character input must be exactly one valid Unicode scalar.");
+        }
+        std::ostringstream out;
+        out << "Character  " << f[1] << "\nCode point  U+"
+            << std::uppercase << std::hex << std::setfill('0')
+            << std::setw(code <= 0xffffU ? 4 : 6) << code
+            << "\nDecimal  " << std::dec << code;
+        return success(out.str());
+    }
+
+    if (f[0] == "code") {
+        if (f.size() != 2U) return failure("Usage: code U+NNNN | 0xNNNN | decimal.");
+        std::uint32_t code = 0U;
+        if (!parse_code_point(f[1], code)) {
+            return failure("Code point must be a valid Unicode scalar.");
+        }
+        std::ostringstream out;
+        out << "Character  " << encode_utf8(code) << "\nCode point  U+"
+            << std::uppercase << std::hex << std::setfill('0')
+            << std::setw(code <= 0xffffU ? 4 : 6) << code
+            << "\nDecimal  " << std::dec << code;
+        return success(out.str());
+    }
+
+    if (f[0] == "ones" || f[0] == "twos") {
+        std::uint64_t value = 0U, bits = 0U;
+        if (f.size() != 3U || !parse_u64(f[1], value) ||
+            !parse_u64(f[2], bits) ||
+            (bits != 8U && bits != 16U && bits != 32U && bits != 64U)) {
+            return failure("Usage: ones|twos value bits where bits is 8, 16, 32 or 64.");
+        }
+        const std::uint64_t mask =
+            bits == 64U ? std::numeric_limits<std::uint64_t>::max()
+                        : ((std::uint64_t{1} << bits) - 1U);
+        const std::uint64_t narrowed = value & mask;
+        const std::uint64_t result = f[0] == "ones"
+            ? (~narrowed & mask)
+            : ((~narrowed + 1U) & mask);
+        std::ostringstream out;
+        out << (f[0] == "ones" ? "One's complement  " : "Two's complement  ")
+            << result << "\nHex  0x" << std::uppercase << std::hex << result;
+        return success(out.str());
+    }
+
+    return failure("Unknown number utility operation.");
+}
+
 bool parse_complex_pair(std::string_view s,double& re,double& im) {
     const std::size_t comma=s.find(',');if(comma==std::string_view::npos)return false;
     return parse_double(s.substr(0,comma),re)&&parse_double(s.substr(comma+1),im);
@@ -1159,7 +1572,7 @@ ToolResult complex_tool(std::string_view input) {
 
 } // namespace
 
-const std::array<ToolDescriptor, 12>& catalog() noexcept { return kCatalog; }
+const std::array<ToolDescriptor, 14>& catalog() noexcept { return kCatalog; }
 
 const ToolDescriptor& descriptor(AdvancedTool tool) noexcept {
     const std::size_t index=static_cast<std::size_t>(tool);
@@ -1180,6 +1593,8 @@ ToolResult evaluate(AdvancedTool tool,std::string_view input) {
     case AdvancedTool::ExactDecimal:return ExactParser(input).run();
     case AdvancedTool::ArbitraryPrecision:return IntegerParser(input).run();
     case AdvancedTool::Complex:return complex_tool(input);
+    case AdvancedTool::Financial:return financial_tool(input);
+    case AdvancedTool::NumberUtilities:return number_utilities_tool(input);
     }
     return failure("Unknown advanced tool.");
 }

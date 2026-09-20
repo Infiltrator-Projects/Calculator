@@ -25,6 +25,8 @@ Calculator 0.2.0 completes the previously listed feature families:
 - exact-decimal/rational arithmetic
 - arbitrary-precision integer arithmetic
 - complex-number arithmetic
+- mature desktop-calculator financial functions and number utilities
+- GNOME/Mint-class expression conveniences and a substantially expanded unit catalogue
 
 These are implemented in the shared C++ core, exercised by deterministic tests and exposed through native Tools workbenches on all three release platforms. Graph rendering is platform-native while graph sampling remains shared.
 
