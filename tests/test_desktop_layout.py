@@ -540,3 +540,15 @@ for needle in (
     "Mode::Programmer",
 ):
     assert needle in linux, f"Linux Mint keyboard replacement contract missing: {needle}"
+
+# GNOME/Mint Ctrl+N replacement parity uses an independent process so the
+# existing global GTK shell cannot accidentally share controller/widget state.
+for needle in (
+    "GDK_KEY_n",
+    "spawn_independent_calculator()",
+    "INFILTRATOR_CALC_NEW_INSTANCE",
+    "G_APPLICATION_NON_UNIQUE",
+    "g_spawn_async(",
+    "Ctrl+N                New independent Calculator window",
+):
+    assert needle in linux, f"Linux independent-window contract missing: {needle}"

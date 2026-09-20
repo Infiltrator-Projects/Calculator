@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.6 — 2026-09-20
+
+- Add GNOME/Mint-compatible Ctrl+N independent Calculator windows without sharing GTK widget/controller state.
+- Launch secondary windows as non-unique application processes so each session has independent expression, memory, history and mode state.
+- Add source-level regression protection for the independent-window contract.
+- Correct the maintained Tools documentation to the current 0.2.x release line.
+- Reduce the explicit GNOME Calculator 41.1 parity backlog to live currency conversion and an integrated arbitrary-precision real/complex Scientific domain.
+
 ## 0.2.5 — 2026-09-20
 
 - Complete the Linux Mint/GNOME 41.1 ordinary unit-conversion catalogue gap with decimal and IEC digital-storage units, metric cups and microlitres.

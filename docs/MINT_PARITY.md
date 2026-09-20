@@ -27,6 +27,7 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - persisted user variables under the XDG data directory, alongside the already-persisted reusable function definitions;
 - a dependency-light console calculator, `infiltrator-calc-cli`, covering the Mint/GNOME `gcalccmd` one-shot and interactive workflows while sharing the same expression/session engine and persisted custom functions;
 - native GTK expression undo/redo enabled explicitly through the GTK4 editable contract, retaining familiar Ctrl+Z/Ctrl+Shift+Z editing behaviour;
+- Ctrl+N opens a genuinely independent Calculator process/window instead of sharing the GTK shell's global widget/controller state; this preserves the useful GNOME multi-window workflow without introducing cross-window state contamination;
 - a first-class Linux unit-conversion picker with dimension/source/target selectors, live conversion, one-click swapping and persisted pair selection.
 
 ## Deliberate architectural differences
@@ -41,7 +42,6 @@ The following GNOME Calculator 41.1 capabilities remain meaningful comparison ta
 
 - live network-backed currency conversion with cached/offline behaviour and an explicit privacy/off switch;
 - an integrated arbitrary-precision real/complex Scientific value domain comparable to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools;
-- independent multi-window Calculator sessions equivalent to GNOME Calculator's Ctrl+N workflow; the current GTK shell intentionally remains single-main-window because its native widget/controller globals must be refactored before multi-window support can be correct;
 
 These items are treated as real engineering work. They are not considered complete merely because another Calculator tool can approximate the same end result.
 

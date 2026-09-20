@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.6" date="2026-09-20">
+      <description>
+        <p>Add GNOME/Mint-compatible Ctrl+N independent Calculator windows while keeping each GTK session isolated.</p>
+      </description>
+    </release>
     <release version="0.2.5" date="2026-09-20">
       <description>
         <p>Close further Linux Mint/GNOME Calculator 41.1 replacement gaps with complete digital-storage conversion coverage and native Linux shortcut parity.</p>

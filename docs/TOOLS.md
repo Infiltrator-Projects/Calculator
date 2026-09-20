@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Advanced Calculator Tools
 
-Calculator 0.3.0 exposes fourteen extended calculation families through the **Tools** button on Linux, Windows and iPhone. The workbench is native on each platform, but the catalogue, prompts, examples, evaluation rules and graph samples come from one shared C++ implementation in `src/core/advanced_tools.*`.
+Calculator 0.2.6 exposes fourteen extended calculation families through the **Tools** button on Linux, Windows and iPhone. The workbench is native on each platform, but the catalogue, prompts, examples, evaluation rules and graph samples come from one shared C++ implementation in `src/core/advanced_tools.*`.
 
 The input field is a compact domain command, not a shell or scripting language. It never executes host commands.
 

@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.6) unstable; urgency=medium
+
+  * Add Ctrl+N independent Calculator windows for GNOME/Mint parity.
+  * Keep each new window in an independent process and calculator session.
+  * Protect the Linux multi-window contract with regression checks.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 20:54:00 +1000
+
 infiltrator-calculator (0.2.5) unstable; urgency=medium
 
   * Complete Mint/GNOME 41.1 digital-storage and volume conversion parity.

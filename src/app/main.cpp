@@ -1773,6 +1773,7 @@ void show_keyboard_shortcuts() {
         "  Escape / Ctrl+Delete  Clear\n"
         "  Ctrl+Z                Undo expression edit\n"
         "  Ctrl+Shift+Z          Redo expression edit\n"
+        "  Ctrl+N                New independent Calculator window\n"
         "  Ctrl+W                Close Calculator\n"
         "  Ctrl+Q                Quit Calculator\n"
         "  F1 / Ctrl+?           Keyboard shortcuts\n\n"
@@ -1795,6 +1796,44 @@ void show_keyboard_shortcuts() {
     gtk_box_append(GTK_BOX(root), shortcuts);
 
     gtk_window_present(GTK_WINDOW(window));
+}
+
+bool spawn_independent_calculator() {
+    GError* error = nullptr;
+    gchar* self = g_file_read_link("/proc/self/exe", &error);
+    if (!self) {
+        if (error) {
+            g_error_free(error);
+            error = nullptr;
+        }
+        self = g_strdup("infiltrator-calc");
+    }
+
+    gchar** environment = g_get_environ();
+    environment = g_environ_setenv(
+        environment,
+        "INFILTRATOR_CALC_NEW_INSTANCE",
+        "1",
+        TRUE);
+
+    gchar* arguments[] = {self, nullptr};
+    const gboolean started = g_spawn_async(
+        nullptr,
+        arguments,
+        environment,
+        G_SPAWN_SEARCH_PATH,
+        nullptr,
+        nullptr,
+        nullptr,
+        &error);
+
+    if (!started && error) {
+        g_warning("Unable to open a new Calculator window: %s", error->message);
+        g_error_free(error);
+    }
+    g_strfreev(environment);
+    g_free(self);
+    return started != FALSE;
 }
 
 gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
@@ -1840,6 +1879,11 @@ gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
         default:
             break;
         }
+    }
+
+    if (control && !alt &&
+        (keyval == GDK_KEY_n || keyval == GDK_KEY_N)) {
+        return spawn_independent_calculator() ? TRUE : FALSE;
     }
 
     if (control && !alt &&
@@ -2154,10 +2198,17 @@ void activate(GtkApplication* app, gpointer) {
 } // namespace
 
 int main(int argc, char** argv) {
+    GApplicationFlags flags = G_APPLICATION_DEFAULT_FLAGS;
+    const char* independent = g_getenv("INFILTRATOR_CALC_NEW_INSTANCE");
+    if (independent && independent[0] != '\0') {
+        flags = static_cast<GApplicationFlags>(
+            flags | G_APPLICATION_NON_UNIQUE);
+    }
+
     GtkApplication* app =
         gtk_application_new(
             "net.ssmith.infiltrator.calc",
-            G_APPLICATION_DEFAULT_FLAGS);
+            flags);
     g_signal_connect(app, "activate", G_CALLBACK(activate), nullptr);
 
     const int status_code =
