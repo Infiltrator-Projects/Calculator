@@ -48,6 +48,10 @@ public:
     std::string history_text(
         std::size_t limit = 50,
         std::string_view newline = "\n") const;
+    std::size_t history_count() const noexcept;
+    std::optional<HistoryEntry> history_entry(
+        std::size_t index_from_newest) const;
+    bool recall_history(std::size_t index_from_newest);
     void clear_history() noexcept;
 
     std::string button_label(

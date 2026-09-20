@@ -327,7 +327,7 @@ for needle in (
     assert needle in windows, f"Windows structured history replay missing: {needle}"
 
 for needle in (
-    "historyEntries()",
+    "historyEntries",
     "recallHistoryAtIndex",
 ):
     assert needle in ios_bridge, f"iPhone structured history bridge missing: {needle}"
