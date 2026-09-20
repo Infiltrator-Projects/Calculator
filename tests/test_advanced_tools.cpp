@@ -25,7 +25,7 @@ int main(){
     check(contains(evaluate(AdvancedTool::Storage,"clusters 4097 4096"),"Slack bytes  4095"),"cluster slack");
     check(contains(evaluate(AdvancedTool::DateTime,"diff 2026-09-20 2026-09-21"),"Days  1"),"date diff");
     check(contains(evaluate(AdvancedTool::DateTime,"add 2024-02-28 1"),"2024-02-29"),"date leap add");
-    check(contains(evaluate(AdvancedTool::Constants,"c0"),"299792458"),"constant c");
+    check(contains(evaluate(AdvancedTool::Constants,"c0"),"2.99792458"),"constant c");
     check(contains(evaluate(AdvancedTool::Statistics,"1,2,3,4,5"),"Mean  3"),"statistics mean");
 
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
