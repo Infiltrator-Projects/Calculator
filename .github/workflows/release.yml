@@ -78,7 +78,7 @@ jobs:
           test "$(dpkg-deb -f "$package" Package)" = "infiltrator-calculator"
           dpkg-deb --fsys-tarfile "$package" | tar -tf - > package-files.txt
           grep -qx './usr/bin/infiltrator-calc' package-files.txt
-          grep -qx './usr/share/applications/infiltrator-calc.desktop' package-files.txt
+          grep -qx './usr/share/applications/net.ssmith.infiltrator.calc.desktop' package-files.txt
           grep -qx './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg' package-files.txt
           grep -qx './usr/share/app-install/icons/infiltrator-calculator.svg' package-files.txt
           grep -qx './usr/share/metainfo/infiltrator-calculator.metainfo.xml' package-files.txt
