@@ -270,12 +270,14 @@ jobs:
             $standard = Get-ButtonByText 'Standard'
             $scientific = Get-ButtonByText 'Scientific'
             $programmer = Get-ButtonByText 'Programmer'
+            $tools = Get-ButtonByText 'Tools'
             $results = Get-ButtonByText 'Results'
             $bases = Get-ButtonByText 'Bases'
             if ($theme -eq [IntPtr]::Zero -or $standard -eq [IntPtr]::Zero -or
                 $scientific -eq [IntPtr]::Zero -or $programmer -eq [IntPtr]::Zero -or
-                $results -eq [IntPtr]::Zero -or $bases -eq [IntPtr]::Zero) {
-              throw 'Windows theme/mode/Results/Bases buttons were not found'
+                $tools -eq [IntPtr]::Zero -or $results -eq [IntPtr]::Zero -or
+                $bases -eq [IntPtr]::Zero) {
+              throw 'Windows theme/mode/Tools/Results/Bases buttons were not found'
             }
 
             [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -296,9 +298,10 @@ jobs:
             Start-Sleep -Milliseconds 80
 
             $initialVisible = Get-VisibleButtonCount
-            if (-not [CalcSmoke]::IsWindowVisible($results) -or
+            if (-not [CalcSmoke]::IsWindowVisible($tools) -or
+                -not [CalcSmoke]::IsWindowVisible($results) -or
                 [CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Standard mode must show Results and hide Bases'
+              throw 'Windows Standard mode must show Tools/Results and hide Bases'
             }
 
             [void][CalcSmoke]::SendMessage($scientific, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -325,8 +328,8 @@ jobs:
               throw 'Windows Standard mode did not restore Results/Bases visibility'
             }
 
-            if ($initialVisible -ne 35 -or $scientificVisible -ne 46 -or
-                $programmerVisible -ne 50 -or $standardVisible -ne 35) {
+            if ($initialVisible -ne 36 -or $scientificVisible -ne 47 -or
+                $programmerVisible -ne 51 -or $standardVisible -ne 36) {
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 

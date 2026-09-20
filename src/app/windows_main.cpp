@@ -995,7 +995,9 @@ void layout_main(HWND window) {
     const int content_width = std::max(0, calc_right - calc_left);
     int y = margin;
 
-    const int toolbar_width = sx(window, 76);
+    // Four always-reachable toolbar actions must still leave the product
+    // title visible at Calculator's compact/default desktop widths.
+    const int toolbar_width = sx(window, 64);
     const int toolbar_height = sx(window, 30);
     const bool show_bases =
         g_controller.state().mode == Mode::Programmer;
@@ -1466,9 +1468,15 @@ RECT tool_graph_rect(HWND window) {
     const int graph_height = sx(window, 220);
     return RECT{
         margin,
-        std::max(margin, client.bottom - margin - graph_height),
-        std::max(margin, client.right - margin),
-        std::max(margin, client.bottom - margin)};
+        std::max<LONG>(
+            static_cast<LONG>(margin),
+            client.bottom - static_cast<LONG>(margin + graph_height)),
+        std::max<LONG>(
+            static_cast<LONG>(margin),
+            client.right - static_cast<LONG>(margin)),
+        std::max<LONG>(
+            static_cast<LONG>(margin),
+            client.bottom - static_cast<LONG>(margin))};
 }
 
 void paint_tool_graph(HWND window, HDC dc) {
@@ -1500,8 +1508,10 @@ void paint_tool_graph(HWND window, HDC dc) {
     if (ymin == ymax) { ymin -= 1.0; ymax += 1.0; }
 
     InflateRect(&rect, -sx(window, 12), -sx(window, 12));
-    const double width = std::max(1, rect.right - rect.left);
-    const double height = std::max(1, rect.bottom - rect.top);
+    const double width = std::max(
+        1.0, static_cast<double>(rect.right - rect.left));
+    const double height = std::max(
+        1.0, static_cast<double>(rect.bottom - rect.top));
     auto px = [&](double x) {
         return rect.left + static_cast<int>(
             (x - xmin) / (xmax - xmin) * width);
@@ -1556,33 +1566,41 @@ void layout_tool_window(HWND window) {
 
     MoveWindow(
         g_tool_selector, margin, y,
-        std::max(0, client.right - margin * 2), row, TRUE);
+        std::max(
+            0, static_cast<int>(client.right) - margin * 2), row, TRUE);
     y += row + gap;
 
     MoveWindow(
         g_tool_prompt, margin, y,
-        std::max(0, client.right - margin * 2), sx(window, 58), TRUE);
+        std::max(
+            0, static_cast<int>(client.right) - margin * 2),
+        sx(window, 58), TRUE);
     y += sx(window, 58) + gap;
 
     const int run_width = sx(window, 86);
     MoveWindow(
         g_tool_input, margin, y,
-        std::max(0, client.right - margin * 2 - run_width - gap),
+        std::max(
+            0, static_cast<int>(client.right) -
+                   margin * 2 - run_width - gap),
         row, TRUE);
     MoveWindow(
         GetDlgItem(window, kIdToolRun),
-        std::max(margin, client.right - margin - run_width),
+        std::max(
+            margin, static_cast<int>(client.right) - margin - run_width),
         y, run_width, row, TRUE);
     y += row + gap;
 
     const int graph_height =
         g_tool_result.points.empty() ? 0 : sx(window, 220) + gap;
     const int output_height =
-        std::max(sx(window, 120),
-                 client.bottom - margin - y - graph_height);
+        std::max(
+            sx(window, 120),
+            static_cast<int>(client.bottom) - margin - y - graph_height);
     MoveWindow(
         g_tool_output, margin, y,
-        std::max(0, client.right - margin * 2),
+        std::max(
+            0, static_cast<int>(client.right) - margin * 2),
         output_height, TRUE);
 }
 
