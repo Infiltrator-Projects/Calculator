@@ -415,7 +415,12 @@ ToolResult storage_tool(std::string_view input) {
         std::uint64_t file=0, cluster=0;
         if(fields.size()!=3U || !parse_u64(fields[1],file) || !parse_u64(fields[2],cluster) || cluster==0U)
             return failure("Usage: clusters file-bytes cluster-bytes");
-        const std::uint64_t clusters=(file+cluster-1U)/cluster;
+        const std::uint64_t clusters =
+            file / cluster + (file % cluster == 0U ? 0U : 1U);
+        if (clusters != 0U &&
+            clusters > std::numeric_limits<std::uint64_t>::max() / cluster) {
+            return failure("Allocated size exceeds the 64-bit storage domain.");
+        }
         const std::uint64_t allocated=clusters*cluster;
         return success("Clusters  "+std::to_string(clusters)+
                        "\nAllocated bytes  "+std::to_string(allocated)+
@@ -683,6 +688,21 @@ public:
         std::size_t n=(limbs_.size()-1U)*9U;std::uint32_t top=limbs_.back();
         do{++n;top/=10U;}while(top); return n;
     }
+    bool divisible_by_10() const {
+        return !zero() && (limbs_.front() % 10U) == 0U;
+    }
+    void divide_small(std::uint32_t divisor) {
+        if (divisor == 0U) return;
+        std::uint64_t remainder = 0U;
+        for (std::size_t i = limbs_.size(); i > 0; --i) {
+            const std::uint64_t current =
+                remainder * kBase + limbs_[i - 1U];
+            limbs_[i - 1U] =
+                static_cast<std::uint32_t>(current / divisor);
+            remainder = current % divisor;
+        }
+        trim();
+    }
     bool to_u32(std::uint32_t& out) const {
         if(negative()||limbs_.size()>2U)return false;
         std::uint64_t v=0;for(std::size_t i=limbs_.size();i>0;--i)v=v*kBase+limbs_[i-1];
@@ -740,6 +760,14 @@ public:
         Exact v=expr();skip();
         if(!error_.empty())return failure(error_);
         if(pos_!=in_.size())return failure("Unexpected input in exact-decimal expression.");
+        if (v.n.zero()) {
+            v.d = BigInt(1);
+        } else {
+            while (v.n.divisible_by_10() && v.d.divisible_by_10()) {
+                v.n.divide_small(10U);
+                v.d.divide_small(10U);
+            }
+        }
         std::string frac=v.n.str()+"/"+v.d.str();
         std::string decimal;
         const std::string ds=v.d.str();
