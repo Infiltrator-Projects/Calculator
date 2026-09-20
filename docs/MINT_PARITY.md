@@ -14,10 +14,10 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - DEG/RAD/GRAD trigonometry, inverse and hyperbolic functions, logarithms, roots, powers, factorial and physical constants;
 - Programmer BIN/OCT/DEC/HEX, 8/16/32/64-bit widths, signed/unsigned interpretation, Boolean operations, shifts plus rotate/NAND/NOR, and simultaneous radix representations;
 - the complete mature financial family Ctrm/Ddb/Fv/Gpm/Pmt/Pv/Rate/Sln/Syd/Term;
-- dimensional conversion with a catalogue at least as broad as the GNOME 41-era ordinary unit set, plus Calculator-specific ICT/network and storage/filesystem tools;
+- dimensional conversion covering the GNOME 41.1 ordinary unit families including decimal/IEC digital storage, plus Calculator-specific pressure, energy, power, ICT/network and storage/filesystem tools;
 - exact decimal/rational arithmetic, bounded arbitrary-precision integer arithmetic, statistics, graphing and real equation solving, which are not all presented as equivalent first-class families by GNOME Calculator 41.1;
 - expression conveniences including `mod`, `**`, implicit multiplication, `frac`, `int`, `round`, `sgn`, previous result `_`, `rand`, Unicode ×/÷/−, π/τ/√, absolute-value bars, superscript powers and inverse-function ⁻¹ notation;
-- Linux keyboard compatibility for Escape/Ctrl+Delete clear, Ctrl+P π, Ctrl+R square-root entry, Ctrl+E exponent entry, Programmer Ctrl+B/O/D/H base selection and Alt+Left/Right history navigation;
+- Linux keyboard compatibility for Escape/Ctrl+Delete clear, Ctrl+P π, Ctrl+R square-root entry, Ctrl+E exponent entry, Programmer Ctrl+B/O/D/H base selection, Ctrl+Alt B/A/P mode selection, Ctrl+Alt F/K/T Tools access, Ctrl+W/Ctrl+Q close/quit, F1/Ctrl+? shortcut discovery and Alt+Left/Right history navigation;
 - unbounded history by default, with an optional explicit limit available to embedders/tests;
 - reusable one- and multi-argument user functions with optional descriptions, deterministic XDG persistence and transactional reload;
 - direct click/touch Programmer bit toggling in the Linux representations view while preserving shared fixed-width semantics;
@@ -41,6 +41,7 @@ The following GNOME Calculator 41.1 capabilities remain meaningful comparison ta
 
 - live network-backed currency conversion with cached/offline behaviour and an explicit privacy/off switch;
 - an integrated arbitrary-precision real/complex Scientific value domain comparable to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools;
+- independent multi-window Calculator sessions equivalent to GNOME Calculator's Ctrl+N workflow; the current GTK shell intentionally remains single-main-window because its native widget/controller globals must be refactored before multi-window support can be correct;
 
 These items are treated as real engineering work. They are not considered complete merely because another Calculator tool can approximate the same end result.
 

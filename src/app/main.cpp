@@ -1748,10 +1748,115 @@ void insert_expression_shortcut(std::string_view text) {
     render_state(static_cast<std::size_t>(position));
 }
 
+void show_keyboard_shortcuts() {
+    GtkWidget* window = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(window), "Calculator Keyboard Shortcuts");
+    gtk_window_set_default_size(GTK_WINDOW(window), 520, 430);
+    if (main_window) {
+        gtk_window_set_transient_for(
+            GTK_WINDOW(window), GTK_WINDOW(main_window));
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(window), TRUE);
+    }
+
+    GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(root, "shell");
+    gtk_window_set_child(GTK_WINDOW(window), root);
+
+    GtkWidget* title = gtk_label_new("Keyboard Shortcuts");
+    gtk_widget_add_css_class(title, "brand-title");
+    gtk_widget_set_halign(title, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(root), title);
+
+    GtkWidget* shortcuts = gtk_label_new(
+        "General\n"
+        "  Enter                 Calculate\n"
+        "  Escape / Ctrl+Delete  Clear\n"
+        "  Ctrl+Z                Undo expression edit\n"
+        "  Ctrl+Shift+Z          Redo expression edit\n"
+        "  Ctrl+W                Close Calculator\n"
+        "  Ctrl+Q                Quit Calculator\n"
+        "  F1 / Ctrl+?           Keyboard shortcuts\n\n"
+        "Modes\n"
+        "  Ctrl+Alt+B            Standard\n"
+        "  Ctrl+Alt+A            Scientific\n"
+        "  Ctrl+Alt+P            Programmer\n"
+        "  Ctrl+Alt+F/K/T        Tools workbench\n\n"
+        "Scientific\n"
+        "  Ctrl+P                Insert pi\n"
+        "  Ctrl+R                Insert sqrt(\n"
+        "  Ctrl+E                Insert e\n\n"
+        "Programmer\n"
+        "  Ctrl+B/O/D/H          Binary / Octal / Decimal / Hex\n\n"
+        "History\n"
+        "  Alt+Left / Alt+Right  Older / newer calculation");
+    gtk_label_set_xalign(GTK_LABEL(shortcuts), 0.0F);
+    gtk_label_set_yalign(GTK_LABEL(shortcuts), 0.0F);
+    gtk_label_set_selectable(GTK_LABEL(shortcuts), TRUE);
+    gtk_box_append(GTK_BOX(root), shortcuts);
+
+    gtk_window_present(GTK_WINDOW(window));
+}
+
 gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
                                guint, GdkModifierType state, gpointer) {
     const bool control = (state & GDK_CONTROL_MASK) != 0;
     const bool alt = (state & GDK_ALT_MASK) != 0;
+
+    if (keyval == GDK_KEY_F1 ||
+        (control && (keyval == GDK_KEY_question ||
+                     keyval == GDK_KEY_slash))) {
+        show_keyboard_shortcuts();
+        return TRUE;
+    }
+
+    if (control && alt) {
+        switch (keyval) {
+        case GDK_KEY_b:
+        case GDK_KEY_B:
+            on_mode_clicked(
+                nullptr,
+                GINT_TO_POINTER(static_cast<int>(Mode::Standard) + 1));
+            return TRUE;
+        case GDK_KEY_a:
+        case GDK_KEY_A:
+            on_mode_clicked(
+                nullptr,
+                GINT_TO_POINTER(static_cast<int>(Mode::Scientific) + 1));
+            return TRUE;
+        case GDK_KEY_p:
+        case GDK_KEY_P:
+            on_mode_clicked(
+                nullptr,
+                GINT_TO_POINTER(static_cast<int>(Mode::Programmer) + 1));
+            return TRUE;
+        case GDK_KEY_f:
+        case GDK_KEY_F:
+        case GDK_KEY_k:
+        case GDK_KEY_K:
+        case GDK_KEY_t:
+        case GDK_KEY_T:
+            show_advanced_tools(nullptr, nullptr);
+            return TRUE;
+        default:
+            break;
+        }
+    }
+
+    if (control && !alt &&
+        (keyval == GDK_KEY_w || keyval == GDK_KEY_W)) {
+        if (main_window) gtk_window_close(GTK_WINDOW(main_window));
+        return TRUE;
+    }
+
+    if (control && !alt &&
+        (keyval == GDK_KEY_q || keyval == GDK_KEY_Q)) {
+        if (main_window) {
+            GtkApplication* app = GTK_APPLICATION(
+                gtk_window_get_application(GTK_WINDOW(main_window)));
+            if (app) g_application_quit(G_APPLICATION(app));
+        }
+        return TRUE;
+    }
 
     if (keyval == GDK_KEY_Escape ||
         (control && keyval == GDK_KEY_Delete)) {

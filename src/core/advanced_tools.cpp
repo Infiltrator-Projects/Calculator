@@ -30,7 +30,7 @@ constexpr std::array<ToolDescriptor, 14> kCatalog{{
      "ohm V I | power V I | reactance-c Hz F | reactance-l Hz H | resonance H F | parallel R1,R2,... | three-phase V I PF | db ratio | db-power ratio",
      "ohm 12 2"},
     {AdvancedTool::UnitConversion, "Unit conversion",
-     "value FROM TO. Supports length, mass, temperature, area, volume, speed, pressure, energy, power and angle units.",
+     "value FROM TO. Supports length, mass, temperature, area, volume, speed, pressure, energy, power, duration, frequency, digital-storage and angle units.",
      "100 km mi"},
     {AdvancedTool::Network, "ICT / network",
      "subnet IPv4/prefix | cidr usable-hosts | transfer bytes bits-per-second",
@@ -245,7 +245,7 @@ struct Unit {
     double offset;
 };
 
-constexpr std::array<Unit, 98> kUnits{{
+constexpr std::array<Unit, 135> kUnits{{
     {"m","length",1.0,0.0},{"km","length",1000.0,0.0},{"cm","length",0.01,0.0},{"mm","length",0.001,0.0},
     {"um","length",1e-6,0.0},{"nm","length",1e-9,0.0},{"in","length",0.0254,0.0},{"ft","length",0.3048,0.0},
     {"yd","length",0.9144,0.0},{"mi","length",1609.344,0.0},{"nmi","length",1852.0,0.0},
@@ -264,7 +264,8 @@ constexpr std::array<Unit, 98> kUnits{{
     {"in2","area",0.00064516,0.0},{"yd2","area",0.83612736,0.0},{"mi2","area",2589988.110336,0.0},
     {"acre","area",4046.8564224,0.0},{"ha","area",10000.0,0.0},
 
-    {"m3","volume",1.0,0.0},{"L","volume",0.001,0.0},{"mL","volume",1e-6,0.0},{"galUS","volume",0.003785411784,0.0},
+    {"m3","volume",1.0,0.0},{"L","volume",0.001,0.0},{"mL","volume",1e-6,0.0},{"uL","volume",1e-9,0.0},
+    {"cupMetric","volume",0.00025,0.0},{"galUS","volume",0.003785411784,0.0},
     {"galUK","volume",0.00454609,0.0},{"ft3","volume",0.028316846592,0.0},{"in3","volume",0.000016387064,0.0},
     {"cupUS","volume",0.0002365882365,0.0},{"pintUS","volume",0.000473176473,0.0},
     {"quartUS","volume",0.000946352946,0.0},{"flozUS","volume",0.0000295735295625,0.0},
@@ -291,7 +292,29 @@ constexpr std::array<Unit, 98> kUnits{{
     {"s","duration",1.0,0.0},{"ms","duration",1e-3,0.0},{"us","duration",1e-6,0.0},{"ns","duration",1e-9,0.0},
 
     {"Hz","frequency",1.0,0.0},{"kHz","frequency",1e3,0.0},{"MHz","frequency",1e6,0.0},
-    {"GHz","frequency",1e9,0.0},{"THz","frequency",1e12,0.0}
+    {"GHz","frequency",1e9,0.0},{"THz","frequency",1e12,0.0},
+
+    // GNOME Calculator 41.1 / Linux Mint digital-storage conversion family.
+    // Byte is the canonical internal unit; decimal and IEC prefixes remain
+    // distinct so the GUI never silently conflates kB with KiB.
+    {"bit","digital-storage",0.125,0.0},{"byte","digital-storage",1.0,0.0},
+    {"nibble","digital-storage",0.5,0.0},
+    {"kb","digital-storage",125.0,0.0},{"kB","digital-storage",1000.0,0.0},
+    {"Kib","digital-storage",128.0,0.0},{"KiB","digital-storage",1024.0,0.0},
+    {"Mb","digital-storage",125000.0,0.0},{"MB","digital-storage",1000000.0,0.0},
+    {"Mib","digital-storage",131072.0,0.0},{"MiB","digital-storage",1048576.0,0.0},
+    {"Gb","digital-storage",125000000.0,0.0},{"GB","digital-storage",1000000000.0,0.0},
+    {"Gib","digital-storage",134217728.0,0.0},{"GiB","digital-storage",1073741824.0,0.0},
+    {"Tb","digital-storage",125000000000.0,0.0},{"TB","digital-storage",1000000000000.0,0.0},
+    {"Tib","digital-storage",137438953472.0,0.0},{"TiB","digital-storage",1099511627776.0,0.0},
+    {"Pb","digital-storage",125000000000000.0,0.0},{"PB","digital-storage",1000000000000000.0,0.0},
+    {"Pib","digital-storage",140737488355328.0,0.0},{"PiB","digital-storage",1125899906842624.0,0.0},
+    {"Eb","digital-storage",1.25e17,0.0},{"EB","digital-storage",1.0e18,0.0},
+    {"Eib","digital-storage",1.44115188075855872e17,0.0},{"EiB","digital-storage",1.152921504606846976e18,0.0},
+    {"Zb","digital-storage",1.25e20,0.0},{"ZB","digital-storage",1.0e21,0.0},
+    {"Zib","digital-storage",1.47573952589676412928e20,0.0},{"ZiB","digital-storage",1.180591620717411303424e21,0.0},
+    {"Yb","digital-storage",1.25e23,0.0},{"YB","digital-storage",1.0e24,0.0},
+    {"Yib","digital-storage",1.51115727451828646838272e23,0.0},{"YiB","digital-storage",1.208925819614629174706176e24,0.0}
 }};
 
 constexpr std::array<Unit, 3> kAngleUnits{{

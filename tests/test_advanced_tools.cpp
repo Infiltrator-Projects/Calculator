@@ -19,6 +19,11 @@ int main(){
     check(contains(evaluate(AdvancedTool::Engineering,"ohm 12 2"),"6e+00 ohm"),"engineering ohm");
     check(contains(evaluate(AdvancedTool::UnitConversion,"100 km mi"),"62.137"),"unit conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"32 F C"),"0 C"),"temperature conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"8 bit byte"),"1 byte"),"Mint digital storage bits to bytes");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1024 KiB MiB"),"1 MiB"),"Mint IEC storage conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1000 kB MB"),"1 MB"),"Mint decimal storage conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 uL mL"),"0.001 mL"),"Mint microlitre conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 cupMetric mL"),"250 mL"),"Mint metric cup conversion");
     const auto& units = calculator::tools::conversion_units();
     check(units.size()==101U,"conversion catalogue size");
     bool km=false,mi=false,deg=false;

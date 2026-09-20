@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.5) unstable; urgency=medium
+
+  * Complete Mint/GNOME 41.1 digital-storage and volume conversion parity.
+  * Add Linux mode, Tools, close/quit and shortcut-help keyboard actions.
+  * Strengthen exact Mint replacement regression documentation and tests.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 20:31:00 +1000
+
 infiltrator-calculator (0.2.4) unstable; urgency=medium
 
   * Persist user variables and semantic calculator settings on Linux.

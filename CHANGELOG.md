@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.5 — 2026-09-20
+
+- Complete the Linux Mint/GNOME 41.1 ordinary unit-conversion catalogue gap with decimal and IEC digital-storage units, metric cups and microlitres.
+- Add native Linux mode/workbench, quit/close and discoverable shortcut-key parity learned from the GNOME 41.1 source.
+- Add regression coverage for digital-storage conversions and the Linux shortcut contract.
+- Re-audit replacement parity against the exact GNOME Calculator 41.1 source and explicitly retain currency, integrated arbitrary-precision real/complex Scientific arithmetic and independent multi-window sessions as remaining engineering work.
+
 ## 0.2.4 — 2026-09-20
 
 - Persist user-defined variables under the Calculator XDG data directory with transactional validation and round-trip-safe binary64 text.

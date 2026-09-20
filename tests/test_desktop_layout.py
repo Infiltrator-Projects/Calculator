@@ -523,3 +523,20 @@ assert 'Swap source and target units' in linux
 # Mint/GNOME-class state persistence includes calculator semantics, not only geometry.
 for needle in ('angle-unit', 'programmer-base', 'programmer-width', 'programmer-signed', 'load_user_variables', 'save_user_variables'):
     assert needle in linux, f'Linux persistent calculator state missing: {needle}'
+
+# Linux Mint / GNOME 41.1 replacement keyboard contract.
+for needle in (
+    "show_keyboard_shortcuts()",
+    "GDK_KEY_F1",
+    "GDK_KEY_question",
+    "GDK_KEY_w",
+    "GDK_KEY_q",
+    "GDK_KEY_a",
+    "GDK_KEY_f",
+    "GDK_KEY_k",
+    "GDK_KEY_t",
+    "Mode::Standard",
+    "Mode::Scientific",
+    "Mode::Programmer",
+):
+    assert needle in linux, f"Linux Mint keyboard replacement contract missing: {needle}"
