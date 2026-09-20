@@ -69,7 +69,7 @@ private:
 
     void calculate();
     void calculate_standard();
-    void calculate_programmer();
+    void calculate_programmer(bool record_history = true);
     void clear_calculation();
     void update_standard_preview();
     void unary_transform(Command command);

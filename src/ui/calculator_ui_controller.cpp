@@ -259,7 +259,7 @@ std::string Controller::programmer_status_text() const {
     return out.str();
 }
 
-void Controller::calculate_programmer() {
+void Controller::calculate_programmer(bool record_history) {
     const ProgrammerResult result = evaluate_programmer(
         state_.expression, state_.programmer_base, state_.programmer_width);
 
@@ -276,9 +276,11 @@ void Controller::calculate_programmer() {
 
     if (!result.ok) {
         state_.result = "Error: " + result.error;
-        session_.record_history_text(
-            state_.expression, state_.result, false,
-            HistoryKind::Programmer, context);
+        if (record_history) {
+            session_.record_history_text(
+                state_.expression, state_.result, false,
+                HistoryKind::Programmer, context);
+        }
         set_status("PROGRAMMER ERROR", true);
         return;
     }
@@ -286,9 +288,11 @@ void Controller::calculate_programmer() {
     state_.result = format_programmer(
         result.value, state_.programmer_base,
         state_.programmer_width, state_.programmer_signed);
-    session_.record_history_text(
-        state_.expression, state_.result, true,
-        HistoryKind::Programmer, context);
+    if (record_history) {
+        session_.record_history_text(
+            state_.expression, state_.result, true,
+            HistoryKind::Programmer, context);
+    }
     set_status(programmer_status_text());
 }
 
@@ -448,7 +452,7 @@ void Controller::programmer_mode_change(Command command) {
         return;
     }
 
-    if (!state_.expression.empty()) calculate_programmer();
+    if (!state_.expression.empty()) calculate_programmer(false);
     else set_status(programmer_status_text());
 }
 
