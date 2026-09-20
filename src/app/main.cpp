@@ -701,6 +701,7 @@ void activate(GtkApplication* app, gpointer) {
     }
 
     gtk_window_set_title(GTK_WINDOW(window), "Calculator");
+    gtk_window_set_icon_name(GTK_WINDOW(window), "infiltrator-calc");
     gtk_window_set_default_size(
         GTK_WINDOW(window),
         metrics.default_width,
