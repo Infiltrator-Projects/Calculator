@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.1" date="2026-09-20">
+      <description>
+        <p>Harden Scientific clear-state semantics, canonical exact rational output, extreme-value MPFR validation and interactive latency regression protection.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-09-20">
       <description>
         <p>Complete the advanced calculator roadmap with engineering, conversion, network, storage, date/time, constants, statistics, graphing, equation solving, exact decimal, arbitrary-precision and complex tools across Linux, Windows and iPhone.</p>

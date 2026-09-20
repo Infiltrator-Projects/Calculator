@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../src/ui/calculator_ui_controller.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -124,6 +125,10 @@ int main() {
     controller.set_expression("1000");
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result.find("e+03") != std::string::npos);
+    controller.dispatch(Command::Clear);
+    CHECK(!controller.state().scientific_notation);
+    CHECK(controller.state().result == "0");
+    CHECK(controller.state().status.find("F-E") == std::string::npos);
 
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseBin);
@@ -235,6 +240,41 @@ int main() {
     CHECK(representations.find("HEX  FF") != std::string::npos);
     CHECK(representations.find("OCT  377") != std::string::npos);
     CHECK(representations.find("BIN  1111 1111") != std::string::npos);
+
+    // Keep the hot input path comfortably inside an interactive frame budget.
+    // The threshold is deliberately much looser than normal native C++ cost:
+    // it detects an order-of-magnitude regression without timing micro-noise.
+    controller.set_mode(Mode::Standard);
+    constexpr int latency_rounds = 2000;
+    for (int warmup = 0; warmup < 20; ++warmup) {
+        controller.dispatch(Command::Clear);
+        controller.dispatch(Command::Digit1);
+        controller.dispatch(Command::Digit2);
+        controller.dispatch(Command::Digit3);
+        controller.dispatch(Command::Digit4);
+        controller.dispatch(Command::Digit5);
+        controller.dispatch(Command::Digit6);
+        controller.dispatch(Command::Digit7);
+    }
+    const auto latency_start = std::chrono::steady_clock::now();
+    for (int round = 0; round < latency_rounds; ++round) {
+        controller.dispatch(Command::Clear);
+        controller.dispatch(Command::Digit1);
+        controller.dispatch(Command::Digit2);
+        controller.dispatch(Command::Digit3);
+        controller.dispatch(Command::Digit4);
+        controller.dispatch(Command::Digit5);
+        controller.dispatch(Command::Digit6);
+        controller.dispatch(Command::Digit7);
+    }
+    const auto latency_elapsed =
+        std::chrono::steady_clock::now() - latency_start;
+    const double latency_ms =
+        std::chrono::duration<double, std::milli>(latency_elapsed).count() /
+        static_cast<double>(latency_rounds * 8);
+    CHECK(latency_ms < 5.0);
+    std::cout << "Average controller keystroke latency: "
+              << latency_ms << " ms\n";
 
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";

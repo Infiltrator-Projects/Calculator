@@ -40,6 +40,10 @@ int main(){
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"3/10"),"exact decimal fraction");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"0.3"),"exact decimal presentation");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"1/3"),"1/3"),"exact rational division");
+    check(contains(evaluate(AdvancedTool::ExactDecimal,"1/3+1/3"),"Exact fraction  2/3"),"exact rational canonical reduction");
+    check(contains(evaluate(AdvancedTool::ExactDecimal,"2/4"),"Exact fraction  1/2"),"exact rational common divisor");
+    check(contains(evaluate(AdvancedTool::ExactDecimal,"1/2"),"Exact decimal  0.5"),"terminating rational decimal");
+    check(contains(evaluate(AdvancedTool::ExactDecimal,"10/4"),"Exact decimal  2.5"),"reduced terminating decimal");
 
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"2^128"),"340282366920938463463374607431768211456"),"big integer power");
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"100!"),"933262154439"),"big factorial");

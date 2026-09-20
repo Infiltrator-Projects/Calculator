@@ -174,20 +174,25 @@ int main() {
         -1.0, -0.9, -0.5, -0.1, 0.0,
         0.1, 0.5, 0.9, 1.0
     };
-    constexpr std::array<double, 8> positive{
-        1.0e-12, 1.0e-6, 0.1, 0.5,
-        1.0, 2.0, 10.0, 1.0e6
+    const std::array<double, 17> positive{
+        std::numeric_limits<double>::denorm_min(),
+        std::numeric_limits<double>::min(),
+        1.0e-300, 1.0e-100, 1.0e-12, 1.0e-6, 0.1, 0.5,
+        1.0, 2.0, 10.0, 1.0e6, 1.0e50, 1.0e100, 1.0e200,
+        1.0e300, std::numeric_limits<double>::max()
     };
-    constexpr std::array<double, 9> exponent{
-        -20.0, -10.0, -1.0, -0.1, 0.0,
-        0.1, 1.0, 10.0, 20.0
+    constexpr std::array<double, 13> exponent{
+        -744.0, -700.0, -20.0, -10.0, -1.0, -0.1, 0.0,
+        0.1, 1.0, 10.0, 20.0, 700.0, 709.0
     };
-    constexpr std::array<double, 9> power_exponent{
-        -300.0, -100.0, -10.0, -1.0, 0.0,
-        1.0, 10.0, 100.0, 300.0
+    constexpr std::array<double, 13> power_exponent{
+        -1074.0, -1022.0, -323.0, -300.0, -100.0, -10.0, -1.0,
+        0.0, 1.0, 10.0, 100.0, 300.0, 1023.0
     };
-    constexpr std::array<double, 7> acosh_domain{
-        1.0, 1.000001, 1.1, 2.0, 10.0, 1.0e3, 1.0e6
+    const std::array<double, 12> acosh_domain{
+        1.0, 1.000001, 1.1, 2.0, 10.0, 1.0e3, 1.0e6,
+        1.0e50, 1.0e100, 1.0e200, 1.0e300,
+        std::numeric_limits<double>::max()
     };
     constexpr std::array<double, 9> atanh_domain{
         -0.99, -0.9, -0.5, -0.1, 0.0,
@@ -210,7 +215,7 @@ int main() {
     check_values(OracleFunction::Sinh, general);
     check_values(OracleFunction::Cosh, general);
     check_values(OracleFunction::Tanh, general);
-    check_values(OracleFunction::Asinh, general);
+    check_values(OracleFunction::Asinh, positive);
     check_values(OracleFunction::Acosh, acosh_domain);
     check_values(OracleFunction::Atanh, atanh_domain);
 

@@ -1,3 +1,13 @@
+infiltrator-calculator (0.2.1) unstable; urgency=medium
+
+  * Reset Scientific F-E notation when clearing a calculation.
+  * Canonically reduce exact rational fractions and render terminating rationals as exact decimals.
+  * Extend MPFR oracle coverage to extreme binary64 domains.
+  * Add controller input-latency regression protection.
+  * Preserve the corrected desktop application identity.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 18:25:00 +1000
+
 infiltrator-calculator (0.2.0) unstable; urgency=medium
 
   * Complete all twelve planned advanced calculator capability families.

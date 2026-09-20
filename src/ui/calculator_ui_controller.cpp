@@ -406,6 +406,13 @@ void Controller::clear_calculation() {
     state_.expression.clear();
     state_.result = "0";
 
+    // Clear returns Scientific display notation to its ordinary fixed form.
+    // Mode/angle/2nd/HYP remain user-selected state, but F-E is a transient
+    // presentation toggle and must not survive a cleared calculation.
+    if (state_.mode == Mode::Scientific) {
+        state_.scientific_notation = false;
+    }
+
     if (state_.mode == Mode::Programmer) {
         set_status(programmer_status_text());
     } else if (state_.mode == Mode::Scientific) {

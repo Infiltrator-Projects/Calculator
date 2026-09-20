@@ -22,7 +22,8 @@ Every `main` push and manual workflow dispatch runs the cross-platform verificat
 - compiles the iPhone application for iOS Simulator through the shared C++ controller and verifies AppIcon metadata;
 - compiles the unsigned ARM64 iPhoneOS target;
 - verifies expected binary assets plus a deterministic source bundle containing the exact Common checkout, and checksums all published payloads; and
-- verifies Package Repository publication for the Debian package.
+- verifies Package Repository publication for the Debian package; and
+- enforces a deliberately loose 5 ms average shared-controller keystroke budget so order-of-magnitude input-path regressions are caught without turning CI scheduling noise into failures.
 
 Automated checks should cover ordinary behaviour, boundary/error cases and release/package contracts appropriate to the affected domain.
 
@@ -57,7 +58,7 @@ The validation system is evidence, not a proof of all possible numerical or plat
 
 ## Independent numerical oracle
 
-Release CI can enable `CALCULATOR_ENABLE_MPFR_ORACLE_TESTS`. The resulting test links only the test executable to MPFR, evaluates representative trigonometric, inverse-trigonometric, hyperbolic, inverse-hyperbolic, root, logarithmic and e/2/10 exponential inputs at 256-bit precision, rounds the reference to binary64 and compares Calculator's shared-core result within a tight scale-aware tolerance. The tolerance no longer normalises tiny values to a unit scale; subnormal comparisons retain a denormal floor so a gross zero/subnormal mismatch cannot pass simply because both values are small. MPFR is therefore evidence, not a shipped runtime dependency or a second production calculation engine.
+Release CI can enable `CALCULATOR_ENABLE_MPFR_ORACLE_TESTS`. The resulting test links only the test executable to MPFR, evaluates representative trigonometric, inverse-trigonometric, hyperbolic, inverse-hyperbolic, root, logarithmic and e/2/10 exponential inputs at 256-bit precision, rounds the reference to binary64 and compares Calculator's shared-core result within a tight scale-aware tolerance. The oracle includes denormal/minimum-positive boundaries, very large logarithmic and inverse-hyperbolic inputs through binary64 maximum, and exponential inputs close to underflow/overflow boundaries. The tolerance no longer normalises tiny values to a unit scale; subnormal comparisons retain a denormal floor so a gross zero/subnormal mismatch cannot pass simply because both values are small. MPFR is therefore evidence, not a shipped runtime dependency or a second production calculation engine.
 
 ## Semantic appearance and focus regression
 

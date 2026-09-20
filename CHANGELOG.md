@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-09-20
+
+- Reset Scientific F-E notation on Clear and protect the behaviour with shared-controller regression coverage.
+- Canonically reduce exact rational results with arbitrary-size GCD/exact division and emit exact decimals for all terminating rationals, not only power-of-ten denominators.
+- Extend the 256-bit MPFR oracle across denormal, extreme logarithmic/inverse-hyperbolic and near underflow/overflow boundaries.
+- Add a generous 5 ms average controller-keystroke CI budget to detect major interaction-performance regressions.
+- Preserve the corrected Linux desktop identity introduced after 0.2.0.
+
 This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
 
 ## Unreleased
