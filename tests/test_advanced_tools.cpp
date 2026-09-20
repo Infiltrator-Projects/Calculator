@@ -25,7 +25,7 @@ int main(){
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 uL mL"),"0.001 mL"),"Mint microlitre conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 cupMetric mL"),"250 mL"),"Mint metric cup conversion");
     const auto& units = calculator::tools::conversion_units();
-    check(units.size()==101U,"conversion catalogue size");
+    check(units.size()==138U,"conversion catalogue size");
     bool km=false,mi=false,deg=false;
     for(const auto& unit:units){
         km = km || (unit.name=="km" && unit.dimension=="length");
