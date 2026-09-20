@@ -27,6 +27,26 @@ enum CalcMode: String, CaseIterable, Identifiable {
     }
 }
 
+struct CalculatorToolDescriptor: Identifiable {
+    let id: Int
+    let name: String
+    let prompt: String
+    let example: String
+}
+
+struct CalculatorGraphPoint: Identifiable {
+    let id: Int
+    let x: Double
+    let y: Double
+    let valid: Bool
+}
+
+struct CalculatorToolEvaluation {
+    let ok: Bool
+    let text: String
+    let points: [CalculatorGraphPoint]
+}
+
 struct CalculatorHistoryRow: Identifiable {
     let id: Int
     let mode: Int
@@ -50,6 +70,7 @@ final class CalculatorModel: ObservableObject {
     @Published var programmerWidth = 64
     @Published var programmerSigned = false
     @Published var showingHistory = false
+    @Published var showingTools = false
     @Published var showingResults = false
     @Published var showingBases = false
 
@@ -131,6 +152,38 @@ final class CalculatorModel: ObservableObject {
 
     func programmerRepresentationsText() -> String {
         bridge.programmerRepresentationsText()
+    }
+
+    func advancedToolDescriptors() -> [CalculatorToolDescriptor] {
+        guard let raw = bridge.advancedToolCatalog() as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let index = (item["index"] as? NSNumber)?.intValue,
+                  let name = item["name"] as? String,
+                  let prompt = item["prompt"] as? String,
+                  let example = item["example"] as? String
+            else { return nil }
+            return CalculatorToolDescriptor(
+                id: index, name: name, prompt: prompt, example: example)
+        }
+    }
+
+    func evaluateAdvancedTool(index: Int, input: String) -> CalculatorToolEvaluation {
+        let raw = bridge.evaluateAdvancedTool(index: index, input: input)
+        let ok = (raw["ok"] as? NSNumber)?.boolValue ?? false
+        let output = raw["output"] as? String ?? ""
+        let error = raw["error"] as? String ?? ""
+        let text = ok ? output : "Error: \(error)"
+        let pointRows = raw["points"] as? [[String: Any]] ?? []
+        let points = pointRows.enumerated().compactMap { offset, item -> CalculatorGraphPoint? in
+            guard let x = (item["x"] as? NSNumber)?.doubleValue,
+                  let y = (item["y"] as? NSNumber)?.doubleValue,
+                  let valid = (item["valid"] as? NSNumber)?.boolValue
+            else { return nil }
+            return CalculatorGraphPoint(id: offset, x: x, y: y, valid: valid)
+        }
+        return CalculatorToolEvaluation(ok: ok, text: text, points: points)
     }
 
     func historyText() -> String {
