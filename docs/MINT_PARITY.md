@@ -20,7 +20,8 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - Linux keyboard compatibility for Escape/Ctrl+Delete clear, Ctrl+P π, Ctrl+R square-root entry, Ctrl+E exponent entry, Programmer Ctrl+B/O/D/H base selection and Alt+Left/Right history navigation;
 - unbounded history by default, with an optional explicit limit available to embedders/tests;
 - reusable one- and multi-argument user functions with optional descriptions, deterministic XDG persistence and transactional reload;
-- direct click/touch Programmer bit toggling in the Linux representations view while preserving shared fixed-width semantics.
+- direct click/touch Programmer bit toggling in the Linux representations view while preserving shared fixed-width semantics;
+- persistent Linux result-presentation preferences for Automatic, Fixed, Scientific and Engineering output, decimal-place control, thousands grouping and trailing-zero presentation.
 
 ## Deliberate architectural differences
 
@@ -34,7 +35,6 @@ The following GNOME Calculator 41.1 capabilities remain meaningful comparison ta
 
 - live network-backed currency conversion with cached/offline behaviour and an explicit privacy/off switch;
 - an integrated arbitrary-precision real/complex Scientific value domain comparable to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools;
-- configurable output accuracy, thousands grouping and trailing-zero presentation;
 - persistent desktop session preferences such as selected conversion pair and geometry where platform conventions make that useful.
 
 These items are treated as real engineering work. They are not considered complete merely because another Calculator tool can approximate the same end result.

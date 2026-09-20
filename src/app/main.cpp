@@ -19,8 +19,10 @@ using calculator::ui::ButtonRole;
 using calculator::ui::ButtonSpec;
 using calculator::ui::Command;
 using calculator::ui::Controller;
+using calculator::ui::DisplayPreferences;
 using calculator::ui::LayoutClass;
 using calculator::ui::Mode;
+using calculator::ui::ResultFormat;
 using calculator::ui::ThemeMode;
 using calculator::ui::ThemePalette;
 
@@ -43,8 +45,10 @@ GtkWidget* tools_button = nullptr;
 GtkWidget* results_button = nullptr;
 GtkWidget* bases_button = nullptr;
 GtkWidget* theme_button = nullptr;
+GtkWidget* preferences_button = nullptr;
 GtkWidget* main_window = nullptr;
 GtkWidget* tools_window = nullptr;
+GtkWidget* preferences_window = nullptr;
 GtkWidget* programmer_bits_window = nullptr;
 GtkWidget* programmer_bits_value = nullptr;
 std::vector<GtkWidget*> programmer_bit_buttons;
@@ -151,6 +155,97 @@ void save_user_functions() {
         }
         g_free(path);
     }
+    g_free(directory);
+}
+
+const char* result_format_name(ResultFormat format) {
+    switch (format) {
+    case ResultFormat::Fixed: return "fixed";
+    case ResultFormat::Scientific: return "scientific";
+    case ResultFormat::Engineering: return "engineering";
+    case ResultFormat::Automatic: return "automatic";
+    }
+    return "automatic";
+}
+
+ResultFormat result_format_from_name(const char* name) {
+    if (!name) return ResultFormat::Automatic;
+    if (g_strcmp0(name, "fixed") == 0) return ResultFormat::Fixed;
+    if (g_strcmp0(name, "scientific") == 0) return ResultFormat::Scientific;
+    if (g_strcmp0(name, "engineering") == 0) return ResultFormat::Engineering;
+    return ResultFormat::Automatic;
+}
+
+void load_display_preferences() {
+    gchar* path = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc",
+        "presentation.ini", nullptr);
+    GKeyFile* key = g_key_file_new();
+    DisplayPreferences prefs = controller.display_preferences();
+    if (g_key_file_load_from_file(key, path, G_KEY_FILE_NONE, nullptr)) {
+        if (g_key_file_has_key(key, "Presentation", "format", nullptr)) {
+            gchar* value = g_key_file_get_string(
+                key, "Presentation", "format", nullptr);
+            prefs.format = result_format_from_name(value);
+            g_free(value);
+        }
+        if (g_key_file_has_key(
+                key, "Presentation", "decimal-places", nullptr)) {
+            const gint value = g_key_file_get_integer(
+                key, "Presentation", "decimal-places", nullptr);
+            prefs.decimal_places =
+                static_cast<unsigned>(std::clamp(value, 0, 15));
+        }
+        if (g_key_file_has_key(
+                key, "Presentation", "group-thousands", nullptr)) {
+            prefs.group_thousands = g_key_file_get_boolean(
+                key, "Presentation", "group-thousands", nullptr);
+        }
+        if (g_key_file_has_key(
+                key, "Presentation", "trailing-zeroes", nullptr)) {
+            prefs.trailing_zeroes = g_key_file_get_boolean(
+                key, "Presentation", "trailing-zeroes", nullptr);
+        }
+    }
+    controller.set_display_preferences(prefs);
+    g_key_file_unref(key);
+    g_free(path);
+}
+
+void save_display_preferences() {
+    gchar* directory = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc", nullptr);
+    if (g_mkdir_with_parents(directory, 0700) != 0) {
+        g_free(directory);
+        return;
+    }
+    gchar* path = g_build_filename(
+        directory, "presentation.ini", nullptr);
+    GKeyFile* key = g_key_file_new();
+    const DisplayPreferences& prefs = controller.display_preferences();
+    g_key_file_set_string(
+        key, "Presentation", "format", result_format_name(prefs.format));
+    g_key_file_set_integer(
+        key, "Presentation", "decimal-places",
+        static_cast<gint>(prefs.decimal_places));
+    g_key_file_set_boolean(
+        key, "Presentation", "group-thousands", prefs.group_thousands);
+    g_key_file_set_boolean(
+        key, "Presentation", "trailing-zeroes", prefs.trailing_zeroes);
+
+    gsize length = 0;
+    gchar* data = g_key_file_to_data(key, &length, nullptr);
+    if (data) {
+        if (!g_file_set_contents(
+                path, data, static_cast<gssize>(length), nullptr)) {
+            g_printerr(
+                "Calculator could not persist presentation preferences to %s\n",
+                path);
+        }
+        g_free(data);
+    }
+    g_key_file_unref(key);
+    g_free(path);
     g_free(directory);
 }
 
@@ -299,6 +394,155 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     }
 
     refresh_history_dock();
+}
+
+struct PreferencesWindowState {
+    GtkWidget* format = nullptr;
+    GtkWidget* decimals = nullptr;
+    GtkWidget* grouping = nullptr;
+    GtkWidget* zeroes = nullptr;
+};
+
+void apply_preferences_window(PreferencesWindowState* state) {
+    if (!state) return;
+    DisplayPreferences prefs = controller.display_preferences();
+    switch (gtk_drop_down_get_selected(GTK_DROP_DOWN(state->format))) {
+    case 1U: prefs.format = ResultFormat::Fixed; break;
+    case 2U: prefs.format = ResultFormat::Scientific; break;
+    case 3U: prefs.format = ResultFormat::Engineering; break;
+    default: prefs.format = ResultFormat::Automatic; break;
+    }
+    prefs.decimal_places = static_cast<unsigned>(
+        gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(state->decimals)));
+    prefs.group_thousands =
+        gtk_switch_get_active(GTK_SWITCH(state->grouping));
+    prefs.trailing_zeroes =
+        gtk_switch_get_active(GTK_SWITCH(state->zeroes));
+    controller.set_display_preferences(prefs);
+    save_display_preferences();
+    render_state();
+}
+
+void on_preferences_changed(GObject*, GParamSpec*, gpointer data) {
+    apply_preferences_window(
+        static_cast<PreferencesWindowState*>(data));
+}
+
+void show_preferences(GtkWidget*, gpointer) {
+    if (preferences_window) {
+        gtk_window_present(GTK_WINDOW(preferences_window));
+        return;
+    }
+
+    GtkApplication* app =
+        main_window
+            ? gtk_window_get_application(GTK_WINDOW(main_window))
+            : nullptr;
+    GtkWidget* window =
+        app ? gtk_application_window_new(app) : gtk_window_new();
+    preferences_window = window;
+    g_object_add_weak_pointer(
+        G_OBJECT(window),
+        reinterpret_cast<gpointer*>(&preferences_window));
+    gtk_window_set_title(GTK_WINDOW(window), "Calculator Preferences");
+    gtk_window_set_default_size(GTK_WINDOW(window), 430, 330);
+    gtk_window_set_hide_on_close(GTK_WINDOW(window), TRUE);
+    if (main_window) {
+        gtk_window_set_transient_for(
+            GTK_WINDOW(window), GTK_WINDOW(main_window));
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(window), TRUE);
+    }
+
+    auto* state = new PreferencesWindowState();
+    g_object_set_data_full(
+        G_OBJECT(window), "calculator-preferences-state", state,
+        +[](gpointer data) {
+            delete static_cast<PreferencesWindowState*>(data);
+        });
+
+    GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_add_css_class(root, "shell");
+    gtk_window_set_child(GTK_WINDOW(window), root);
+
+    GtkWidget* title = gtk_label_new("Result Presentation");
+    gtk_widget_add_css_class(title, "brand-title");
+    gtk_widget_set_halign(title, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(root), title);
+
+    const char* formats[] = {
+        "Automatic", "Fixed", "Scientific", "Engineering", nullptr
+    };
+    GtkStringList* model = gtk_string_list_new(formats);
+    state->format = gtk_drop_down_new(G_LIST_MODEL(model), nullptr);
+    g_object_unref(model);
+    gtk_widget_set_hexpand(state->format, TRUE);
+    gtk_box_append(GTK_BOX(root), state->format);
+
+    GtkWidget* decimal_row =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* decimal_label = gtk_label_new("Decimal places");
+    gtk_widget_set_hexpand(decimal_label, TRUE);
+    gtk_widget_set_halign(decimal_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(decimal_row), decimal_label);
+    state->decimals = gtk_spin_button_new_with_range(0.0, 15.0, 1.0);
+    gtk_box_append(GTK_BOX(decimal_row), state->decimals);
+    gtk_box_append(GTK_BOX(root), decimal_row);
+
+    GtkWidget* grouping_row =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* grouping_label =
+        gtk_label_new("Thousands separators");
+    gtk_widget_set_hexpand(grouping_label, TRUE);
+    gtk_widget_set_halign(grouping_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(grouping_row), grouping_label);
+    state->grouping = gtk_switch_new();
+    gtk_box_append(GTK_BOX(grouping_row), state->grouping);
+    gtk_box_append(GTK_BOX(root), grouping_row);
+
+    GtkWidget* zero_row =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* zero_label = gtk_label_new("Show trailing zeroes");
+    gtk_widget_set_hexpand(zero_label, TRUE);
+    gtk_widget_set_halign(zero_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(zero_row), zero_label);
+    state->zeroes = gtk_switch_new();
+    gtk_box_append(GTK_BOX(zero_row), state->zeroes);
+    gtk_box_append(GTK_BOX(root), zero_row);
+
+    const DisplayPreferences& prefs = controller.display_preferences();
+    guint selected = 0U;
+    if (prefs.format == ResultFormat::Fixed) selected = 1U;
+    else if (prefs.format == ResultFormat::Scientific) selected = 2U;
+    else if (prefs.format == ResultFormat::Engineering) selected = 3U;
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(state->format), selected);
+    gtk_spin_button_set_value(
+        GTK_SPIN_BUTTON(state->decimals), prefs.decimal_places);
+    gtk_switch_set_active(
+        GTK_SWITCH(state->grouping), prefs.group_thousands);
+    gtk_switch_set_active(
+        GTK_SWITCH(state->zeroes), prefs.trailing_zeroes);
+
+    g_signal_connect(
+        state->format, "notify::selected",
+        G_CALLBACK(on_preferences_changed), state);
+    g_signal_connect(
+        state->decimals, "notify::value",
+        G_CALLBACK(on_preferences_changed), state);
+    g_signal_connect(
+        state->grouping, "notify::active",
+        G_CALLBACK(on_preferences_changed), state);
+    g_signal_connect(
+        state->zeroes, "notify::active",
+        G_CALLBACK(on_preferences_changed), state);
+
+    GtkWidget* note = gtk_label_new(
+        "F-E remains a temporary Scientific override and resets on Clear.");
+    gtk_widget_add_css_class(note, "status");
+    gtk_label_set_wrap(GTK_LABEL(note), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(note), 0.0F);
+    gtk_box_append(GTK_BOX(root), note);
+
+    gtk_window_present(GTK_WINDOW(window));
 }
 
 void show_history(GtkWidget*, gpointer) {
@@ -1202,6 +1446,7 @@ void activate(GtkApplication* app, gpointer) {
     main_window = window;
     theme_mode = load_theme_mode();
     load_user_functions();
+    load_display_preferences();
 
     if (!font_family_available(ui_font()) ||
         !font_family_available(brand_font())) {
@@ -1248,6 +1493,14 @@ void activate(GtkApplication* app, gpointer) {
     g_signal_connect(
         theme_button, "clicked", G_CALLBACK(on_theme_clicked), nullptr);
     gtk_box_append(GTK_BOX(header), theme_button);
+
+    preferences_button = toolbar_button("Prefs");
+    gtk_widget_set_tooltip_text(
+        preferences_button, "Result format, precision and grouping");
+    g_signal_connect(
+        preferences_button, "clicked",
+        G_CALLBACK(show_preferences), nullptr);
+    gtk_box_append(GTK_BOX(header), preferences_button);
 
     tools_button = toolbar_button("Tools");
     gtk_widget_set_tooltip_text(
