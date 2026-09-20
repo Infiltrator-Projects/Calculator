@@ -230,6 +230,11 @@ if(CALCULATOR_BUILD_DESKTOP)
         add_executable(infiltrator-calc
             src/app/main.cpp
         )
+        add_executable(infiltrator-calc-cli
+            src/app/cli_main.cpp
+        )
+        target_link_libraries(infiltrator-calc-cli PRIVATE calculator-core)
+        install(TARGETS infiltrator-calc-cli RUNTIME DESTINATION bin)
 
         target_link_libraries(infiltrator-calc PRIVATE
             calculator-ui
