@@ -23,6 +23,8 @@ targets:
       - path: Bridge
       - path: ../src/core/calculator.cpp
       - path: ../src/core/calculator.hpp
+      - path: ../src/core/advanced_tools.cpp
+      - path: ../src/core/advanced_tools.hpp
       - path: ../src/core/session.cpp
       - path: ../src/core/session.hpp
       - path: ../src/core/programmer.cpp
