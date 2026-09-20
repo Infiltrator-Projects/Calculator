@@ -249,6 +249,85 @@ void save_display_preferences() {
     g_free(directory);
 }
 
+struct DesktopState {
+    int width = calculator::ui::kDesktopMetrics.default_width;
+    int height = calculator::ui::desktop_preferred_height(Mode::Standard);
+    Mode mode = Mode::Standard;
+};
+
+DesktopState load_desktop_state() {
+    DesktopState state;
+    gchar* path = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc",
+        "desktop.ini", nullptr);
+    GKeyFile* key = g_key_file_new();
+    if (g_key_file_load_from_file(key, path, G_KEY_FILE_NONE, nullptr)) {
+        if (g_key_file_has_key(key, "Window", "width", nullptr)) {
+            state.width = g_key_file_get_integer(
+                key, "Window", "width", nullptr);
+        }
+        if (g_key_file_has_key(key, "Window", "height", nullptr)) {
+            state.height = g_key_file_get_integer(
+                key, "Window", "height", nullptr);
+        }
+        if (g_key_file_has_key(key, "Window", "mode", nullptr)) {
+            const gint mode = g_key_file_get_integer(
+                key, "Window", "mode", nullptr);
+            if (mode >= static_cast<gint>(Mode::Standard) &&
+                mode <= static_cast<gint>(Mode::Programmer)) {
+                state.mode = static_cast<Mode>(mode);
+            }
+        }
+    }
+    g_key_file_unref(key);
+    g_free(path);
+
+    const auto& metrics = calculator::ui::kDesktopMetrics;
+    state.width = std::clamp(
+        state.width, metrics.minimum_width, 2000);
+    state.height = std::clamp(
+        state.height,
+        calculator::ui::desktop_minimum_height(state.mode), 1600);
+    return state;
+}
+
+void save_desktop_state(GtkWidget* window) {
+    if (!window) return;
+    gchar* directory = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc", nullptr);
+    if (g_mkdir_with_parents(directory, 0700) != 0) {
+        g_free(directory);
+        return;
+    }
+    gchar* path = g_build_filename(directory, "desktop.ini", nullptr);
+    GKeyFile* key = g_key_file_new();
+    g_key_file_set_integer(
+        key, "Window", "width", gtk_widget_get_width(window));
+    g_key_file_set_integer(
+        key, "Window", "height", gtk_widget_get_height(window));
+    g_key_file_set_integer(
+        key, "Window", "mode",
+        static_cast<gint>(controller.state().mode));
+
+    gsize length = 0;
+    gchar* data = g_key_file_to_data(key, &length, nullptr);
+    if (data) {
+        (void)g_file_set_contents(
+            path, data, static_cast<gssize>(length), nullptr);
+        g_free(data);
+    }
+    g_key_file_unref(key);
+    g_free(path);
+    g_free(directory);
+}
+
+gboolean on_main_close_request(GtkWindow* window, gpointer) {
+    save_desktop_state(GTK_WIDGET(window));
+    save_user_functions();
+    save_display_preferences();
+    return FALSE;
+}
+
 void save_theme_mode() {
     gchar* directory = g_build_filename(
         g_get_user_config_dir(), "infiltrator-calc", nullptr);
@@ -1055,6 +1134,7 @@ void on_mode_clicked(GtkButton*, gpointer data) {
     const Mode mode = static_cast<Mode>(encoded - 1);
     controller.set_mode(mode);
     render_state();
+    if (main_window) save_desktop_state(main_window);
 
     // Standard mode has four fewer keypad rows than the extended modes.
     // Keep it compact instead of carrying the Scientific/Programmer height.
@@ -1447,6 +1527,8 @@ void activate(GtkApplication* app, gpointer) {
     theme_mode = load_theme_mode();
     load_user_functions();
     load_display_preferences();
+    const DesktopState desktop_state = load_desktop_state();
+    controller.set_mode(desktop_state.mode);
 
     if (!font_family_available(ui_font()) ||
         !font_family_available(brand_font())) {
@@ -1462,8 +1544,11 @@ void activate(GtkApplication* app, gpointer) {
     gtk_window_set_icon_name(GTK_WINDOW(window), "infiltrator-calc");
     gtk_window_set_default_size(
         GTK_WINDOW(window),
-        metrics.default_width,
-        calculator::ui::desktop_preferred_height(Mode::Standard));
+        desktop_state.width,
+        desktop_state.height);
+    g_signal_connect(
+        window, "close-request",
+        G_CALLBACK(on_main_close_request), nullptr);
 
     GtkWidget* shell = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, metrics.section_gap);
     gtk_widget_add_css_class(shell, "shell");

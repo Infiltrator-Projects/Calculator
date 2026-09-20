@@ -21,7 +21,8 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - unbounded history by default, with an optional explicit limit available to embedders/tests;
 - reusable one- and multi-argument user functions with optional descriptions, deterministic XDG persistence and transactional reload;
 - direct click/touch Programmer bit toggling in the Linux representations view while preserving shared fixed-width semantics;
-- persistent Linux result-presentation preferences for Automatic, Fixed, Scientific and Engineering output, decimal-place control, thousands grouping and trailing-zero presentation.
+- persistent Linux result-presentation preferences for Automatic, Fixed, Scientific and Engineering output, decimal-place control, thousands grouping and trailing-zero presentation;
+- persistent Cinnamon/GTK desktop mode and window size without forcing legacy absolute window positioning under Wayland.
 
 ## Deliberate architectural differences
 
@@ -35,7 +36,7 @@ The following GNOME Calculator 41.1 capabilities remain meaningful comparison ta
 
 - live network-backed currency conversion with cached/offline behaviour and an explicit privacy/off switch;
 - an integrated arbitrary-precision real/complex Scientific value domain comparable to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools;
-- persistent desktop session preferences such as selected conversion pair and geometry where platform conventions make that useful.
+- selected conversion-pair persistence for a future first-class converter surface; Calculator's current Tools input is intentionally expression-driven rather than a two-picker clone.
 
 These items are treated as real engineering work. They are not considered complete merely because another Calculator tool can approximate the same end result.
 
