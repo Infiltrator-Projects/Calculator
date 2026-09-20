@@ -6,4 +6,5 @@ Exec=infiltrator-calc
 Icon=infiltrator-calc
 Terminal=false
 Categories=Utility;Calculator;GTK;
+StartupWMClass=net.ssmith.infiltrator.calc
 StartupNotify=true
