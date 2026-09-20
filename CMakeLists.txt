@@ -69,6 +69,7 @@ include(
 
 add_library(calculator-core STATIC
     src/core/calculator.cpp
+    src/core/advanced_tools.cpp
     src/core/session.cpp
     src/core/programmer.cpp
 )
@@ -254,6 +255,12 @@ add_executable(calculator-test
 )
 target_link_libraries(calculator-test PRIVATE calculator-core)
 add_test(NAME calculator-core COMMAND calculator-test)
+
+add_executable(calculator-advanced-tools-test
+    tests/test_advanced_tools.cpp
+)
+target_link_libraries(calculator-advanced-tools-test PRIVATE calculator-core)
+add_test(NAME calculator-advanced-tools COMMAND calculator-advanced-tools-test)
 
 add_executable(calculator-session-test
     tests/test_session.cpp

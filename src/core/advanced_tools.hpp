@@ -1,0 +1,50 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#pragma once
+
+#include <array>
+#include <string>
+#include <string_view>
+#include <vector>
+
+namespace calculator::tools {
+
+enum class AdvancedTool {
+    Engineering,
+    UnitConversion,
+    Network,
+    Storage,
+    DateTime,
+    Constants,
+    Statistics,
+    Graph,
+    EquationSolver,
+    ExactDecimal,
+    ArbitraryPrecision,
+    Complex
+};
+
+struct ToolDescriptor {
+    AdvancedTool tool;
+    std::string_view name;
+    std::string_view prompt;
+    std::string_view example;
+};
+
+struct GraphPoint {
+    double x = 0.0;
+    double y = 0.0;
+    bool valid = false;
+};
+
+struct ToolResult {
+    bool ok = false;
+    std::string output;
+    std::string error;
+    std::vector<GraphPoint> points;
+};
+
+const std::array<ToolDescriptor, 12>& catalog() noexcept;
+const ToolDescriptor& descriptor(AdvancedTool tool) noexcept;
+ToolResult evaluate(AdvancedTool tool, std::string_view input);
+
+} // namespace calculator::tools

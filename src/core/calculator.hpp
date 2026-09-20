@@ -1,12 +1,23 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #pragma once
 
+#include <array>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace calculator {
 
 using Variables = std::unordered_map<std::string, double>;
+
+struct ConstantInfo {
+    std::string_view name;
+    std::string_view alias;
+    double value = 0.0;
+    std::string_view unit;
+};
+
+const std::array<ConstantInfo, 17>& constant_catalog() noexcept;
 
 struct Result {
     bool ok = false;

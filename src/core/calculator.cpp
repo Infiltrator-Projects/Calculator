@@ -17,6 +17,33 @@ constexpr double kPi = 3.141592653589793238462643383279502884;
 constexpr double kE = 2.718281828459045235360287471352662498;
 constexpr std::size_t kMaxParseDepth = 256;
 
+constexpr std::array<ConstantInfo, 17> kConstants{{
+    {"pi", "π", kPi, ""},
+    {"e", "euler", kE, ""},
+    {"tau", "τ", 2.0 * kPi, ""},
+    {"phi", "golden", 1.6180339887498948482, ""},
+    {"c0", "c", 299792458.0, "m/s"},
+    {"G", "grav", 6.67430e-11, "m^3 kg^-1 s^-2"},
+    {"h", "planck", 6.62607015e-34, "J s"},
+    {"hbar", "ħ", 1.0545718176461565e-34, "J s"},
+    {"kB", "boltzmann", 1.380649e-23, "J/K"},
+    {"NA", "avogadro", 6.02214076e23, "mol^-1"},
+    {"qe", "electron-charge", 1.602176634e-19, "C"},
+    {"me", "electron-mass", 9.1093837139e-31, "kg"},
+    {"mp", "proton-mass", 1.67262192595e-27, "kg"},
+    {"g0", "gravity", 9.80665, "m/s^2"},
+    {"eps0", "epsilon0", 8.8541878188e-12, "F/m"},
+    {"mu0", "permeability", 1.25663706127e-6, "N/A^2"},
+    {"Rgas", "gas", 8.31446261815324, "J mol^-1 K^-1"}
+}};
+
+const ConstantInfo* lookup_constant(std::string_view name) noexcept {
+    for (const auto& constant : kConstants) {
+        if (constant.name == name || constant.alias == name) return &constant;
+    }
+    return nullptr;
+}
+
 enum class DecimalTokenStatus {
     None,
     Invalid,
@@ -223,8 +250,9 @@ private:
         if (position_ < input_.size() &&
             (std::isalpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) {
             const std::string name = parse_identifier();
-            if (name == "pi") return kPi;
-            if (name == "e") return kE;
+            if (const ConstantInfo* constant = lookup_constant(name)) {
+                return constant->value;
+            }
             if (consume('(')) {
                 const double argument = parse_expression();
                 if (!consume(')') && error_.empty()) error_ = "missing closing parenthesis";
@@ -353,6 +381,10 @@ private:
 };
 
 } // namespace
+
+const std::array<ConstantInfo, 17>& constant_catalog() noexcept {
+    return kConstants;
+}
 
 Result apply_real_function(RealFunction function, double value,
                            AngleUnit angle_unit) {
