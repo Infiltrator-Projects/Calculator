@@ -422,6 +422,58 @@ for needle in (
     assert needle in ios, f"iPhone Programmer/copy completeness missing: {needle}"
 
 for needle in (
+    '#include "../core/advanced_tools.hpp"',
+    "show_advanced_tools",
+    "calculator::tools::catalog()",
+    "calculator::tools::evaluate(",
+    "gtk_drawing_area_set_draw_func",
+    'tools_button = toolbar_button("Tools")',
+):
+    assert needle in linux, f"Linux advanced tools surface missing: {needle}"
+
+for needle in (
+    '#include "../core/advanced_tools.hpp"',
+    "kToolsClass",
+    "kIdTools",
+    "tools_proc",
+    "calculator::tools::catalog()",
+    "calculator::tools::evaluate(",
+    "paint_tool_graph",
+    'L"Tools"',
+):
+    assert needle in windows, f"Windows advanced tools surface missing: {needle}"
+
+for needle in (
+    "advancedToolCatalog",
+    "evaluateAdvancedToolAtIndex",
+    "advanced_tools.hpp",
+    "calculator::tools::evaluate",
+):
+    assert needle in ios_bridge, f"iPhone advanced tools bridge missing: {needle}"
+
+for needle in (
+    "AdvancedToolsView",
+    "ToolGraphView",
+    "model.showingTools",
+    "model.advancedToolDescriptors()",
+    "model.evaluateAdvancedTool(",
+    "Canvas",
+):
+    assert needle in ios, f"iPhone advanced tools surface missing: {needle}"
+
+for needle in (
+    "../src/core/advanced_tools.cpp",
+    "../src/core/advanced_tools.hpp",
+):
+    assert needle in ios_project, f"iPhone advanced tools build integration missing: {needle}"
+
+for needle in (
+    "src/core/advanced_tools.cpp",
+    "calculator-advanced-tools-test",
+):
+    assert needle in cmake, f"advanced tools core/test integration missing: {needle}"
+
+for needle in (
     "controller.history_count()",
     "controller.history_entry(index)",
     "controller.recall_history(index)",
