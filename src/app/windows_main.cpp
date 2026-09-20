@@ -395,6 +395,38 @@ void sync_controller_expression() {
     g_controller.set_expression(wide_to_utf8(window_text(g_expression)));
 }
 
+bool copy_text_to_clipboard(HWND owner, const std::wstring& text) {
+    if (!OpenClipboard(owner)) return false;
+
+    bool success = false;
+    HGLOBAL storage = nullptr;
+    if (EmptyClipboard()) {
+        const std::size_t character_count = text.size() + 1U;
+        const std::size_t byte_count =
+            character_count * sizeof(wchar_t);
+        storage = GlobalAlloc(GMEM_MOVEABLE, byte_count);
+        if (storage != nullptr) {
+            auto* destination =
+                static_cast<wchar_t*>(GlobalLock(storage));
+            if (destination != nullptr) {
+                std::copy(
+                    text.c_str(),
+                    text.c_str() + character_count,
+                    destination);
+                GlobalUnlock(storage);
+                if (SetClipboardData(CF_UNICODETEXT, storage) != nullptr) {
+                    storage = nullptr;
+                    success = true;
+                }
+            }
+        }
+    }
+
+    if (storage != nullptr) GlobalFree(storage);
+    CloseClipboard();
+    return success;
+}
+
 void show_grid(std::vector<HWND>& buttons, bool visible);
 void refresh_history();
 void redraw_button(HWND button);
@@ -1133,14 +1165,12 @@ void create_controls(HWND window) {
     apply_control_theme(g_expression);
 
     g_result = CreateWindowExW(
-        0, L"EDIT", L"0",
-        WS_CHILD | WS_VISIBLE | ES_RIGHT | ES_READONLY |
-            ES_AUTOHSCROLL | ES_NOHIDESEL,
+        0, L"STATIC", L"0",
+        WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_NOPREFIX | SS_NOTIFY,
         0, 0, 0, 0, window,
         reinterpret_cast<HMENU>(
             static_cast<INT_PTR>(kIdResult)),
         g_instance, nullptr);
-    apply_control_theme(g_result);
     g_status = CreateWindowExW(0, L"STATIC", L"READY",
                                WS_CHILD | WS_VISIBLE | SS_RIGHT | SS_NOPREFIX,
                                0, 0, 0, 0, window, nullptr, g_instance, nullptr);
@@ -1408,6 +1438,12 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
                 MB_OK | MB_ICONINFORMATION);
             return 0;
         }
+        if (id == kIdResult && HIWORD(wparam) == STN_CLICKED) {
+            (void)copy_text_to_clipboard(
+                window, utf8_to_wide(g_controller.state().result));
+            SetFocus(g_expression);
+            return 0;
+        }
         if (id == kIdModeStandard) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Standard);
@@ -1449,11 +1485,6 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
     case WM_CTLCOLOREDIT: {
         HDC dc = reinterpret_cast<HDC>(wparam);
         HWND control = reinterpret_cast<HWND>(lparam);
-        if (control == g_result) {
-            SetTextColor(dc, kHeading);
-            SetBkColor(dc, kPanel);
-            return reinterpret_cast<LRESULT>(g_panel_brush);
-        }
         SetTextColor(dc, control == g_history_dock ? kDetailLabel : kSummary);
         if (control == g_history_dock) {
             SetBkColor(dc, kPanel);

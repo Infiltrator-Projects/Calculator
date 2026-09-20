@@ -351,24 +351,22 @@ jobs:
             [void][CalcSmoke]::SendMessage($equals, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 100
 
-            $result = [IntPtr]::Zero
-            foreach ($hwnd in $children) {
-              $name = [System.Text.StringBuilder]::new(64)
-              $text = [System.Text.StringBuilder]::new(128)
-              [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
-              [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
-              if ($name.ToString() -ieq 'Edit' -and $text.ToString() -ceq '6') {
-                $result = $hwnd
-                break
-              }
-            }
+            $result = [CalcSmoke]::GetDlgItem(
+              $process.MainWindowHandle, 1020)
             if ($result -eq [IntPtr]::Zero) {
-              throw 'Windows UI arithmetic smoke test failed: read-only result Edit did not display 6'
+              throw 'Windows result control was not found'
             }
-
-            $style = [CalcSmoke]::GetWindowLongPtr($result, -16).ToInt64()
-            if (($style -band 0x0800) -eq 0) {
-              throw 'Windows result copy surface regressed: result Edit is not read-only'
+            $resultClassName = [System.Text.StringBuilder]::new(64)
+            $resultText = [System.Text.StringBuilder]::new(128)
+            [void][CalcSmoke]::GetClassName(
+              $result, $resultClassName, $resultClassName.Capacity)
+            [void][CalcSmoke]::GetWindowText(
+              $result, $resultText, $resultText.Capacity)
+            if ($resultText.ToString() -cne '6') {
+              throw "Windows UI arithmetic smoke test failed: 3 + 3 displayed '$($resultText.ToString())'"
+            }
+            if ($resultClassName.ToString() -ine 'Static') {
+              throw "Windows result copy surface regressed: expected clickable Static, got '$($resultClassName.ToString())'"
             }
 
             $title = [IntPtr]::Zero

@@ -191,8 +191,10 @@ for needle in (
     "selected_summary_rgb",
     "warning_muted_rgb",
     "warning_border_rgb",
-    "ES_READONLY",
-    "control == g_result",
+    "SS_NOTIFY",
+    "OpenClipboard",
+    "SetClipboardData",
+    "kIdResult",
 ):
     assert needle in windows, f"Windows Common/copy semantic role missing: {needle}"
 

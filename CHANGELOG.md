@@ -11,7 +11,7 @@ No unreleased changes.
 - Release the exact Common 1.19.10 dependency already reviewed on main and consume its expanded semantic appearance roles rather than flattening them back to older generic colours.
 - Use Common heading, summary, kicker, detail/note, status-border, accent-hover, selected-summary and warning roles where they match Calculator semantics on GTK, Win32 and SwiftUI.
 - Use Common's explicit titlebar, heading and status-border roles for native Windows non-client rendering.
-- Make the Windows result field read-only/selectable so copy workflows now match Linux and iPhone without introducing a second result model.
+- Make the native Windows result a direct click-to-copy surface while Linux and iPhone retain selectable result text, without introducing a second result model.
 - Replace the native Windows dotted focus rectangle with a DPI-aware two-pixel semantic accent focus ring and add matching GTK focus treatment.
 - Strengthen iPhone calculator-key accessibility with explicit labels/selection state while preserving native SwiftUI controls.
 - Add an opt-in MPFR 256-bit CI oracle and enable it in the Linux release build to compare transcendental Calculator results against an independent high-precision reference.

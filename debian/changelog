@@ -3,7 +3,7 @@ infiltrator-calculator (0.1.41) unstable; urgency=medium
   * Release Calculator against immutable Infiltratr Common 1.19.10.
   * Consume the expanded Common semantic palette on GTK, Win32 and iPhone.
   * Use Common titlebar and status-border roles in native Windows rendering.
-  * Make the Windows result field selectable for normal copy workflows.
+  * Make the Windows result a direct click-to-copy surface.
   * Add stronger keyboard focus treatment and iPhone key accessibility semantics.
   * Add an MPFR-backed high-precision release-CI numerical oracle.
   * Publish the standardised graphite and #00ADEF Calculator artwork.
