@@ -34,6 +34,8 @@ int main(){
 
     const auto roots=evaluate(AdvancedTool::EquationSolver,"x^2-2;0;2");
     check(roots.ok&&roots.output.find("1.414213")!=std::string::npos,"equation root");
+    const auto tangent=evaluate(AdvancedTool::EquationSolver,"x^2;-1;2");
+    check(tangent.ok&&tangent.output.find("\n0")!=std::string::npos,"equation even root");
 
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"3/10"),"exact decimal fraction");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"0.3"),"exact decimal presentation");
@@ -41,6 +43,9 @@ int main(){
 
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"2^128"),"340282366920938463463374607431768211456"),"big integer power");
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"100!"),"933262154439"),"big factorial");
+    check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"-2^2"),"-4"),"big integer unary precedence");
+    check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"(-2)^2"),"4"),"big integer parenthesized power");
+    check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"2^3^2"),"512"),"big integer right associative power");
 
     check(contains(evaluate(AdvancedTool::Complex,"mul 1,2 3,-4"),"11 + 2i"),"complex multiply");
     check(!evaluate(AdvancedTool::Complex,"div 1,2 0,0").ok,"complex divide zero");

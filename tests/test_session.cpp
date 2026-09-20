@@ -24,6 +24,11 @@ int main(){
     if(e_assignment.ok || e_assignment.error!="cannot assign reserved constant") fail("e assignment should be rejected");
     reserved.set_variable("pi", 99.0);
     if(reserved.variable("pi").has_value()) fail("set_variable should reject pi");
+    const auto c0_assignment = reserved.evaluate("c0=1");
+    if(c0_assignment.ok || c0_assignment.error!="cannot assign reserved constant")
+        fail("broader constant assignment should be rejected");
+    reserved.set_variable("c", 99.0);
+    if(reserved.variable("c").has_value()) fail("constant alias should be reserved");
 
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");

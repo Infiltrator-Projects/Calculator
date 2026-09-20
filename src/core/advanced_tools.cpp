@@ -7,6 +7,7 @@
 #include <charconv>
 #include <cctype>
 #include <cmath>
+#include <complex>
 #include <cstdint>
 #include <iomanip>
 #include <limits>
@@ -553,11 +554,26 @@ ToolResult statistics_tool(std::string_view input) {
     std::vector<double> v;
     if(!parse_value_list(input,v)) return failure("Enter comma or space separated finite values.");
     std::sort(v.begin(),v.end());
-    const double sum=std::accumulate(v.begin(),v.end(),0.0);
-    const double mean=sum/static_cast<double>(v.size());
-    double sq=0.0;
-    for(double x:v){const double d=x-mean;sq+=d*d;}
-    const double pop=sq/static_cast<double>(v.size());
+    // Kahan summation keeps the reported sum stable; Welford's recurrence
+    // avoids catastrophic cancellation in variance for large-offset samples.
+    double sum=0.0;
+    double compensation=0.0;
+    double mean=0.0;
+    double m2=0.0;
+    std::size_t seen=0;
+    for(double x:v){
+        const double adjusted=x-compensation;
+        const double next=sum+adjusted;
+        compensation=(next-sum)-adjusted;
+        sum=next;
+
+        ++seen;
+        const double delta=x-mean;
+        mean+=delta/static_cast<double>(seen);
+        const double delta2=x-mean;
+        m2+=delta*delta2;
+    }
+    const double pop=m2/static_cast<double>(v.size());
     std::ostringstream out;
     out<<"Count  "<<v.size()
        <<"\nSum  "<<number(sum)
@@ -571,7 +587,7 @@ ToolResult statistics_tool(std::string_view input) {
        <<"\nPopulation variance  "<<number(pop)
        <<"\nPopulation stddev  "<<number(std::sqrt(pop));
     if(v.size()>1U) {
-        const double sample=sq/static_cast<double>(v.size()-1U);
+        const double sample=m2/static_cast<double>(v.size()-1U);
         out<<"\nSample variance  "<<number(sample)
            <<"\nSample stddev  "<<number(std::sqrt(sample));
     }
@@ -621,6 +637,48 @@ void add_root(std::vector<double>& roots,double x) {
     for(double r:roots) if(std::fabs(r-x)<=1e-9*std::max({1.0,std::fabs(r),std::fabs(x)})) return;
     roots.push_back(x);
 }
+bool refine_stationary_root(std::string_view expression,
+                            double left, double seed, double right,
+                            double& root) {
+    double x=seed;
+    const double span=std::max(right-left,1e-12);
+    for(int iteration=0;iteration<40;++iteration){
+        bool ok=false;
+        const double fx=eval_x(expression,x,ok);
+        if(!ok) return false;
+        if(std::fabs(fx)<=1e-12){root=x;return true;}
+
+        const double h=std::max(
+            span*1e-4,
+            std::sqrt(std::numeric_limits<double>::epsilon())*
+                std::max(1.0,std::fabs(x)));
+        bool okp=false,okm=false;
+        const double fp=eval_x(expression,std::min(right,x+h),okp);
+        const double fm=eval_x(expression,std::max(left,x-h),okm);
+        if(!okp||!okm) return false;
+        const double denominator=
+            std::min(right,x+h)-std::max(left,x-h);
+        if(denominator<=0.0) return false;
+        const double derivative=(fp-fm)/denominator;
+        if(!std::isfinite(derivative)||std::fabs(derivative)<1e-15) return false;
+
+        double next=x-fx/derivative;
+        if(!std::isfinite(next)) return false;
+        next=std::clamp(next,left,right);
+        if(std::fabs(next-x)<=
+           8.0*std::numeric_limits<double>::epsilon()*
+               std::max(1.0,std::fabs(x))){
+            x=next;
+            break;
+        }
+        x=next;
+    }
+    bool ok=false;
+    const double value=eval_x(expression,x,ok);
+    if(ok&&std::fabs(value)<=1e-7){root=x;return true;}
+    return false;
+}
+
 ToolResult equation_tool(std::string_view input) {
     const auto p=split_semicolon(input);
     if(p.empty()||p[0].empty()||p.size()>3U) return failure("Usage: expression ; xmin ; xmax");
@@ -631,25 +689,57 @@ ToolResult equation_tool(std::string_view input) {
 
     constexpr int segments=2048;
     std::vector<double> roots;
-    double x0=xmin; bool ok0=false; double y0=eval_x(p[0],x0,ok0);
-    if(ok0&&std::fabs(y0)<1e-12) add_root(roots,x0);
+    double x_prev2=xmin;
+    bool ok_prev2=false;
+    double y_prev2=eval_x(p[0],x_prev2,ok_prev2);
+    if(ok_prev2&&std::fabs(y_prev2)<1e-12) add_root(roots,x_prev2);
+
+    double x_prev=x_prev2;
+    double y_prev=y_prev2;
+    bool ok_prev=ok_prev2;
+
     for(int i=1;i<=segments;++i){
-        const double x1=xmin+(xmax-xmin)*static_cast<double>(i)/segments;
-        bool ok1=false; const double y1=eval_x(p[0],x1,ok1);
-        if(ok1&&std::fabs(y1)<1e-12) add_root(roots,x1);
-        if(ok0&&ok1&&std::signbit(y0)!=std::signbit(y1)){
-            double lo=x0,hi=x1,flo=y0,fhi=y1;
+        const double x=xmin+(xmax-xmin)*static_cast<double>(i)/segments;
+        bool ok=false;
+        const double y=eval_x(p[0],x,ok);
+        if(ok&&std::fabs(y)<1e-12) add_root(roots,x);
+
+        if(ok_prev&&ok&&std::signbit(y_prev)!=std::signbit(y)){
+            double lo=x_prev,hi=x,flo=y_prev,fhi=y;
             for(int n=0;n<80;++n){
-                const double mid=(lo+hi)/2.0; bool okm=false; const double fm=eval_x(p[0],mid,okm);
+                const double mid=(lo+hi)/2.0;
+                bool okm=false;
+                const double fm=eval_x(p[0],mid,okm);
                 if(!okm) break;
                 if(std::fabs(fm)<1e-14){lo=hi=mid;flo=fhi=fm;break;}
                 if(std::signbit(flo)!=std::signbit(fm)){hi=mid;fhi=fm;}
                 else{lo=mid;flo=fm;}
             }
-            const double root=(lo+hi)/2.0; bool okr=false; const double fr=eval_x(p[0],root,okr);
-            if(okr&&std::fabs(fr)<=1e-7) add_root(roots,root);
+            const double candidate=(lo+hi)/2.0;
+            bool okc=false;
+            const double fc=eval_x(p[0],candidate,okc);
+            if(okc&&std::fabs(fc)<=1e-7) add_root(roots,candidate);
         }
-        x0=x1;y0=y1;ok0=ok1;
+
+        // Sign-change bracketing cannot see even-multiplicity roots. A local
+        // minimum of |f(x)| is therefore refined with a bounded numerical
+        // Newton step and admitted only after direct residual validation.
+        if(i>=2&&ok_prev2&&ok_prev&&ok&&
+           std::fabs(y_prev)<std::fabs(y_prev2)&&
+           std::fabs(y_prev)<std::fabs(y)){
+            double candidate=0.0;
+            if(refine_stationary_root(
+                   p[0],x_prev2,x_prev,x,candidate)){
+                add_root(roots,candidate);
+            }
+        }
+
+        x_prev2=x_prev;
+        y_prev2=y_prev;
+        ok_prev2=ok_prev;
+        x_prev=x;
+        y_prev=y;
+        ok_prev=ok;
     }
     std::sort(roots.begin(),roots.end());
     if(roots.empty()) return failure("No validated real root was found in the requested interval.");
@@ -825,9 +915,10 @@ private:
     void skip(){while(pos_<in_.size()&&std::isspace(static_cast<unsigned char>(in_[pos_])))++pos_;}
     bool take(char c){skip();if(pos_<in_.size()&&in_[pos_]==c){++pos_;return true;}return false;}
     BigInt expr(){BigInt a=term();while(err_.empty()){if(take('+'))a=a+term();else if(take('-'))a=a-term();else break;}return a;}
-    BigInt term(){BigInt a=power();while(err_.empty()&&take('*')){a=a*power();if(a.decimal_digits()>20000U)err_="Result exceeds the 20,000-digit safety limit.";}return a;}
-    BigInt power(){BigInt a=unary();if(err_.empty()&&take('^')){BigInt e=power();std::uint32_t exp=0;if(!e.to_u32(exp)||exp>100000U){err_="Exponent must be a non-negative integer <= 100000.";return{};}bool ok=false;a=BigInt::pow(a,exp,ok);if(!ok)err_="Result exceeds the 20,000-digit safety limit.";}while(err_.empty()&&take('!')){std::uint32_t n=0;if(!a.to_u32(n)||n>1000U){err_="Factorial requires an integer from 0 to 1000.";return{};}BigInt r(1);for(std::uint32_t i=2;i<=n;++i)r=r*BigInt(i);a=r;}return a;}
-    BigInt unary(){if(take('+'))return unary();if(take('-')){BigInt v=unary();v.negate();return v;}return primary();}
+    BigInt term(){BigInt a=unary();while(err_.empty()&&take('*')){a=a*unary();if(a.decimal_digits()>20000U)err_="Result exceeds the 20,000-digit safety limit.";}return a;}
+    BigInt unary(){if(take('+'))return unary();if(take('-')){BigInt v=unary();v.negate();return v;}return power();}
+    BigInt power(){BigInt a=postfix();if(err_.empty()&&take('^')){BigInt e=unary();std::uint32_t exp=0;if(!e.to_u32(exp)||exp>100000U){err_="Exponent must be a non-negative integer <= 100000.";return{};}bool ok=false;a=BigInt::pow(a,exp,ok);if(!ok)err_="Result exceeds the 20,000-digit safety limit.";}return a;}
+    BigInt postfix(){BigInt a=primary();while(err_.empty()&&take('!')){std::uint32_t n=0;if(!a.to_u32(n)||n>1000U){err_="Factorial requires an integer from 0 to 1000.";return{};}BigInt r(1);for(std::uint32_t i=2;i<=n;++i)r=r*BigInt(i);a=r;}return a;}
     BigInt primary(){if(take('(')){BigInt v=expr();if(!take(')')&&err_.empty())err_="Missing closing parenthesis.";return v;}skip();const std::size_t start=pos_;while(pos_<in_.size()&&std::isdigit(static_cast<unsigned char>(in_[pos_])))++pos_;if(start==pos_){err_="Expected an integer.";return{};}BigInt v;if(!BigInt::parse(in_.substr(start,pos_-start),v))err_="Invalid or oversized integer.";return v;}
 };
 
@@ -843,22 +934,41 @@ ToolResult complex_tool(std::string_view input) {
     double ar=0,ai=0,br=0,bi=0;
     if(f[0]=="conj"||f[0]=="abs"||f[0]=="arg"||f[0]=="polar"){
         if(f.size()!=2U||!parse_complex_pair(f[1],ar,ai))return failure("Usage: conj|abs|arg|polar real,imag");
-        if(f[0]=="conj")return success(complex_string(ar,-ai));
-        const double mag=std::hypot(ar,ai);
+        const std::complex<double> value(ar,ai);
+        if(f[0]=="conj"){
+            const auto result=std::conj(value);
+            return success(complex_string(result.real(),result.imag()));
+        }
+        const double mag=std::abs(value);
+        const double angle=std::arg(value);
+        if(!std::isfinite(mag)||!std::isfinite(angle)) return failure("Complex result is non-finite.");
         if(f[0]=="abs")return success("Magnitude  "+number(mag));
-        const double angle=std::atan2(ai,ar);
         if(f[0]=="arg")return success("Argument  "+number(angle)+" rad");
         return success("Magnitude  "+number(mag)+"\nPhase  "+number(angle)+" rad");
     }
     if(f.size()!=3U||!parse_complex_pair(f[1],ar,ai)||!parse_complex_pair(f[2],br,bi))
         return failure("Usage: add|sub|mul|div real,imag real,imag");
-    double rr=0,ri=0;
-    if(f[0]=="add"){rr=ar+br;ri=ai+bi;}
-    else if(f[0]=="sub"){rr=ar-br;ri=ai-bi;}
-    else if(f[0]=="mul"){rr=ar*br-ai*bi;ri=ar*bi+ai*br;}
-    else if(f[0]=="div"){const double d=br*br+bi*bi;if(d==0.0)return failure("Complex division by zero.");rr=(ar*br+ai*bi)/d;ri=(ai*br-ar*bi)/d;}
-    else return failure("Unknown complex operation.");
-    return success(complex_string(rr,ri)+"\nMagnitude  "+number(std::hypot(rr,ri))+"\nPhase  "+number(std::atan2(ri,rr))+" rad");
+
+    const std::complex<double> left(ar,ai);
+    const std::complex<double> right(br,bi);
+    std::complex<double> result;
+    if(f[0]=="add")result=left+right;
+    else if(f[0]=="sub")result=left-right;
+    else if(f[0]=="mul")result=left*right;
+    else if(f[0]=="div"){
+        if(right==std::complex<double>{})return failure("Complex division by zero.");
+        result=left/right;
+    } else return failure("Unknown complex operation.");
+
+    const double rr=result.real();
+    const double ri=result.imag();
+    const double mag=std::abs(result);
+    const double angle=std::arg(result);
+    if(!std::isfinite(rr)||!std::isfinite(ri)||
+       !std::isfinite(mag)||!std::isfinite(angle)){
+        return failure("Complex result is non-finite.");
+    }
+    return success(complex_string(rr,ri)+"\nMagnitude  "+number(mag)+"\nPhase  "+number(angle)+" rad");
 }
 
 } // namespace

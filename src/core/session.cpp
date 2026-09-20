@@ -17,7 +17,10 @@ bool valid_identifier(const std::string& name) {
 }
 
 bool reserved_identifier(const std::string& name) {
-    return name == "pi" || name == "e";
+    for (const auto& constant : constant_catalog()) {
+        if (constant.name == name || constant.alias == name) return true;
+    }
+    return false;
 }
 
 std::optional<std::string> assignment_name(const std::string& input, std::string& expression) {
