@@ -35,7 +35,7 @@ int main(){
     const auto roots=evaluate(AdvancedTool::EquationSolver,"x^2-2;0;2");
     check(roots.ok&&roots.output.find("1.414213")!=std::string::npos,"equation root");
     const auto tangent=evaluate(AdvancedTool::EquationSolver,"x^2;-1;2");
-    check(tangent.ok&&tangent.output.find("\n0")!=std::string::npos,"equation even root");
+    check(tangent.ok&&tangent.output.find("Roots (1)")!=std::string::npos,"equation even root");
 
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"3/10"),"exact decimal fraction");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"0.3"),"exact decimal presentation");

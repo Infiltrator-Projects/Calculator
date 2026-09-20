@@ -1567,7 +1567,8 @@ void layout_tool_window(HWND window) {
     MoveWindow(
         g_tool_selector, margin, y,
         std::max(
-            0, static_cast<int>(client.right) - margin * 2), row, TRUE);
+            0, static_cast<int>(client.right) - margin * 2),
+        sx(window, 260), TRUE);
     y += row + gap;
 
     MoveWindow(

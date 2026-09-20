@@ -502,7 +502,11 @@ ToolResult datetime_tool(std::string_view input) {
         const auto conv=std::from_chars(f[2].data(),f[2].data()+f[2].size(),delta);
         if(conv.ec!=std::errc{}||conv.ptr!=f[2].data()+f[2].size()) return failure("Invalid day offset.");
         int oy; unsigned om,od;
-        civil_from_days(days_from_civil(y,m,d)+delta,oy,om,od);
+        civil_from_days(
+            days_from_civil(
+                y, static_cast<unsigned>(m), static_cast<unsigned>(d)) +
+                delta,
+            oy, om, od);
         if(oy<1||oy>9999) return failure("Result is outside supported civil year range 1..9999.");
         return success("Date  "+date_string(oy,om,od));
     }
@@ -515,7 +519,12 @@ ToolResult datetime_tool(std::string_view input) {
         int hh=0,mm=0,ss=0;
         auto p=[&](std::size_t pos,int& v){auto r=std::from_chars(t.data()+pos,t.data()+pos+2,v);return r.ec==std::errc{}&&r.ptr==t.data()+pos+2;};
         if(!p(11,hh)||!p(14,mm)||!p(17,ss)||hh>23||mm>59||ss>59) return failure("Invalid UTC time.");
-        const std::int64_t seconds=days_from_civil(y,m,d)*86400 + hh*3600 + mm*60 + ss;
+        const std::int64_t seconds =
+            days_from_civil(
+                y, static_cast<unsigned>(m), static_cast<unsigned>(d)) *
+                86400 +
+            static_cast<std::int64_t>(hh) * 3600 +
+            static_cast<std::int64_t>(mm) * 60 + ss;
         return success("Unix time  "+std::to_string(seconds)+" s");
     }
     return failure("Unknown date/time operation.");
@@ -656,7 +665,7 @@ bool refine_stationary_root(std::string_view expression,
         bool ok=false;
         const double fx=eval_x(expression,x,ok);
         if(!ok) return false;
-        if(std::fabs(fx)<=1e-12){root=x;return true;}
+        if(std::fabs(fx)<=1e-24){root=x;return true;}
 
         const double h=std::max(
             span*1e-4,
@@ -761,7 +770,21 @@ ToolResult equation_tool(std::string_view input) {
 class BigInt {
 public:
     BigInt()=default;
-    explicit BigInt(std::int64_t value){ if(value<0){negative_=true; value=-value;} while(value){limbs_.push_back(static_cast<std::uint32_t>(value%kBase));value/=kBase;} }
+    explicit BigInt(std::int64_t value){
+        std::uint64_t magnitude=0U;
+        if(value<0){
+            negative_=true;
+            magnitude=
+                static_cast<std::uint64_t>(-(value+1)) + 1U;
+        } else {
+            magnitude=static_cast<std::uint64_t>(value);
+        }
+        while(magnitude){
+            limbs_.push_back(
+                static_cast<std::uint32_t>(magnitude%kBase));
+            magnitude/=kBase;
+        }
+    }
     static bool parse(std::string_view digits,BigInt& out) {
         if(digits.empty()) return false;
         out=BigInt();
