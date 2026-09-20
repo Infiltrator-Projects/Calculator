@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3 — 2026-09-20
+
+- Pin replacement validation to Linux Mint 22.3's actual `gnome-calculator 1:41.1+mint1+wilma` baseline and upstream GNOME 41.1 source revision.
+- Add a first-class GTK unit converter with dimension/source/target selectors, live conversion and one-click swapping.
+- Persist the selected conversion pair under Calculator's XDG configuration directory.
+- Expose shared unit catalogue metadata so the GTK shell cannot drift from the C++ conversion engine.
+- Add core and Linux regression protection for the new converter workflow.
+
 ## 0.2.2 — 2026-09-20
 
 - Fix the Linux Advanced Tools title-bar close action so it closes only the Tools workbench and never terminates the Calculator application.

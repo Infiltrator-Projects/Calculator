@@ -45,7 +45,13 @@ struct ToolResult {
     std::vector<GraphPoint> points;
 };
 
+struct ConversionUnitInfo {
+    std::string_view name;
+    std::string_view dimension;
+};
+
 const std::array<ToolDescriptor, 14>& catalog() noexcept;
+const std::vector<ConversionUnitInfo>& conversion_units() noexcept;
 const ToolDescriptor& descriptor(AdvancedTool tool) noexcept;
 ToolResult evaluate(AdvancedTool tool, std::string_view input);
 

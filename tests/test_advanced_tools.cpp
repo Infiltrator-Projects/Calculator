@@ -19,6 +19,15 @@ int main(){
     check(contains(evaluate(AdvancedTool::Engineering,"ohm 12 2"),"6e+00 ohm"),"engineering ohm");
     check(contains(evaluate(AdvancedTool::UnitConversion,"100 km mi"),"62.137"),"unit conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"32 F C"),"0 C"),"temperature conversion");
+    const auto& units = calculator::tools::conversion_units();
+    check(units.size()==101U,"conversion catalogue size");
+    bool km=false,mi=false,deg=false;
+    for(const auto& unit:units){
+        km = km || (unit.name=="km" && unit.dimension=="length");
+        mi = mi || (unit.name=="mi" && unit.dimension=="length");
+        deg = deg || (unit.name=="deg" && unit.dimension=="angle");
+    }
+    check(km&&mi&&deg,"conversion catalogue metadata");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 pc ly"),"3.261"),"parsec light-year conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 st lb"),"14"),"stone pounds conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"491.67 R K"),"273.15 K"),"rankine conversion");

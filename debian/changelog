@@ -1,3 +1,10 @@
+infiltrator-calc (0.2.3) unstable; urgency=medium
+
+  * Add a first-class persistent Linux unit-conversion picker.
+  * Pin Mint replacement validation to GNOME Calculator 41.1.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 19:56:00 +1000
+
 infiltrator-calculator (0.2.2) unstable; urgency=medium
 
   * Keep the Linux Tools title-bar close action local to the Tools workbench.

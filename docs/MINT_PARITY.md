@@ -2,7 +2,7 @@
 
 ## Baseline
 
-Linux Mint 22.x deliberately ships the GTK3-era GNOME Calculator 41.1 line rather than the newer GTK4 application. The package used by Mint 22/22.3 is the Mint rebuild of that 41.1 source line. Calculator treats that application as a replacement-compatibility baseline for the Linux desktop, not as its architecture or visual specification.
+Linux Mint 22.x deliberately ships the GTK3-era GNOME Calculator 41.1 line rather than the newer GTK4 application. Linux Mint 22.3 Zena carries `gnome-calculator 1:41.1+mint1+wilma`. The corresponding upstream GNOME 41.1 tag resolves to commit `1e576c9b024439c3d6fe814b40c22edfa94618e6`; that exact source tree and Mint package metadata are the replacement-compatibility baseline.
 
 The comparison is made against the upstream GNOME Calculator 41.1 source and help contract. Newer GNOME Calculator releases are also useful research inputs, but they are not substituted for the actual Mint 22.x baseline when making replacement claims.
 
@@ -24,7 +24,8 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - persistent Linux result-presentation preferences for Automatic, Fixed, Scientific and Engineering output, decimal-place control, thousands grouping and trailing-zero presentation;
 - persistent Cinnamon/GTK desktop mode and window size without forcing legacy absolute window positioning under Wayland;
 - a dependency-light console calculator, `infiltrator-calc-cli`, covering the Mint/GNOME `gcalccmd` one-shot and interactive workflows while sharing the same expression/session engine and persisted custom functions;
-- native GTK expression undo/redo enabled explicitly through the GTK4 editable contract, retaining familiar Ctrl+Z/Ctrl+Shift+Z editing behaviour.
+- native GTK expression undo/redo enabled explicitly through the GTK4 editable contract, retaining familiar Ctrl+Z/Ctrl+Shift+Z editing behaviour;
+- a first-class Linux unit-conversion picker with dimension/source/target selectors, live conversion, one-click swapping and persisted pair selection.
 
 ## Deliberate architectural differences
 
@@ -38,7 +39,6 @@ The following GNOME Calculator 41.1 capabilities remain meaningful comparison ta
 
 - live network-backed currency conversion with cached/offline behaviour and an explicit privacy/off switch;
 - an integrated arbitrary-precision real/complex Scientific value domain comparable to GNOME's MPFR/MPC path, rather than Calculator's current binary64 Scientific engine plus separate exact/arbitrary/complex tools;
-- selected conversion-pair persistence for a future first-class converter surface; Calculator's current Tools input is intentionally expression-driven rather than a two-picker clone.
 
 These items are treated as real engineering work. They are not considered complete merely because another Calculator tool can approximate the same end result.
 

@@ -512,3 +512,10 @@ for needle in (
     "model.recallHistory(entry.id)",
 ):
     assert needle in ios, f"iPhone structured history UI missing: {needle}"
+
+# Mint-class converter remains first-class and persistent on Linux.
+assert '"conversion.ini"' in source
+assert 'conversion_dimension' in source
+assert 'conversion_from' in source
+assert 'conversion_to' in source
+assert 'Swap source and target units' in source

@@ -294,14 +294,15 @@ constexpr std::array<Unit, 98> kUnits{{
     {"GHz","frequency",1e9,0.0},{"THz","frequency",1e12,0.0}
 }};
 
+constexpr std::array<Unit, 3> kAngleUnits{{
+    {"deg","angle",kPi/180.0,0.0},
+    {"rad","angle",1.0,0.0},
+    {"grad","angle",kPi/200.0,0.0}
+}};
+
 const Unit* find_unit(std::string_view name) {
     for (const auto& unit : kUnits) if (unit.name == name) return &unit;
-    static constexpr std::array<Unit, 3> angles{{
-        {"deg","angle",kPi/180.0,0.0},
-        {"rad","angle",1.0,0.0},
-        {"grad","angle",kPi/200.0,0.0}
-    }};
-    for (const auto& unit : angles) if (unit.name == name) return &unit;
+    for (const auto& unit : kAngleUnits) if (unit.name == name) return &unit;
     return nullptr;
 }
 
@@ -1581,6 +1582,17 @@ ToolResult complex_tool(std::string_view input) {
 } // namespace
 
 const std::array<ToolDescriptor, 14>& catalog() noexcept { return kCatalog; }
+
+const std::vector<ConversionUnitInfo>& conversion_units() noexcept {
+    static const std::vector<ConversionUnitInfo> units = [] {
+        std::vector<ConversionUnitInfo> out;
+        out.reserve(kUnits.size() + kAngleUnits.size());
+        for (const auto& unit : kUnits) out.push_back({unit.name, unit.dimension});
+        for (const auto& unit : kAngleUnits) out.push_back({unit.name, unit.dimension});
+        return out;
+    }();
+    return units;
+}
 
 const ToolDescriptor& descriptor(AdvancedTool tool) noexcept {
     const std::size_t index=static_cast<std::size_t>(tool);

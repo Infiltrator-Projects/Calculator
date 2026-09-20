@@ -864,11 +864,155 @@ void show_programmer_bases(GtkWidget*, gpointer) {
 struct ToolWindowState {
     GtkWidget* selector = nullptr;
     GtkWidget* prompt = nullptr;
+    GtkWidget* generic_input_row = nullptr;
     GtkWidget* input = nullptr;
+    GtkWidget* conversion_box = nullptr;
+    GtkWidget* conversion_dimension = nullptr;
+    GtkWidget* conversion_value = nullptr;
+    GtkWidget* conversion_from = nullptr;
+    GtkWidget* conversion_to = nullptr;
     GtkWidget* output = nullptr;
     GtkWidget* graph = nullptr;
+    bool updating_conversion = false;
     calculator::tools::ToolResult result;
 };
+
+struct ConversionPreferences {
+    std::string dimension = "length";
+    std::string from = "km";
+    std::string to = "mi";
+};
+
+std::string drop_down_text(GtkWidget* widget) {
+    if (!widget) return {};
+    gpointer item = gtk_drop_down_get_selected_item(GTK_DROP_DOWN(widget));
+    if (!item || !GTK_IS_STRING_OBJECT(item)) return {};
+    const char* value = gtk_string_object_get_string(GTK_STRING_OBJECT(item));
+    return value ? value : "";
+}
+
+void set_drop_down_values(GtkWidget* widget,
+                          const std::vector<std::string>& values,
+                          std::string_view preferred = {}) {
+    std::vector<const char*> raw;
+    raw.reserve(values.size() + 1U);
+    for (const auto& value : values) raw.push_back(value.c_str());
+    raw.push_back(nullptr);
+    GtkStringList* list = gtk_string_list_new(raw.data());
+    gtk_drop_down_set_model(GTK_DROP_DOWN(widget), G_LIST_MODEL(list));
+    g_object_unref(list);
+    guint selected = values.empty() ? GTK_INVALID_LIST_POSITION : 0U;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (values[i] == preferred) {
+            selected = static_cast<guint>(i);
+            break;
+        }
+    }
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(widget), selected);
+}
+
+std::vector<std::string> converter_dimensions() {
+    std::vector<std::string> dimensions;
+    for (const auto& unit : calculator::tools::conversion_units()) {
+        if (std::find(dimensions.begin(), dimensions.end(), unit.dimension) ==
+            dimensions.end()) {
+            dimensions.emplace_back(unit.dimension);
+        }
+    }
+    return dimensions;
+}
+
+ConversionPreferences load_conversion_preferences() {
+    ConversionPreferences prefs;
+    gchar* path = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc", "conversion.ini", nullptr);
+    GKeyFile* key = g_key_file_new();
+    if (g_key_file_load_from_file(key, path, G_KEY_FILE_NONE, nullptr)) {
+        auto load = [&](const char* name, std::string& target) {
+            if (!g_key_file_has_key(key, "Conversion", name, nullptr)) return;
+            gchar* value = g_key_file_get_string(key, "Conversion", name, nullptr);
+            if (value && *value) target = value;
+            g_free(value);
+        };
+        load("dimension", prefs.dimension);
+        load("from", prefs.from);
+        load("to", prefs.to);
+    }
+    g_key_file_unref(key);
+    g_free(path);
+    return prefs;
+}
+
+void save_conversion_preferences(ToolWindowState* state) {
+    if (!state || state->updating_conversion) return;
+    const std::string dimension = drop_down_text(state->conversion_dimension);
+    const std::string from = drop_down_text(state->conversion_from);
+    const std::string to = drop_down_text(state->conversion_to);
+    if (dimension.empty() || from.empty() || to.empty()) return;
+
+    gchar* directory = g_build_filename(
+        g_get_user_config_dir(), "infiltrator-calc", nullptr);
+    if (g_mkdir_with_parents(directory, 0700) != 0) {
+        g_free(directory);
+        return;
+    }
+    gchar* path = g_build_filename(directory, "conversion.ini", nullptr);
+    GKeyFile* key = g_key_file_new();
+    g_key_file_set_string(key, "Conversion", "dimension", dimension.c_str());
+    g_key_file_set_string(key, "Conversion", "from", from.c_str());
+    g_key_file_set_string(key, "Conversion", "to", to.c_str());
+    gsize length = 0;
+    gchar* data = g_key_file_to_data(key, &length, nullptr);
+    if (data) {
+        (void)g_file_set_contents(path, data, static_cast<gssize>(length), nullptr);
+        g_free(data);
+    }
+    g_key_file_unref(key);
+    g_free(path);
+    g_free(directory);
+}
+
+void populate_conversion_units(ToolWindowState* state,
+                               std::string_view preferred_from = {},
+                               std::string_view preferred_to = {}) {
+    if (!state) return;
+    state->updating_conversion = true;
+    const std::string dimension = drop_down_text(state->conversion_dimension);
+    std::vector<std::string> units;
+    for (const auto& unit : calculator::tools::conversion_units()) {
+        if (unit.dimension == dimension) units.emplace_back(unit.name);
+    }
+    set_drop_down_values(state->conversion_from, units, preferred_from);
+    std::string_view target = preferred_to;
+    if (target.empty() && units.size() > 1U) target = units[1];
+    set_drop_down_values(state->conversion_to, units, target);
+    state->updating_conversion = false;
+}
+
+void present_tool_result(ToolWindowState* state) {
+    if (!state || !state->output) return;
+    const std::string text = state->result.ok
+        ? state->result.output
+        : "Error: " + state->result.error;
+    GtkTextBuffer* buffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(state->output));
+    gtk_text_buffer_set_text(buffer, text.c_str(), -1);
+    gtk_widget_set_visible(state->graph, !state->result.points.empty());
+    gtk_widget_queue_draw(state->graph);
+}
+
+void run_conversion(ToolWindowState* state) {
+    if (!state || !state->conversion_value || !state->output) return;
+    const char* raw = gtk_editable_get_text(GTK_EDITABLE(state->conversion_value));
+    const std::string value = raw ? raw : "";
+    const std::string from = drop_down_text(state->conversion_from);
+    const std::string to = drop_down_text(state->conversion_to);
+    if (value.empty() || from.empty() || to.empty()) return;
+    state->result = calculator::tools::evaluate(
+        calculator::tools::AdvancedTool::UnitConversion,
+        value + " " + from + " " + to);
+    present_tool_result(state);
+}
 
 void update_tool_prompt(ToolWindowState* state) {
     if (!state || !state->selector) return;
@@ -878,6 +1022,20 @@ void update_tool_prompt(ToolWindowState* state) {
     const std::size_t index =
         std::min<std::size_t>(selected, catalog.size() - 1U);
     const auto& descriptor = catalog[index];
+    const bool conversion =
+        descriptor.tool == calculator::tools::AdvancedTool::UnitConversion;
+    gtk_widget_set_visible(state->generic_input_row, !conversion);
+    gtk_widget_set_visible(state->conversion_box, conversion);
+
+    if (conversion) {
+        gtk_label_set_text(
+            GTK_LABEL(state->prompt),
+            "Choose a dimension, source unit and target unit. "
+            "The selected pair is remembered between Calculator sessions.");
+        run_conversion(state);
+        return;
+    }
+
     std::string prompt(descriptor.prompt);
     prompt += "\nExample: ";
     prompt += descriptor.example;
@@ -986,15 +1144,7 @@ void on_tool_run(GtkButton*, gpointer data) {
     state->result = calculator::tools::evaluate(
         catalog[index].tool, input ? input : "");
 
-    const std::string text = state->result.ok
-        ? state->result.output
-        : "Error: " + state->result.error;
-    GtkTextBuffer* buffer =
-        gtk_text_view_get_buffer(GTK_TEXT_VIEW(state->output));
-    gtk_text_buffer_set_text(buffer, text.c_str(), -1);
-    gtk_widget_set_visible(
-        state->graph, !state->result.points.empty());
-    gtk_widget_queue_draw(state->graph);
+    present_tool_result(state);
 }
 
 void show_advanced_tools(GtkWidget*, gpointer) {
@@ -1057,15 +1207,57 @@ void show_advanced_tools(GtkWidget*, gpointer) {
     gtk_widget_add_css_class(state->prompt, "history-row");
     gtk_box_append(GTK_BOX(root), state->prompt);
 
-    GtkWidget* input_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_box_append(GTK_BOX(root), input_row);
+    state->generic_input_row =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(root), state->generic_input_row);
     state->input = gtk_entry_new();
     gtk_widget_set_hexpand(state->input, TRUE);
-    gtk_box_append(GTK_BOX(input_row), state->input);
+    gtk_box_append(GTK_BOX(state->generic_input_row), state->input);
 
     GtkWidget* run = gtk_button_new_with_label("Run");
     gtk_widget_add_css_class(run, "toolbar-button");
-    gtk_box_append(GTK_BOX(input_row), run);
+    gtk_box_append(GTK_BOX(state->generic_input_row), run);
+
+    state->conversion_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_box_append(GTK_BOX(root), state->conversion_box);
+    GtkWidget* conversion_top =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(state->conversion_box), conversion_top);
+
+    state->conversion_dimension = gtk_drop_down_new(nullptr, nullptr);
+    gtk_widget_set_hexpand(state->conversion_dimension, TRUE);
+    gtk_box_append(GTK_BOX(conversion_top), state->conversion_dimension);
+
+    state->conversion_value = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(state->conversion_value), "Value");
+    gtk_editable_set_text(GTK_EDITABLE(state->conversion_value), "100");
+    gtk_widget_set_hexpand(state->conversion_value, TRUE);
+    gtk_box_append(GTK_BOX(conversion_top), state->conversion_value);
+
+    GtkWidget* conversion_pair =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(state->conversion_box), conversion_pair);
+    state->conversion_from = gtk_drop_down_new(nullptr, nullptr);
+    state->conversion_to = gtk_drop_down_new(nullptr, nullptr);
+    gtk_widget_set_hexpand(state->conversion_from, TRUE);
+    gtk_widget_set_hexpand(state->conversion_to, TRUE);
+    gtk_box_append(GTK_BOX(conversion_pair), state->conversion_from);
+
+    GtkWidget* swap = gtk_button_new_with_label("⇄");
+    gtk_widget_add_css_class(swap, "toolbar-button");
+    gtk_widget_set_tooltip_text(swap, "Swap source and target units");
+    gtk_box_append(GTK_BOX(conversion_pair), swap);
+    gtk_box_append(GTK_BOX(conversion_pair), state->conversion_to);
+
+    const ConversionPreferences converter_prefs =
+        load_conversion_preferences();
+    state->updating_conversion = true;
+    set_drop_down_values(
+        state->conversion_dimension, converter_dimensions(),
+        converter_prefs.dimension);
+    state->updating_conversion = false;
+    populate_conversion_units(
+        state, converter_prefs.from, converter_prefs.to);
 
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(scroll, TRUE);
@@ -1094,6 +1286,48 @@ void show_advanced_tools(GtkWidget*, gpointer) {
         state->input, "activate",
         G_CALLBACK(+[](GtkEntry*, gpointer data) {
             on_tool_run(nullptr, data);
+        }), state);
+    g_signal_connect(
+        state->conversion_dimension, "notify::selected",
+        G_CALLBACK(+[](GObject*, GParamSpec*, gpointer data) {
+            auto* s = static_cast<ToolWindowState*>(data);
+            if (!s || s->updating_conversion) return;
+            populate_conversion_units(s);
+            save_conversion_preferences(s);
+            run_conversion(s);
+        }), state);
+    auto pair_changed = +[](GObject*, GParamSpec*, gpointer data) {
+        auto* s = static_cast<ToolWindowState*>(data);
+        if (!s || s->updating_conversion) return;
+        save_conversion_preferences(s);
+        run_conversion(s);
+    };
+    g_signal_connect(
+        state->conversion_from, "notify::selected",
+        G_CALLBACK(pair_changed), state);
+    g_signal_connect(
+        state->conversion_to, "notify::selected",
+        G_CALLBACK(pair_changed), state);
+    g_signal_connect(
+        state->conversion_value, "changed",
+        G_CALLBACK(+[](GtkEditable*, gpointer data) {
+            run_conversion(static_cast<ToolWindowState*>(data));
+        }), state);
+    g_signal_connect(
+        swap, "clicked",
+        G_CALLBACK(+[](GtkButton*, gpointer data) {
+            auto* s = static_cast<ToolWindowState*>(data);
+            if (!s) return;
+            const guint from = gtk_drop_down_get_selected(
+                GTK_DROP_DOWN(s->conversion_from));
+            const guint to = gtk_drop_down_get_selected(
+                GTK_DROP_DOWN(s->conversion_to));
+            s->updating_conversion = true;
+            gtk_drop_down_set_selected(GTK_DROP_DOWN(s->conversion_from), to);
+            gtk_drop_down_set_selected(GTK_DROP_DOWN(s->conversion_to), from);
+            s->updating_conversion = false;
+            save_conversion_preferences(s);
+            run_conversion(s);
         }), state);
 
     update_tool_prompt(state);
