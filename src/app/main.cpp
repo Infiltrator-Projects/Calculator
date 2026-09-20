@@ -252,7 +252,7 @@ void save_display_preferences() {
 struct DesktopState {
     int width = calculator::ui::kDesktopMetrics.default_width;
     int height = calculator::ui::desktop_preferred_height(Mode::Standard);
-    Mode mode = Mode::Standard;
+    Mode selected_mode = Mode::Standard;
 };
 
 DesktopState load_desktop_state() {
@@ -275,7 +275,7 @@ DesktopState load_desktop_state() {
                 key, "Window", "mode", nullptr);
             if (mode >= static_cast<gint>(Mode::Standard) &&
                 mode <= static_cast<gint>(Mode::Programmer)) {
-                state.mode = static_cast<Mode>(mode);
+                state.selected_mode = static_cast<Mode>(mode);
             }
         }
     }
@@ -287,7 +287,7 @@ DesktopState load_desktop_state() {
         state.width, metrics.minimum_width, 2000);
     state.height = std::clamp(
         state.height,
-        calculator::ui::desktop_minimum_height(state.mode), 1600);
+        calculator::ui::desktop_minimum_height(state.selected_mode), 1600);
     return state;
 }
 
@@ -1528,7 +1528,7 @@ void activate(GtkApplication* app, gpointer) {
     load_user_functions();
     load_display_preferences();
     const DesktopState desktop_state = load_desktop_state();
-    controller.set_mode(desktop_state.mode);
+    controller.set_mode(desktop_state.selected_mode);
 
     if (!font_family_available(ui_font()) ||
         !font_family_available(brand_font())) {
