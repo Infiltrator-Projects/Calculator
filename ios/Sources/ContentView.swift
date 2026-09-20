@@ -187,6 +187,9 @@ struct ContentView: View {
         .sheet(isPresented: $model.showingHistory) {
             HistoryView(model: model)
         }
+        .sheet(isPresented: $model.showingTools) {
+            AdvancedToolsView(model: model)
+        }
         .sheet(isPresented: $model.showingResults) {
             AdditionalResultsView(model: model)
         }
@@ -248,6 +251,16 @@ struct ContentView: View {
                 .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
                 .accessibilityLabel("Additional result representations")
             }
+
+            Button {
+                model.showingTools = true
+            } label: {
+                Image(systemName: "wrench.and.screwdriver")
+                    .imageScale(.medium)
+                    .frame(width: 42, height: 38)
+            }
+            .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
+            .accessibilityLabel("Advanced calculator tools")
 
             Button {
                 model.showingHistory = true
@@ -493,6 +506,214 @@ private struct CalculatorToolbarButtonStyle: ButtonStyle {
                             )
                     )
             )
+    }
+}
+
+
+private struct AdvancedToolsView: View {
+    @ObservedObject var model: CalculatorModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var systemColorScheme
+    @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
+
+    @State private var descriptors: [CalculatorToolDescriptor] = []
+    @State private var selected = 0
+    @State private var input = ""
+    @State private var output = ""
+    @State private var points: [CalculatorGraphPoint] = []
+
+    private var themePreference: ThemePreference {
+        ThemePreference(rawValue: themePreferenceRaw) ?? .system
+    }
+
+    private var palette: CalculatorPalette {
+        switch themePreference {
+        case .day: return CalculatorPalette(dark: false)
+        case .night: return CalculatorPalette(dark: true)
+        case .system: return CalculatorPalette(dark: systemColorScheme == .dark)
+        }
+    }
+
+    private var current: CalculatorToolDescriptor? {
+        descriptors.first { $0.id == selected }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                palette.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: sharedDesign.sectionSpacing) {
+                        Picker("Tool", selection: $selected) {
+                            ForEach(descriptors) { item in
+                                Text(item.name).tag(item.id)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(palette.accentForeground)
+                        .onChange(of: selected) { _, _ in
+                            loadExample()
+                        }
+
+                        if let current {
+                            Text(current.prompt)
+                                .font(CalculatorTypography.regular(14, relativeTo: .body))
+                                .foregroundStyle(palette.summary)
+                            Text("Example: \(current.example)")
+                                .font(CalculatorTypography.regular(12, relativeTo: .caption))
+                                .foregroundStyle(palette.note)
+                        }
+
+                        TextField("Input", text: $input)
+                            .font(CalculatorTypography.regular(15, relativeTo: .body))
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .padding(sharedDesign.contentPadding)
+                            .foregroundStyle(palette.text)
+                            .background(
+                                RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
+                                    .fill(palette.input)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
+                                            .stroke(palette.border, lineWidth: 1)
+                                    )
+                            )
+                            .onSubmit { run() }
+
+                        Button("Run") { run() }
+                            .font(CalculatorTypography.bold(15, relativeTo: .body))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 11)
+                            .foregroundStyle(palette.primaryText)
+                            .background(
+                                RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
+                                    .fill(palette.primary)
+                            )
+
+                        if !output.isEmpty {
+                            Text(output)
+                                .font(CalculatorTypography.regular(14, relativeTo: .body))
+                                .foregroundStyle(palette.text)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(sharedDesign.contentPadding)
+                                .background(
+                                    RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                        .fill(palette.panel)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                                .stroke(palette.statusBorder, lineWidth: 1)
+                                        )
+                                )
+                        }
+
+                        if !points.isEmpty {
+                            ToolGraphView(points: points, palette: palette)
+                                .frame(height: 240)
+                                .background(
+                                    RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                        .fill(palette.panel)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                                .stroke(palette.statusBorder, lineWidth: 1)
+                                        )
+                                )
+                        }
+                    }
+                    .padding(sharedDesign.screenPadding)
+                }
+            }
+            .navigationTitle("Calculator Tools")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .preferredColorScheme(themePreference.preferredScheme)
+        .onAppear {
+            descriptors = model.advancedToolDescriptors()
+            selected = descriptors.first?.id ?? 0
+            loadExample()
+        }
+    }
+
+    private func loadExample() {
+        guard let current else { return }
+        input = current.example
+        output = ""
+        points = []
+    }
+
+    private func run() {
+        let result = model.evaluateAdvancedTool(index: selected, input: input)
+        output = result.text
+        points = result.points
+    }
+}
+
+private struct ToolGraphView: View {
+    let points: [CalculatorGraphPoint]
+    let palette: CalculatorPalette
+
+    var body: some View {
+        GeometryReader { geometry in
+            Canvas { context, size in
+                let valid = points.filter { $0.valid }
+                guard let first = valid.first else { return }
+                var xmin = first.x
+                var xmax = first.x
+                var ymin = first.y
+                var ymax = first.y
+                for point in valid.dropFirst() {
+                    xmin = min(xmin, point.x)
+                    xmax = max(xmax, point.x)
+                    ymin = min(ymin, point.y)
+                    ymax = max(ymax, point.y)
+                }
+                if xmin == xmax { xmin -= 1; xmax += 1 }
+                if ymin == ymax { ymin -= 1; ymax += 1 }
+
+                let inset: CGFloat = 12
+                let width = max(1, size.width - inset * 2)
+                let height = max(1, size.height - inset * 2)
+                func px(_ x: Double) -> CGFloat {
+                    inset + CGFloat((x - xmin) / (xmax - xmin)) * width
+                }
+                func py(_ y: Double) -> CGFloat {
+                    inset + CGFloat((ymax - y) / (ymax - ymin)) * height
+                }
+
+                var axes = Path()
+                if xmin <= 0 && xmax >= 0 {
+                    axes.move(to: CGPoint(x: px(0), y: inset))
+                    axes.addLine(to: CGPoint(x: px(0), y: inset + height))
+                }
+                if ymin <= 0 && ymax >= 0 {
+                    axes.move(to: CGPoint(x: inset, y: py(0)))
+                    axes.addLine(to: CGPoint(x: inset + width, y: py(0)))
+                }
+                context.stroke(axes, with: .color(palette.statusBorder), lineWidth: 1)
+
+                var path = Path()
+                var drawing = false
+                for point in points {
+                    guard point.valid else {
+                        drawing = false
+                        continue
+                    }
+                    let position = CGPoint(x: px(point.x), y: py(point.y))
+                    if drawing {
+                        path.addLine(to: position)
+                    } else {
+                        path.move(to: position)
+                        drawing = true
+                    }
+                }
+                context.stroke(path, with: .color(palette.accentForeground), lineWidth: 2)
+            }
+        }
+        .accessibilityLabel("Graph")
     }
 }
 
