@@ -462,8 +462,8 @@ private:
         const auto positive_integer_suffix =
             [](std::string_view text, std::string_view prefix,
                unsigned& value) {
-                if (!text.starts_with(prefix) ||
-                    text.size() == prefix.size()) return false;
+                if (text.size() <= prefix.size() ||
+                    text.substr(0, prefix.size()) != prefix) return false;
                 unsigned parsed = 0U;
                 for (std::size_t i = prefix.size(); i < text.size(); ++i) {
                     const char ch = text[i];
@@ -774,7 +774,8 @@ bool is_builtin_function_name(std::string_view name) noexcept {
         name == "floor" || name == "ceil") return true;
 
     const auto numbered = [name](std::string_view prefix) {
-        if (!name.starts_with(prefix) || name.size() == prefix.size()) {
+        if (name.size() <= prefix.size() ||
+            name.substr(0, prefix.size()) != prefix) {
             return false;
         }
         for (std::size_t i = prefix.size(); i < name.size(); ++i) {
