@@ -176,6 +176,9 @@ int main() {
     CHECK(controller.state().programmer_base == calculator::ProgrammerBase::Octal);
     CHECK(controller.state().programmer_width == calculator::IntegerWidth::Bits16);
     CHECK(controller.state().programmer_signed);
+    controller.set_programmer_context(
+        calculator::ProgrammerBase::Decimal,
+        calculator::IntegerWidth::Bits64, false);
     controller.dispatch(Command::BaseBin);
     CHECK(!controller.command_enabled(Command::Digit2));
     CHECK(!controller.command_enabled(Command::Digit9));
