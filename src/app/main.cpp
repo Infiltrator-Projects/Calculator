@@ -45,6 +45,9 @@ GtkWidget* bases_button = nullptr;
 GtkWidget* theme_button = nullptr;
 GtkWidget* main_window = nullptr;
 GtkWidget* tools_window = nullptr;
+GtkWidget* programmer_bits_window = nullptr;
+GtkWidget* programmer_bits_value = nullptr;
+std::vector<GtkWidget*> programmer_bit_buttons;
 GtkWidget* history_dock = nullptr;
 GtkWidget* history_text = nullptr;
 GtkWidget* calculator_column = nullptr;
@@ -110,6 +113,45 @@ ThemeMode load_theme_mode() {
     g_free(contents);
     g_free(path);
     return mode;
+}
+
+bool user_functions_loaded = false;
+
+void load_user_functions() {
+    if (user_functions_loaded) return;
+    user_functions_loaded = true;
+
+    gchar* path = g_build_filename(
+        g_get_user_data_dir(), "infiltrator-calc", "custom-functions", nullptr);
+    gchar* contents = nullptr;
+    gsize length = 0;
+    if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
+        if (!controller.load_function_definitions_text(
+                std::string_view(contents, length))) {
+            g_printerr(
+                "Calculator ignored malformed custom-functions data at %s\n",
+                path);
+        }
+    }
+    g_free(contents);
+    g_free(path);
+}
+
+void save_user_functions() {
+    gchar* directory = g_build_filename(
+        g_get_user_data_dir(), "infiltrator-calc", nullptr);
+    if (g_mkdir_with_parents(directory, 0700) == 0) {
+        gchar* path = g_build_filename(directory, "custom-functions", nullptr);
+        const std::string text = controller.function_definitions_text();
+        if (!g_file_set_contents(
+                path, text.data(), static_cast<gssize>(text.size()), nullptr)) {
+            g_printerr(
+                "Calculator could not persist custom functions to %s\n",
+                path);
+        }
+        g_free(path);
+    }
+    g_free(directory);
 }
 
 void save_theme_mode() {
@@ -379,32 +421,120 @@ void show_additional_results(GtkWidget*, gpointer) {
     gtk_window_present(GTK_WINDOW(window));
 }
 
+void refresh_programmer_bits_window() {
+    if (!programmer_bits_window || !programmer_bits_value) return;
+    const std::string text = controller.programmer_representations_text();
+    gtk_label_set_text(GTK_LABEL(programmer_bits_value), text.c_str());
+
+    const auto bits = controller.programmer_bits();
+    for (std::size_t bit = 0; bit < programmer_bit_buttons.size(); ++bit) {
+        GtkWidget* button = programmer_bit_buttons[bit];
+        const bool active = bit < bits.size() && bits[bit];
+        gtk_button_set_label(GTK_BUTTON(button), active ? "1" : "0");
+        gtk_widget_set_sensitive(button, bit < bits.size());
+        apply_selected(button, active);
+    }
+}
+
+void on_programmer_bit_clicked(GtkButton* button, gpointer) {
+    const guint encoded = GPOINTER_TO_UINT(
+        g_object_get_data(G_OBJECT(button), "calculator-bit-index"));
+    if (encoded == 0U) return;
+    const unsigned bit = static_cast<unsigned>(encoded - 1U);
+    if (!controller.toggle_programmer_bit(bit)) return;
+    render_state();
+    refresh_programmer_bits_window();
+}
+
 void show_programmer_bases(GtkWidget*, gpointer) {
-    GtkWidget* window = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(window), "Programmer Representations");
-    gtk_window_set_default_size(GTK_WINDOW(window), 560, 280);
+    if (programmer_bits_window) {
+        refresh_programmer_bits_window();
+        gtk_window_present(GTK_WINDOW(programmer_bits_window));
+        return;
+    }
+
+    GtkApplication* app =
+        main_window
+            ? gtk_window_get_application(GTK_WINDOW(main_window))
+            : nullptr;
+    GtkWidget* window =
+        app ? gtk_application_window_new(app) : gtk_window_new();
+    programmer_bits_window = window;
+    g_object_add_weak_pointer(
+        G_OBJECT(window),
+        reinterpret_cast<gpointer*>(&programmer_bits_window));
+    gtk_window_set_title(
+        GTK_WINDOW(window), "Programmer Representations & Bits");
+    gtk_window_set_default_size(GTK_WINDOW(window), 600, 430);
+    gtk_window_set_hide_on_close(GTK_WINDOW(window), TRUE);
+    if (main_window) {
+        gtk_window_set_transient_for(
+            GTK_WINDOW(window), GTK_WINDOW(main_window));
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(window), TRUE);
+    }
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_add_css_class(root, "shell");
     gtk_window_set_child(GTK_WINDOW(window), root);
 
-    GtkWidget* title = gtk_label_new("Programmer Representations");
+    GtkWidget* title =
+        gtk_label_new("Programmer Representations & Bits");
     gtk_widget_add_css_class(title, "brand-title");
     gtk_widget_set_halign(title, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(root), title);
 
-    const std::string text =
-        controller.programmer_representations_text();
-    GtkWidget* value = gtk_label_new(text.c_str());
-    gtk_widget_add_css_class(value, "history-row");
-    gtk_label_set_selectable(GTK_LABEL(value), TRUE);
-    gtk_label_set_wrap(GTK_LABEL(value), TRUE);
-    gtk_label_set_xalign(GTK_LABEL(value), 0.0F);
-    gtk_widget_set_halign(value, GTK_ALIGN_FILL);
-    gtk_widget_set_hexpand(value, TRUE);
-    gtk_widget_set_vexpand(value, TRUE);
-    gtk_box_append(GTK_BOX(root), value);
+    programmer_bits_value = gtk_label_new("");
+    gtk_widget_add_css_class(programmer_bits_value, "history-row");
+    gtk_label_set_selectable(GTK_LABEL(programmer_bits_value), TRUE);
+    gtk_label_set_wrap(GTK_LABEL(programmer_bits_value), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(programmer_bits_value), 0.0F);
+    gtk_widget_set_halign(programmer_bits_value, GTK_ALIGN_FILL);
+    gtk_box_append(GTK_BOX(root), programmer_bits_value);
 
+    GtkWidget* hint = gtk_label_new(
+        "Click a bit to toggle it. Bit 63 is upper-left; bit 0 is lower-right.");
+    gtk_widget_add_css_class(hint, "status");
+    gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(hint), 0.0F);
+    gtk_box_append(GTK_BOX(root), hint);
+
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_box_append(GTK_BOX(root), scroll);
+
+    GtkWidget* grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 4);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 4);
+    gtk_widget_set_margin_top(grid, 6);
+    gtk_widget_set_margin_bottom(grid, 6);
+    gtk_widget_set_margin_start(grid, 6);
+    gtk_widget_set_margin_end(grid, 6);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), grid);
+
+    programmer_bit_buttons.assign(64U, nullptr);
+    for (unsigned display = 0; display < 64U; ++display) {
+        const unsigned bit = 63U - display;
+        GtkWidget* button = gtk_button_new_with_label("0");
+        gtk_widget_add_css_class(button, "calc-button");
+        gtk_widget_add_css_class(button, "utility");
+        const std::string tooltip =
+            "Toggle bit " + std::to_string(bit);
+        gtk_widget_set_tooltip_text(button, tooltip.c_str());
+        g_object_set_data(
+            G_OBJECT(button), "calculator-bit-index",
+            GUINT_TO_POINTER(bit + 1U));
+        g_signal_connect(
+            button, "clicked",
+            G_CALLBACK(on_programmer_bit_clicked), nullptr);
+        gtk_grid_attach(
+            GTK_GRID(grid), button,
+            static_cast<int>(display % 8U),
+            static_cast<int>(display / 8U), 1, 1);
+        programmer_bit_buttons[bit] = button;
+    }
+
+    refresh_programmer_bits_window();
     gtk_window_present(GTK_WINDOW(window));
 }
 
@@ -656,6 +786,7 @@ void on_activate(GtkEntry*) {
         Command::Equals,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
+    save_user_functions();
 }
 
 void on_button_clicked(GtkButton*, gpointer data) {
@@ -670,6 +801,7 @@ void on_button_clicked(GtkButton*, gpointer data) {
         spec->command,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
+    if (spec->command == Command::Equals) save_user_functions();
     gtk_widget_grab_focus(expression_entry);
 }
 
@@ -1069,6 +1201,7 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
+    load_user_functions();
 
     if (!font_family_available(ui_font()) ||
         !font_family_available(brand_font())) {
@@ -1260,6 +1393,7 @@ int main(int argc, char** argv) {
     const int status_code =
         g_application_run(G_APPLICATION(app), argc, argv);
 
+    save_user_functions();
     if (css_provider) g_object_unref(css_provider);
     g_object_unref(app);
     return status_code;
