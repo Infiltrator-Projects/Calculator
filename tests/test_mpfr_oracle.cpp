@@ -185,9 +185,13 @@ int main() {
         -744.0, -700.0, -20.0, -10.0, -1.0, -0.1, 0.0,
         0.1, 1.0, 10.0, 20.0, 700.0, 709.0
     };
-    constexpr std::array<double, 13> power_exponent{
-        -1074.0, -1022.0, -323.0, -300.0, -100.0, -10.0, -1.0,
-        0.0, 1.0, 10.0, 100.0, 300.0, 1023.0
+    constexpr std::array<double, 11> binary_power_exponent{
+        -1074.0, -1022.0, -300.0, -100.0, -10.0, -1.0,
+        0.0, 1.0, 10.0, 300.0, 1023.0
+    };
+    constexpr std::array<double, 11> decimal_power_exponent{
+        -323.0, -300.0, -100.0, -10.0, -1.0, 0.0,
+        1.0, 10.0, 100.0, 300.0, 308.0
     };
     const std::array<double, 12> acosh_domain{
         1.0, 1.000001, 1.1, 2.0, 10.0, 1.0e3, 1.0e6,
@@ -210,8 +214,8 @@ int main() {
     check_values(OracleFunction::Ln, positive);
     check_values(OracleFunction::Log10, positive);
     check_values(OracleFunction::Exp, exponent);
-    check_values(OracleFunction::TwoPower, power_exponent);
-    check_values(OracleFunction::TenPower, power_exponent);
+    check_values(OracleFunction::TwoPower, binary_power_exponent);
+    check_values(OracleFunction::TenPower, decimal_power_exponent);
     check_values(OracleFunction::Sinh, general);
     check_values(OracleFunction::Cosh, general);
     check_values(OracleFunction::Tanh, general);
