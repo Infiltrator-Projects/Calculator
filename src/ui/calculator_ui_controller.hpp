@@ -28,6 +28,20 @@ struct ViewState {
     bool programmer_signed = false;
 };
 
+enum class ResultFormat {
+    Automatic,
+    Fixed,
+    Scientific,
+    Engineering
+};
+
+struct DisplayPreferences {
+    ResultFormat format = ResultFormat::Automatic;
+    unsigned decimal_places = 9;
+    bool group_thousands = false;
+    bool trailing_zeroes = false;
+};
+
 struct AdditionalResult {
     std::string label;
     std::string value;
@@ -67,6 +81,11 @@ public:
     std::string function_definitions_text() const;
     bool load_function_definitions_text(std::string_view text);
 
+    const DisplayPreferences& display_preferences() const noexcept {
+        return display_preferences_;
+    }
+    void set_display_preferences(DisplayPreferences preferences);
+
     std::string button_label(
         Command command, std::string_view fallback) const;
     bool command_enabled(Command command) const;
@@ -93,6 +112,7 @@ private:
     std::string scientific_status_text() const;
     std::string programmer_status_text() const;
     std::string format_real(double value) const;
+    std::string format_display(double value) const;
     Command effective_scientific_command(Command command) const;
     bool current_number_has_decimal() const;
     bool has_unmatched_open_parenthesis() const;
@@ -101,6 +121,7 @@ private:
 
     Session session_;
     ViewState state_;
+    DisplayPreferences display_preferences_;
 };
 
 } // namespace calculator::ui

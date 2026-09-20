@@ -3,7 +3,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <sstream>
+#include <system_error>
 #include <utility>
 
 namespace calculator::ui {
@@ -201,6 +203,25 @@ bool Controller::toggle_programmer_bit(unsigned bit) {
     return true;
 }
 
+void Controller::set_display_preferences(DisplayPreferences preferences) {
+    preferences.decimal_places =
+        std::min<unsigned>(preferences.decimal_places, 15U);
+    display_preferences_ = preferences;
+
+    double value = 0.0;
+    const Result parsed =
+        state_.mode == Mode::Programmer
+            ? Result{}
+            : (state_.mode == Mode::Standard
+                ? evaluate_immediate(state_.expression)
+                : calculator::evaluate(
+                      state_.expression, session_.variables(),
+                      session_.functions()));
+    if (state_.mode != Mode::Programmer && parsed.ok) {
+        state_.result = format_real(parsed.value);
+    }
+}
+
 std::string Controller::scientific_status_text() const {
     const char* angle = "DEG";
     if (state_.angle_unit == AngleUnit::Radians) angle = "RAD";
@@ -214,10 +235,74 @@ std::string Controller::scientific_status_text() const {
     return status;
 }
 
+std::string Controller::format_display(double value) const {
+    const auto trim_fraction_zeroes = [](std::string text) {
+        const std::size_t exponent = text.find_first_of("eE");
+        const std::size_t mantissa_end =
+            exponent == std::string::npos ? text.size() : exponent;
+        const std::size_t dot = text.find('.');
+        if (dot != std::string::npos && dot < mantissa_end) {
+            std::size_t end = mantissa_end;
+            while (end > dot + 1U && text[end - 1U] == '0') --end;
+            if (end == dot + 1U) --end;
+            text.erase(end, mantissa_end - end);
+        }
+        return text;
+    };
+    const auto group_integer = [](std::string text) {
+        const std::size_t exponent = text.find_first_of("eE");
+        const std::size_t mantissa_end =
+            exponent == std::string::npos ? text.size() : exponent;
+        const std::size_t dot = text.find('.');
+        const std::size_t integer_end =
+            dot != std::string::npos && dot < mantissa_end ? dot : mantissa_end;
+        const std::size_t first_digit =
+            !text.empty() && (text.front() == '-' || text.front() == '+')
+                ? 1U : 0U;
+        if (integer_end <= first_digit + 3U) return text;
+        for (std::size_t pos = integer_end; pos > first_digit + 3U;) {
+            pos -= 3U;
+            text.insert(pos, 1, ',');
+        }
+        return text;
+    };
+
+    std::string text;
+    if (display_preferences_.format == ResultFormat::Automatic) {
+        text = calculator::format_value(value);
+    } else if (display_preferences_.format == ResultFormat::Engineering) {
+        text = calculator::format_engineering_value(value);
+    } else {
+        char buffer[128] = {};
+        const std::chars_format style =
+            display_preferences_.format == ResultFormat::Fixed
+                ? std::chars_format::fixed
+                : std::chars_format::scientific;
+        const auto converted = std::to_chars(
+            buffer, buffer + sizeof(buffer), value, style,
+            static_cast<int>(display_preferences_.decimal_places));
+        if (converted.ec != std::errc{}) {
+            text = calculator::format_value(value);
+        } else {
+            text.assign(buffer, converted.ptr);
+        }
+        if (!display_preferences_.trailing_zeroes) {
+            text = trim_fraction_zeroes(std::move(text));
+        }
+    }
+
+    if (display_preferences_.group_thousands &&
+        display_preferences_.format != ResultFormat::Scientific &&
+        display_preferences_.format != ResultFormat::Engineering) {
+        text = group_integer(std::move(text));
+    }
+    return text;
+}
+
 std::string Controller::format_real(double value) const {
     return state_.mode == Mode::Scientific && state_.scientific_notation
         ? calculator::format_scientific_value(value)
-        : calculator::format_value(value);
+        : format_display(value);
 }
 
 Command Controller::effective_scientific_command(Command command) const {
@@ -425,7 +510,7 @@ void Controller::calculate_standard() {
         return;
     }
 
-    state_.result = calculator::format_value(result.value);
+    state_.result = format_display(result.value);
     set_status("READY");
 }
 
@@ -606,7 +691,7 @@ void Controller::update_standard_preview() {
     if (preview.empty()) return;
     const Result result = evaluate_immediate(preview);
     if (result.ok) {
-        state_.result = calculator::format_value(result.value);
+        state_.result = format_display(result.value);
         set_status("READY");
     }
 }

@@ -130,6 +130,30 @@ int main() {
     CHECK(controller.state().result == "0");
     CHECK(controller.state().status.find("F-E") == std::string::npos);
 
+    controller.set_mode(Mode::Standard);
+    controller.set_expression("12345.5");
+    calculator::ui::DisplayPreferences fixed{};
+    fixed.format = calculator::ui::ResultFormat::Fixed;
+    fixed.decimal_places = 3;
+    fixed.group_thousands = true;
+    fixed.trailing_zeroes = true;
+    controller.set_display_preferences(fixed);
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "12,345.500");
+
+    fixed.trailing_zeroes = false;
+    controller.set_display_preferences(fixed);
+    CHECK(controller.state().result == "12,345.5");
+
+    calculator::ui::DisplayPreferences scientific{};
+    scientific.format = calculator::ui::ResultFormat::Scientific;
+    scientific.decimal_places = 4;
+    scientific.trailing_zeroes = true;
+    controller.set_display_preferences(scientific);
+    CHECK(controller.state().result.find("1.2346e+04") != std::string::npos);
+
+    controller.set_display_preferences({});
+
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseBin);
     CHECK(!controller.command_enabled(Command::Digit2));
