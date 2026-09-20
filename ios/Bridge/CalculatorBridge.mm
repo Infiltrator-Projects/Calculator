@@ -2,6 +2,7 @@
 #import "CalculatorBridge.h"
 
 #include "../../src/ui/calculator_ui_controller.hpp"
+#include "../../src/core/advanced_tools.hpp"
 
 #include <infiltratr/design.h>
 
@@ -220,6 +221,52 @@ NSInteger angle_value(calculator::AngleUnit unit) {
 
 - (NSString *)programmerRepresentationsText {
     return to_ns([self controller]->programmer_representations_text());
+}
+
+- (NSArray<NSDictionary *> *)advancedToolCatalog {
+    NSMutableArray<NSDictionary *> *items = [NSMutableArray array];
+    const auto& catalog = calculator::tools::catalog();
+    for (std::size_t index = 0; index < catalog.size(); ++index) {
+        const auto& item = catalog[index];
+        [items addObject:@{
+            @"index": @(static_cast<NSInteger>(index)),
+            @"name": to_ns(std::string(item.name)),
+            @"prompt": to_ns(std::string(item.prompt)),
+            @"example": to_ns(std::string(item.example))
+        }];
+    }
+    return items;
+}
+
+- (NSDictionary *)evaluateAdvancedToolAtIndex:(NSInteger)index
+                                      input:(NSString *)input {
+    const auto& catalog = calculator::tools::catalog();
+    if (index < 0 || static_cast<std::size_t>(index) >= catalog.size()) {
+        return @{
+            @"ok": @NO,
+            @"output": @"",
+            @"error": @"Unknown advanced tool.",
+            @"points": @[]
+        };
+    }
+
+    const auto result = calculator::tools::evaluate(
+        catalog[static_cast<std::size_t>(index)].tool,
+        input.UTF8String ?: "");
+    NSMutableArray<NSDictionary *> *points = [NSMutableArray array];
+    for (const auto& point : result.points) {
+        [points addObject:@{
+            @"x": @(point.x),
+            @"y": @(point.y),
+            @"valid": @(point.valid)
+        }];
+    }
+    return @{
+        @"ok": @(result.ok),
+        @"output": to_ns(result.output),
+        @"error": to_ns(result.error),
+        @"points": points
+    };
 }
 
 - (NSString *)historyText {
