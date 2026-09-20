@@ -514,8 +514,8 @@ for needle in (
     assert needle in ios, f"iPhone structured history UI missing: {needle}"
 
 # Mint-class converter remains first-class and persistent on Linux.
-assert '"conversion.ini"' in source
-assert 'conversion_dimension' in source
-assert 'conversion_from' in source
-assert 'conversion_to' in source
-assert 'Swap source and target units' in source
+assert '"conversion.ini"' in linux
+assert 'conversion_dimension' in linux
+assert 'conversion_from' in linux
+assert 'conversion_to' in linux
+assert 'Swap source and target units' in linux
