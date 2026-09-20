@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../ui/calculator_ui_controller.hpp"
+#include "../core/advanced_tools.hpp"
 #include "../ui/calculator_theme.hpp"
 
 #include <gtk/gtk.h>
@@ -38,6 +39,7 @@ GtkWidget* second_button = nullptr;
 GtkWidget* hyperbolic_button = nullptr;
 GtkWidget* notation_button = nullptr;
 GtkWidget* history_button = nullptr;
+GtkWidget* tools_button = nullptr;
 GtkWidget* results_button = nullptr;
 GtkWidget* bases_button = nullptr;
 GtkWidget* theme_button = nullptr;
@@ -401,6 +403,227 @@ void show_programmer_bases(GtkWidget*, gpointer) {
     gtk_widget_set_vexpand(value, TRUE);
     gtk_box_append(GTK_BOX(root), value);
 
+    gtk_window_present(GTK_WINDOW(window));
+}
+
+struct ToolWindowState {
+    GtkWidget* selector = nullptr;
+    GtkWidget* prompt = nullptr;
+    GtkWidget* input = nullptr;
+    GtkWidget* output = nullptr;
+    GtkWidget* graph = nullptr;
+    calculator::tools::ToolResult result;
+};
+
+void update_tool_prompt(ToolWindowState* state) {
+    if (!state || !state->selector) return;
+    const guint selected =
+        gtk_drop_down_get_selected(GTK_DROP_DOWN(state->selector));
+    const auto& catalog = calculator::tools::catalog();
+    const std::size_t index =
+        std::min<std::size_t>(selected, catalog.size() - 1U);
+    const auto& descriptor = catalog[index];
+    std::string prompt(descriptor.prompt);
+    prompt += "\nExample: ";
+    prompt += descriptor.example;
+    gtk_label_set_text(GTK_LABEL(state->prompt), prompt.c_str());
+    gtk_editable_set_text(
+        GTK_EDITABLE(state->input),
+        std::string(descriptor.example).c_str());
+}
+
+void on_tool_selected(GObject*, GParamSpec*, gpointer data) {
+    update_tool_prompt(static_cast<ToolWindowState*>(data));
+}
+
+void draw_tool_graph(GtkDrawingArea*, cairo_t* cr, int width, int height,
+                     gpointer data) {
+    auto* state = static_cast<ToolWindowState*>(data);
+    if (!state || state->result.points.empty() || width <= 2 || height <= 2) {
+        return;
+    }
+
+    const auto& palette = active_palette();
+    auto set_colour = [cr](std::uint32_t rgb) {
+        cairo_set_source_rgb(
+            cr,
+            static_cast<double>((rgb >> 16U) & 0xffU) / 255.0,
+            static_cast<double>((rgb >> 8U) & 0xffU) / 255.0,
+            static_cast<double>(rgb & 0xffU) / 255.0);
+    };
+
+    set_colour(palette.panel_rgb);
+    cairo_paint(cr);
+
+    bool have_point = false;
+    double xmin = 0.0, xmax = 0.0, ymin = 0.0, ymax = 0.0;
+    for (const auto& point : state->result.points) {
+        if (!point.valid) continue;
+        if (!have_point) {
+            xmin = xmax = point.x;
+            ymin = ymax = point.y;
+            have_point = true;
+        } else {
+            xmin = std::min(xmin, point.x);
+            xmax = std::max(xmax, point.x);
+            ymin = std::min(ymin, point.y);
+            ymax = std::max(ymax, point.y);
+        }
+    }
+    if (!have_point) return;
+    if (xmin == xmax) { xmin -= 1.0; xmax += 1.0; }
+    if (ymin == ymax) { ymin -= 1.0; ymax += 1.0; }
+
+    constexpr double margin = 12.0;
+    const double plot_width = std::max(1.0, static_cast<double>(width) - 2.0 * margin);
+    const double plot_height = std::max(1.0, static_cast<double>(height) - 2.0 * margin);
+    auto px = [&](double x) {
+        return margin + (x - xmin) / (xmax - xmin) * plot_width;
+    };
+    auto py = [&](double y) {
+        return margin + (ymax - y) / (ymax - ymin) * plot_height;
+    };
+
+    set_colour(palette.status_border_rgb);
+    cairo_set_line_width(cr, 1.0);
+    if (xmin <= 0.0 && xmax >= 0.0) {
+        cairo_move_to(cr, px(0.0), margin);
+        cairo_line_to(cr, px(0.0), margin + plot_height);
+        cairo_stroke(cr);
+    }
+    if (ymin <= 0.0 && ymax >= 0.0) {
+        cairo_move_to(cr, margin, py(0.0));
+        cairo_line_to(cr, margin + plot_width, py(0.0));
+        cairo_stroke(cr);
+    }
+
+    set_colour(palette.accent_foreground_rgb);
+    cairo_set_line_width(cr, 2.0);
+    bool drawing = false;
+    for (const auto& point : state->result.points) {
+        if (!point.valid) {
+            if (drawing) {
+                cairo_stroke(cr);
+                drawing = false;
+            }
+            continue;
+        }
+        if (!drawing) {
+            cairo_move_to(cr, px(point.x), py(point.y));
+            drawing = true;
+        } else {
+            cairo_line_to(cr, px(point.x), py(point.y));
+        }
+    }
+    if (drawing) cairo_stroke(cr);
+}
+
+void on_tool_run(GtkButton*, gpointer data) {
+    auto* state = static_cast<ToolWindowState*>(data);
+    if (!state) return;
+    const guint selected =
+        gtk_drop_down_get_selected(GTK_DROP_DOWN(state->selector));
+    const auto& catalog = calculator::tools::catalog();
+    const std::size_t index =
+        std::min<std::size_t>(selected, catalog.size() - 1U);
+    const char* input =
+        gtk_editable_get_text(GTK_EDITABLE(state->input));
+    state->result = calculator::tools::evaluate(
+        catalog[index].tool, input ? input : "");
+
+    const std::string text = state->result.ok
+        ? state->result.output
+        : "Error: " + state->result.error;
+    GtkTextBuffer* buffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(state->output));
+    gtk_text_buffer_set_text(buffer, text.c_str(), -1);
+    gtk_widget_set_visible(
+        state->graph, !state->result.points.empty());
+    gtk_widget_queue_draw(state->graph);
+}
+
+void show_advanced_tools(GtkWidget*, gpointer) {
+    GtkWidget* window = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(window), "Calculator Tools");
+    gtk_window_set_default_size(GTK_WINDOW(window), 720, 620);
+    if (main_window) {
+        gtk_window_set_transient_for(
+            GTK_WINDOW(window), GTK_WINDOW(main_window));
+    }
+
+    auto* state = new ToolWindowState();
+    g_object_set_data_full(
+        G_OBJECT(window), "calculator-tool-state", state,
+        +[](gpointer data) {
+            delete static_cast<ToolWindowState*>(data);
+        });
+
+    GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(root, "shell");
+    gtk_window_set_child(GTK_WINDOW(window), root);
+
+    GtkWidget* title = gtk_label_new("Advanced Calculator Tools");
+    gtk_widget_add_css_class(title, "brand-title");
+    gtk_widget_set_halign(title, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(root), title);
+
+    const auto& catalog = calculator::tools::catalog();
+    std::vector<const char*> names;
+    names.reserve(catalog.size() + 1U);
+    for (const auto& item : catalog) names.push_back(item.name.data());
+    names.push_back(nullptr);
+
+    GtkStringList* list = gtk_string_list_new(names.data());
+    state->selector = gtk_drop_down_new(G_LIST_MODEL(list), nullptr);
+    g_object_unref(list);
+    gtk_widget_set_hexpand(state->selector, TRUE);
+    gtk_box_append(GTK_BOX(root), state->selector);
+
+    state->prompt = gtk_label_new("");
+    gtk_label_set_wrap(GTK_LABEL(state->prompt), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(state->prompt), 0.0F);
+    gtk_widget_add_css_class(state->prompt, "history-row");
+    gtk_box_append(GTK_BOX(root), state->prompt);
+
+    GtkWidget* input_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(root), input_row);
+    state->input = gtk_entry_new();
+    gtk_widget_set_hexpand(state->input, TRUE);
+    gtk_box_append(GTK_BOX(input_row), state->input);
+
+    GtkWidget* run = toolbar_button("Run");
+    gtk_box_append(GTK_BOX(input_row), run);
+
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_box_append(GTK_BOX(root), scroll);
+    state->output = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(state->output), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(state->output), TRUE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(state->output), GTK_WRAP_WORD_CHAR);
+    gtk_widget_add_css_class(state->output, "history-row");
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), state->output);
+
+    state->graph = gtk_drawing_area_new();
+    gtk_widget_set_size_request(state->graph, -1, 220);
+    gtk_widget_set_visible(state->graph, FALSE);
+    gtk_drawing_area_set_draw_func(
+        GTK_DRAWING_AREA(state->graph), draw_tool_graph, state, nullptr);
+    gtk_box_append(GTK_BOX(root), state->graph);
+
+    g_signal_connect(
+        state->selector, "notify::selected",
+        G_CALLBACK(on_tool_selected), state);
+    g_signal_connect(
+        run, "clicked", G_CALLBACK(on_tool_run), state);
+    g_signal_connect(
+        state->input, "activate",
+        G_CALLBACK(+[](GtkEntry*, gpointer data) {
+            on_tool_run(nullptr, data);
+        }), state);
+
+    update_tool_prompt(state);
     gtk_window_present(GTK_WINDOW(window));
 }
 
@@ -770,6 +993,13 @@ void activate(GtkApplication* app, gpointer) {
     g_signal_connect(
         theme_button, "clicked", G_CALLBACK(on_theme_clicked), nullptr);
     gtk_box_append(GTK_BOX(header), theme_button);
+
+    tools_button = toolbar_button("Tools");
+    gtk_widget_set_tooltip_text(
+        tools_button, "Open engineering, conversion, network, storage, date, statistics, graph, equation, exact, arbitrary-precision and complex tools");
+    g_signal_connect(
+        tools_button, "clicked", G_CALLBACK(show_advanced_tools), nullptr);
+    gtk_box_append(GTK_BOX(header), tools_button);
 
     results_button = toolbar_button("Results");
     gtk_widget_set_tooltip_text(
