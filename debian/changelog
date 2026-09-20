@@ -1,3 +1,13 @@
+infiltrator-calculator (0.1.40) unstable; urgency=medium
+
+  * Add simultaneous BIN/OCT/DEC/HEX Programmer representations.
+  * Preserve signed decimal and exact non-decimal bit-pattern semantics.
+  * Add Programmer representation surfaces on GTK, Win32 and iPhone.
+  * Make Linux and iPhone result text selectable for copy workflows.
+  * Add representation and cross-platform UI regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 12:35:00 +1000
+
 infiltrator-calculator (0.1.39) unstable; urgency=medium
 
   * Add structured cross-platform calculation history and exact recall.

@@ -163,6 +163,9 @@ struct ContentView: View {
         .sheet(isPresented: $model.showingHistory) {
             HistoryView(model: model)
         }
+        .sheet(isPresented: $model.showingBases) {
+            ProgrammerRepresentationsView(model: model)
+        }
     }
 
     private var header: some View {
@@ -196,6 +199,18 @@ struct ContentView: View {
             }
             .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
             .accessibilityLabel("Theme")
+
+            if model.mode == .programmer {
+                Button {
+                    model.showingBases = true
+                } label: {
+                    Image(systemName: "number.square")
+                        .imageScale(.medium)
+                        .frame(width: 42, height: 38)
+                }
+                .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
+                .accessibilityLabel("Programmer base representations")
+            }
 
             Button {
                 model.showingHistory = true
@@ -276,6 +291,8 @@ struct ContentView: View {
                 .foregroundStyle(palette.title)
                 .lineLimit(1)
                 .minimumScaleFactor(0.42)
+                .textSelection(.enabled)
+                .accessibilityLabel("Calculation result \(model.display)")
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 4)
 
@@ -431,6 +448,49 @@ private struct CalculatorToolbarButtonStyle: ButtonStyle {
                             .stroke(palette.border, lineWidth: 1)
                     )
             )
+    }
+}
+
+private struct ProgrammerRepresentationsView: View {
+    @ObservedObject var model: CalculatorModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var systemColorScheme
+    @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
+
+    private var themePreference: ThemePreference {
+        ThemePreference(rawValue: themePreferenceRaw) ?? .system
+    }
+
+    private var palette: CalculatorPalette {
+        switch themePreference {
+        case .day: return CalculatorPalette(dark: false)
+        case .night: return CalculatorPalette(dark: true)
+        case .system: return CalculatorPalette(dark: systemColorScheme == .dark)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                palette.background.ignoresSafeArea()
+                ScrollView(.horizontal, showsIndicators: true) {
+                    Text(model.programmerRepresentationsText())
+                        .font(CalculatorTypography.regular(15, relativeTo: .body))
+                        .foregroundStyle(palette.text)
+                        .textSelection(.enabled)
+                        .padding(sharedDesign.sectionSpacing)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(palette.panel)
+            }
+            .navigationTitle("Programmer Representations")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .preferredColorScheme(themePreference.preferredScheme)
     }
 }
 

@@ -311,6 +311,36 @@ assert "session().history()" not in linux
 assert "session().history()" not in windows
 
 for needle in (
+    'bases_button = toolbar_button("Bases")',
+    "show_programmer_bases",
+    "programmer_representations_text()",
+    "gtk_label_set_selectable(GTK_LABEL(result_label), TRUE)",
+):
+    assert needle in linux, f"Linux Programmer/copy completeness missing: {needle}"
+
+for needle in (
+    "kIdBases",
+    'L"Bases"',
+    "programmer_representations_text()",
+    'L"Programmer Representations"',
+):
+    assert needle in windows, f"Windows Programmer representations missing: {needle}"
+
+for needle in (
+    "programmerRepresentationsText",
+    "programmer_representations_text()",
+):
+    assert needle in ios_bridge, f"iPhone Programmer representations bridge missing: {needle}"
+
+for needle in (
+    "ProgrammerRepresentationsView",
+    "model.showingBases",
+    "model.programmerRepresentationsText()",
+    ".textSelection(.enabled)",
+):
+    assert needle in ios, f"iPhone Programmer/copy completeness missing: {needle}"
+
+for needle in (
     "controller.history_count()",
     "controller.history_entry(index)",
     "controller.recall_history(index)",

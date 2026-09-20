@@ -199,6 +199,10 @@ NSInteger angle_value(calculator::AngleUnit unit) {
     return spec != nullptr && controller->command_enabled(spec->command);
 }
 
+- (NSString *)programmerRepresentationsText {
+    return to_ns([self controller]->programmer_representations_text());
+}
+
 - (NSString *)historyText {
     return to_ns([self controller]->history_text());
 }

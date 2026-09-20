@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.40" date="2026-09-20">
+      <description>
+        <p>Add simultaneous Programmer BIN/OCT/DEC/HEX representations and selectable result/copy surfaces.</p>
+      </description>
+    </release>
     <release version="0.1.39" date="2026-09-20">
       <description>
         <p>Add structured, recallable calculation history across Linux, Windows and iPhone, including exact Programmer-mode context.</p>

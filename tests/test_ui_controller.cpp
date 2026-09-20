@@ -197,6 +197,16 @@ int main() {
     CHECK(controller.state().result == "12");
     CHECK(!controller.recall_history(99));
 
+    controller.set_mode(Mode::Programmer);
+    controller.dispatch(Command::BaseHex);
+    controller.dispatch(Command::Width8);
+    controller.set_expression("FF");
+    const std::string representations =
+        controller.programmer_representations_text();
+    CHECK(representations.find("HEX  FF") != std::string::npos);
+    CHECK(representations.find("OCT  377") != std::string::npos);
+    CHECK(representations.find("BIN  1111 1111") != std::string::npos);
+
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";
         return 1;

@@ -83,6 +83,36 @@ void Controller::clear_history() noexcept {
     session_.clear_history();
 }
 
+std::string Controller::programmer_representations_text() const {
+    if (state_.mode != Mode::Programmer || state_.expression.empty()) {
+        return "Enter a Programmer value.";
+    }
+
+    const ProgrammerResult result = evaluate_programmer(
+        state_.expression, state_.programmer_base, state_.programmer_width);
+    if (!result.ok) return "Error: " + result.error;
+
+    const auto representations = programmer_representations(
+        result.value, state_.programmer_width, state_.programmer_signed);
+
+    auto grouped_binary = [](const std::string& binary) {
+        std::string grouped;
+        grouped.reserve(binary.size() + binary.size() / 4U);
+        for (std::size_t i = 0; i < binary.size(); ++i) {
+            if (i != 0 && (binary.size() - i) % 4U == 0U) {
+                grouped.push_back(' ');
+            }
+            grouped.push_back(binary[i]);
+        }
+        return grouped;
+    };
+
+    return "HEX  " + representations.hexadecimal +
+           "\nDEC  " + representations.decimal +
+           "\nOCT  " + representations.octal +
+           "\nBIN  " + grouped_binary(representations.binary);
+}
+
 std::string Controller::scientific_status_text() const {
     const char* angle = "DEG";
     if (state_.angle_unit == AngleUnit::Radians) angle = "RAD";

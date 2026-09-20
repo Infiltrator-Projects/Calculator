@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.40 — 2026-09-20
+
+- Add one shared Programmer representation contract that renders the current fixed-width bit pattern simultaneously as BIN, OCT, DEC and HEX.
+- Preserve signed interpretation for the decimal representation while keeping binary/octal/hexadecimal as exact masked bit-pattern views.
+- Add an on-demand Programmer Representations surface on Linux, Windows and iPhone without increasing Standard or Programmer main-window geometry.
+- Group binary output by nibbles for readability while retaining the exact full-width representation underneath.
+- Make Linux and iPhone result text directly selectable for copy workflows and expose selectable representations on iPhone.
+- Add regression coverage for representation semantics and cross-platform presentation wiring.
+
 ## 0.1.39 — 2026-09-20
 
 - Replace presentation-only history with structured history entries carrying mode, exact rendered result and Programmer radix/width/signed context.

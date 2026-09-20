@@ -53,6 +53,7 @@ public:
         std::size_t index_from_newest) const;
     bool recall_history(std::size_t index_from_newest);
     void clear_history() noexcept;
+    std::string programmer_representations_text() const;
 
     std::string button_label(
         Command command, std::string_view fallback) const;

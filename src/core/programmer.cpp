@@ -339,4 +339,18 @@ std::string format_programmer(std::uint64_t value,
     return out.str();
 }
 
+ProgrammerRepresentations programmer_representations(
+    std::uint64_t value, IntegerWidth width, bool signed_display) {
+    return {
+        format_programmer(
+            value, ProgrammerBase::Binary, width, false),
+        format_programmer(
+            value, ProgrammerBase::Octal, width, false),
+        format_programmer(
+            value, ProgrammerBase::Decimal, width, signed_display),
+        format_programmer(
+            value, ProgrammerBase::Hexadecimal, width, false)
+    };
+}
+
 } // namespace calculator

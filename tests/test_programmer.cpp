@@ -60,6 +60,13 @@ int main(){
         deeply_unary,ProgrammerBase::Decimal,IntegerWidth::Bits64,
         "expression nesting too deep");
 
+    const auto reps = calculator::programmer_representations(
+        0xff, calculator::IntegerWidth::Bits8, true);
+    if(reps.binary!="11111111") fail("representation binary wrong");
+    if(reps.octal!="377") fail("representation octal wrong");
+    if(reps.decimal!="-1") fail("representation signed decimal wrong");
+    if(reps.hexadecimal!="FF") fail("representation hexadecimal wrong");
+
     if(failures){std::cerr<<failures<<" programmer test(s) failed\n";return 1;}
     std::cout<<"programmer tests passed\n";
     return 0;

@@ -126,3 +126,8 @@ External references establish specific rules; they do not make another calculato
 Before a new mathematical capability is accepted, establish the numeric representation and units, grammar/interaction semantics, valid and invalid domains, overflow/underflow or exactness policy, display policy, authoritative definition/reference, cross-platform expectations, and deterministic reference values/boundary tests.
 
 If those cannot be stated precisely, the capability is not ready to be advertised as complete.
+
+
+## Programmer multi-radix representation
+
+A Programmer result is one fixed-width masked bit pattern. The representation view does not re-evaluate the expression four times: it renders that one value as binary, octal, decimal and hexadecimal. Binary, octal and hexadecimal remain unsigned bit-pattern views. The decimal row follows the current signed/unsigned presentation toggle. This keeps representation switching observational rather than computational.

@@ -10,7 +10,7 @@ The repository currently uses:
 
 - `.github/workflows/release.yml`
 
-The `tests/` tree covers expression grammar and nesting limits, Standard immediate semantics, gradian/inverse/hyperbolic Scientific transforms and F-E formatting, Programmer width/radix/ROL/ROR/NAND/NOR behaviour, explicit memory store/update state, structured history ordering/context/recall, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
+The `tests/` tree covers expression grammar and nesting limits, Standard immediate semantics, gradian/inverse/hyperbolic Scientific transforms and F-E formatting, Programmer width/radix/ROL/ROR/NAND/NOR behaviour and simultaneous multi-radix representations, explicit memory store/update state, structured history ordering/context/recall, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
 
 Every `main` push and manual workflow dispatch runs the cross-platform verification jobs. Release publication remains gated to explicit `Release ...` commits. Verification:
 
