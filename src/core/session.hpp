@@ -38,7 +38,9 @@ struct HistoryEntry {
 // semantics to the calculation engines.
 class Session {
 public:
-    explicit Session(std::size_t history_limit = 100);
+    // A zero limit means unbounded history, matching mature desktop
+    // calculator behaviour. Tests and embedders may still request a bound.
+    explicit Session(std::size_t history_limit = 0);
 
     // Supports direct assignment as name=expression. The identifier must begin
     // with an alphabetic character or '_' and '=' immediately follows the name.

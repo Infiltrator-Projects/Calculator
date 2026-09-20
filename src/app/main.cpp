@@ -53,6 +53,7 @@ GtkCssProvider* css_provider = nullptr;
 std::vector<std::pair<GtkWidget*, const ButtonSpec*>> command_buttons;
 LayoutClass last_layout_class = LayoutClass::Regular;
 bool responsive_layout_initialized = false;
+int history_navigation_index = -1;
 
 Controller controller;
 ThemeMode theme_mode = ThemeMode::System;
@@ -647,6 +648,7 @@ void show_advanced_tools(GtkWidget*, gpointer) {
 }
 
 void on_activate(GtkEntry*) {
+    history_navigation_index = -1;
     sync_expression_from_widget();
     const int position =
         gtk_editable_get_position(GTK_EDITABLE(expression_entry));
@@ -660,6 +662,7 @@ void on_button_clicked(GtkButton*, gpointer data) {
     const auto* spec = static_cast<const ButtonSpec*>(data);
     if (!spec) return;
 
+    history_navigation_index = -1;
     sync_expression_from_widget();
     const int position =
         gtk_editable_get_position(GTK_EDITABLE(expression_entry));
@@ -960,6 +963,106 @@ void on_system_theme_changed(GObject*, GParamSpec*, gpointer) {
     }
 }
 
+void insert_expression_shortcut(std::string_view text) {
+    if (!expression_entry) return;
+    GtkEditable* editable = GTK_EDITABLE(expression_entry);
+    int position = gtk_editable_get_position(editable);
+    if (position < 0) position = 0;
+    gtk_editable_insert_text(
+        editable, text.data(), static_cast<int>(text.size()), &position);
+    gtk_editable_set_position(editable, position);
+    sync_expression_from_widget();
+    render_state(static_cast<std::size_t>(position));
+}
+
+gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
+                               guint, GdkModifierType state, gpointer) {
+    const bool control = (state & GDK_CONTROL_MASK) != 0;
+    const bool alt = (state & GDK_ALT_MASK) != 0;
+
+    if (keyval == GDK_KEY_Escape ||
+        (control && keyval == GDK_KEY_Delete)) {
+        history_navigation_index = -1;
+        sync_expression_from_widget();
+        const auto result = controller.dispatch(Command::Clear);
+        render_state(result.cursor);
+        gtk_widget_grab_focus(expression_entry);
+        return TRUE;
+    }
+
+    if (alt && (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right)) {
+        const std::size_t count = controller.history_count();
+        if (count == 0U) return TRUE;
+
+        if (keyval == GDK_KEY_Left) {
+            const int maximum = static_cast<int>(count - 1U);
+            history_navigation_index =
+                std::min(history_navigation_index + 1, maximum);
+        } else if (history_navigation_index > 0) {
+            --history_navigation_index;
+        } else {
+            return TRUE;
+        }
+
+        if (controller.recall_history(
+                static_cast<std::size_t>(history_navigation_index))) {
+            render_state();
+            update_responsive_layout(main_window);
+            gtk_widget_grab_focus(expression_entry);
+        }
+        return TRUE;
+    }
+
+    if (!control) return FALSE;
+
+    if (controller.state().mode == Mode::Programmer) {
+        Command base_command = Command::BaseDec;
+        bool handled = true;
+        switch (keyval) {
+        case GDK_KEY_b:
+        case GDK_KEY_B: base_command = Command::BaseBin; break;
+        case GDK_KEY_o:
+        case GDK_KEY_O: base_command = Command::BaseOct; break;
+        case GDK_KEY_d:
+        case GDK_KEY_D: base_command = Command::BaseDec; break;
+        case GDK_KEY_h:
+        case GDK_KEY_H: base_command = Command::BaseHex; break;
+        default: handled = false; break;
+        }
+        if (handled) {
+            history_navigation_index = -1;
+            const auto result = controller.dispatch(base_command);
+            render_state(result.cursor);
+            gtk_widget_grab_focus(expression_entry);
+            return TRUE;
+        }
+    }
+
+    if (controller.state().mode == Mode::Scientific) {
+        switch (keyval) {
+        case GDK_KEY_p:
+        case GDK_KEY_P:
+            history_navigation_index = -1;
+            insert_expression_shortcut("pi");
+            return TRUE;
+        case GDK_KEY_r:
+        case GDK_KEY_R:
+            history_navigation_index = -1;
+            insert_expression_shortcut("sqrt(");
+            return TRUE;
+        case GDK_KEY_e:
+        case GDK_KEY_E:
+            history_navigation_index = -1;
+            insert_expression_shortcut("e");
+            return TRUE;
+        default:
+            break;
+        }
+    }
+
+    return FALSE;
+}
+
 void activate(GtkApplication* app, gpointer) {
     const auto& metrics = calculator::ui::kDesktopMetrics;
 
@@ -1120,6 +1223,14 @@ void activate(GtkApplication* app, gpointer) {
         GTK_SCROLLED_WINDOW(history_dock), history_text);
 
     render_state();
+
+    GtkEventController* key_controller = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(
+        key_controller, GTK_PHASE_CAPTURE);
+    g_signal_connect(
+        key_controller, "key-pressed",
+        G_CALLBACK(on_window_key_pressed), nullptr);
+    gtk_widget_add_controller(window, key_controller);
 
     GtkSettings* settings = gtk_settings_get_default();
     if (settings) {

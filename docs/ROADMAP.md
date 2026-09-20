@@ -27,6 +27,8 @@ Calculator 0.2.0 completes the previously listed feature families:
 - complex-number arithmetic
 - mature desktop-calculator financial functions and number utilities
 - GNOME/Mint-class expression conveniences and a substantially expanded unit catalogue
+- Mint-compatible Linux keyboard accelerators for clear, scientific entry, Programmer bases and history navigation
+- unbounded default calculation history, while retaining an optional bounded session contract for embedded/test use
 
 These are implemented in the shared C++ core, exercised by deterministic tests and exposed through native Tools workbenches on all three release platforms. Graph rendering is platform-native while graph sampling remains shared.
 

@@ -34,6 +34,11 @@ int main(){
     if(reserved.evaluate("sin=1").ok) fail("built-in function assignment should be rejected");
     if(reserved.evaluate("sqrt=1").ok) fail("root function assignment should be rejected");
 
+    calculator::Session unlimited;
+    for(int i=0;i<150;++i) unlimited.evaluate("1+1");
+    if(unlimited.history_count()!=150U)
+        fail("default history should be unbounded");
+
     calculator::Session session(3);
     expect_value(session.evaluate("x=10"),10.0,"assignment");
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");

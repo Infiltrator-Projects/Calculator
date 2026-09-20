@@ -41,9 +41,7 @@ std::optional<std::string> assignment_name(const std::string& input, std::string
 
 } // namespace
 
-Session::Session(std::size_t history_limit) : history_limit_(history_limit) {
-    if (history_limit_ == 0) history_limit_ = 1;
-}
+Session::Session(std::size_t history_limit) : history_limit_(history_limit) {}
 
 Result Session::evaluate(const std::string& input) {
     std::string expression;
@@ -80,7 +78,9 @@ void Session::record_history_text(std::string input, std::string output,
                                   HistoryContext context) {
     history_.push_back(
         {kind, context, std::move(input), std::move(output), ok});
-    while (history_.size() > history_limit_) history_.pop_front();
+    if (history_limit_ != 0U) {
+        while (history_.size() > history_limit_) history_.pop_front();
+    }
 }
 
 void Session::memory_clear() {

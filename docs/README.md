@@ -25,6 +25,7 @@ Code and tests remain authoritative for executable behaviour. Immutable tags/rel
 - [Numerical semantics](NUMERICS.md) — evidence hierarchy, numeric representations, expression/immediate/Programmer semantics, display precision and numerical failure contracts.
 - [Portability](PORTABILITY.md) — language, platform, representation, locale, bridge, ABI and compatibility boundaries.
 - [UI parity](UI_PARITY.md) — shared controller ownership, desktop-layout responsibilities and native-shell parity boundaries.
+- [Linux Mint / GNOME Calculator parity](MINT_PARITY.md) — exact Mint 22.x replacement baseline, adopted behaviours and remaining architectural differences.
 
 ## Maintenance rule
 
