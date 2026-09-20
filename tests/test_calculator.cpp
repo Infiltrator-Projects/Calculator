@@ -169,6 +169,17 @@ int main() {
         std::string::npos) {
         fail("scientific formatter wrong output");
     }
+    if (calculator::format_engineering_value(12345.0) !=
+        "12.345e+03") {
+        fail("engineering formatter positive exponent wrong output");
+    }
+    if (calculator::format_engineering_value(0.00123) !=
+        "1.23e-03") {
+        fail("engineering formatter negative exponent wrong output");
+    }
+    if (calculator::format_engineering_value(0.0) != "0e+00") {
+        fail("engineering formatter zero wrong output");
+    }
 
     if (failures != 0) {
         std::cerr << failures << " calculator test(s) failed\n";

@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace calculator::ui {
 
@@ -25,6 +26,11 @@ struct ViewState {
     ProgrammerBase programmer_base = ProgrammerBase::Decimal;
     IntegerWidth programmer_width = IntegerWidth::Bits64;
     bool programmer_signed = false;
+};
+
+struct AdditionalResult {
+    std::string label;
+    std::string value;
 };
 
 struct DispatchResult {
@@ -53,6 +59,8 @@ public:
         std::size_t index_from_newest) const;
     bool recall_history(std::size_t index_from_newest);
     void clear_history() noexcept;
+    std::vector<AdditionalResult> additional_results() const;
+    std::string additional_results_text() const;
     std::string programmer_representations_text() const;
 
     std::string button_label(

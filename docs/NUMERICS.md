@@ -30,7 +30,7 @@ The primary representation authority is IEEE 754 / ISO/IEC 60559. The project cu
 
 ## Decimal token conversion
 
-Calculator owns expression grammar and decides when a numeric operand is expected. Common 1.19.8 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
+Calculator owns expression grammar and decides when a numeric operand is expected. Common 1.19.10 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
 
 Calculator therefore no longer carries a private decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned.
 
@@ -131,3 +131,12 @@ If those cannot be stated precisely, the capability is not ready to be advertise
 ## Programmer multi-radix representation
 
 A Programmer result is one fixed-width masked bit pattern. The representation view does not re-evaluate the expression four times: it renders that one value as binary, octal, decimal and hexadecimal. Binary, octal and hexadecimal remain unsigned bit-pattern views. The decimal row follows the current signed/unsigned presentation toggle. This keeps representation switching observational rather than computational.
+
+
+## Engineering notation
+
+Engineering notation is a presentation of the existing finite binary64 result, not a separate numerical domain. The exponent is an integer multiple of three and the mantissa is scaled accordingly. Formatting is locale-independent and deterministic across supported platforms.
+
+For example, `12345` is presented as `12.345e+03` and `0.00123` as `1.23e-03`. The canonical decimal and scientific representations remain available alongside it in Additional Results.
+
+Additional Results never implies additional precision. Until an exact or arbitrary-precision domain is explicitly introduced, all Standard/Scientific rows describe the same binary64 value.

@@ -50,6 +50,7 @@ final class CalculatorModel: ObservableObject {
     @Published var programmerWidth = 64
     @Published var programmerSigned = false
     @Published var showingHistory = false
+    @Published var showingResults = false
     @Published var showingBases = false
 
     private let bridge = CalculatorBridge()
@@ -122,6 +123,10 @@ final class CalculatorModel: ObservableObject {
     func clear() {
         bridge.pressKey(mode == .programmer ? "AC" : "C")
         sync()
+    }
+
+    func additionalResultsText() -> String {
+        bridge.additionalResultsText()
     }
 
     func programmerRepresentationsText() -> String {

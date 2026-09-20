@@ -270,11 +270,12 @@ jobs:
             $standard = Get-ButtonByText 'Standard'
             $scientific = Get-ButtonByText 'Scientific'
             $programmer = Get-ButtonByText 'Programmer'
+            $results = Get-ButtonByText 'Results'
             $bases = Get-ButtonByText 'Bases'
             if ($theme -eq [IntPtr]::Zero -or $standard -eq [IntPtr]::Zero -or
                 $scientific -eq [IntPtr]::Zero -or $programmer -eq [IntPtr]::Zero -or
-                $bases -eq [IntPtr]::Zero) {
-              throw 'Windows theme/mode/Bases buttons were not found'
+                $results -eq [IntPtr]::Zero -or $bases -eq [IntPtr]::Zero) {
+              throw 'Windows theme/mode/Results/Bases buttons were not found'
             }
 
             [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -295,33 +296,37 @@ jobs:
             Start-Sleep -Milliseconds 80
 
             $initialVisible = Get-VisibleButtonCount
-            if ([CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Bases button must be hidden outside Programmer mode'
+            if (-not [CalcSmoke]::IsWindowVisible($results) -or
+                [CalcSmoke]::IsWindowVisible($bases)) {
+              throw 'Windows Standard mode must show Results and hide Bases'
             }
 
             [void][CalcSmoke]::SendMessage($scientific, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 100
             $scientificVisible = Get-VisibleButtonCount
-            if ([CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Bases button must remain hidden in Scientific mode'
+            if (-not [CalcSmoke]::IsWindowVisible($results) -or
+                [CalcSmoke]::IsWindowVisible($bases)) {
+              throw 'Windows Scientific mode must show Results and hide Bases'
             }
 
             [void][CalcSmoke]::SendMessage($programmer, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 100
             $programmerVisible = Get-VisibleButtonCount
-            if (-not [CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Bases button was not shown in Programmer mode'
+            if ([CalcSmoke]::IsWindowVisible($results) -or
+                -not [CalcSmoke]::IsWindowVisible($bases)) {
+              throw 'Windows Programmer mode must hide Results and show Bases'
             }
 
             [void][CalcSmoke]::SendMessage($standard, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 100
             $standardVisible = Get-VisibleButtonCount
-            if ([CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Bases button was not hidden after returning to Standard mode'
+            if (-not [CalcSmoke]::IsWindowVisible($results) -or
+                [CalcSmoke]::IsWindowVisible($bases)) {
+              throw 'Windows Standard mode did not restore Results/Bases visibility'
             }
 
-            if ($initialVisible -ne 34 -or $scientificVisible -ne 45 -or
-                $programmerVisible -ne 50 -or $standardVisible -ne 34) {
+            if ($initialVisible -ne 35 -or $scientificVisible -ne 46 -or
+                $programmerVisible -ne 50 -or $standardVisible -ne 35) {
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 

@@ -187,6 +187,9 @@ struct ContentView: View {
         .sheet(isPresented: $model.showingHistory) {
             HistoryView(model: model)
         }
+        .sheet(isPresented: $model.showingResults) {
+            AdditionalResultsView(model: model)
+        }
         .sheet(isPresented: $model.showingBases) {
             ProgrammerRepresentationsView(model: model)
         }
@@ -234,6 +237,16 @@ struct ContentView: View {
                 }
                 .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
                 .accessibilityLabel("Programmer base representations")
+            } else {
+                Button {
+                    model.showingResults = true
+                } label: {
+                    Image(systemName: "list.bullet.rectangle")
+                        .imageScale(.medium)
+                        .frame(width: 42, height: 38)
+                }
+                .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
+                .accessibilityLabel("Additional result representations")
             }
 
             Button {
@@ -480,6 +493,49 @@ private struct CalculatorToolbarButtonStyle: ButtonStyle {
                             )
                     )
             )
+    }
+}
+
+private struct AdditionalResultsView: View {
+    @ObservedObject var model: CalculatorModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var systemColorScheme
+    @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
+
+    private var themePreference: ThemePreference {
+        ThemePreference(rawValue: themePreferenceRaw) ?? .system
+    }
+
+    private var palette: CalculatorPalette {
+        switch themePreference {
+        case .day: return CalculatorPalette(dark: false)
+        case .night: return CalculatorPalette(dark: true)
+        case .system: return CalculatorPalette(dark: systemColorScheme == .dark)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                palette.background.ignoresSafeArea()
+                ScrollView(.horizontal, showsIndicators: true) {
+                    Text(model.additionalResultsText())
+                        .font(CalculatorTypography.regular(15, relativeTo: .body))
+                        .foregroundStyle(palette.summary)
+                        .textSelection(.enabled)
+                        .padding(sharedDesign.sectionSpacing)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(palette.panel)
+            }
+            .navigationTitle("Additional Results")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .preferredColorScheme(themePreference.preferredScheme)
     }
 }
 

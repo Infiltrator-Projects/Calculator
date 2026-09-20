@@ -4,13 +4,13 @@ This is a direction document, not a dated promise. The released source and tests
 
 ## Current foundation
 
-- maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture, including stateful Scientific 2nd/HYP/angle/notation controls and fixed-width Programmer rotate/NAND/NOR operations
+- maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture, including stateful Scientific 2nd/HYP/angle/notation controls, fixed-width Programmer rotate/NAND/NOR operations and shared Additional Results representations
 - preserve native GTK4, Win32 and SwiftUI interfaces without duplicating calculation semantics
 - keep numerical edge behaviour, cross-platform parity and exact Common integration protected by regression tests
 
 ## Near-term priorities
 
-- strengthen numerical reference evidence and cross-platform boundary testing as mathematical features evolve
+- strengthen numerical reference evidence and cross-platform boundary testing as mathematical features evolve, including extending the MPFR oracle and Additional Results invariants
 - improve accessibility and native interaction quality without weakening shared calculator semantics
 - continue consolidating genuinely generic mechanisms into Common only when its contract remains at least as strong as Calculator's local implementation
 

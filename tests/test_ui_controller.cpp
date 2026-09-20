@@ -169,6 +169,25 @@ int main() {
           calculator::HistoryKind::Standard);
     CHECK(controller.history_entry(0)->output == "12");
 
+    controller.set_mode(Mode::Standard);
+    controller.set_expression("12345");
+    const auto standard_details = controller.additional_results();
+    CHECK(standard_details.size() == 3);
+    CHECK(standard_details[0].label == "Decimal");
+    CHECK(standard_details[0].value == "12345");
+    CHECK(standard_details[1].label == "Scientific");
+    CHECK(standard_details[1].value.find("e+04") != std::string::npos);
+    CHECK(standard_details[2].label == "Engineering");
+    CHECK(standard_details[2].value == "12.345e+03");
+
+    controller.set_mode(Mode::Scientific);
+    controller.set_expression("sqrt(81)");
+    const std::string scientific_details =
+        controller.additional_results_text();
+    CHECK(scientific_details.find("Decimal  9") != std::string::npos);
+    CHECK(scientific_details.find("Engineering  9e+00") !=
+          std::string::npos);
+
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseHex);
     controller.dispatch(Command::Width8);
@@ -203,6 +222,8 @@ int main() {
     controller.set_expression("FF");
     const std::string representations =
         controller.programmer_representations_text();
+    CHECK(controller.additional_results().size() == 4);
+    CHECK(representations == controller.additional_results_text());
     CHECK(representations.find("HEX  FF") != std::string::npos);
     CHECK(representations.find("OCT  377") != std::string::npos);
     CHECK(representations.find("BIN  1111 1111") != std::string::npos);

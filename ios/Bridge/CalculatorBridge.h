@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)selectMode:(NSInteger)mode;
 - (void)pressKey:(NSString *)key;
 - (BOOL)isKeyEnabled:(NSString *)key;
+- (NSString *)additionalResultsText;
 - (NSString *)programmerRepresentationsText;
 
 - (NSString *)historyText;

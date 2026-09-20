@@ -36,7 +36,7 @@ External or cross-language boundaries should use explicit-width types where bit 
 
 ## Locale and text boundaries
 
-Numeric expression syntax is locale-independent. Common 1.19.8's cursor-based decimal-token parser owns token conversion directly, so Calculator does not carry a second numeric scanner or depend on the host process locale.
+Numeric expression syntax is locale-independent. Common 1.19.10's cursor-based decimal-token parser owns token conversion directly, so Calculator does not carry a second numeric scanner or depend on the host process locale.
 
 User-interface text and platform font rendering may vary by locale/platform, but locale must not silently change the meaning of Calculator's decimal grammar, operators or Programmer radices.
 
@@ -87,3 +87,8 @@ A portable change should preserve these properties:
 - native DPI/theme/font behaviour stays a presentation concern, with Windows using per-monitor DPI awareness;
 - compatibility identifiers change only through a deliberate migration; and
 - another native frontend could consume the domain contracts without copying an existing platform shell.
+
+
+## Additional Results portability
+
+Additional-result labels and strings are produced by the shared C++ controller. GTK, Win32 and SwiftUI only present those strings through native controls. Engineering/scientific formatting therefore does not depend on host locale, platform printf behaviour or toolkit formatting defaults.

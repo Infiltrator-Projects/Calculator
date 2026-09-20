@@ -364,6 +364,13 @@ assert "session().history()" not in linux
 assert "session().history()" not in windows
 
 for needle in (
+    'results_button = toolbar_button("Results")',
+    "show_additional_results",
+    "additional_results_text()",
+):
+    assert needle in linux, f"Linux Additional Results surface missing: {needle}"
+
+for needle in (
     'bases_button = toolbar_button("Bases")',
     "show_programmer_bases",
     "programmer_representations_text()",
@@ -372,12 +379,33 @@ for needle in (
     assert needle in linux, f"Linux Programmer/copy completeness missing: {needle}"
 
 for needle in (
+    "kIdResults",
+    'L"Results"',
+    "additional_results_text()",
+    'L"Additional Results"',
+):
+    assert needle in windows, f"Windows Additional Results surface missing: {needle}"
+
+for needle in (
     "kIdBases",
     'L"Bases"',
     "programmer_representations_text()",
     'L"Programmer Representations"',
 ):
     assert needle in windows, f"Windows Programmer representations missing: {needle}"
+
+for needle in (
+    "additionalResultsText",
+    "additional_results_text()",
+):
+    assert needle in ios_bridge, f"iPhone Additional Results bridge missing: {needle}"
+
+for needle in (
+    "AdditionalResultsView",
+    "model.showingResults",
+    "model.additionalResultsText()",
+):
+    assert needle in ios, f"iPhone Additional Results surface missing: {needle}"
 
 for needle in (
     "programmerRepresentationsText",

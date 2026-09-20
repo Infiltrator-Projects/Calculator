@@ -39,7 +39,7 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 `src/core/calculator.*` owns the binary64 expression domain used by Scientific calculations and reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation.
 
-Calculator decides where the expression grammar expects a number, then Common 1.19.8's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
+Calculator decides where the expression grammar expects a number, then Common 1.19.10's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
 
 Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
@@ -91,9 +91,9 @@ SwiftUI owns touch-native composition, platform appearance observation and prese
 
 ## Common boundary
 
-Common is an exact git submodule dependency. Common 1.19.8 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette, structural rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts while deliberately retaining its stricter no-fallback font policy.
+Common is an exact git submodule dependency. Common 1.19.10 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette and structural roles, rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts while deliberately retaining its stricter no-fallback font policy.
 
-Common 1.19.8 does not add a new Calculator-facing API; its value here is that the same pinned public contracts now sit on a less duplicated Common implementation. Calculator must not include Common private headers such as its internal ASCII/read helpers, because doing so would reverse the intended ownership boundary.
+Calculator must consume Common through its published public surface. It must not include Common private headers such as internal ASCII/read helpers, because doing so would reverse the intended ownership boundary. Common's expanded semantic appearance roles are consumed where their meanings fit Calculator; connection-specific roles remain unused because Calculator has no connection concept.
 
 Calculator owns expression grammar, immediate-calculator behaviour, Programmer-mode width semantics, calculator state, command semantics and calculator-specific layout. Code is moved into Common only when it has a stable product-neutral contract and a demonstrated shared consumer.
 
@@ -158,3 +158,12 @@ The shared Controller exposes newest-first history access and recall. Platform s
 Calculator treats Common's semantic design palette as data, not as a product-specific widget implementation. Native shells resolve the same Common Day/Night structure and map only semantically relevant roles: headings/results, summaries/input text, kicker/detail/note text, status borders, selected summaries, warning states and focus/hover accents. Connection-specific roles remain unused because Calculator has no connection concept; consuming every field mechanically would weaken rather than strengthen the ownership model.
 
 Windows additionally consumes Common's titlebar and status-border roles for DWM non-client rendering. GTK and Win32 expose keyboard-visible focus using the shared accent-hover role, while SwiftUI keeps native focus/accessibility behaviour and receives explicit key labels/selection state.
+
+
+## Additional Results boundary
+
+Additional Results is a Calculator-owned representation model, not another calculation engine. The shared Controller evaluates the active domain once and emits labelled representations for native shells to display.
+
+Standard and Scientific expose decimal, scientific and engineering forms of the same finite binary64 value. Programmer exposes hexadecimal, signed-or-unsigned decimal, octal and grouped binary forms of the same masked fixed-width bit pattern. Platform shells do not re-evaluate expressions or reinterpret signedness to build these rows.
+
+This deliberately creates an extensible result surface before future exact, unit, complex or symbolic domains are introduced. New result families can extend the shared model without increasing keypad density or creating platform-specific mathematics.

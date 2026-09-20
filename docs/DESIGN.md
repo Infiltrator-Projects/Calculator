@@ -29,7 +29,7 @@ A new numeric representation should be introduced when a feature has a correctne
 
 ## Shared foundation boundary
 
-Common is used for stable, product-neutral facilities. Calculator currently relies on Common 1.19.8 for exact decimal-token conversion, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
+Common is used for stable, product-neutral facilities. Calculator currently relies on Common 1.19.10 for exact decimal-token conversion, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
 
 Calculator-specific semantics stay local even when they could technically be generalized. Real unary/scientific transforms are shared inside Calculator because they are calculator-domain semantics; the controller and expression parser consume one core implementation rather than moving those rules into Common. Shared code is valuable only when the abstraction is clearer than the duplication it replaces.
 
@@ -50,3 +50,10 @@ Calculator-owned text uses exactly three canonical MB Corpo faces: S Regular, S 
 A design change should have an identifiable improvement in at least one of correctness, numerical behaviour, usability, accessibility, performance, resilience or maintainability. Changes that merely relocate complexity or increase abstraction without improving one of those properties are not architectural improvements.
 
 Where behaviour is important enough to document as a contract, it should also be represented by automated tests where practical.
+
+
+## Additional Results
+
+Primary calculation stays visually dominant. Secondary representations belong in an on-demand Additional Results surface rather than being permanently inserted into the keypad or display card. This follows the project's compact-window rule and gives future exact/unit/symbolic representations a stable home.
+
+The platform shell may choose native presentation mechanics, but labels and values come from the shared Controller. Programmer's existing Bases surface is the domain-specific form of the same representation model.

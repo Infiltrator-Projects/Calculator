@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.1.42" date="2026-09-20">
+      <description>
+        <p>Add shared Additional Results with decimal, scientific and engineering representations across Linux, Windows and iPhone.</p>
+      </description>
+    </release>
     <release version="0.1.41" date="2026-09-20">
       <description>
         <p>Complete the Common 1.19.10 semantic appearance integration, add direct Windows result copying, stronger focus/accessibility treatment, and high-precision MPFR numerical validation.</p>

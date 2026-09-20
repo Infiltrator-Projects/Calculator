@@ -53,6 +53,7 @@ enum class RealFunction {
 // same binary64 result.
 std::string format_value(double value);
 std::string format_scientific_value(double value);
+std::string format_engineering_value(double value);
 
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);

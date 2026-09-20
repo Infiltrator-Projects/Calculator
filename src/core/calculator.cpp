@@ -477,6 +477,47 @@ std::string format_scientific_value(double value) {
     return std::string(buffer, converted.ptr);
 }
 
+std::string format_engineering_value(double value) {
+    if (!std::isfinite(value)) return "0";
+    if (value == 0.0) return "0e+00";
+
+    const int exponent = static_cast<int>(
+        std::floor(std::log10(std::fabs(value))));
+    const int engineering_exponent =
+        exponent >= 0
+            ? (exponent / 3) * 3
+            : -(((-exponent + 2) / 3) * 3);
+
+    const double scale = std::pow(10.0, engineering_exponent);
+    const double mantissa = value / scale;
+
+    char mantissa_buffer[64] = {};
+    const auto mantissa_converted = std::to_chars(
+        mantissa_buffer, mantissa_buffer + sizeof(mantissa_buffer),
+        mantissa, std::chars_format::general, 12);
+    if (mantissa_converted.ec != std::errc{}) return "0";
+
+    std::string formatted(
+        mantissa_buffer, mantissa_converted.ptr);
+    formatted += 'e';
+    formatted += engineering_exponent < 0 ? '-' : '+';
+
+    const unsigned absolute_exponent = static_cast<unsigned>(
+        engineering_exponent < 0
+            ? -engineering_exponent
+            : engineering_exponent);
+    if (absolute_exponent < 10U) formatted += '0';
+
+    char exponent_buffer[16] = {};
+    const auto exponent_converted = std::to_chars(
+        exponent_buffer, exponent_buffer + sizeof(exponent_buffer),
+        absolute_exponent);
+    if (exponent_converted.ec != std::errc{}) return "0";
+    formatted.append(
+        exponent_buffer, exponent_converted.ptr);
+    return formatted;
+}
+
 Result evaluate(const std::string& expression) {
     static const Variables empty_variables;
     return Parser(expression, empty_variables).run();

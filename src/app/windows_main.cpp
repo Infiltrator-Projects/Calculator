@@ -28,6 +28,7 @@ constexpr wchar_t kHistoryClass[] = L"CalculatorHistoryWindow";
 constexpr int kIdHistory = 1001;
 constexpr int kIdTheme = 1002;
 constexpr int kIdBases = 1003;
+constexpr int kIdResults = 1004;
 constexpr int kIdModeStandard = 1010;
 constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
@@ -96,6 +97,7 @@ HWND g_main = nullptr;
 HWND g_title = nullptr;
 HWND g_subtitle = nullptr;
 HWND g_history_button = nullptr;
+HWND g_results_button = nullptr;
 HWND g_bases_button = nullptr;
 HWND g_theme_button = nullptr;
 HWND g_expression = nullptr;
@@ -454,6 +456,11 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     show_grid(g_standard_buttons, state.mode == Mode::Standard);
     show_grid(g_scientific_buttons, state.mode == Mode::Scientific);
     show_grid(g_programmer_buttons, state.mode == Mode::Programmer);
+    if (g_results_button != nullptr) {
+        ShowWindow(
+            g_results_button,
+            state.mode == Mode::Programmer ? SW_HIDE : SW_SHOW);
+    }
     if (g_bases_button != nullptr) {
         ShowWindow(
             g_bases_button,
@@ -552,7 +559,8 @@ void show_history() {
 }
 
 ButtonKind button_kind(int id, const ButtonSpec* spec) {
-    if (id == kIdHistory || id == kIdTheme || id == kIdBases)
+    if (id == kIdHistory || id == kIdTheme ||
+        id == kIdBases || id == kIdResults)
         return ButtonKind::Toolbar;
     if (id == kIdModeStandard || id == kIdModeScientific ||
         id == kIdModeProgrammer) return ButtonKind::Mode;
@@ -964,7 +972,7 @@ void layout_main(HWND window) {
     const bool show_bases =
         g_controller.state().mode == Mode::Programmer;
     const int toolbar_count =
-        (responsive.dock_history ? 1 : 2) + (show_bases ? 1 : 0);
+        (responsive.dock_history ? 1 : 2) + 1;
     const int title_right =
         calc_right - toolbar_count * toolbar_width -
         (toolbar_count > 0 ? toolbar_count * gap : 0);
@@ -982,14 +990,14 @@ void layout_main(HWND window) {
             toolbar_width, toolbar_height, TRUE);
         ++toolbar_slot;
     }
-    if (show_bases) {
-        MoveWindow(
-            g_bases_button,
-            calc_right - (toolbar_slot + 1) * toolbar_width -
-                toolbar_slot * gap,
-            y, toolbar_width, toolbar_height, TRUE);
-        ++toolbar_slot;
-    }
+    HWND extra_button =
+        show_bases ? g_bases_button : g_results_button;
+    MoveWindow(
+        extra_button,
+        calc_right - (toolbar_slot + 1) * toolbar_width -
+            toolbar_slot * gap,
+        y, toolbar_width, toolbar_height, TRUE);
+    ++toolbar_slot;
     MoveWindow(
         g_theme_button,
         calc_right - (toolbar_slot + 1) * toolbar_width -
@@ -1142,6 +1150,7 @@ void create_controls(HWND window) {
                                  WS_CHILD | SS_LEFT,
                                  0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_theme_button = create_button(window, kIdTheme, L"System", g_ui_bold_font);
+    g_results_button = create_button(window, kIdResults, L"Results", g_ui_bold_font);
     g_bases_button = create_button(window, kIdBases, L"Bases", g_ui_bold_font);
     g_history_button = create_button(window, kIdHistory, L"History", g_ui_bold_font);
 
@@ -1242,6 +1251,7 @@ void apply_fonts_to_controls() {
     apply_font(g_title, g_title_font);
     apply_font(g_subtitle, g_small_font);
     apply_font(g_theme_button, g_ui_bold_font);
+    apply_font(g_results_button, g_ui_bold_font);
     apply_font(g_bases_button, g_ui_bold_font);
     apply_font(g_history_button, g_ui_bold_font);
     apply_font(g_expression, g_ui_font);
@@ -1427,6 +1437,15 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             g_theme_mode =
                 calculator::ui::next_theme_mode(g_theme_mode);
             apply_theme(true);
+            return 0;
+        }
+        if (id == kIdResults) {
+            const std::wstring text = utf8_to_wide(
+                g_controller.additional_results_text());
+            MessageBoxW(
+                window, text.c_str(),
+                L"Additional Results",
+                MB_OK | MB_ICONINFORMATION);
             return 0;
         }
         if (id == kIdBases) {

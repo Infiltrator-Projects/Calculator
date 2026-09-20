@@ -6,6 +6,16 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.42 — 2026-09-20
+
+- Add a shared Additional Results model above the calculation engines so platform shells render representations instead of deriving their own mathematics.
+- Add deterministic engineering notation alongside canonical decimal and scientific notation for Standard and Scientific results.
+- Reuse the same Additional Results model for Programmer HEX/DEC/OCT/BIN representations rather than maintaining a separate representation path.
+- Add native Additional Results surfaces on GTK, Win32 and iPhone while preserving the compact Standard window and the existing Programmer Bases interaction.
+- Keep iPhone and GTK Additional Results selectable for copy workflows and preserve the Windows click-to-copy primary result behaviour.
+- Update active architecture/numerics/design documentation to the actual Common 1.19.10 baseline while retaining historical Common 1.19.8 decisions as history.
+- Extend core, controller, cross-platform and native Windows smoke regressions for the new representations and mode-specific Results/Bases visibility contract.
+
 ## 0.1.41 — 2026-09-20
 
 - Release the exact Common 1.19.10 dependency already reviewed on main and consume its expanded semantic appearance roles rather than flattening them back to older generic colours.

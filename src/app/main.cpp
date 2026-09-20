@@ -38,6 +38,7 @@ GtkWidget* second_button = nullptr;
 GtkWidget* hyperbolic_button = nullptr;
 GtkWidget* notation_button = nullptr;
 GtkWidget* history_button = nullptr;
+GtkWidget* results_button = nullptr;
 GtkWidget* bases_button = nullptr;
 GtkWidget* theme_button = nullptr;
 GtkWidget* main_window = nullptr;
@@ -197,6 +198,10 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     gtk_widget_set_visible(standard_panel, state.mode == Mode::Standard);
     gtk_widget_set_visible(scientific_grid, state.mode == Mode::Scientific);
     gtk_widget_set_visible(programmer_grid, state.mode == Mode::Programmer);
+    if (results_button) {
+        gtk_widget_set_visible(
+            results_button, state.mode != Mode::Programmer);
+    }
     if (bases_button) {
         gtk_widget_set_visible(
             bases_button, state.mode == Mode::Programmer);
@@ -336,6 +341,36 @@ void show_history(GtkWidget*, gpointer) {
         }),
         window);
     gtk_box_append(GTK_BOX(root), clear);
+
+    gtk_window_present(GTK_WINDOW(window));
+}
+
+void show_additional_results(GtkWidget*, gpointer) {
+    GtkWidget* window = gtk_window_new();
+    gtk_window_set_title(GTK_WINDOW(window), "Additional Results");
+    gtk_window_set_default_size(GTK_WINDOW(window), 560, 280);
+
+    GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(root, "shell");
+    gtk_window_set_child(GTK_WINDOW(window), root);
+
+    GtkWidget* title = gtk_label_new("Additional Results");
+    gtk_widget_add_css_class(title, "brand-title");
+    gtk_widget_set_halign(title, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(root), title);
+
+    const std::string text = controller.additional_results_text();
+    GtkWidget* value = gtk_label_new(text.c_str());
+    gtk_widget_add_css_class(value, "history-row");
+    gtk_label_set_selectable(GTK_LABEL(value), TRUE);
+    gtk_label_set_wrap(GTK_LABEL(value), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(value), 0.0F);
+    gtk_widget_set_halign(value, GTK_ALIGN_FILL);
+    gtk_widget_set_hexpand(value, TRUE);
+    gtk_widget_set_vexpand(value, TRUE);
+    gtk_widget_set_tooltip_text(
+        value, "Select any representation to copy it");
+    gtk_box_append(GTK_BOX(root), value);
 
     gtk_window_present(GTK_WINDOW(window));
 }
@@ -735,6 +770,14 @@ void activate(GtkApplication* app, gpointer) {
     g_signal_connect(
         theme_button, "clicked", G_CALLBACK(on_theme_clicked), nullptr);
     gtk_box_append(GTK_BOX(header), theme_button);
+
+    results_button = toolbar_button("Results");
+    gtk_widget_set_tooltip_text(
+        results_button, "Show decimal, scientific and engineering representations");
+    g_signal_connect(
+        results_button, "clicked",
+        G_CALLBACK(show_additional_results), nullptr);
+    gtk_box_append(GTK_BOX(header), results_button);
 
     bases_button = toolbar_button("Bases");
     gtk_widget_set_tooltip_text(

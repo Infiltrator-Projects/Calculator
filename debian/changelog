@@ -1,3 +1,14 @@
+infiltrator-calculator (0.1.42) unstable; urgency=medium
+
+  * Add shared Additional Results for Standard and Scientific modes.
+  * Add deterministic engineering notation alongside decimal and scientific forms.
+  * Reuse the same result model for Programmer multi-radix representations.
+  * Add GTK, Win32 and iPhone Additional Results surfaces.
+  * Refresh active documentation to the Common 1.19.10 baseline.
+  * Add representation and native visibility regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 16:42:00 +1000
+
 infiltrator-calculator (0.1.41) unstable; urgency=medium
 
   * Release Calculator against immutable Infiltratr Common 1.19.10.

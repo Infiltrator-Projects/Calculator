@@ -83,34 +83,74 @@ void Controller::clear_history() noexcept {
     session_.clear_history();
 }
 
-std::string Controller::programmer_representations_text() const {
-    if (state_.mode != Mode::Programmer || state_.expression.empty()) {
-        return "Enter a Programmer value.";
+std::vector<AdditionalResult> Controller::additional_results() const {
+    if (state_.expression.empty()) return {};
+
+    if (state_.mode == Mode::Programmer) {
+        const ProgrammerResult result = evaluate_programmer(
+            state_.expression, state_.programmer_base,
+            state_.programmer_width);
+        if (!result.ok) {
+            return {{"Error", result.error}};
+        }
+
+        const auto representations = programmer_representations(
+            result.value, state_.programmer_width,
+            state_.programmer_signed);
+
+        auto grouped_binary = [](const std::string& binary) {
+            std::string grouped;
+            grouped.reserve(binary.size() + binary.size() / 4U);
+            for (std::size_t i = 0; i < binary.size(); ++i) {
+                if (i != 0 && (binary.size() - i) % 4U == 0U) {
+                    grouped.push_back(' ');
+                }
+                grouped.push_back(binary[i]);
+            }
+            return grouped;
+        };
+
+        return {
+            {"HEX", representations.hexadecimal},
+            {"DEC", representations.decimal},
+            {"OCT", representations.octal},
+            {"BIN", grouped_binary(representations.binary)}
+        };
     }
 
-    const ProgrammerResult result = evaluate_programmer(
-        state_.expression, state_.programmer_base, state_.programmer_width);
-    if (!result.ok) return "Error: " + result.error;
+    const Result result =
+        state_.mode == Mode::Standard
+            ? evaluate_immediate(state_.expression)
+            : calculator::evaluate(
+                  state_.expression, session_.variables());
+    if (!result.ok) {
+        return {{"Error", result.error}};
+    }
 
-    const auto representations = programmer_representations(
-        result.value, state_.programmer_width, state_.programmer_signed);
-
-    auto grouped_binary = [](const std::string& binary) {
-        std::string grouped;
-        grouped.reserve(binary.size() + binary.size() / 4U);
-        for (std::size_t i = 0; i < binary.size(); ++i) {
-            if (i != 0 && (binary.size() - i) % 4U == 0U) {
-                grouped.push_back(' ');
-            }
-            grouped.push_back(binary[i]);
-        }
-        return grouped;
+    return {
+        {"Decimal", calculator::format_value(result.value)},
+        {"Scientific", calculator::format_scientific_value(result.value)},
+        {"Engineering", calculator::format_engineering_value(result.value)}
     };
+}
 
-    return "HEX  " + representations.hexadecimal +
-           "\nDEC  " + representations.decimal +
-           "\nOCT  " + representations.octal +
-           "\nBIN  " + grouped_binary(representations.binary);
+std::string Controller::additional_results_text() const {
+    const auto rows = additional_results();
+    if (rows.empty()) return "Enter a value or expression.";
+
+    std::ostringstream out;
+    for (std::size_t index = 0; index < rows.size(); ++index) {
+        if (index != 0) out << '\n';
+        out << rows[index].label << "  " << rows[index].value;
+    }
+    return out.str();
+}
+
+std::string Controller::programmer_representations_text() const {
+    if (state_.mode != Mode::Programmer) {
+        return "Programmer mode is not active.";
+    }
+    return additional_results_text();
 }
 
 std::string Controller::scientific_status_text() const {
