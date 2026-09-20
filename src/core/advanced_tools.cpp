@@ -2,6 +2,8 @@
 #include "advanced_tools.hpp"
 #include "calculator.hpp"
 
+#include <infiltratr/token.h>
+
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -111,12 +113,20 @@ std::vector<std::string> split_semicolon(std::string_view value) {
 bool parse_double(std::string_view text, double& value) {
     const std::string s = trim(text);
     if (s.empty()) return false;
-    const char* begin = s.data();
-    const char* end = begin + s.size();
-    const auto converted = std::from_chars(
-        begin, end, value, std::chars_format::general);
-    return converted.ec == std::errc{} &&
-           converted.ptr == end && std::isfinite(value);
+
+    // Use the same Common decimal-token contract as Calculator's expression
+    // parser. Floating-point std::from_chars is not available on every
+    // supported iOS deployment target, and platform-local fallbacks would
+    // create different accepted numeric syntax.
+    const char* cursor = s.data();
+    double parsed = 0.0;
+    if (!infiltratr_parse_double_token(&cursor, true, &parsed) ||
+        cursor != s.data() + s.size() ||
+        !std::isfinite(parsed)) {
+        return false;
+    }
+    value = parsed;
+    return true;
 }
 
 bool parse_u64(std::string_view text, std::uint64_t& value) {
