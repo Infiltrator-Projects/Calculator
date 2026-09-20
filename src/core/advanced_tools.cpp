@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <iomanip>
