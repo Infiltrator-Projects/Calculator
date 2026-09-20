@@ -141,9 +141,10 @@ class Parser {
 public:
     Parser(std::string_view input, const Variables& variables,
            const Functions* functions = nullptr,
-           std::size_t function_depth = 0)
+           std::size_t function_depth = 0,
+           AngleUnit angle_unit = AngleUnit::Radians)
         : input_(input), variables_(variables), functions_(functions),
-          function_depth_(function_depth) {}
+          function_depth_(function_depth), angle_unit_(angle_unit) {}
 
     Result run() {
         skip_space();
@@ -161,6 +162,7 @@ private:
     const Variables& variables_;
     const Functions* functions_ = nullptr;
     std::size_t function_depth_ = 0;
+    AngleUnit angle_unit_ = AngleUnit::Radians;
     std::size_t position_ = 0;
     std::size_t recursion_depth_ = 0;
     std::string error_;
@@ -389,7 +391,8 @@ private:
         }
 
         Parser nested(
-            definition.expression, scoped, functions_, function_depth_ + 1U);
+            definition.expression, scoped, functions_, function_depth_ + 1U,
+            angle_unit_);
         const Result result = nested.run();
         if (!result.ok) {
             error_ = result.error;
@@ -436,7 +439,7 @@ private:
         else { error_ = "unknown function"; return 0.0; }
 
         const Result result =
-            apply_real_function(function, x, AngleUnit::Radians);
+            apply_real_function(function, x, angle_unit_);
         if (!result.ok) {
             error_ = result.error;
             return 0.0;
@@ -905,9 +908,9 @@ Result evaluate(const std::string& expression, const Variables& variables) {
 }
 
 Result evaluate(const std::string& expression, const Variables& variables,
-                const Functions& functions) {
+                const Functions& functions, AngleUnit angle_unit) {
     const std::string normalized = normalize_expression_spelling(expression);
-    return Parser(normalized, variables, &functions).run();
+    return Parser(normalized, variables, &functions, 0U, angle_unit).run();
 }
 
 Result evaluate_immediate(const std::string& expression) {

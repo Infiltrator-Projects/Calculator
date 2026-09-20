@@ -132,7 +132,8 @@ std::vector<AdditionalResult> Controller::additional_results() const {
         state_.mode == Mode::Standard
             ? evaluate_immediate(state_.expression)
             : calculator::evaluate(
-                  state_.expression, session_.variables());
+                  state_.expression, session_.variables(),
+                  session_.functions(), state_.angle_unit);
     if (!result.ok) {
         return {{"Error", result.error}};
     }
@@ -216,7 +217,7 @@ void Controller::set_display_preferences(DisplayPreferences preferences) {
                 ? evaluate_immediate(state_.expression)
                 : calculator::evaluate(
                       state_.expression, session_.variables(),
-                      session_.functions()));
+                      session_.functions(), state_.angle_unit));
     if (state_.mode != Mode::Programmer && parsed.ok) {
         state_.result = format_real(parsed.value);
     }
@@ -421,7 +422,9 @@ bool Controller::current_value(double& value) {
     const Result result =
         state_.mode == Mode::Standard
             ? evaluate_immediate(state_.expression)
-            : calculator::evaluate(state_.expression, session_.variables());
+            : calculator::evaluate(
+                  state_.expression, session_.variables(),
+                  session_.functions(), state_.angle_unit);
 
     if (!result.ok) {
         state_.result = "Error: " + result.error;
@@ -524,7 +527,8 @@ void Controller::calculate() {
         return;
     }
 
-    const Result result = session_.evaluate(state_.expression);
+    const Result result =
+        session_.evaluate(state_.expression, state_.angle_unit);
     if (!result.ok) {
         state_.result = "Error: " + result.error;
         set_status("CALCULATION ERROR", true);

@@ -134,7 +134,8 @@ std::optional<ParsedFunctionDefinition> function_definition(
 
 Session::Session(std::size_t history_limit) : history_limit_(history_limit) {}
 
-Result Session::evaluate(const std::string& input) {
+Result Session::evaluate(
+    const std::string& input, AngleUnit angle_unit) {
     std::string definition_error;
     const auto definition = function_definition(input, definition_error);
     if (!definition_error.empty()) {
@@ -161,7 +162,7 @@ Result Session::evaluate(const std::string& input) {
     }
 
     Result result = calculator::evaluate(
-        assignment ? expression : input, variables_, functions_);
+        assignment ? expression : input, variables_, functions_, angle_unit);
 
     if (result.ok) {
         if (assignment) variables_[*assignment] = result.value;

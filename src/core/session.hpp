@@ -45,7 +45,9 @@ public:
     // Supports direct assignment as name=expression. The identifier must begin
     // with an alphabetic character or '_' and '=' immediately follows the name.
     // Every evaluation, including an error, is recorded in bounded history.
-    Result evaluate(const std::string& input);
+    Result evaluate(
+        const std::string& input,
+        AngleUnit angle_unit = AngleUnit::Radians);
 
     void memory_clear();
     void memory_store(double value);

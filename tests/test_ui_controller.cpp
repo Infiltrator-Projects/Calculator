@@ -120,6 +120,17 @@ int main() {
     controller.dispatch(Command::CycleAngleUnit);
     CHECK(controller.state().angle_unit == calculator::AngleUnit::Degrees);
 
+    controller.set_expression("sin(30)");
+    controller.dispatch(Command::Equals);
+    CHECK(std::fabs(std::stod(controller.state().result) - 0.5) < 1e-12);
+    controller.dispatch(Command::CycleAngleUnit);
+    controller.set_expression("sin(pi/2)");
+    controller.dispatch(Command::Equals);
+    CHECK(std::fabs(std::stod(controller.state().result) - 1.0) < 1e-12);
+    controller.dispatch(Command::CycleAngleUnit);
+    controller.dispatch(Command::CycleAngleUnit);
+    CHECK(controller.state().angle_unit == calculator::AngleUnit::Degrees);
+
     controller.dispatch(Command::ToggleScientificNotation);
     CHECK(controller.state().scientific_notation);
     controller.set_expression("1000");

@@ -81,7 +81,8 @@ std::string format_engineering_value(double value);
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);
 Result evaluate(const std::string& expression, const Variables& variables,
-                const Functions& functions);
+                const Functions& functions,
+                AngleUnit angle_unit = AngleUnit::Radians);
 
 // Standard calculator semantics: apply binary operations from left to right.
 // Contextual percentages follow conventional desktop-calculator behaviour
