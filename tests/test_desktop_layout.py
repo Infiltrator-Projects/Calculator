@@ -432,6 +432,18 @@ for needle in (
     assert needle in linux, f"Linux advanced tools surface missing: {needle}"
 
 for needle in (
+    "GtkWidget* tools_window = nullptr;",
+    "if (tools_window) {",
+    "gtk_window_present(GTK_WINDOW(tools_window));",
+    "gtk_window_get_application(GTK_WINDOW(main_window))",
+    "gtk_window_set_hide_on_close(GTK_WINDOW(window), TRUE);",
+    "gtk_window_set_destroy_with_parent(GTK_WINDOW(window), TRUE);",
+):
+    assert needle in linux, (
+        f"Linux Tools secondary-window lifecycle regression: {needle}"
+    )
+
+for needle in (
     '#include "../core/advanced_tools.hpp"',
     "kToolsClass",
     "kIdTools",
