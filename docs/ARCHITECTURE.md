@@ -49,7 +49,7 @@ Standard mode deliberately uses a separate immediate evaluator. Binary operators
 
 ### Programmer domain
 
-`src/core/programmer.*` owns fixed-width integer calculation. Values are represented as bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Arithmetic overflow wraps by masking to that width; this is intentional Programmer-mode behaviour rather than an unchecked error in the general arithmetic domain.
+`src/core/programmer.*` owns fixed-width integer calculation. Values are represented as bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Arithmetic overflow wraps by masking to that width; this is intentional Programmer-mode behaviour rather than an unchecked error in the general arithmetic domain. NAND/NOR and ROL/ROR live in the same width-aware layer, so masking and rotate-count semantics are portable and testable.
 
 Signedness affects decimal presentation of the resulting bit pattern. It does not create a separate stored numeric representation.
 
@@ -58,7 +58,7 @@ Signedness affects decimal presentation of the resulting bit pattern. It does no
 `src/core/session.*` owns process-local state that spans individual calculations:
 
 - reusable variables;
-- calculator memory, including whether memory has been explicitly populated; and
+- calculator memory, including explicit store (MS), recall, clear and arithmetic update state; and
 - bounded calculation history.
 
 The session delegates mathematical evaluation to the core. It does not implement an alternate expression grammar.
@@ -87,7 +87,7 @@ The shared desktop metrics remain logical units. GTK consumes them through its l
 
 The iPhone interface is native SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary between Swift and the shared C++ controller.
 
-SwiftUI owns touch-native composition, platform appearance observation and presentation. Expression edits, mode changes, command enablement, memory/history state and calculator operations are routed through the same C++ controller used by the desktop shells. The bridge also exposes the canonical Common Day/Night palette. Desktop geometry and cursor mechanics remain desktop concerns and are not imposed on SwiftUI.
+SwiftUI owns touch-native composition, platform appearance observation and presentation. Expression edits, mode changes, command enablement, Scientific angle/2nd/HYP/F-E state, memory/history state and calculator operations are routed through the same C++ controller used by the desktop shells. The bridge also exposes the canonical Common Day/Night palette. Desktop geometry and cursor mechanics remain desktop concerns and are not imposed on SwiftUI.
 
 ## Common boundary
 

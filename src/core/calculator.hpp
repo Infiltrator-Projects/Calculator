@@ -16,11 +16,13 @@ struct Result {
 
 enum class AngleUnit {
     Radians,
-    Degrees
+    Degrees,
+    Gradians
 };
 
 enum class RealFunction {
     Square,
+    Cube,
     SquareRoot,
     Reciprocal,
     Sin,
@@ -32,17 +34,25 @@ enum class RealFunction {
     Sinh,
     Cosh,
     Tanh,
+    Asinh,
+    Acosh,
+    Atanh,
     Cbrt,
     Ln,
     Log10,
     Exp,
-    Abs
+    TwoPower,
+    TenPower,
+    Abs,
+    Floor,
+    Ceil
 };
 
 // UI display contract for the real-number domain. Uses locale-independent
 // general notation with 15 significant digits so every platform presents the
 // same binary64 result.
 std::string format_value(double value);
+std::string format_scientific_value(double value);
 
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);

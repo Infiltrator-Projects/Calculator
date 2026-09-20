@@ -4,7 +4,7 @@ This is a direction document, not a dated promise. The released source and tests
 
 ## Current foundation
 
-- maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture
+- maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture, including stateful Scientific 2nd/HYP/angle/notation controls and fixed-width Programmer rotate/NAND/NOR operations
 - preserve native GTK4, Win32 and SwiftUI interfaces without duplicating calculation semantics
 - keep numerical edge behaviour, cross-platform parity and exact Common integration protected by regression tests
 

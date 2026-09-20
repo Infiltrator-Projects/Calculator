@@ -411,10 +411,10 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     for (HWND button : g_scientific_buttons) {
         const int id = GetDlgCtrlID(button);
         const auto it = g_key_specs.find(id);
-        if (it != g_key_specs.end() && it->second != nullptr &&
-            it->second->command == Command::ToggleDegrees) {
-            SetWindowTextW(button, state.degrees ? L"DEG" : L"RAD");
-            break;
+        if (it != g_key_specs.end() && it->second != nullptr) {
+            const std::string label = g_controller.button_label(
+                it->second->command, it->second->label);
+            SetWindowTextW(button, utf8_to_wide(label).c_str());
         }
     }
 
@@ -502,6 +502,7 @@ ButtonKind button_kind(int id, const ButtonSpec* spec) {
 bool is_memory_command(Command command) {
     return command == Command::MemoryClear ||
            command == Command::MemoryRecall ||
+           command == Command::MemoryStore ||
            command == Command::MemoryAdd ||
            command == Command::MemorySubtract;
 }
@@ -533,6 +534,12 @@ bool is_selected_button(int id, const ButtonSpec* spec) {
         return state.programmer_width == calculator::IntegerWidth::Bits64;
     case Command::ToggleSigned:
         return state.programmer_signed;
+    case Command::ToggleSecond:
+        return state.scientific_second;
+    case Command::ToggleHyperbolic:
+        return state.scientific_hyperbolic;
+    case Command::ToggleScientificNotation:
+        return state.scientific_notation;
     default:
         return false;
     }
@@ -795,21 +802,28 @@ void layout_grid(const std::vector<HWND>& buttons, int rows,
 }
 
 void layout_standard_grid(int left, int top, int width, int height) {
-    if (g_standard_buttons.size() < 28U) return;
+    constexpr std::size_t memory_count =
+        calculator::ui::kStandardMemory.size();
+    constexpr std::size_t keypad_count =
+        calculator::ui::kStandardKeypad.size();
+    if (g_standard_buttons.size() < memory_count + keypad_count) return;
 
     const int memory_height = sx(
         g_main, calculator::ui::kDesktopMetrics.memory_height);
     const int memory_gap = sx(g_main, 2);
-    const int memory_width = width / 4;
+    const int memory_width =
+        width / static_cast<int>(memory_count);
 
-    for (int i = 0; i < 4; ++i) {
-        const int x = left + i * memory_width;
-        const int w = (i == 3) ? (left + width - x) : memory_width;
-        MoveWindow(g_standard_buttons[static_cast<std::size_t>(i)],
+    for (std::size_t i = 0; i < memory_count; ++i) {
+        const int x = left + static_cast<int>(i) * memory_width;
+        const int w = (i + 1U == memory_count)
+            ? (left + width - x)
+            : memory_width;
+        MoveWindow(g_standard_buttons[i],
                    x, top, w, memory_height, TRUE);
     }
 
-    layout_grid_range(g_standard_buttons, 4, 6,
+    layout_grid_range(g_standard_buttons, memory_count, 6,
                       left, top + memory_height + memory_gap,
                       width, std::max(0, height - memory_height - memory_gap));
 }
@@ -933,12 +947,16 @@ void layout_main(HWND window) {
         layout_standard_grid(
             calc_left, y, content_width, grid_height);
     } else if (active_mode == Mode::Scientific) {
+        const int rows = static_cast<int>(
+            (calculator::ui::kScientificKeypad.size() + 3U) / 4U);
         layout_grid(
-            g_scientific_buttons, 10,
+            g_scientific_buttons, rows,
             calc_left, y, content_width, grid_height);
     } else {
+        const int rows = static_cast<int>(
+            (calculator::ui::kProgrammerKeypad.size() + 3U) / 4U);
         layout_grid(
-            g_programmer_buttons, 10,
+            g_programmer_buttons, rows,
             calc_left, y, content_width, grid_height);
     }
 

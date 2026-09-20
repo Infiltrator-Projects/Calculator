@@ -76,17 +76,18 @@ int main() {
 
     controller.set_expression("6");
     CHECK(controller.command_enabled(Command::MemoryAdd));
-    controller.dispatch(Command::MemoryAdd);
+    controller.dispatch(Command::MemoryStore);
     CHECK(controller.command_enabled(Command::MemoryRecall));
+    controller.dispatch(Command::MemoryAdd);
     CHECK(controller.command_enabled(Command::MemoryClear));
     controller.dispatch(Command::Clear);
     controller.dispatch(Command::MemoryRecall);
-    CHECK(controller.state().expression == "6");
+    CHECK(controller.state().expression == "12");
     controller.dispatch(Command::MemoryClear);
     CHECK(!controller.command_enabled(Command::MemoryRecall));
 
     controller.set_mode(Mode::Scientific);
-    CHECK(controller.state().status == "SCIENTIFIC · DEGREES");
+    CHECK(controller.state().status == "SCIENTIFIC · DEG");
     controller.set_expression("2+3*4");
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "14");
@@ -94,9 +95,35 @@ int main() {
     controller.dispatch(Command::Sin);
     CHECK(std::fabs(std::stod(controller.state().result) - 0.5) < 1e-12);
 
-    controller.dispatch(Command::ToggleDegrees);
-    CHECK(!controller.state().degrees);
-    CHECK(controller.state().status == "SCIENTIFIC · RADIANS");
+    CHECK(controller.button_label(Command::Sin, "sin") == "sin");
+    controller.dispatch(Command::ToggleSecond);
+    CHECK(controller.state().scientific_second);
+    CHECK(controller.button_label(Command::Sin, "sin") == "asin");
+    controller.set_expression("1");
+    controller.dispatch(Command::Sin);
+    CHECK(std::fabs(std::stod(controller.state().result) - 90.0) < 1e-10);
+
+    controller.dispatch(Command::ToggleHyperbolic);
+    CHECK(controller.state().scientific_hyperbolic);
+    CHECK(controller.button_label(Command::Sin, "sin") == "asinh");
+    controller.dispatch(Command::ToggleSecond);
+    CHECK(!controller.state().scientific_second);
+    CHECK(controller.button_label(Command::Sin, "sin") == "sinh");
+
+    controller.dispatch(Command::CycleAngleUnit);
+    CHECK(controller.state().angle_unit == calculator::AngleUnit::Radians);
+    CHECK(controller.button_label(Command::CycleAngleUnit, "DEG") == "RAD");
+    controller.dispatch(Command::CycleAngleUnit);
+    CHECK(controller.state().angle_unit == calculator::AngleUnit::Gradians);
+    CHECK(controller.button_label(Command::CycleAngleUnit, "DEG") == "GRAD");
+    controller.dispatch(Command::CycleAngleUnit);
+    CHECK(controller.state().angle_unit == calculator::AngleUnit::Degrees);
+
+    controller.dispatch(Command::ToggleScientificNotation);
+    CHECK(controller.state().scientific_notation);
+    controller.set_expression("1000");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result.find("e+03") != std::string::npos);
 
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseBin);
@@ -111,6 +138,13 @@ int main() {
     controller.set_expression("F+1");
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "10");
+    controller.dispatch(Command::AllClear);
+    controller.dispatch(Command::Width8);
+    controller.set_expression("59");
+    controller.dispatch(Command::RotateLeft);
+    controller.dispatch(Command::Digit3);
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "CA");
 
     controller.dispatch(Command::AllClear);
     controller.dispatch(Command::HexC);

@@ -146,13 +146,6 @@ struct ContentView: View {
         }
     }
 
-    private var columns: [GridItem] {
-        Array(
-            repeating: GridItem(.flexible(), spacing: sharedDesign.controlSpacing),
-            count: 4
-        )
-    }
-
     var body: some View {
         ZStack {
             palette.background.ignoresSafeArea()
@@ -311,16 +304,18 @@ struct ContentView: View {
 
     private var keypad: some View {
         ScrollView(showsIndicators: false) {
-            LazyVGrid(columns: columns, spacing: sharedDesign.controlSpacing) {
+            VStack(spacing: sharedDesign.controlSpacing) {
                 ForEach(Array(model.rows.enumerated()), id: \.offset) { _, row in
-                    ForEach(Array(row.enumerated()), id: \.offset) { _, key in
-                        CalculatorKey(
-                            title: model.visibleTitle(key),
-                            selected: model.keyIsSelected(key),
-                            enabled: model.keyIsEnabled(key),
-                            palette: palette
-                        ) {
-                            model.press(key)
+                    HStack(spacing: sharedDesign.controlSpacing) {
+                        ForEach(Array(row.enumerated()), id: \.offset) { _, key in
+                            CalculatorKey(
+                                title: model.visibleTitle(key),
+                                selected: model.keyIsSelected(key),
+                                enabled: model.keyIsEnabled(key),
+                                palette: palette
+                            ) {
+                                model.press(key)
+                            }
                         }
                     }
                 }
@@ -348,7 +343,8 @@ private struct CalculatorKey: View {
         if title == "=" { return .equals }
         if ["C", "AC", "⌫"].contains(title) { return .clear }
         if [
-            "MC", "MR", "M+", "M−", "DEG", "RAD",
+            "MC", "MR", "MS", "M+", "M−", "DEG", "RAD", "GRAD",
+            "2nd", "HYP", "F-E",
             "BIN", "OCT", "DEC", "HEX",
             "W8", "W16", "W32", "W64", "U/S"
         ].contains(title) { return .utility }

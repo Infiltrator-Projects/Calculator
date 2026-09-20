@@ -1,3 +1,13 @@
+infiltrator-calculator (0.1.38) unstable; urgency=medium
+
+  * Expand Scientific mode with 2nd/HYP layers, DEG/RAD/GRAD and F-E notation.
+  * Add gradian-aware inverse/hyperbolic transforms and additional unary functions.
+  * Add Programmer ROL/ROR and NAND/NOR fixed-width operators.
+  * Add explicit MS memory-store control across Linux, Windows and iPhone.
+  * Preserve compact Standard geometry and Common 1.19.8 integration.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 11:58:00 +1000
+
 infiltrator-calculator (0.1.37) unstable; urgency=medium
 
   * Advance Calculator to immutable Infiltratr Common 1.19.8.

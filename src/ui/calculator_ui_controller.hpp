@@ -17,7 +17,10 @@ struct ViewState {
     std::string result = "0";
     std::string status = "READY";
     bool fault = false;
-    bool degrees = true;
+    AngleUnit angle_unit = AngleUnit::Degrees;
+    bool scientific_second = false;
+    bool scientific_hyperbolic = false;
+    bool scientific_notation = false;
     ProgrammerBase programmer_base = ProgrammerBase::Decimal;
     IntegerWidth programmer_width = IntegerWidth::Bits64;
     bool programmer_signed = false;
@@ -46,6 +49,8 @@ public:
         std::string_view newline = "\n") const;
     void clear_history() noexcept;
 
+    std::string button_label(
+        Command command, std::string_view fallback) const;
     bool command_enabled(Command command) const;
     DispatchResult dispatch(Command command, std::size_t cursor = kEnd);
 
@@ -67,7 +72,10 @@ private:
     void programmer_mode_change(Command command);
 
     void set_status(std::string text, bool fault = false);
+    std::string scientific_status_text() const;
     std::string programmer_status_text() const;
+    std::string format_real(double value) const;
+    Command effective_scientific_command(Command command) const;
     bool current_number_has_decimal() const;
     bool has_unmatched_open_parenthesis() const;
     bool expression_has_value() const;

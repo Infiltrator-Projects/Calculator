@@ -69,6 +69,10 @@ void Session::memory_clear() {
     memory_ = 0.0;
     memory_set_ = false;
 }
+void Session::memory_store(double value) {
+    memory_ = value;
+    memory_set_ = true;
+}
 void Session::memory_add(double value) {
     memory_ += value;
     memory_set_ = true;

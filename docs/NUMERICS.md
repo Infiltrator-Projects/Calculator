@@ -54,7 +54,7 @@ Exponentiation is right-associative and binds more tightly than a leading sign: 
 
 Postfix `%` divides a value by 100 in expression mode. Factorial accepts non-negative integral real values through 170; larger factorials exceed the finite range of the current binary64 domain.
 
-The current function set delegates elementary transcendental operations to the C++ standard math library through one Calculator-owned `apply_real_function()` contract. Both the expression parser and interactive unary/scientific controls use that same implementation, including degree/radian conversion and domain validation. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
+The current function set delegates elementary transcendental operations to the C++ standard math library through one Calculator-owned `apply_real_function()` contract. Both the expression parser and interactive unary/scientific controls use that same implementation. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. The same core owns square/cube, square/cube root, reciprocal, natural/base-10 logarithms, e/2/10 exponentials, absolute value, floor and ceiling. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
 
 Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Inputs whose nested parentheses or unary operators exceed the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
 
@@ -72,13 +72,13 @@ Programmer mode operates on bit patterns constrained to the selected 8, 16, 32 o
 
 Arithmetic intentionally wraps by masking to the selected width. This is the domain semantics, not an unchecked-overflow accident. Signed display interprets the final masked pattern using two's-complement presentation; it does not change the stored bit pattern or evaluation domain.
 
-Numeric literals use the selected radix. Matching binary/octal/hex prefixes are accepted only when consistent with that radix. Shift counts are decimal control quantities and values outside the implementation's safe shift contract are rejected before executing a native shift.
+Numeric literals use the selected radix. Matching binary/octal/hex prefixes are accepted only when consistent with that radix. Shift counts are decimal control quantities and values outside the implementation's safe shift contract are rejected before executing a native shift. NAND and NOR are width-masked after each operation. Rotate-left and rotate-right are also width-aware and reduce the rotate count modulo the selected width, avoiding undefined native shift behaviour.
 
 Programmer semantics should be validated with exact integer expectations rather than floating-point tolerances.
 
 ## Constants and elementary functions
 
-`pi` and `e` are current built-in constants and are reserved identifiers: variable assignment cannot replace them. Trigonometric, inverse-trigonometric, hyperbolic, logarithmic, exponential, root and absolute-value functions use the C++ standard math implementation over the binary64 domain.
+`pi` and `e` are current built-in constants and are reserved identifiers: variable assignment cannot replace them. Trigonometric, inverse-trigonometric, hyperbolic/inverse-hyperbolic, logarithmic, exponential, root, rounding and absolute-value functions use the C++ standard math implementation over the binary64 domain.
 
 The project does not claim bit-for-bit transcendental equality across different standard libraries. Regression tests should use mathematically justified tolerances for real-valued functions while exact parser/Programmer contracts use exact comparisons where appropriate.
 
@@ -86,7 +86,7 @@ New constants or functions should document source/definition, accepted domain, r
 
 ## Display formatting
 
-Calculator uses one locale-independent real-result display formatter across GTK, Win32 and iPhone. It currently uses general notation with 15 significant digits.
+Calculator uses one locale-independent real-result display formatter across GTK, Win32 and iPhone. Normal display uses general notation with 15 significant digits; Scientific F-E mode uses a second shared formatter with explicit scientific notation so platform shells do not invent their own exponent formatting.
 
 Fifteen significant digits are a presentation choice, not a round-trip guarantee for every binary64 value. Internal evaluation continues to use the underlying binary64 value until a new numeric domain explicitly replaces it.
 

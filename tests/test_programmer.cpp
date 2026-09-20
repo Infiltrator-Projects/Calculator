@@ -30,6 +30,11 @@ int main(){
     expect_ok("1 << 4",ProgrammerBase::Binary,IntegerWidth::Bits8,16);
     expect_ok("1 << 10",ProgrammerBase::Hexadecimal,IntegerWidth::Bits16,1024);
     expect_ok("64 >> 2",ProgrammerBase::Decimal,IntegerWidth::Bits8,16);
+    expect_ok("01011001 rol 3",ProgrammerBase::Binary,IntegerWidth::Bits8,0b11001010);
+    expect_ok("01011001 ror 3",ProgrammerBase::Binary,IntegerWidth::Bits8,0b00101011);
+    expect_ok("0f nand 03",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0xfc);
+    expect_ok("0f nor f0",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0x00);
+    expect_ok("1 rol 9",ProgrammerBase::Binary,IntegerWidth::Bits8,2);
     expect_ok("~0",ProgrammerBase::Decimal,IntegerWidth::Bits8,255);
     expect_ok("0xff + 1",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0);
     expect_ok("ff & 0f",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,15);

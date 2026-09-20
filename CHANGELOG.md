@@ -6,6 +6,16 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.1.38 — 2026-09-20
+
+- Expand Scientific mode without increasing its keypad row count: add 2nd and HYP layers, DEG/RAD/GRAD cycling and F-E scientific-notation display switching while preserving the existing direct constants/operators.
+- Add inverse and hyperbolic trig command routing through the shared C++ core, plus square/cube, floor/ceiling and base-2/base-10 exponential transforms exposed through the 2nd layer.
+- Extend the expression engine with asinh/acosh/atanh, square/cube, exp2/exp10, floor and ceil functions and add gradian-aware trigonometric conversion.
+- Extend Programmer mode with fixed-width ROL/ROR and NAND/NOR operators while preserving wrapping, radix and width semantics.
+- Add an explicit MS memory-store command alongside MC/MR/M+/M− on every platform.
+- Keep Standard at its compact 480-unit geometry; extended controls remain shared through the controller/UI contract rather than platform-specific implementations.
+- Release the previously unpublished copyright-normalisation commits together with the functional changes so main and the immutable release are aligned.
+
 ## 0.1.37 — 2026-09-19
 
 - Advance the exact shared foundation from Common 1.19.7 to immutable Common 1.19.8.

@@ -67,6 +67,15 @@ NSInteger width_value(IntegerWidth width) {
     return 64;
 }
 
+NSInteger angle_value(calculator::AngleUnit unit) {
+    switch (unit) {
+    case calculator::AngleUnit::Degrees: return 0;
+    case calculator::AngleUnit::Radians: return 1;
+    case calculator::AngleUnit::Gradians: return 2;
+    }
+    return 0;
+}
+
 } // namespace
 
 @interface CalculatorBridge ()
@@ -146,7 +155,10 @@ NSInteger width_value(IntegerWidth width) {
         @"display": to_ns(state.result),
         @"status": to_ns(state.status),
         @"fault": @(state.fault),
-        @"degrees": @(state.degrees),
+        @"angleUnit": @(angle_value(state.angle_unit)),
+        @"scientificSecond": @(state.scientific_second),
+        @"scientificHyperbolic": @(state.scientific_hyperbolic),
+        @"scientificNotation": @(state.scientific_notation),
         @"programmerBase": @(base_value(state.programmer_base)),
         @"programmerWidth": @(width_value(state.programmer_width)),
         @"programmerSigned": @(state.programmer_signed)

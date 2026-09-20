@@ -9,7 +9,7 @@ Calculator has one interaction state machine rendered by three native shells. Li
 
 - Standard, Scientific and Programmer mode names;
 - calculator button labels, order, role and command identity;
-- the Standard memory strip and desktop keypad layouts;
+- the Standard MC/MR/MS/M+/M− memory strip and desktop keypad layouts;
 - shared logical desktop sizing/spacing metrics and responsive breakpoints; and
 - command-to-insertion mappings and Programmer selector classification.
 
@@ -17,7 +17,7 @@ Calculator has one interaction state machine rendered by three native shells. Li
 
 - active calculator mode;
 - expression, result and status state;
-- DEG/RAD state;
+- Scientific DEG/RAD/GRAD, 2nd, HYP and F-E state;
 - Programmer radix, width and signedness;
 - memory, variables and history through `Session`;
 - command enablement; and
@@ -51,7 +51,7 @@ This is semantic parity rather than pixel/layout parity: calculator state and co
 
 `calculator-ui-contract` validates the canonical desktop button/layout definition.
 
-`calculator-ui-controller` exercises shared desktop behaviour independently of GTK and Win32, including arithmetic, memory, scientific mode, Programmer mode and cursor-aware editing.
+`calculator-ui-controller` exercises shared desktop behaviour independently of GTK and Win32, including arithmetic, explicit memory store/update, Scientific angle/2nd/HYP/F-E state, Programmer extended bitwise operations and cursor-aware editing.
 
 Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
 

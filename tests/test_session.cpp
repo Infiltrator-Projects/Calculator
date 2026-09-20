@@ -31,9 +31,11 @@ int main(){
 
     session.memory_clear();
     if(!session.memory_empty()) fail("cleared memory should be empty");
-    session.memory_add(12.5);
-    if(session.memory_empty()) fail("memory add should make memory available");
-    session.memory_subtract(2.5);
+    session.memory_store(12.5);
+    if(session.memory_empty()) fail("memory store should make memory available");
+    if(std::abs(session.memory_recall()-12.5)>1e-12) fail("memory store wrong");
+    session.memory_add(2.5);
+    session.memory_subtract(5.0);
     if(std::abs(session.memory_recall()-10.0)>1e-12) fail("memory state wrong");
     session.memory_clear();
     if(!session.memory_empty()) fail("second memory clear should be empty");

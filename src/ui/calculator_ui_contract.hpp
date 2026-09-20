@@ -22,6 +22,7 @@ enum class ButtonRole {
 enum class Command {
     MemoryClear,
     MemoryRecall,
+    MemoryStore,
     MemoryAdd,
     MemorySubtract,
     Clear,
@@ -37,6 +38,11 @@ enum class Command {
     Square,
     SquareRoot,
     CubeRoot,
+    Cube,
+    TwoPower,
+    TenPower,
+    Floor,
+    Ceil,
     Negate,
     Equals,
     DecimalPoint,
@@ -55,7 +61,13 @@ enum class Command {
     Log10,
     Exp,
     Abs,
-    ToggleDegrees,
+    Asinh,
+    Acosh,
+    Atanh,
+    ToggleSecond,
+    ToggleHyperbolic,
+    CycleAngleUnit,
+    ToggleScientificNotation,
     BaseBin,
     BaseOct,
     BaseDec,
@@ -71,6 +83,10 @@ enum class Command {
     BitXor,
     ShiftLeft,
     ShiftRight,
+    RotateLeft,
+    RotateRight,
+    BitNand,
+    BitNor,
     Digit0,
     Digit1,
     Digit2,
@@ -159,9 +175,10 @@ inline constexpr ResponsiveLayout responsive_layout(int width, int height) {
     return {LayoutClass::Regular, false, false};
 }
 
-inline constexpr std::array<ButtonSpec, 4> kStandardMemory{{
+inline constexpr std::array<ButtonSpec, 5> kStandardMemory{{
     {"MC", ButtonRole::Utility, Command::MemoryClear},
     {"MR", ButtonRole::Utility, Command::MemoryRecall},
+    {"MS", ButtonRole::Utility, Command::MemoryStore},
     {"M+", ButtonRole::Utility, Command::MemoryAdd},
     {"M−", ButtonRole::Utility, Command::MemorySubtract},
 }};
@@ -199,7 +216,7 @@ inline constexpr std::array<ButtonSpec, 24> kStandardKeypad{{
 }};
 
 inline constexpr std::array<ButtonSpec, 40> kScientificKeypad{{
-    {"DEG", ButtonRole::Utility, Command::ToggleDegrees},
+    {"DEG", ButtonRole::Utility, Command::CycleAngleUnit},
     {"π", ButtonRole::Operation, Command::Pi},
     {"e", ButtonRole::Operation, Command::Euler},
     {"C", ButtonRole::Clear, Command::Clear},
@@ -209,9 +226,9 @@ inline constexpr std::array<ButtonSpec, 40> kScientificKeypad{{
     {"tan", ButtonRole::Operation, Command::Tan},
     {"⌫", ButtonRole::Clear, Command::Backspace},
 
-    {"asin", ButtonRole::Operation, Command::Asin},
-    {"acos", ButtonRole::Operation, Command::Acos},
-    {"atan", ButtonRole::Operation, Command::Atan},
+    {"2nd", ButtonRole::Utility, Command::ToggleSecond},
+    {"HYP", ButtonRole::Utility, Command::ToggleHyperbolic},
+    {"F-E", ButtonRole::Utility, Command::ToggleScientificNotation},
     {"^", ButtonRole::Operation, Command::Power},
 
     {"ln", ButtonRole::Operation, Command::Ln},
@@ -250,7 +267,7 @@ inline constexpr std::array<ButtonSpec, 40> kScientificKeypad{{
     {"=", ButtonRole::Equals, Command::Equals},
 }};
 
-inline constexpr std::array<ButtonSpec, 40> kProgrammerKeypad{{
+inline constexpr std::array<ButtonSpec, 44> kProgrammerKeypad{{
     {"BIN", ButtonRole::Utility, Command::BaseBin},
     {"OCT", ButtonRole::Utility, Command::BaseOct},
     {"DEC", ButtonRole::Utility, Command::BaseDec},
@@ -270,6 +287,11 @@ inline constexpr std::array<ButtonSpec, 40> kProgrammerKeypad{{
     {"<<", ButtonRole::Operation, Command::ShiftLeft},
     {">>", ButtonRole::Operation, Command::ShiftRight},
     {"AC", ButtonRole::Clear, Command::AllClear},
+
+    {"ROL", ButtonRole::Operation, Command::RotateLeft},
+    {"ROR", ButtonRole::Operation, Command::RotateRight},
+    {"NAND", ButtonRole::Operation, Command::BitNand},
+    {"NOR", ButtonRole::Operation, Command::BitNor},
 
     {"(", ButtonRole::Operation, Command::OpenParen},
     {")", ButtonRole::Operation, Command::CloseParen},
@@ -361,6 +383,10 @@ inline constexpr std::string_view insertion_text(Command command) {
     case Command::BitXor: return "^";
     case Command::ShiftLeft: return "<<";
     case Command::ShiftRight: return ">>";
+    case Command::RotateLeft: return " rol ";
+    case Command::RotateRight: return " ror ";
+    case Command::BitNand: return " nand ";
+    case Command::BitNor: return " nor ";
     default: return "";
     }
 }

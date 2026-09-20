@@ -21,10 +21,10 @@ void check(bool condition, const char* expression) {
 } // namespace
 
 int main() {
-    static_assert(kStandardMemory.size() == 4);
+    static_assert(kStandardMemory.size() == 5);
     static_assert(kStandardKeypad.size() == 24);
     static_assert(kScientificKeypad.size() == 40);
-    static_assert(kProgrammerKeypad.size() == 40);
+    static_assert(kProgrammerKeypad.size() == 44);
 
     static_assert(kDesktopMetrics.default_width == 360);
     static_assert(kDesktopMetrics.default_height == 610);
@@ -79,12 +79,13 @@ int main() {
 
     CHECK(kStandardMemory[0].command == Command::MemoryClear);
     CHECK(kStandardMemory[1].command == Command::MemoryRecall);
-    CHECK(kStandardMemory[2].command == Command::MemoryAdd);
-    CHECK(kStandardMemory[3].command == Command::MemorySubtract);
+    CHECK(kStandardMemory[2].command == Command::MemoryStore);
+    CHECK(kStandardMemory[3].command == Command::MemoryAdd);
+    CHECK(kStandardMemory[4].command == Command::MemorySubtract);
 
     CHECK(kStandardKeypad.front().label == "%");
     CHECK(kStandardKeypad.back().command == Command::Equals);
-    CHECK(kScientificKeypad.front().command == Command::ToggleDegrees);
+    CHECK(kScientificKeypad.front().command == Command::CycleAngleUnit);
     CHECK(kScientificKeypad.back().command == Command::Equals);
     CHECK(kProgrammerKeypad.front().command == Command::BaseBin);
     CHECK(kProgrammerKeypad.back().command == Command::HexF);
@@ -95,6 +96,10 @@ int main() {
     CHECK(insertion_text(Command::Add) == "+");
     CHECK(insertion_text(Command::ShiftLeft) == "<<");
     CHECK(insertion_text(Command::ShiftRight) == ">>");
+    CHECK(insertion_text(Command::RotateLeft) == " rol ");
+    CHECK(insertion_text(Command::RotateRight) == " ror ");
+    CHECK(insertion_text(Command::BitNand) == " nand ");
+    CHECK(insertion_text(Command::BitNor) == " nor ");
 
     CHECK(is_programmer_selector(Command::BaseHex));
     CHECK(is_programmer_selector(Command::Width64));

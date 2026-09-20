@@ -295,8 +295,8 @@ jobs:
             Start-Sleep -Milliseconds 100
             $standardVisible = Get-VisibleButtonCount
 
-            if ($initialVisible -ne 33 -or $scientificVisible -ne 45 -or
-                $programmerVisible -ne 45 -or $standardVisible -ne 33) {
+            if ($initialVisible -ne 34 -or $scientificVisible -ne 45 -or
+                $programmerVisible -ne 49 -or $standardVisible -ne 34) {
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 

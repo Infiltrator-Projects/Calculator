@@ -79,12 +79,21 @@ int main() {
     expect_value("sinh(0)", 0);
     expect_value("cosh(0)", 1);
     expect_value("tanh(0)", 0);
+    expect_value("asinh(0)", 0);
+    expect_value("acosh(1)", 0);
+    expect_value("atanh(0)", 0);
+    expect_value("square(12)", 144);
+    expect_value("cube(3)", 27);
     expect_value("sqrt(81)", 9);
     expect_value("cbrt(27)", 3);
     expect_value("ln(e)", 1);
     expect_value("log(1000)", 3);
     expect_value("exp(0)", 1);
+    expect_value("exp2(10)", 1024);
+    expect_value("exp10(3)", 1000);
     expect_value("abs(-12.5)", 12.5);
+    expect_value("floor(2.9)", 2);
+    expect_value("ceil(2.1)", 3);
     expect_value("5!", 120);
     expect_value("0!", 1);
     expect_value("3!^2", 36);
@@ -122,6 +131,16 @@ int main() {
     if (!sin_degrees.ok || std::abs(sin_degrees.value - 0.5) > 1e-12) {
         fail("shared degree sine transform wrong");
     }
+    const auto sin_gradians = calculator::apply_real_function(
+        calculator::RealFunction::Sin, 100.0, calculator::AngleUnit::Gradians);
+    if (!sin_gradians.ok || std::abs(sin_gradians.value - 1.0) > 1e-12) {
+        fail("shared gradian sine transform wrong");
+    }
+    const auto asin_gradians = calculator::apply_real_function(
+        calculator::RealFunction::Asin, 1.0, calculator::AngleUnit::Gradians);
+    if (!asin_gradians.ok || std::abs(asin_gradians.value - 100.0) > 1e-12) {
+        fail("shared gradian inverse-sine transform wrong");
+    }
     const auto reciprocal_zero = calculator::apply_real_function(
         calculator::RealFunction::Reciprocal, 0.0);
     if (reciprocal_zero.ok || reciprocal_zero.error != "division by zero") {
@@ -145,6 +164,10 @@ int main() {
     if (calculator::format_value(1.0 / 3.0) !=
         "0.333333333333333") {
         fail("shared value formatter wrong output");
+    }
+    if (calculator::format_scientific_value(1000.0).find("e+03") ==
+        std::string::npos) {
+        fail("scientific formatter wrong output");
     }
 
     if (failures != 0) {

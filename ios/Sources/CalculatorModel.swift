@@ -34,7 +34,10 @@ final class CalculatorModel: ObservableObject {
     @Published var display = "0"
     @Published var status = "READY"
     @Published var fault = false
-    @Published var degrees = true
+    @Published var angleUnit = 0
+    @Published var scientificSecond = false
+    @Published var scientificHyperbolic = false
+    @Published var scientificNotation = false
     @Published var programmerBase = 10
     @Published var programmerWidth = 64
     @Published var programmerSigned = false
@@ -43,7 +46,7 @@ final class CalculatorModel: ObservableObject {
     private let bridge = CalculatorBridge()
 
     let standardKeys = [
-        ["MC", "MR", "M+", "M−"],
+        ["MC", "MR", "MS", "M+", "M−"],
         ["%", "C", "⌫", "÷"],
         ["1/x", "x²", "√", "^"],
         ["7", "8", "9", "×"],
@@ -55,7 +58,7 @@ final class CalculatorModel: ObservableObject {
     let scientificKeys = [
         ["DEG", "π", "e", "C"],
         ["sin", "cos", "tan", "⌫"],
-        ["asin", "acos", "atan", "^"],
+        ["2nd", "HYP", "F-E", "^"],
         ["ln", "log", "exp", "x!"],
         ["√", "∛", "abs", "%"],
         ["7", "8", "9", "÷"],
@@ -70,6 +73,7 @@ final class CalculatorModel: ObservableObject {
         ["W8", "W16", "W32", "W64"],
         ["U/S", "~", "&", "|"],
         ["^", "<<", ">>", "AC"],
+        ["ROL", "ROR", "NAND", "NOR"],
         ["(", ")", "÷", "×"],
         ["7", "8", "9", "−"],
         ["4", "5", "6", "+"],
@@ -120,14 +124,39 @@ final class CalculatorModel: ObservableObject {
     }
 
     func visibleTitle(_ key: String) -> String {
-        if key == "DEG" { return degrees ? "DEG" : "RAD" }
-        return key
+        switch key {
+        case "DEG":
+            return angleUnit == 0 ? "DEG" : (angleUnit == 1 ? "RAD" : "GRAD")
+        case "sin":
+            if scientificHyperbolic {
+                return scientificSecond ? "asinh" : "sinh"
+            }
+            return scientificSecond ? "asin" : "sin"
+        case "cos":
+            if scientificHyperbolic {
+                return scientificSecond ? "acosh" : "cosh"
+            }
+            return scientificSecond ? "acos" : "cos"
+        case "tan":
+            if scientificHyperbolic {
+                return scientificSecond ? "atanh" : "tanh"
+            }
+            return scientificSecond ? "atan" : "tan"
+        case "√": return scientificSecond ? "x²" : "√"
+        case "∛": return scientificSecond ? "x³" : "∛"
+        case "abs": return scientificSecond ? "floor" : "abs"
+        case "%": return scientificSecond ? "ceil" : "%"
+        case "log": return scientificSecond ? "10ˣ" : "log"
+        case "exp": return scientificSecond ? "2ˣ" : "eˣ"
+        default: return key
+        }
     }
 
     func keyIsSelected(_ key: String) -> Bool {
         switch key {
-        case "DEG": return mode == .scientific && degrees
-        case "RAD": return mode == .scientific && !degrees
+        case "2nd": return mode == .scientific && scientificSecond
+        case "HYP": return mode == .scientific && scientificHyperbolic
+        case "F-E": return mode == .scientific && scientificNotation
         case "BIN": return mode == .programmer && programmerBase == 2
         case "OCT": return mode == .programmer && programmerBase == 8
         case "DEC": return mode == .programmer && programmerBase == 10
@@ -156,7 +185,13 @@ final class CalculatorModel: ObservableObject {
         display = state["display"] as? String ?? display
         status = state["status"] as? String ?? status
         fault = (state["fault"] as? NSNumber)?.boolValue ?? false
-        degrees = (state["degrees"] as? NSNumber)?.boolValue ?? true
+        angleUnit = (state["angleUnit"] as? NSNumber)?.intValue ?? 0
+        scientificSecond =
+            (state["scientificSecond"] as? NSNumber)?.boolValue ?? false
+        scientificHyperbolic =
+            (state["scientificHyperbolic"] as? NSNumber)?.boolValue ?? false
+        scientificNotation =
+            (state["scientificNotation"] as? NSNumber)?.boolValue ?? false
         programmerBase = (state["programmerBase"] as? NSNumber)?.intValue ?? 10
         programmerWidth = (state["programmerWidth"] as? NSNumber)?.intValue ?? 64
         programmerSigned =

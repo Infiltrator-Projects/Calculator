@@ -31,6 +31,7 @@ public:
     Result evaluate(const std::string& input);
 
     void memory_clear();
+    void memory_store(double value);
     void memory_add(double value);
     void memory_subtract(double value);
     double memory_recall() const noexcept;

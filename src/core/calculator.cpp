@@ -186,12 +186,21 @@ private:
         else if (name == "sinh") function = RealFunction::Sinh;
         else if (name == "cosh") function = RealFunction::Cosh;
         else if (name == "tanh") function = RealFunction::Tanh;
+        else if (name == "asinh") function = RealFunction::Asinh;
+        else if (name == "acosh") function = RealFunction::Acosh;
+        else if (name == "atanh") function = RealFunction::Atanh;
         else if (name == "sqrt") function = RealFunction::SquareRoot;
         else if (name == "cbrt") function = RealFunction::Cbrt;
+        else if (name == "square") function = RealFunction::Square;
+        else if (name == "cube") function = RealFunction::Cube;
         else if (name == "ln") function = RealFunction::Ln;
         else if (name == "log") function = RealFunction::Log10;
         else if (name == "exp") function = RealFunction::Exp;
+        else if (name == "exp2") function = RealFunction::TwoPower;
+        else if (name == "exp10") function = RealFunction::TenPower;
         else if (name == "abs") function = RealFunction::Abs;
+        else if (name == "floor") function = RealFunction::Floor;
+        else if (name == "ceil") function = RealFunction::Ceil;
         else { error_ = "unknown function"; return 0.0; }
 
         const Result result =
@@ -347,17 +356,30 @@ private:
 
 Result apply_real_function(RealFunction function, double value,
                            AngleUnit angle_unit) {
+    const auto to_radians = [angle_unit](double input) {
+        if (angle_unit == AngleUnit::Degrees) return input * kPi / 180.0;
+        if (angle_unit == AngleUnit::Gradians) return input * kPi / 200.0;
+        return input;
+    };
+    const auto from_radians = [angle_unit](double input) {
+        if (angle_unit == AngleUnit::Degrees) return input * 180.0 / kPi;
+        if (angle_unit == AngleUnit::Gradians) return input * 200.0 / kPi;
+        return input;
+    };
+
     double argument = value;
-    if (angle_unit == AngleUnit::Degrees &&
-        (function == RealFunction::Sin ||
-         function == RealFunction::Cos ||
-         function == RealFunction::Tan)) {
-        argument = value * kPi / 180.0;
+    if (function == RealFunction::Sin ||
+        function == RealFunction::Cos ||
+        function == RealFunction::Tan) {
+        argument = to_radians(value);
     }
 
     switch (function) {
     case RealFunction::Square:
         value *= value;
+        break;
+    case RealFunction::Cube:
+        value = value * value * value;
         break;
     case RealFunction::SquareRoot:
         value = std::sqrt(value);
@@ -376,16 +398,13 @@ Result apply_real_function(RealFunction function, double value,
         value = std::tan(argument);
         break;
     case RealFunction::Asin:
-        value = std::asin(value);
-        if (angle_unit == AngleUnit::Degrees) value = value * 180.0 / kPi;
+        value = from_radians(std::asin(value));
         break;
     case RealFunction::Acos:
-        value = std::acos(value);
-        if (angle_unit == AngleUnit::Degrees) value = value * 180.0 / kPi;
+        value = from_radians(std::acos(value));
         break;
     case RealFunction::Atan:
-        value = std::atan(value);
-        if (angle_unit == AngleUnit::Degrees) value = value * 180.0 / kPi;
+        value = from_radians(std::atan(value));
         break;
     case RealFunction::Sinh:
         value = std::sinh(value);
@@ -395,6 +414,15 @@ Result apply_real_function(RealFunction function, double value,
         break;
     case RealFunction::Tanh:
         value = std::tanh(value);
+        break;
+    case RealFunction::Asinh:
+        value = std::asinh(value);
+        break;
+    case RealFunction::Acosh:
+        value = std::acosh(value);
+        break;
+    case RealFunction::Atanh:
+        value = std::atanh(value);
         break;
     case RealFunction::Cbrt:
         value = std::cbrt(value);
@@ -408,8 +436,20 @@ Result apply_real_function(RealFunction function, double value,
     case RealFunction::Exp:
         value = std::exp(value);
         break;
+    case RealFunction::TwoPower:
+        value = std::exp2(value);
+        break;
+    case RealFunction::TenPower:
+        value = std::pow(10.0, value);
+        break;
     case RealFunction::Abs:
         value = std::fabs(value);
+        break;
+    case RealFunction::Floor:
+        value = std::floor(value);
+        break;
+    case RealFunction::Ceil:
+        value = std::ceil(value);
         break;
     }
 
@@ -424,6 +464,15 @@ std::string format_value(double value) {
     const auto converted = std::to_chars(
         buffer, buffer + sizeof(buffer),
         value, std::chars_format::general, 15);
+    if (converted.ec != std::errc{}) return "0";
+    return std::string(buffer, converted.ptr);
+}
+
+std::string format_scientific_value(double value) {
+    char buffer[64] = {};
+    const auto converted = std::to_chars(
+        buffer, buffer + sizeof(buffer),
+        value, std::chars_format::scientific, 12);
     if (converted.ec != std::errc{}) return "0";
     return std::string(buffer, converted.ptr);
 }

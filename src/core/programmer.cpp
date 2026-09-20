@@ -33,6 +33,36 @@ unsigned base_value(ProgrammerBase base) {
     return 10;
 }
 
+unsigned width_bits(IntegerWidth width) {
+    return static_cast<unsigned>(width);
+}
+
+std::uint64_t rotate_left(std::uint64_t value, unsigned amount,
+                          IntegerWidth width) {
+    const unsigned bits = width_bits(width);
+    const std::uint64_t mask = mask_for(width);
+    value &= mask;
+    amount %= bits;
+    if (amount == 0U) return value;
+    if (bits == 64U) {
+        return (value << amount) | (value >> (64U - amount));
+    }
+    return ((value << amount) | (value >> (bits - amount))) & mask;
+}
+
+std::uint64_t rotate_right(std::uint64_t value, unsigned amount,
+                           IntegerWidth width) {
+    const unsigned bits = width_bits(width);
+    const std::uint64_t mask = mask_for(width);
+    value &= mask;
+    amount %= bits;
+    if (amount == 0U) return value;
+    if (bits == 64U) {
+        return (value >> amount) | (value << (64U - amount));
+    }
+    return ((value >> amount) | (value << (bits - amount))) & mask;
+}
+
 int digit_value(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -91,6 +121,29 @@ private:
         return false;
     }
 
+    bool consume_word(std::string_view word) {
+        skip_space();
+        if (position_ + word.size() > input_.size()) return false;
+
+        for (std::size_t i = 0; i < word.size(); ++i) {
+            const unsigned char actual =
+                static_cast<unsigned char>(input_[position_ + i]);
+            const unsigned char expected =
+                static_cast<unsigned char>(word[i]);
+            if (std::tolower(actual) != std::tolower(expected)) return false;
+        }
+
+        const std::size_t end = position_ + word.size();
+        if (end < input_.size()) {
+            const unsigned char next =
+                static_cast<unsigned char>(input_[end]);
+            if (std::isalnum(next) || next == '_') return false;
+        }
+
+        position_ = end;
+        return true;
+    }
+
     bool enter_recursion() {
         if (recursion_depth_ >= kMaxParseDepth) {
             if (error_.empty()) error_ = "expression nesting too deep";
@@ -106,7 +159,15 @@ private:
 
     std::uint64_t parse_or() {
         auto left = parse_xor();
-        while (error_.empty() && consume('|')) left |= parse_xor();
+        while (error_.empty()) {
+            if (consume('|')) {
+                left |= parse_xor();
+            } else if (consume_word("nor")) {
+                left = ~(left | parse_xor()) & mask_for(width_);
+            } else {
+                break;
+            }
+        }
         return left & mask_for(width_);
     }
 
@@ -118,7 +179,15 @@ private:
 
     std::uint64_t parse_and() {
         auto left = parse_shift();
-        while (error_.empty() && consume('&')) left &= parse_shift();
+        while (error_.empty()) {
+            if (consume('&')) {
+                left &= parse_shift();
+            } else if (consume_word("nand")) {
+                left = ~(left & parse_shift()) & mask_for(width_);
+            } else {
+                break;
+            }
+        }
         return left & mask_for(width_);
     }
 
@@ -147,7 +216,17 @@ private:
                 const auto amount = parse_shift_amount();
                 if (amount >= 64) { error_ = "shift count out of range"; return 0; }
                 left = left >> static_cast<unsigned>(amount);
-            } else break;
+            } else if (consume_word("rol")) {
+                const auto amount = parse_shift_amount();
+                left = rotate_left(
+                    left, static_cast<unsigned>(amount % 64U), width_);
+            } else if (consume_word("ror")) {
+                const auto amount = parse_shift_amount();
+                left = rotate_right(
+                    left, static_cast<unsigned>(amount % 64U), width_);
+            } else {
+                break;
+            }
         }
         return left & mask_for(width_);
     }

@@ -17,8 +17,7 @@ void Controller::set_expression(std::string expression) {
 void Controller::set_mode(Mode mode) {
     state_.mode = mode;
     if (mode == Mode::Scientific) {
-        set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
-                                  : "SCIENTIFIC · RADIANS");
+        set_status(scientific_status_text());
     } else if (mode == Mode::Programmer) {
         set_status(programmer_status_text());
     } else {
@@ -33,6 +32,109 @@ std::string Controller::history_text(std::size_t limit,
 
 void Controller::clear_history() noexcept {
     session_.clear_history();
+}
+
+std::string Controller::scientific_status_text() const {
+    const char* angle = "DEG";
+    if (state_.angle_unit == AngleUnit::Radians) angle = "RAD";
+    else if (state_.angle_unit == AngleUnit::Gradians) angle = "GRAD";
+
+    std::string status = "SCIENTIFIC · ";
+    status += angle;
+    if (state_.scientific_second) status += " · 2ND";
+    if (state_.scientific_hyperbolic) status += " · HYP";
+    if (state_.scientific_notation) status += " · F-E";
+    return status;
+}
+
+std::string Controller::format_real(double value) const {
+    return state_.mode == Mode::Scientific && state_.scientific_notation
+        ? calculator::format_scientific_value(value)
+        : calculator::format_value(value);
+}
+
+Command Controller::effective_scientific_command(Command command) const {
+    if (state_.mode != Mode::Scientific) return command;
+
+    if (command == Command::Sin || command == Command::Cos ||
+        command == Command::Tan) {
+        if (state_.scientific_hyperbolic) {
+            if (state_.scientific_second) {
+                if (command == Command::Sin) return Command::Asinh;
+                if (command == Command::Cos) return Command::Acosh;
+                return Command::Atanh;
+            }
+            if (command == Command::Sin) return Command::Sinh;
+            if (command == Command::Cos) return Command::Cosh;
+            return Command::Tanh;
+        }
+
+        if (state_.scientific_second) {
+            if (command == Command::Sin) return Command::Asin;
+            if (command == Command::Cos) return Command::Acos;
+            return Command::Atan;
+        }
+        return command;
+    }
+
+    if (!state_.scientific_second) return command;
+
+    switch (command) {
+    case Command::SquareRoot: return Command::Square;
+    case Command::CubeRoot: return Command::Cube;
+    case Command::Abs: return Command::Floor;
+    case Command::Percent: return Command::Ceil;
+    case Command::Log10: return Command::TenPower;
+    case Command::Exp: return Command::TwoPower;
+    default: return command;
+    }
+}
+
+std::string Controller::button_label(
+    Command command, std::string_view fallback) const {
+    if (state_.mode != Mode::Scientific) return std::string(fallback);
+
+    switch (command) {
+    case Command::CycleAngleUnit:
+        if (state_.angle_unit == AngleUnit::Degrees) return "DEG";
+        if (state_.angle_unit == AngleUnit::Radians) return "RAD";
+        return "GRAD";
+    case Command::Sin: {
+        const Command effective = effective_scientific_command(command);
+        if (effective == Command::Asin) return "asin";
+        if (effective == Command::Sinh) return "sinh";
+        if (effective == Command::Asinh) return "asinh";
+        return "sin";
+    }
+    case Command::Cos: {
+        const Command effective = effective_scientific_command(command);
+        if (effective == Command::Acos) return "acos";
+        if (effective == Command::Cosh) return "cosh";
+        if (effective == Command::Acosh) return "acosh";
+        return "cos";
+    }
+    case Command::Tan: {
+        const Command effective = effective_scientific_command(command);
+        if (effective == Command::Atan) return "atan";
+        if (effective == Command::Tanh) return "tanh";
+        if (effective == Command::Atanh) return "atanh";
+        return "tan";
+    }
+    case Command::SquareRoot:
+        return state_.scientific_second ? "x²" : "√";
+    case Command::CubeRoot:
+        return state_.scientific_second ? "x³" : "∛";
+    case Command::Abs:
+        return state_.scientific_second ? "floor" : "abs";
+    case Command::Percent:
+        return state_.scientific_second ? "ceil" : "%";
+    case Command::Log10:
+        return state_.scientific_second ? "10ˣ" : "log";
+    case Command::Exp:
+        return state_.scientific_second ? "2ˣ" : "eˣ";
+    default:
+        return std::string(fallback);
+    }
 }
 
 void Controller::set_status(std::string text, bool fault) {
@@ -149,9 +251,8 @@ void Controller::calculate() {
         return;
     }
 
-    state_.result = calculator::format_value(result.value);
-    set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
-                              : "SCIENTIFIC · RADIANS");
+    state_.result = format_real(result.value);
+    set_status(scientific_status_text());
 }
 
 void Controller::clear_calculation() {
@@ -161,8 +262,7 @@ void Controller::clear_calculation() {
     if (state_.mode == Mode::Programmer) {
         set_status(programmer_status_text());
     } else if (state_.mode == Mode::Scientific) {
-        set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
-                                  : "SCIENTIFIC · RADIANS");
+        set_status(scientific_status_text());
     } else {
         set_status("READY");
     }
@@ -174,7 +274,7 @@ void Controller::unary_transform(Command command) {
 
     if (command == Command::Negate) {
         value = -value;
-        state_.expression = calculator::format_value(value);
+        state_.expression = format_real(value);
         state_.result = state_.expression;
         set_status("READY");
         return;
@@ -199,42 +299,63 @@ void Controller::unary_transform(Command command) {
         return;
     }
 
-    state_.expression = calculator::format_value(transformed.value);
+    state_.expression = format_real(transformed.value);
     state_.result = state_.expression;
-    set_status("READY");
+    set_status(state_.mode == Mode::Scientific
+                   ? scientific_status_text()
+                   : "READY");
 }
 
 void Controller::scientific_transform(Command command) {
     double value = 0.0;
     if (!current_value(value)) return;
 
+    command = effective_scientific_command(command);
+
     RealFunction function = RealFunction::Abs;
     switch (command) {
+    case Command::Square: function = RealFunction::Square; break;
+    case Command::Cube: function = RealFunction::Cube; break;
+    case Command::SquareRoot: function = RealFunction::SquareRoot; break;
+    case Command::CubeRoot: function = RealFunction::Cbrt; break;
+    case Command::Reciprocal: function = RealFunction::Reciprocal; break;
     case Command::Sin: function = RealFunction::Sin; break;
     case Command::Cos: function = RealFunction::Cos; break;
     case Command::Tan: function = RealFunction::Tan; break;
     case Command::Asin: function = RealFunction::Asin; break;
     case Command::Acos: function = RealFunction::Acos; break;
     case Command::Atan: function = RealFunction::Atan; break;
+    case Command::Sinh: function = RealFunction::Sinh; break;
+    case Command::Cosh: function = RealFunction::Cosh; break;
+    case Command::Tanh: function = RealFunction::Tanh; break;
+    case Command::Asinh: function = RealFunction::Asinh; break;
+    case Command::Acosh: function = RealFunction::Acosh; break;
+    case Command::Atanh: function = RealFunction::Atanh; break;
     case Command::Ln: function = RealFunction::Ln; break;
     case Command::Log10: function = RealFunction::Log10; break;
     case Command::Exp: function = RealFunction::Exp; break;
+    case Command::TwoPower: function = RealFunction::TwoPower; break;
+    case Command::TenPower: function = RealFunction::TenPower; break;
     case Command::Abs: function = RealFunction::Abs; break;
+    case Command::Floor: function = RealFunction::Floor; break;
+    case Command::Ceil: function = RealFunction::Ceil; break;
     default: return;
     }
 
     const Result transformed = calculator::apply_real_function(
-        function, value,
-        state_.degrees ? AngleUnit::Degrees : AngleUnit::Radians);
+        function, value, state_.angle_unit);
     if (!transformed.ok) {
-        set_status("DOMAIN ERROR", true);
+        set_status(
+            transformed.error == "division by zero"
+                ? "DIVISION BY ZERO"
+                : "DOMAIN ERROR",
+            true);
         return;
     }
 
-    state_.expression = calculator::format_value(transformed.value);
+    state_.expression = format_real(transformed.value);
     state_.result = state_.expression;
-    set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
-                              : "SCIENTIFIC · RADIANS");
+    set_status(scientific_status_text());
 }
 
 void Controller::programmer_mode_change(Command command) {
@@ -330,10 +451,15 @@ bool Controller::expression_has_value() const {
 }
 
 bool Controller::command_enabled(Command command) const {
+    if (state_.mode == Mode::Scientific) {
+        command = effective_scientific_command(command);
+    }
+
     switch (command) {
     case Command::MemoryClear:
     case Command::MemoryRecall:
         return !session_.memory_empty();
+    case Command::MemoryStore:
     case Command::MemoryAdd:
     case Command::MemorySubtract:
         return expression_has_value();
@@ -344,7 +470,9 @@ bool Controller::command_enabled(Command command) const {
     case Command::Percent:
     case Command::Reciprocal:
     case Command::Square:
+    case Command::Cube:
     case Command::SquareRoot:
+    case Command::CubeRoot:
     case Command::Negate:
     case Command::Sin:
     case Command::Cos:
@@ -352,10 +480,20 @@ bool Controller::command_enabled(Command command) const {
     case Command::Asin:
     case Command::Acos:
     case Command::Atan:
+    case Command::Sinh:
+    case Command::Cosh:
+    case Command::Tanh:
+    case Command::Asinh:
+    case Command::Acosh:
+    case Command::Atanh:
     case Command::Ln:
     case Command::Log10:
     case Command::Exp:
+    case Command::TwoPower:
+    case Command::TenPower:
     case Command::Abs:
+    case Command::Floor:
+    case Command::Ceil:
     case Command::Factorial:
         return expression_has_value();
     case Command::DecimalPoint:
@@ -393,6 +531,10 @@ bool Controller::command_enabled(Command command) const {
     case Command::BitXor:
     case Command::ShiftLeft:
     case Command::ShiftRight:
+    case Command::RotateLeft:
+    case Command::RotateRight:
+    case Command::BitNand:
+    case Command::BitNor:
         return !state_.expression.empty();
     default:
         return true;
@@ -426,12 +568,47 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         return {normalized_cursor(cursor), false};
     }
 
-    switch (command) {
-    case Command::ToggleDegrees:
-        state_.degrees = !state_.degrees;
-        set_status(state_.degrees ? "SCIENTIFIC · DEGREES"
-                                  : "SCIENTIFIC · RADIANS");
-        return {normalized_cursor(cursor), false};
+    if (state_.mode == Mode::Scientific) {
+        switch (command) {
+        case Command::CycleAngleUnit:
+            if (state_.angle_unit == AngleUnit::Degrees) {
+                state_.angle_unit = AngleUnit::Radians;
+            } else if (state_.angle_unit == AngleUnit::Radians) {
+                state_.angle_unit = AngleUnit::Gradians;
+            } else {
+                state_.angle_unit = AngleUnit::Degrees;
+            }
+            set_status(scientific_status_text());
+            return {normalized_cursor(cursor), false};
+        case Command::ToggleSecond:
+            state_.scientific_second = !state_.scientific_second;
+            set_status(scientific_status_text());
+            return {normalized_cursor(cursor), false};
+        case Command::ToggleHyperbolic:
+            state_.scientific_hyperbolic = !state_.scientific_hyperbolic;
+            set_status(scientific_status_text());
+            return {normalized_cursor(cursor), false};
+        case Command::ToggleScientificNotation: {
+            state_.scientific_notation = !state_.scientific_notation;
+            double value = 0.0;
+            if (current_value(value)) {
+                state_.result = format_real(value);
+                state_.fault = false;
+            }
+            set_status(scientific_status_text());
+            return {normalized_cursor(cursor), false};
+        }
+        default:
+            break;
+        }
+    }
+
+    const Command effective =
+        state_.mode == Mode::Scientific
+            ? effective_scientific_command(command)
+            : command;
+
+    switch (effective) {
     case Command::Equals:
         calculate();
         return {normalized_cursor(cursor), false};
@@ -444,7 +621,35 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
     case Command::Square:
     case Command::SquareRoot:
     case Command::Reciprocal:
-        unary_transform(command);
+        if (state_.mode == Mode::Scientific) {
+            scientific_transform(effective);
+        } else {
+            unary_transform(effective);
+        }
+        return {state_.expression.size(), true};
+    case Command::Cube:
+    case Command::CubeRoot:
+    case Command::Sin:
+    case Command::Cos:
+    case Command::Tan:
+    case Command::Asin:
+    case Command::Acos:
+    case Command::Atan:
+    case Command::Sinh:
+    case Command::Cosh:
+    case Command::Tanh:
+    case Command::Asinh:
+    case Command::Acosh:
+    case Command::Atanh:
+    case Command::Ln:
+    case Command::Log10:
+    case Command::Exp:
+    case Command::TwoPower:
+    case Command::TenPower:
+    case Command::Abs:
+    case Command::Floor:
+    case Command::Ceil:
+        scientific_transform(effective);
         return {state_.expression.size(), true};
     case Command::MemoryClear:
         session_.memory_clear();
@@ -453,46 +658,36 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
     case Command::MemoryRecall:
         set_status("MEMORY RECALL");
         return insert(calculator::format_value(session_.memory_recall()), cursor);
+    case Command::MemoryStore:
     case Command::MemoryAdd:
     case Command::MemorySubtract: {
         double value = 0.0;
         if (current_value(value)) {
-            if (command == Command::MemoryAdd) session_.memory_add(value);
+            if (effective == Command::MemoryStore) session_.memory_store(value);
+            else if (effective == Command::MemoryAdd) session_.memory_add(value);
             else session_.memory_subtract(value);
-            set_status("MEMORY UPDATED");
+            set_status(effective == Command::MemoryStore
+                           ? "MEMORY STORED"
+                           : "MEMORY UPDATED");
         }
         return {normalized_cursor(cursor), false};
     }
-    case Command::Sin:
-    case Command::Cos:
-    case Command::Tan:
-    case Command::Asin:
-    case Command::Acos:
-    case Command::Atan:
-    case Command::Ln:
-    case Command::Log10:
-    case Command::Exp:
-    case Command::Abs:
-        scientific_transform(command);
-        return {state_.expression.size(), true};
     case Command::Pi:
         return insert("pi", cursor);
     case Command::Euler:
         return insert("e", cursor);
     case Command::Factorial:
         return insert("!", cursor);
-    case Command::CubeRoot:
-        return insert("cbrt(", cursor);
     default:
         break;
     }
 
-    const std::string_view text = insertion_text(command);
+    const std::string_view text = insertion_text(effective);
     if (!text.empty()) {
         if (state_.mode == Mode::Standard &&
-            (command == Command::Divide || command == Command::Multiply ||
-             command == Command::Subtract || command == Command::Add ||
-             command == Command::Power) &&
+            (effective == Command::Divide || effective == Command::Multiply ||
+             effective == Command::Subtract || effective == Command::Add ||
+             effective == Command::Power) &&
             expression_ends_with_binary_operator() &&
             normalized_cursor(cursor) == state_.expression.size()) {
             state_.expression.back() = text.front();

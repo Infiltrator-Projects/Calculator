@@ -33,7 +33,10 @@ GtkWidget* mode_buttons[3] = {nullptr, nullptr, nullptr};
 GtkWidget* programmer_base_buttons[4] = {nullptr, nullptr, nullptr, nullptr};
 GtkWidget* programmer_width_buttons[4] = {nullptr, nullptr, nullptr, nullptr};
 GtkWidget* programmer_signed_button = nullptr;
-GtkWidget* degrees_button = nullptr;
+GtkWidget* angle_button = nullptr;
+GtkWidget* second_button = nullptr;
+GtkWidget* hyperbolic_button = nullptr;
+GtkWidget* notation_button = nullptr;
 GtkWidget* history_button = nullptr;
 GtkWidget* theme_button = nullptr;
 GtkWidget* main_window = nullptr;
@@ -42,7 +45,7 @@ GtkWidget* history_text = nullptr;
 GtkWidget* calculator_column = nullptr;
 GtkCssProvider* css_provider = nullptr;
 
-std::vector<std::pair<GtkWidget*, Command>> command_buttons;
+std::vector<std::pair<GtkWidget*, const ButtonSpec*>> command_buttons;
 LayoutClass last_layout_class = LayoutClass::Regular;
 bool responsive_layout_initialized = false;
 
@@ -226,16 +229,17 @@ void render_state(std::size_t cursor = Controller::kEnd) {
         programmer_width_buttons[3],
         state.programmer_width == calculator::IntegerWidth::Bits64);
     apply_selected(programmer_signed_button, state.programmer_signed);
+    apply_selected(second_button, state.scientific_second);
+    apply_selected(hyperbolic_button, state.scientific_hyperbolic);
+    apply_selected(notation_button, state.scientific_notation);
 
-    if (degrees_button) {
-        gtk_button_set_label(
-            GTK_BUTTON(degrees_button),
-            state.degrees ? "DEG" : "RAD");
-    }
-
-    for (const auto& [button, command] : command_buttons) {
+    for (const auto& [button, spec] : command_buttons) {
+        if (spec == nullptr) continue;
+        const std::string label =
+            controller.button_label(spec->command, spec->label);
+        gtk_button_set_label(GTK_BUTTON(button), label.c_str());
         gtk_widget_set_sensitive(
-            button, controller.command_enabled(command));
+            button, controller.command_enabled(spec->command));
     }
 
     refresh_history_dock();
@@ -354,7 +358,10 @@ void remember_programmer_button(Command command, GtkWidget* button) {
     case Command::Width32: programmer_width_buttons[2] = button; break;
     case Command::Width64: programmer_width_buttons[3] = button; break;
     case Command::ToggleSigned: programmer_signed_button = button; break;
-    case Command::ToggleDegrees: degrees_button = button; break;
+    case Command::CycleAngleUnit: angle_button = button; break;
+    case Command::ToggleSecond: second_button = button; break;
+    case Command::ToggleHyperbolic: hyperbolic_button = button; break;
+    case Command::ToggleScientificNotation: notation_button = button; break;
     default: break;
     }
 }
@@ -367,6 +374,7 @@ GtkWidget* calc_button(const ButtonSpec& spec) {
 
     if (spec.command == Command::MemoryClear ||
         spec.command == Command::MemoryRecall ||
+        spec.command == Command::MemoryStore ||
         spec.command == Command::MemoryAdd ||
         spec.command == Command::MemorySubtract) {
         gtk_widget_add_css_class(button, "memory-button");
@@ -378,7 +386,7 @@ GtkWidget* calc_button(const ButtonSpec& spec) {
     gtk_widget_set_hexpand(button, TRUE);
     gtk_widget_set_vexpand(button, FALSE);
     remember_programmer_button(spec.command, button);
-    command_buttons.emplace_back(button, spec.command);
+    command_buttons.emplace_back(button, &spec);
     return button;
 }
 
