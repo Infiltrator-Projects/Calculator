@@ -935,14 +935,11 @@ std::string format_engineering_value(double value) {
     const char exponent_sign_char = scientific[exponent_pos + 1U];
     if (exponent_sign_char != '+' && exponent_sign_char != '-') return "0";
 
-    unsigned exponent_magnitude = 0;
-    const char* exponent_begin =
-        scientific.data() + exponent_pos + 2U;
-    const char* exponent_end = scientific.data() + scientific.size();
-    const auto exponent_converted = std::from_chars(
-        exponent_begin, exponent_end, exponent_magnitude);
-    if (exponent_converted.ec != std::errc{} ||
-        exponent_converted.ptr != exponent_end) {
+    std::uint64_t exponent_magnitude = 0U;
+    const std::string exponent_text =
+        scientific.substr(exponent_pos + 2U);
+    if (!infiltratr_parse_u64(
+            exponent_text.c_str(), 10U, &exponent_magnitude)) {
         return "0";
     }
 
