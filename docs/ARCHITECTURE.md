@@ -38,7 +38,7 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 ### Expression core
 
-`src/core/calculator.*` owns the binary64 expression domain used by Scientific calculations and reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation.
+src/core/scientific.* owns the arbitrary-precision real/complex expression domain used by Scientific calculations and precise reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation without routing Scientific intermediates through binary64. src/core/calculator.* remains the binary64 foundation used by Standard mode and supporting finite-real facilities.
 
 Calculator decides where the expression grammar expects a number, then Common 1.19.10's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
 
@@ -108,7 +108,7 @@ Calculator owns expression grammar, immediate-calculator behaviour, Programmer-m
 
 ## Numerical representation
 
-Standard and Scientific currently use the binary64 real-number domain; Programmer uses explicit fixed-width integer bit patterns. Representation is part of the contract rather than an implementation detail hidden by formatting.
+Standard uses the binary64 real-number domain for conventional immediate-calculator semantics; Scientific uses the shared arbitrary-precision real/complex domain; Programmer uses explicit fixed-width integer bit patterns. Representation is part of the contract rather than an implementation detail hidden by formatting.
 
 The detailed numerical model, parser semantics, evidence hierarchy, display policy and cross-platform expectations are maintained in [NUMERICS.md](NUMERICS.md). Cross-platform representation and ABI assumptions are maintained in [PORTABILITY.md](PORTABILITY.md).
 
@@ -174,6 +174,6 @@ Windows additionally consumes Common's titlebar and status-border roles for DWM 
 
 Additional Results is a Calculator-owned representation model, not another calculation engine. The shared Controller evaluates the active domain once and emits labelled representations for native shells to display.
 
-Standard and Scientific expose decimal, scientific and engineering forms of the same finite binary64 value. Programmer exposes hexadecimal, signed-or-unsigned decimal, octal and grouped binary forms of the same masked fixed-width bit pattern. Platform shells do not re-evaluate expressions or reinterpret signedness to build these rows.
+Standard exposes decimal, scientific and engineering forms of its finite binary64 value. Scientific builds General/Fixed/Scientific/Engineering representations directly from its retained arbitrary-precision real/complex value. Programmer exposes hexadecimal, signed-or-unsigned decimal, octal and grouped binary forms of the same masked fixed-width bit pattern. Platform shells do not re-evaluate expressions, down-convert precise Scientific values or reinterpret signedness to build these rows.
 
 This deliberately creates an extensible result surface before future exact, unit, complex or symbolic domains are introduced. New result families can extend the shared model without increasing keypad density or creating platform-specific mathematics.

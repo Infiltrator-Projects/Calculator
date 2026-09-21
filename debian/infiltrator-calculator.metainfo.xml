@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.10" date="2026-09-21">
+      <description>
+        <p>Complete integrated arbitrary-precision real/complex Scientific evaluation with shared cross-platform state, display formatting and independent MPFR/MPC validation.</p>
+      </description>
+    </release>
     <release version="0.2.6" date="2026-09-20">
       <description>
         <p>Add GNOME/Mint-compatible Ctrl+N independent Calculator windows while keeping each GTK session isolated.</p>

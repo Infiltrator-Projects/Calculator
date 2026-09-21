@@ -20,13 +20,11 @@ A familiar result, another calculator's output or a plausible display string is 
 
 ## Real-number representation
 
-Standard and Scientific currently use C++ `double` and rely on the supported release platforms providing the conventional IEEE-754 binary64 representation.
+Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex: 50 decimal digits by default, selectable up to the maintained 1000-digit ceiling.
 
-Binary64 provides finite precision and cannot represent every decimal rational exactly. Calculator therefore distinguishes the internal binary value, the mathematical/domain validity of an operation, and the user-facing display string.
+Scientific decimal literals are parsed directly into that multiprecision domain, and intermediate arithmetic/transcendental/complex results are not silently routed through binary64. The Session/Controller boundary stores real and imaginary components as decimal text so the shared public C++ state preserves the precise value without exposing a third-party multiprecision ABI.
 
-Formatting does not make an inexact binary value exact. A feature requiring exact decimal, arbitrary precision, complex values or another domain should introduce that representation explicitly rather than hiding the requirement behind display rounding.
-
-The primary representation authority is IEEE 754 / ISO/IEC 60559. The project currently targets the binary64 behaviour provided by the supported C++ toolchains and platforms rather than claiming portability to an arbitrary non-IEC-60559 `double` implementation.
+Formatting does not create precision. Standard binary64 presentation remains distinct from Scientific multiprecision presentation, Programmer fixed-width integers and the specialist exact/arbitrary tool domains.
 
 ## Decimal token conversion
 
@@ -52,9 +50,9 @@ primary     := number
 
 Exponentiation is right-associative and binds more tightly than a leading sign: `-2^2` means `-(2^2)`, while `2^-2` is valid.
 
-Postfix `%` divides a value by 100 in expression mode. Factorial accepts non-negative integral real values through 170; larger factorials exceed the finite range of the current binary64 domain.
+Postfix `%` divides a value by 100 in expression mode. Scientific factorial accepts real non-negative integral inputs through the maintained 100000 safety ceiling and evaluates the product in the multiprecision real domain; invalid, complex or oversized factorial inputs fail explicitly.
 
-The current function set delegates elementary transcendental operations to the C++ standard math library through one Calculator-owned `apply_real_function()` contract. Both the expression parser and interactive unary/scientific controls use that same implementation. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. The same core owns square/cube, square/cube root, reciprocal, natural/base-10 logarithms, e/2/10 exponentials, absolute value, floor and ceiling. Domain-invalid or non-finite results are calculation failures rather than values silently propagated into the UI.
+Scientific elementary and complex operations execute in the shared multiprecision backend. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. Roots, powers, reciprocal, logarithmic/exponential, real/imaginary/conjugate and rounding-related operations retain high precision where mathematically defined. Domain-invalid or non-finite results are explicit calculation failures rather than values silently propagated into the UI.
 
 Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Inputs whose nested parentheses or unary operators exceed the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
 
@@ -86,9 +84,7 @@ New constants or functions should document source/definition, accepted domain, r
 
 ## Display formatting
 
-Calculator uses one locale-independent real-result display formatter across GTK, Win32 and iPhone. Normal display uses general notation with 15 significant digits; Scientific F-E mode uses a second shared formatter with explicit scientific notation so platform shells do not invent their own exponent formatting.
-
-Fifteen significant digits are a presentation choice, not a round-trip guarantee for every binary64 value. Internal evaluation continues to use the underlying binary64 value until a new numeric domain explicitly replaces it.
+Calculator keeps result formatting in the shared core/controller rather than platform shells. Standard retains its locale-independent binary64 formatter. Scientific formats the retained arbitrary-precision real/complex components directly in General, Fixed, Scientific or Engineering form using the selected precision and display preferences; formatting never requires conversion through double.
 
 Platform shells must not introduce independent numeric formatting rules that change the represented Calculator result.
 
@@ -143,7 +139,7 @@ The engineering formatter derives its mantissa and exponent from one rounded sci
 
 Boundary regressions cover zero, signed finite values, the smallest positive subnormal, the largest finite binary64 value and a mantissa-rounding carry into the next engineering exponent.
 
-Additional Results never implies additional precision. Until an exact or arbitrary-precision domain is explicitly introduced, all Standard/Scientific rows describe the same binary64 value.
+Additional Results never invents precision: Standard rows describe the same binary64 value, while Scientific rows are alternative presentations of the same retained arbitrary-precision real/complex value.
 
 
 ## Advanced tool numeric domains

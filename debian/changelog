@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.10) unstable; urgency=medium
+
+  * Complete integrated arbitrary-precision real/complex Scientific evaluation.
+  * Preserve precise Scientific values through shared Session and Controller state.
+  * Add independent MPFR/MPC oracle validation and precise display regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 13:45:00 +1000
+
 infiltrator-calculator (0.2.9) unstable; urgency=medium
 
   * Cache Controller expression validation and result state.

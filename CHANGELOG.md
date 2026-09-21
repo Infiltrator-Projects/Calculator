@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.10 — 2026-09-21
+
+- Complete the final Linux Mint/GNOME Calculator replacement target with integrated arbitrary-precision real/complex Scientific evaluation in the shared C++ core.
+- Preserve high-precision Scientific values through Session and Controller state without silent binary64 truncation, including variables, history, Additional Results and native Linux/Windows/iPhone shells.
+- Add independent MPFR/MPC oracle coverage for high-precision real and complex arithmetic plus release-CI validation, while keeping those libraries test-only rather than runtime dependencies.
+- Preserve Fixed, Scientific and Engineering display preferences on precise Scientific results and document the completed numeric architecture.
+
 ## 0.2.9 — 2026-09-21
 
 - Cache expression validity/value once per state mutation so command enablement no longer reparses the same expression for every visible control; Scientific validation now uses the full Session variable/function/assignment context.
