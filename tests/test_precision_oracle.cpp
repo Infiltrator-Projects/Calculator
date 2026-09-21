@@ -152,9 +152,9 @@ int main() {
     mpc_t input;
     mpc_t exponent;
     mpc_t expected;
-    mpc_inits2(
-        kOracleBits, input, exponent, expected,
-        static_cast<mpc_ptr>(nullptr));
+    mpc_init2(input, kOracleBits);
+    mpc_init2(exponent, kOracleBits);
+    mpc_init2(expected, kOracleBits);
 
     mpc_set_d_d(input, -2.0, 0.0, MPC_RNDNN);
     mpc_sqrt(expected, input, MPC_RNDNN);
@@ -187,9 +187,9 @@ int main() {
             kCalculatorDigits),
         expected);
 
-    mpc_clears(
-        expected, exponent, input,
-        static_cast<mpc_ptr>(nullptr));
+    mpc_clear(expected);
+    mpc_clear(exponent);
+    mpc_clear(input);
 
     if (failures != 0) {
         std::cerr << failures
