@@ -40,16 +40,32 @@ int main(){
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 week day"),"7 day"),"duration conversion");
     check(contains(evaluate(AdvancedTool::Network,"subnet 192.168.10.42/24"),"Network  192.168.10.0"),"subnet network");
     check(contains(evaluate(AdvancedTool::Network,"cidr 254"),"/24"),"cidr sizing");
+    check(!evaluate(AdvancedTool::Network,"subnet 192.168.1.1/33").ok,
+          "subnet prefix range");
+    check(!evaluate(AdvancedTool::Network,"cidr 0").ok,
+          "cidr host lower bound");
     check(contains(evaluate(AdvancedTool::Storage,"raid 5 6 4 TiB"),"20"),"raid capacity");
     check(contains(evaluate(AdvancedTool::Storage,"clusters 4097 4096"),"Slack bytes  4095"),"cluster slack");
     check(contains(evaluate(AdvancedTool::Storage,"convert 1 YiB ZiB"),"1024 ZiB"),"yobibyte storage conversion");
     check(contains(evaluate(AdvancedTool::DateTime,"diff 2026-09-20 2026-09-21"),"Days  1"),"date diff");
     check(contains(evaluate(AdvancedTool::DateTime,"add 2024-02-28 1"),"2024-02-29"),"date leap add");
+    check(!evaluate(
+              AdvancedTool::DateTime,
+              "add 9999-12-31 9223372036854775807").ok,
+          "date offset checked overflow");
+    check(!evaluate(
+              AdvancedTool::DateTime,
+              "unix 2026-09-20T24:00:00Z").ok,
+          "UTC hour range");
     check(contains(evaluate(AdvancedTool::Constants,"c0"),"2.99792458"),"constant c");
     check(contains(evaluate(AdvancedTool::Statistics,"1,2,3,4,5"),"Mean  3"),"statistics mean");
 
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
     check(graph.ok&&graph.points.size()==9U,"graph points");
+    check(!evaluate(AdvancedTool::Graph,"x;0;1;1").ok,
+          "graph sample lower bound");
+    check(!evaluate(AdvancedTool::Graph,"x;0;1;4097").ok,
+          "graph sample upper bound");
     check(graph.ok&&std::fabs(graph.points[4].y)<1e-12,"graph center");
 
     const auto roots=evaluate(AdvancedTool::EquationSolver,"x^2-2;0;2");
@@ -79,6 +95,8 @@ int main(){
     check(contains(evaluate(AdvancedTool::Financial,"gpm 80 0.2"),"100"),"financial gross margin");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"mod 9 5"),"4"),"utility modulus");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"factor 360"),"2 x 2 x 2 x 3 x 3 x 5"),"utility factorization");
+    check(!evaluate(AdvancedTool::NumberUtilities,"factor 1").ok,
+          "factor range lower bound");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"gcd 84 30"),"6"),"utility gcd");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"comb 10 3"),"120"),"utility combinations");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"root 3 -8"),"-2"),"utility nth root");

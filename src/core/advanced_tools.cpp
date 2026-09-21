@@ -133,6 +133,21 @@ bool parse_i64(std::string_view text, std::int64_t& value,
     return infiltratr_parse_i64(input.c_str(), base, &value);
 }
 
+bool parse_u64_range(std::string_view text, std::uint64_t minimum,
+                     std::uint64_t maximum, std::uint64_t& value,
+                     unsigned int base = 10U) {
+    const std::string input(text);
+    return infiltratr_parse_u64_range(
+        input.c_str(), base, minimum, maximum, &value);
+}
+
+bool parse_double_range(std::string_view text, double minimum,
+                        double maximum, double& value) {
+    const std::string input(text);
+    return infiltratr_parse_double_range(
+        input.c_str(), minimum, maximum, &value);
+}
+
 std::string number(double value) {
     return calculator::format_value(value);
 }
@@ -193,7 +208,7 @@ ToolResult engineering_tool(std::string_view input) {
             return failure("Usage: three-phase line_volts line_amps power_factor");
         }
         double pf = 0.0;
-        if (!parse_double(fields[3], pf) || pf < 0.0 || pf > 1.0) {
+        if (!parse_double_range(fields[3], 0.0, 1.0, pf)) {
             return failure("Power factor must be between 0 and 1.");
         }
         return success("Apparent power  " +
@@ -343,7 +358,7 @@ bool parse_ipv4(std::string_view text, std::uint32_t& address) {
         const std::string_view token = text.substr(
             begin, (end == std::string_view::npos ? text.size() : end) - begin);
         std::uint64_t value = 0;
-        if (!parse_u64(token, value) || value > 255U) return false;
+        if (!parse_u64_range(token, 0U, 255U, value)) return false;
         out = (out << 8U) | static_cast<std::uint32_t>(value);
         begin = end == std::string_view::npos ? text.size() : end + 1U;
     }
@@ -371,7 +386,7 @@ ToolResult network_tool(std::string_view input) {
         if (!parse_ipv4(std::string_view(fields[1]).substr(0, slash), address)) return failure("Invalid IPv4 address.");
         std::uint64_t parsed_prefix = 0;
         const std::string_view p(fields[1].data() + slash + 1U, fields[1].size() - slash - 1U);
-        if (!parse_u64(p, parsed_prefix) || parsed_prefix > 32U)
+        if (!parse_u64_range(p, 0U, 32U, parsed_prefix))
             return failure("IPv4 prefix must be 0..32.");
         const unsigned prefix = static_cast<unsigned>(parsed_prefix);
         const std::uint32_t mask = prefix == 0U ? 0U : 0xffffffffU << (32U-prefix);
@@ -398,7 +413,8 @@ ToolResult network_tool(std::string_view input) {
     }
     if (fields[0] == "cidr") {
         std::uint64_t hosts = 0;
-        if (fields.size()!=2U || !parse_u64(fields[1], hosts) || hosts == 0U || hosts > 4294967294ULL)
+        if (fields.size()!=2U ||
+            !parse_u64_range(fields[1], 1U, 4294967294ULL, hosts))
             return failure("Usage: cidr usable-hosts (1..4294967294)");
         std::uint64_t needed = hosts + 2U;
         unsigned host_bits = 0;
@@ -500,17 +516,20 @@ int month_days(int y,int m) {
 }
 bool parse_date(std::string_view s,int& y,int& m,int& d) {
     if(s.size()!=10 || s[4]!='-' || s[7]!='-') return false;
-    auto part=[&](std::size_t pos,std::size_t n,int& v){
+    auto part=[&](std::size_t pos,std::size_t n,
+                   std::uint64_t minimum,std::uint64_t maximum,int& v){
         std::uint64_t parsed = 0;
-        if (!parse_u64(s.substr(pos, n), parsed) ||
-            parsed > static_cast<std::uint64_t>(std::numeric_limits<int>::max())) {
+        if (!parse_u64_range(
+                s.substr(pos, n), minimum, maximum, parsed)) {
             return false;
         }
         v = static_cast<int>(parsed);
         return true;
     };
-    if(!part(0,4,y)||!part(5,2,m)||!part(8,2,d)) return false;
-    return y>=1 && y<=9999 && m>=1 && m<=12 && d>=1 && d<=month_days(y,m);
+    if(!part(0,4,1U,9999U,y)||
+       !part(5,2,1U,12U,m)||
+       !part(8,2,1U,31U,d)) return false;
+    return d<=month_days(y,m);
 }
 std::int64_t days_from_civil(int y,unsigned m,unsigned d) {
     y -= m <= 2;
@@ -560,12 +579,15 @@ ToolResult datetime_tool(std::string_view input) {
         int y,m,d; std::int64_t delta=0;
         if(f.size()!=3U||!parse_date(f[1],y,m,d)) return failure("Usage: add YYYY-MM-DD days");
         if(!parse_i64(f[2], delta)) return failure("Invalid day offset.");
-        int oy; unsigned om,od;
-        civil_from_days(
+        const std::int64_t base_day =
             days_from_civil(
-                y, static_cast<unsigned>(m), static_cast<unsigned>(d)) +
-                delta,
-            oy, om, od);
+                y, static_cast<unsigned>(m), static_cast<unsigned>(d));
+        std::int64_t result_day = 0;
+        if (!infiltratr_i64_add_checked(base_day, delta, &result_day)) {
+            return failure("Result is outside the supported civil date domain.");
+        }
+        int oy; unsigned om,od;
+        civil_from_days(result_day, oy, om, od);
         if(oy<1||oy>9999) return failure("Result is outside supported civil year range 1..9999.");
         return success("Date  "+date_string(oy,om,od));
     }
@@ -576,16 +598,18 @@ ToolResult datetime_tool(std::string_view input) {
             return failure("Use UTC form YYYY-MM-DDTHH:MM:SSZ.");
         int y,m,d; if(!parse_date(std::string_view(t).substr(0,10),y,m,d)) return failure("Invalid date.");
         int hh=0,mm=0,ss=0;
-        auto p=[&](std::size_t pos,int& v){
+        auto p=[&](std::size_t pos,std::uint64_t maximum,int& v){
             std::uint64_t parsed = 0;
-            if (!parse_u64(std::string_view(t).substr(pos, 2U), parsed) ||
-                parsed > static_cast<std::uint64_t>(std::numeric_limits<int>::max())) {
+            if (!parse_u64_range(
+                    std::string_view(t).substr(pos, 2U),
+                    0U, maximum, parsed)) {
                 return false;
             }
             v = static_cast<int>(parsed);
             return true;
         };
-        if(!p(11,hh)||!p(14,mm)||!p(17,ss)||hh>23||mm>59||ss>59) return failure("Invalid UTC time.");
+        if(!p(11,23U)||!p(14,59U)||!p(17,59U))
+            return failure("Invalid UTC time.");
         const std::int64_t seconds =
             days_from_civil(
                 y, static_cast<unsigned>(m), static_cast<unsigned>(d)) *
@@ -687,7 +711,8 @@ ToolResult graph_tool(std::string_view input) {
     std::uint64_t samples=201;
     if(p.size()>1U&&!p[1].empty()&&!parse_double(p[1],xmin)) return failure("Invalid xmin.");
     if(p.size()>2U&&!p[2].empty()&&!parse_double(p[2],xmax)) return failure("Invalid xmax.");
-    if(p.size()>3U&&!p[3].empty()&&(!parse_u64(p[3],samples)||samples<2U||samples>4096U))
+    if(p.size()>3U&&!p[3].empty()&&
+       !parse_u64_range(p[3],2U,4096U,samples))
         return failure("Samples must be 2..4096.");
     if(p.size()>4U) return failure("Too many graph fields.");
     if(!(xmin<xmax)) return failure("xmin must be less than xmax.");
@@ -1154,8 +1179,8 @@ private:
             const std::size_t es=pos_;while(pos_<in_.size()&&infiltratr_ascii_is_digit(static_cast<unsigned char>(in_[pos_])))++pos_;
             if(es==pos_){error_="Malformed decimal exponent.";return{};}
             std::uint64_t parsed_exponent = 0;
-            if(!parse_u64(in_.substr(es,pos_-es), parsed_exponent) ||
-               parsed_exponent > 4096U){
+            if(!parse_u64_range(
+                   in_.substr(es,pos_-es),0U,4096U,parsed_exponent)){
                 error_="Decimal exponent exceeds safety limit.";return{};
             }
             exponent=static_cast<int>(parsed_exponent);if(neg)exponent=-exponent;
@@ -1423,8 +1448,9 @@ ToolResult number_utilities_tool(std::string_view input) {
 
     if (f[0] == "factor") {
         std::uint64_t value = 0U;
-        if (f.size() != 2U || !parse_u64(f[1], value) ||
-            value < 2U || value > 1000000000000ULL) {
+        if (f.size() != 2U ||
+            !parse_u64_range(
+                f[1], 2U, 1000000000000ULL, value)) {
             return failure("Usage: factor integer from 2 through 1000000000000.");
         }
         std::uint64_t remaining = value;

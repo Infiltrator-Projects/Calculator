@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -84,6 +85,27 @@ bool write_private_file(const char* path, std::string_view data) {
                data.data(), data.size()) == 0;
 }
 
+bool read_text_file(const char* path, std::string& data) {
+    if (!path) return false;
+
+    char* contents = nullptr;
+    std::size_t length = 0U;
+    const InfiltratrIoResult status =
+        infiltratr_read_text_file_alloc(path, &contents, &length);
+    if (status == INFILTRATR_IO_EMPTY) {
+        data.clear();
+        return true;
+    }
+    if (status != INFILTRATR_IO_OK) {
+        std::free(contents);
+        return false;
+    }
+
+    data.assign(contents, length);
+    std::free(contents);
+    return true;
+}
+
 // Calculator has exactly three approved MB Corpo faces: S Regular, S Bold
 // and A Condensed Regular. GTK selects the S regular/bold face by weight and
 // the A condensed face for display text; no fourth family is selected here.
@@ -116,11 +138,9 @@ bool system_prefers_dark() {
 ThemeMode load_theme_mode() {
     gchar* path = g_build_filename(
         g_get_user_config_dir(), "infiltrator-calc", "theme", nullptr);
-    gchar* contents = nullptr;
-    gsize length = 0;
     ThemeMode mode = ThemeMode::System;
-    if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
-        std::string value(contents, length);
+    std::string value;
+    if (read_text_file(path, value)) {
         while (!value.empty() &&
                infiltratr_ascii_is_space(
                    static_cast<unsigned char>(value.back()))) {
@@ -131,7 +151,6 @@ ThemeMode load_theme_mode() {
             mode = parsed;
         }
     }
-    g_free(contents);
     g_free(path);
     return mode;
 }
@@ -144,16 +163,13 @@ void load_user_variables() {
     user_variables_loaded = true;
     gchar* path = g_build_filename(
         g_get_user_data_dir(), "infiltrator-calc", "variables", nullptr);
-    gchar* contents = nullptr;
-    gsize length = 0;
-    if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
-        if (!controller.load_variables_text(
-                std::string_view(contents, length))) {
+    std::string contents;
+    if (read_text_file(path, contents)) {
+        if (!controller.load_variables_text(contents)) {
             g_printerr(
                 "Calculator ignored malformed variables data at %s\n", path);
         }
     }
-    g_free(contents);
     g_free(path);
 }
 
@@ -178,17 +194,14 @@ void load_user_functions() {
 
     gchar* path = g_build_filename(
         g_get_user_data_dir(), "infiltrator-calc", "custom-functions", nullptr);
-    gchar* contents = nullptr;
-    gsize length = 0;
-    if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
-        if (!controller.load_function_definitions_text(
-                std::string_view(contents, length))) {
+    std::string contents;
+    if (read_text_file(path, contents)) {
+        if (!controller.load_function_definitions_text(contents)) {
             g_printerr(
                 "Calculator ignored malformed custom-functions data at %s\n",
                 path);
         }
     }
-    g_free(contents);
     g_free(path);
 }
 
@@ -473,7 +486,7 @@ bool font_family_available(const char* wanted) {
     bool found = false;
     for (int i = 0; i < count; ++i) {
         const char* name = pango_font_family_get_name(families[i]);
-        if (name && g_ascii_strcasecmp(name, wanted) == 0) {
+        if (name && infiltratr_ascii_equal_ci(name, wanted)) {
             found = true;
             break;
         }

@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.12) unstable; urgency=medium
+
+  * Complete remaining safe Common-to-Calculator reuse from the 1.19.20 audit.
+  * Use Common bounded parsers and checked signed date arithmetic.
+  * Use Common text reads and ASCII comparison in the Linux shell.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 14:48:00 +1000
+
 infiltrator-calculator (0.2.11) unstable; urgency=medium
 
   * Move to Common 1.19.20 and consume its numeric, ASCII and checked-arithmetic contracts.

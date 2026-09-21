@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.12 — 2026-09-21
+
+- Complete the remaining safe Common-to-Calculator reuse identified by the post-1.19.20 forensic audit.
+- Use Common range parsers for bounded integer and floating-point inputs in network, date/time, graph, exact-decimal, engineering and number-utility paths.
+- Use Common checked signed addition for civil-date offsets so extreme valid int64 input cannot trigger signed overflow.
+- Use Common allocation-backed text reads for Linux theme, variables and custom-function persistence.
+- Use Common deterministic ASCII case-insensitive comparison for Linux font-family validation.
+
 ## 0.2.11 — 2026-09-21
 
 - Move Calculator to the reviewed Common 1.19.20 baseline.
