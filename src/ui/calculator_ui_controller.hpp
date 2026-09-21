@@ -104,6 +104,7 @@ private:
     DispatchResult backspace(std::size_t cursor);
 
     bool current_value(double& value);
+    bool current_scientific_value(ScientificValue& value);
     bool current_programmer_value(std::uint64_t& value);
 
     void calculate();
@@ -121,6 +122,8 @@ private:
     std::string scientific_status_text() const;
     std::string programmer_status_text() const;
     std::string format_real(double value) const;
+    std::string format_scientific_result(
+        const ScientificValue& value) const;
     std::string format_display(double value) const;
     Command effective_scientific_command(Command command) const;
     bool current_number_has_decimal() const;
@@ -133,7 +136,9 @@ private:
     ViewState state_;
     DisplayPreferences display_preferences_;
     Result real_cache_;
+    ScientificResult scientific_cache_;
     ProgrammerResult programmer_cache_;
+    unsigned scientific_digits_ = kScientificDefaultDigits;
 };
 
 } // namespace calculator::ui
