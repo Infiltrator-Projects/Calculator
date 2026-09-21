@@ -111,6 +111,21 @@ int main() {
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "3");
 
+    controller.set_expression("1/7");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result.size() > 40U);
+    CHECK(controller.state().result.rfind(
+        "0.142857142857142857142857", 0) == 0U);
+
+    controller.set_expression("-1");
+    controller.dispatch(Command::SquareRoot);
+    CHECK(controller.state().result == "i");
+    CHECK(controller.state().expression == "i");
+
+    controller.set_expression("1e1000*1e1000");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "1e+2000");
+
     const std::uint64_t before_definition_history =
         controller.history_revision();
     controller.set_expression("inc(x)=x+1");
