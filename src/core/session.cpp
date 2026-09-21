@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "session.hpp"
 
-#include <infiltratr/token.h>
-
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -38,7 +36,8 @@ bool valid_identifier(const std::string& name) {
 }
 
 bool reserved_identifier(const std::string& name) {
-    if (name == "_" || name == "rand" ||
+    if (name == "_" || name == "rand" || name == "i" ||
+        name == "conj" || name == "real" || name == "imag" ||
         is_builtin_function_name(name)) return true;
     for (const auto& constant : constant_catalog()) {
         if (constant.name == name || constant.alias == name) return true;
@@ -194,11 +193,121 @@ Result Session::evaluate(
         assignment ? expression : input, variables_, functions_, angle_unit);
 
     if (result.ok) {
-        if (assignment) variables_[*assignment] = result.value;
+        const ScientificValue precise =
+            scientific_value_from_double(result.value);
+        if (assignment) {
+            variables_[*assignment] = result.value;
+            scientific_variables_[*assignment] = precise;
+        }
         variables_["_"] = result.value;
+        scientific_variables_["_"] = precise;
     }
 
     record_history(input, result, HistoryKind::Scientific);
+    return result;
+}
+
+
+ScientificResult Session::preview_scientific(
+    const std::string& input, AngleUnit angle_unit,
+    unsigned decimal_digits) const {
+    std::string definition_error;
+    const auto definition =
+        function_definition(input, definition_error);
+    if (!definition_error.empty()) {
+        return {false, {}, definition_error, {}};
+    }
+    if (definition) {
+        return {
+            true, {}, {},
+            "Function defined: " + definition->name};
+    }
+
+    std::string expression;
+    const auto assignment = assignment_name(input, expression);
+    if (assignment && reserved_identifier(*assignment)) {
+        return {
+            false, {}, "cannot assign reserved constant", {}};
+    }
+
+    return calculator::evaluate_scientific(
+        assignment ? expression : input,
+        scientific_variables_, functions_,
+        angle_unit, decimal_digits);
+}
+
+ScientificResult Session::evaluate_scientific(
+    const std::string& input, AngleUnit angle_unit,
+    unsigned decimal_digits) {
+    std::string definition_error;
+    const auto definition =
+        function_definition(input, definition_error);
+    if (!definition_error.empty()) {
+        ScientificResult result{
+            false, {}, definition_error, {}};
+        record_history_text(
+            input, "Error: " + result.error, false,
+            HistoryKind::Scientific);
+        return result;
+    }
+    if (definition) {
+        functions_[definition->name] = definition->definition;
+        ScientificResult result{
+            true, {}, {},
+            "Function defined: " + definition->name};
+        record_history_text(
+            input, result.display, true,
+            HistoryKind::Scientific);
+        return result;
+    }
+
+    std::string expression;
+    const auto assignment = assignment_name(input, expression);
+    if (assignment && reserved_identifier(*assignment)) {
+        ScientificResult result{
+            false, {}, "cannot assign reserved constant", {}};
+        record_history_text(
+            input, "Error: " + result.error, false,
+            HistoryKind::Scientific);
+        return result;
+    }
+
+    ScientificResult result = calculator::evaluate_scientific(
+        assignment ? expression : input,
+        scientific_variables_, functions_,
+        angle_unit, decimal_digits);
+
+    if (result.ok) {
+        if (assignment) {
+            scientific_variables_[*assignment] = result.value;
+            double approximate = 0.0;
+            if (scientific_value_to_double(
+                    result.value, approximate)) {
+                variables_[*assignment] = approximate;
+            } else {
+                variables_.erase(*assignment);
+            }
+        }
+
+        scientific_variables_["_"] = result.value;
+        double approximate = 0.0;
+        if (scientific_value_to_double(
+                result.value, approximate)) {
+            variables_["_"] = approximate;
+        } else {
+            variables_.erase("_");
+        }
+    }
+
+    const std::string output = result.ok
+        ? (result.display.empty()
+            ? format_scientific_value(
+                result.value, decimal_digits)
+            : result.display)
+        : ("Error: " + result.error);
+    record_history_text(
+        input, output, result.ok,
+        HistoryKind::Scientific);
     return result;
 }
 
@@ -226,26 +335,66 @@ void Session::record_history_text(std::string input, std::string output,
 
 void Session::memory_clear() {
     memory_ = 0.0;
+    scientific_memory_ = {};
     memory_set_ = false;
 }
 void Session::memory_store(double value) {
     memory_ = value;
+    scientific_memory_ = scientific_value_from_double(value);
     memory_set_ = true;
 }
 void Session::memory_add(double value) {
     memory_ += value;
+    scientific_memory_ = scientific_value_from_double(memory_);
     memory_set_ = true;
 }
 void Session::memory_subtract(double value) {
     memory_ -= value;
+    scientific_memory_ = scientific_value_from_double(memory_);
     memory_set_ = true;
 }
 double Session::memory_recall() const noexcept { return memory_; }
+
+void Session::memory_store_scientific(ScientificValue value) {
+    scientific_memory_ = std::move(value);
+    double approximate = 0.0;
+    memory_ = scientific_value_to_double(
+        scientific_memory_, approximate) ? approximate : 0.0;
+    memory_set_ = true;
+}
+
+void Session::memory_add_scientific(
+    const ScientificValue& value, unsigned decimal_digits) {
+    const ScientificValue left =
+        memory_set_ ? scientific_memory_ : ScientificValue{};
+    const auto result = calculator::evaluate_scientific(
+        "(" + scientific_value_expression(left) + ")+(" +
+            scientific_value_expression(value) + ")",
+        {}, {}, AngleUnit::Radians, decimal_digits);
+    if (result.ok) memory_store_scientific(result.value);
+}
+
+void Session::memory_subtract_scientific(
+    const ScientificValue& value, unsigned decimal_digits) {
+    const ScientificValue left =
+        memory_set_ ? scientific_memory_ : ScientificValue{};
+    const auto result = calculator::evaluate_scientific(
+        "(" + scientific_value_expression(left) + ")-(" +
+            scientific_value_expression(value) + ")",
+        {}, {}, AngleUnit::Radians, decimal_digits);
+    if (result.ok) memory_store_scientific(result.value);
+}
+
+ScientificValue Session::memory_recall_scientific() const {
+    return scientific_memory_;
+}
 bool Session::memory_empty() const noexcept { return !memory_set_; }
 
 void Session::set_variable(std::string name, double value) {
     if (valid_identifier(name) && !reserved_identifier(name)) {
-        variables_[std::move(name)] = value;
+        variables_[name] = value;
+        scientific_variables_[std::move(name)] =
+            scientific_value_from_double(value);
     }
 }
 
@@ -257,32 +406,42 @@ std::optional<double> Session::variable(const std::string& name) const {
 
 const Variables& Session::variables() const noexcept { return variables_; }
 
+const ScientificVariables&
+Session::scientific_variables() const noexcept {
+    return scientific_variables_;
+}
+
 std::string Session::variables_text() const {
     std::vector<std::string> names;
-    names.reserve(variables_.size());
-    for (const auto& item : variables_) {
+    names.reserve(scientific_variables_.size());
+    for (const auto& item : scientific_variables_) {
         if (item.first != "_") names.push_back(item.first);
     }
     std::sort(names.begin(), names.end());
 
     std::ostringstream out;
-    out << std::setprecision(std::numeric_limits<double>::max_digits10);
     for (const auto& name : names) {
-        const auto it = variables_.find(name);
-        if (it == variables_.end() || !std::isfinite(it->second)) continue;
-        out << name << '=' << it->second << '\n';
+        const auto it = scientific_variables_.find(name);
+        if (it == scientific_variables_.end()) continue;
+        out << name << '='
+            << scientific_value_expression(it->second)
+            << '\n';
     }
     return out.str();
 }
 
 bool Session::load_variables_text(std::string_view text) {
-    Variables loaded;
+    ScientificVariables loaded_scientific;
+    Variables loaded_legacy;
+
     std::size_t begin = 0;
     while (begin <= text.size()) {
         const std::size_t newline = text.find('\n', begin);
         const std::size_t end =
-            newline == std::string_view::npos ? text.size() : newline;
-        const std::string line = trim_copy(text.substr(begin, end - begin));
+            newline == std::string_view::npos
+                ? text.size() : newline;
+        const std::string line =
+            trim_copy(text.substr(begin, end - begin));
         if (!line.empty()) {
             const std::size_t equals = line.find('=');
             if (equals == std::string::npos) return false;
@@ -290,29 +449,52 @@ bool Session::load_variables_text(std::string_view text) {
                 std::string_view(line).substr(0, equals));
             const std::string value_text = trim_copy(
                 std::string_view(line).substr(equals + 1U));
-            if (!valid_identifier(name) || reserved_identifier(name) ||
+            if (!valid_identifier(name) ||
+                reserved_identifier(name) ||
                 name == "_" || value_text.empty()) {
                 return false;
             }
 
-            const char* cursor = value_text.data();
-            double value = 0.0;
-            if (!infiltratr_parse_double_token(&cursor, true, &value) ||
-                cursor != value_text.data() + value_text.size() ||
-                !std::isfinite(value)) {
-                return false;
+            const ScientificResult parsed =
+                calculator::evaluate_scientific(
+                    value_text, loaded_scientific, functions_,
+                    AngleUnit::Radians, kScientificDefaultDigits);
+            if (!parsed.ok || !parsed.display.empty()) return false;
+
+            loaded_scientific[name] = parsed.value;
+            double approximate = 0.0;
+            if (scientific_value_to_double(
+                    parsed.value, approximate)) {
+                loaded_legacy[name] = approximate;
             }
-            loaded[name] = value;
         }
         if (newline == std::string_view::npos) break;
         begin = newline + 1U;
     }
 
-    const auto last = variables_.find("_");
-    std::optional<double> last_value;
-    if (last != variables_.end()) last_value = last->second;
-    variables_ = std::move(loaded);
-    if (last_value) variables_["_"] = *last_value;
+    const auto precise_last = scientific_variables_.find("_");
+    const bool has_precise_last =
+        precise_last != scientific_variables_.end();
+    ScientificValue precise_last_value{};
+    if (has_precise_last) {
+        precise_last_value = precise_last->second;
+    }
+
+    const auto legacy_last = variables_.find("_");
+    const bool has_legacy_last = legacy_last != variables_.end();
+    const double legacy_last_value =
+        has_legacy_last ? legacy_last->second : 0.0;
+
+    scientific_variables_ = std::move(loaded_scientific);
+    variables_ = std::move(loaded_legacy);
+
+    if (has_precise_last) {
+        scientific_variables_["_"] =
+            std::move(precise_last_value);
+    }
+    if (has_legacy_last) {
+        variables_["_"] = legacy_last_value;
+    }
     return true;
 }
 
