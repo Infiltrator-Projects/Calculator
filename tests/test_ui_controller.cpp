@@ -242,6 +242,21 @@ int main() {
     controller.set_display_preferences(scientific);
     CHECK(controller.state().result.find("1.2346e+04") != std::string::npos);
 
+    controller.set_mode(Mode::Scientific);
+    controller.set_expression("12345.5");
+    fixed.trailing_zeroes = true;
+    controller.set_display_preferences(fixed);
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "12,345.500");
+
+    fixed.trailing_zeroes = false;
+    controller.set_display_preferences(fixed);
+    CHECK(controller.state().result == "12,345.5");
+
+    controller.set_display_preferences(scientific);
+    CHECK(controller.state().result.find("1.2346e+04") !=
+          std::string::npos);
+
     controller.set_display_preferences({});
 
     controller.set_mode(Mode::Programmer);
