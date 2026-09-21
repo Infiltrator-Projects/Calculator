@@ -357,18 +357,32 @@ std::string Controller::format_real(double value) const {
 
 std::string Controller::format_scientific_result(
     const ScientificValue& value) const {
-    if (state_.scientific_notation ||
-        display_preferences_.format == ResultFormat::Scientific) {
+    if (state_.scientific_notation) {
         return calculator::format_scientific_value(
             value, scientific_digits_, true);
     }
-    if (display_preferences_.format == ResultFormat::Engineering) {
-        return calculator::format_engineering_value(
-            value, std::max(
-                2U, display_preferences_.decimal_places + 1U));
+
+    switch (display_preferences_.format) {
+    case ResultFormat::Fixed:
+        return calculator::format_scientific_display(
+            value, ScientificDisplayFormat::Fixed,
+            display_preferences_.decimal_places,
+            display_preferences_.trailing_zeroes,
+            display_preferences_.group_thousands);
+    case ResultFormat::Scientific:
+        return calculator::format_scientific_display(
+            value, ScientificDisplayFormat::Scientific,
+            display_preferences_.decimal_places,
+            display_preferences_.trailing_zeroes, false);
+    case ResultFormat::Engineering:
+        return calculator::format_engineering_value(value, 13U);
+    case ResultFormat::Automatic:
+    default:
+        return calculator::format_scientific_display(
+            value, ScientificDisplayFormat::General,
+            scientific_digits_, false,
+            display_preferences_.group_thousands);
     }
-    return calculator::format_scientific_value(
-        value, scientific_digits_);
 }
 
 Command Controller::effective_scientific_command(Command command) const {
