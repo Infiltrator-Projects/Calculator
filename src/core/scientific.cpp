@@ -316,6 +316,9 @@ std::string group_integer_digits(std::string text) {
     return text;
 }
 
+std::string engineering_component(
+    const Real& value, unsigned significant_digits);
+
 std::string display_component(
     const Real& value,
     ScientificDisplayFormat format,
