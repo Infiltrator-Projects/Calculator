@@ -25,6 +25,7 @@ enum class Command {
     MemoryStore,
     MemoryAdd,
     MemorySubtract,
+    ClearEntry,
     Clear,
     AllClear,
     Backspace,
@@ -188,14 +189,14 @@ inline constexpr std::array<ButtonSpec, 5> kStandardMemory{{
 
 inline constexpr std::array<ButtonSpec, 24> kStandardKeypad{{
     {"%", ButtonRole::Operation, Command::Percent},
+    {"CE", ButtonRole::Clear, Command::ClearEntry},
     {"C", ButtonRole::Clear, Command::Clear},
     {"⌫", ButtonRole::Clear, Command::Backspace},
-    {"÷", ButtonRole::Operation, Command::Divide},
 
     {"1/x", ButtonRole::Operation, Command::Reciprocal},
     {"x²", ButtonRole::Operation, Command::Square},
     {"√", ButtonRole::Operation, Command::SquareRoot},
-    {"^", ButtonRole::Operation, Command::Power},
+    {"÷", ButtonRole::Operation, Command::Divide},
 
     {"7", ButtonRole::Number, Command::Digit7},
     {"8", ButtonRole::Number, Command::Digit8},

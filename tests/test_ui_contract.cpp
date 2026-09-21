@@ -92,6 +92,11 @@ int main() {
     CHECK(kStandardMemory[4].command == Command::MemorySubtract);
 
     CHECK(kStandardKeypad.front().label == "%");
+    CHECK(kStandardKeypad[1].label == "CE");
+    CHECK(kStandardKeypad[1].command == Command::ClearEntry);
+    CHECK(kStandardKeypad[2].command == Command::Clear);
+    CHECK(kStandardKeypad[3].command == Command::Backspace);
+    CHECK(kStandardKeypad[7].command == Command::Divide);
     CHECK(kStandardKeypad.back().command == Command::Equals);
     CHECK(kScientificKeypad.front().command == Command::CycleAngleUnit);
     CHECK(kScientificKeypad.back().command == Command::Equals);

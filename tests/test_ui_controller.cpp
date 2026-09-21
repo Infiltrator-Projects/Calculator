@@ -31,8 +31,10 @@ int main() {
     CHECK(!controller.command_enabled(Command::Equals));
     CHECK(!controller.command_enabled(Command::MemoryRecall));
     CHECK(!controller.command_enabled(Command::MemoryClear));
+    CHECK(!controller.command_enabled(Command::ClearEntry));
 
     controller.dispatch(Command::Digit3);
+    CHECK(controller.command_enabled(Command::ClearEntry));
     CHECK(controller.command_enabled(Command::Add));
     controller.dispatch(Command::Add);
     controller.dispatch(Command::Digit3);
@@ -44,6 +46,33 @@ int main() {
     controller.dispatch(Command::Clear);
     CHECK(controller.state().expression.empty());
     CHECK(controller.state().result == "0");
+
+    controller.set_expression("12+34");
+    auto clear_entry = controller.dispatch(Command::ClearEntry);
+    CHECK(controller.state().expression == "12+");
+    CHECK(controller.state().result == "0");
+    CHECK(controller.state().status == "READY");
+    CHECK(clear_entry.cursor == 3);
+    CHECK(clear_entry.expression_changed);
+    controller.dispatch(Command::Digit5);
+    CHECK(controller.state().expression == "12+5");
+    CHECK(controller.state().result == "17");
+
+    controller.set_expression("1+2e-3");
+    controller.dispatch(Command::ClearEntry);
+    CHECK(controller.state().expression == "1+");
+    CHECK(controller.state().result == "0");
+
+    controller.set_expression("10+(2+3)");
+    controller.dispatch(Command::ClearEntry);
+    CHECK(controller.state().expression == "10+");
+    CHECK(controller.state().result == "0");
+
+    controller.set_expression("987");
+    controller.dispatch(Command::ClearEntry);
+    CHECK(controller.state().expression.empty());
+    CHECK(controller.state().result == "0");
+    CHECK(!controller.command_enabled(Command::ClearEntry));
 
     controller.dispatch(Command::Digit2);
     controller.dispatch(Command::Add);

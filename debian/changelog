@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.8) unstable; urgency=medium
+
+  * Add Standard-mode CE current-entry clearing semantics.
+  * Align Standard keypad layout across Linux, Windows and iPhone.
+  * Add CE controller and cross-platform parity regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 11:06:00 +1000
+
 infiltrator-calculator (0.2.7) unstable; urgency=medium
 
   * Correct the Windows application icon to the canonical Calculator artwork.

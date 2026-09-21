@@ -101,6 +101,7 @@ for needle in (
     "inline constexpr std::array<ButtonSpec, 44> kProgrammerKeypad",
     '{"MC", ButtonRole::Utility, Command::MemoryClear}',
     '{"MS", ButtonRole::Utility, Command::MemoryStore}',
+    '{"CE", ButtonRole::Clear, Command::ClearEntry}',
     '{"=", ButtonRole::Equals, Command::Equals}',
     "is_programmer_selector(Command command)",
     "insertion_text(Command command)",
@@ -212,6 +213,10 @@ for needle in (
 # iPhone owns only SwiftUI adaptation and platform theme preference. The
 # semantic Day/Night values must come from Common through the Objective-C++
 # bridge rather than being mirrored in Swift.
+assert '["%", "CE", "C", "⌫"]' in Path(
+    "ios/Sources/CalculatorModel.swift"
+).read_text(encoding="utf-8"), "iPhone Standard keypad is missing CE"
+
 for needle in (
     "CalculatorBridge.themePalette(dark: dark)",
     "CalculatorBridge.designMetrics()",

@@ -9,7 +9,7 @@ Calculator has one interaction state machine rendered by three native shells. Li
 
 - Standard, Scientific and Programmer mode names;
 - calculator button labels, order, role and command identity;
-- the Standard MC/MR/MS/M+/M− memory strip and desktop keypad layouts;
+- the Standard MC/MR/MS/M+/M− memory strip and desktop keypad layouts, including distinct CE (current entry) and C (whole calculation) actions;
 - shared logical desktop sizing/spacing metrics and responsive breakpoints; and
 - command-to-insertion mappings and Programmer selector classification.
 
@@ -21,7 +21,7 @@ Calculator has one interaction state machine rendered by three native shells. Li
 - Programmer radix, width and signedness;
 - memory, variables and history through `Session`;
 - command enablement; and
-- command dispatch and calculator interaction behaviour.
+- command dispatch and calculator interaction behaviour, including Standard CE semantics that discard only the current operand while preserving the pending expression.
 
 The logical metrics are platform-neutral contract values. Standard mode has a compact 480-unit preferred/minimum desktop height; Scientific and Programmer use the extended 610-unit preferred height with a 520-unit minimum. Both GTK and Win32 consume those mode-aware values rather than inventing platform-local heights. Win32 performs DPI conversion when mapping them to physical coordinates; GTK renders them through its native layout system.
 

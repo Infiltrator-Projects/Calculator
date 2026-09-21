@@ -78,8 +78,8 @@ final class CalculatorModel: ObservableObject {
 
     let standardKeys = [
         ["MC", "MR", "MS", "M+", "M−"],
-        ["%", "C", "⌫", "÷"],
-        ["1/x", "x²", "√", "^"],
+        ["%", "CE", "C", "⌫"],
+        ["1/x", "x²", "√", "÷"],
         ["7", "8", "9", "×"],
         ["4", "5", "6", "−"],
         ["1", "2", "3", "+"],

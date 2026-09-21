@@ -584,6 +584,78 @@ void Controller::clear_calculation() {
     }
 }
 
+void Controller::clear_entry() {
+    if (state_.mode != Mode::Standard) return;
+
+    std::size_t end = state_.expression.size();
+    while (end > 0 &&
+           std::isspace(static_cast<unsigned char>(
+               state_.expression[end - 1]))) {
+        --end;
+    }
+
+    std::size_t start = end;
+    int parenthesis_depth = 0;
+
+    const auto sign_is_unary = [this](std::size_t position) {
+        if (position == 0) return true;
+
+        std::size_t previous = position;
+        while (previous > 0 &&
+               std::isspace(static_cast<unsigned char>(
+                   state_.expression[previous - 1]))) {
+            --previous;
+        }
+        if (previous == 0) return true;
+
+        const char before = state_.expression[previous - 1];
+        return before == 'e' || before == 'E' ||
+               before == '+' || before == '-' ||
+               before == '*' || before == '/' ||
+               before == '^' || before == '(';
+    };
+
+    for (std::size_t cursor = end; cursor > 0; --cursor) {
+        const std::size_t position = cursor - 1;
+        const char ch = state_.expression[position];
+
+        if (ch == ')') {
+            ++parenthesis_depth;
+            start = position;
+            continue;
+        }
+        if (ch == '(') {
+            if (parenthesis_depth > 0) {
+                --parenthesis_depth;
+                start = position;
+                continue;
+            }
+            break;
+        }
+
+        if (parenthesis_depth == 0 &&
+            (ch == '+' || ch == '-' || ch == '*' ||
+             ch == '/' || ch == '^')) {
+            if ((ch == '+' || ch == '-') && sign_is_unary(position)) {
+                start = position;
+                continue;
+            }
+            start = position + 1;
+            break;
+        }
+
+        start = position;
+    }
+
+    if (start < state_.expression.size()) {
+        state_.expression.erase(start);
+    }
+
+    state_.result = "0";
+    state_.fault = false;
+    set_status("READY");
+}
+
 void Controller::unary_transform(Command command) {
     double value = 0.0;
     if (!current_value(value)) return;
@@ -779,6 +851,8 @@ bool Controller::command_enabled(Command command) const {
     case Command::MemoryAdd:
     case Command::MemorySubtract:
         return expression_has_value();
+    case Command::ClearEntry:
+        return state_.mode == Mode::Standard && !state_.expression.empty();
     case Command::Backspace:
         return !state_.expression.empty();
     case Command::Equals:
@@ -928,6 +1002,12 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
     case Command::Equals:
         calculate();
         return {normalized_cursor(cursor), false};
+    case Command::ClearEntry: {
+        const std::size_t previous_size = state_.expression.size();
+        clear_entry();
+        return {state_.expression.size(),
+                state_.expression.size() != previous_size};
+    }
     case Command::Clear:
         clear_calculation();
         return {0, true};

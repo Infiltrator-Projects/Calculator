@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.8 — 2026-09-21
+
+- Add a first-class Standard-mode CE action that clears only the current operand while preserving the pending expression and resets the entry display to zero.
+- Align the six-row Standard keypad with the familiar `% / CE / C / backspace` and `1/x / x² / √ / divide` arrangement on Linux, Windows and iPhone; power remains available in Scientific mode and typed expressions.
+- Add regression coverage for ordinary operands, exponent notation, grouped entries, command enablement and iPhone presentation parity.
+
 ## 0.2.7 — 2026-09-21
 
 - Replace the stale Windows ICO with the canonical Calculator graphite and #00ADEF artwork so the executable, title bar and taskbar use the same product identity as the maintained Linux application.
