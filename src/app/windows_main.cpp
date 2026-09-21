@@ -192,6 +192,9 @@ std::wstring window_text(HWND window) {
     return std::wstring(buffer.data(), static_cast<std::size_t>(length));
 }
 
+// All shared desktop dimensions are logical 96-DPI units. Win32 is solely
+// responsible for mapping them to device pixels; calculation/layout contracts
+// therefore stay independent of monitor DPI.
 int window_dpi(HWND window) {
     if (window != nullptr) {
         const UINT dpi = GetDpiForWindow(window);
@@ -311,6 +314,9 @@ bool register_font_resource(int resource_id) {
     return true;
 }
 
+// Fonts are process-private resources embedded in the executable. Failure is
+// fatal to Calculator's strict typography contract; Windows must not silently
+// substitute a fourth UI family.
 bool register_bundled_fonts() {
     return
         register_font_resource(CALCULATOR_FONT_RESOURCE_REGULAR) &&
@@ -359,6 +365,9 @@ void rebuild_fonts(HWND window) {
     g_small_font = make_font(window, 8, FW_BOLD, ui_family);
 }
 
+// Non-client theming is best-effort platform adaptation. Missing DWM entry
+// points must not affect Calculator semantics or prevent the window running on
+// supported Windows variants with a reduced native chrome treatment.
 void apply_nonclient_theme(HWND window) {
     using DwmSetWindowAttributeFn = HRESULT(WINAPI*)(HWND, DWORD, LPCVOID, DWORD);
     HMODULE module = LoadLibraryW(L"dwmapi.dll");

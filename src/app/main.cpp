@@ -73,6 +73,10 @@ Controller controller;
 ThemeMode theme_mode = ThemeMode::System;
 bool effective_dark_theme = true;
 
+// Linux persistence policy: Calculator owns file formats and XDG locations;
+ // Common owns private-directory creation plus durable/atomic file I/O. Reads
+ // treat an empty file as a valid empty document and malformed content is
+ // rejected by the owning Controller/Session parser before state is replaced.
 bool ensure_private_directory(const char* path) {
     return path && *path &&
            infiltratr_mkdir_parents(path, 0700U) == 0;
@@ -158,6 +162,9 @@ ThemeMode load_theme_mode() {
 bool user_functions_loaded = false;
 bool user_variables_loaded = false;
 
+// User variables/functions are loaded once per process. Secondary Calculator
+// windows are independent processes, so this does not create cross-window
+// mutable state inside the GTK shell.
 void load_user_variables() {
     if (user_variables_loaded) return;
     user_variables_loaded = true;

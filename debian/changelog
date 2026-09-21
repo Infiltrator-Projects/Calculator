@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.13) unstable; urgency=medium
+
+  * Synchronise canonical documentation with current numeric, tool and Common contracts.
+  * Strengthen public API and implementation commentary for non-obvious invariants.
+  * Mark superseded ADRs and record the active Scientific/Common architecture.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 15:58:00 +1000
+
 infiltrator-calculator (0.2.12) unstable; urgency=medium
 
   * Complete remaining safe Common-to-Calculator reuse from the 1.19.20 audit.

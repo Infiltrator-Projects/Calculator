@@ -35,6 +35,9 @@ private enum ThemePreference: String, CaseIterable, Identifiable {
     }
 }
 
+// SwiftUI resolves native Color values from Common through the bridge. The key
+// set mirrors the shared semantic palette; this layer must not invent alternate
+// Day/Night colour constants.
 private struct CalculatorPalette {
     let background: Color
     let panel: Color
@@ -120,6 +123,8 @@ private struct CalculatorPalette {
 
 }
 
+// Geometry values that are product-family design semantics come from Common;
+ // touch-native SwiftUI composition remains local to iPhone.
 private struct SharedDesignMetrics {
     let smallRadius: CGFloat
     let controlRadius: CGFloat

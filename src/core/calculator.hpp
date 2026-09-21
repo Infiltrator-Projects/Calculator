@@ -25,7 +25,12 @@ struct ConstantInfo {
     std::string_view unit;
 };
 
+// Process-lifetime catalogue of Calculator-owned constants. Returned views
+// refer to static storage and remain valid for the life of the process.
 const std::array<ConstantInfo, 17>& constant_catalog() noexcept;
+
+// True only for names reserved by the Calculator expression grammar. This is
+// the canonical guard used by variable/function definition paths.
 bool is_builtin_function_name(std::string_view name) noexcept;
 
 struct Result {
@@ -78,6 +83,9 @@ std::string format_value(double value);
 std::string format_scientific_value(double value);
 std::string format_engineering_value(double value);
 
+// Evaluate the mathematical expression grammar in the binary64 domain.
+// Overloads progressively add variable/function scope; failures are returned
+// through Result rather than thrown for ordinary syntax/domain errors.
 Result evaluate(const std::string& expression);
 Result evaluate(const std::string& expression, const Variables& variables);
 Result evaluate(const std::string& expression, const Variables& variables,

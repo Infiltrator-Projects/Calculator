@@ -1,5 +1,18 @@
 # Changelog
 
+This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
+
+## Unreleased
+
+No unreleased changes.
+
+## 0.2.13 — 2026-09-21
+
+- Bring canonical design, decisions, numerics, roadmap and README documentation back into agreement with the released arbitrary-precision Scientific domain, fourteen-tool catalogue, unbounded default history and Common 1.19.20 baseline.
+- Mark superseded architectural decisions explicitly and add current ADRs for Scientific's multiprecision domain and the Common 1.19.20 public dependency boundary.
+- Strengthen public API and implementation commentary around precision, parser limits, persistence transactions, controller caching/state transitions and native bridge contracts without narrating straightforward syntax.
+- Clarify the repository's documentation/comment maintenance standard so non-obvious lifetime, ownership, side-effect, failure, persistence and precision contracts remain reconstructible.
+
 ## 0.2.12 — 2026-09-21
 
 - Complete the remaining safe Common-to-Calculator reuse identified by the post-1.19.20 forensic audit.
@@ -86,12 +99,6 @@
 - Extend the 256-bit MPFR oracle across denormal, extreme logarithmic/inverse-hyperbolic and near underflow/overflow boundaries.
 - Add a generous 5 ms average controller-keystroke CI budget to detect major interaction-performance regressions.
 - Preserve the corrected Linux desktop identity introduced after 0.2.0.
-
-This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
-
-## Unreleased
-
-No unreleased changes.
 
 ## 0.2.0 — 2026-09-20
 

@@ -42,7 +42,7 @@ Platform-visible changes also require the relevant native build/integration evid
 
 Read `docs/README.md` for document authority. Architecture belongs in `docs/ARCHITECTURE.md`; rationale in `docs/DESIGN.md`; durable choices in `docs/DECISIONS.md`; direction in `docs/ROADMAP.md`; validation evidence in `docs/VALIDATION.md`; numerical contracts and evidence in `docs/NUMERICS.md`; cross-platform representation and compatibility boundaries in `docs/PORTABILITY.md`; and shared desktop/iPhone ownership rules in `docs/UI_PARITY.md`.
 
-Comments should preserve information expensive to reconstruct: units, precedence, representation assumptions, numerical domains, ownership, compatibility constraints and deliberate deviations. Do not narrate straightforward syntax.
+Comments should preserve information expensive to reconstruct: units, precedence, representation assumptions, numerical domains, ownership, compatibility constraints and deliberate deviations. Public interfaces should state non-obvious lifetime, ownership, side-effect, failure, persistence and precision contracts where those are not evident from the type signature. Do not narrate straightforward syntax.
 
 ## Repository discipline
 

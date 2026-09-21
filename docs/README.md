@@ -26,6 +26,7 @@ Code and tests remain authoritative for executable behaviour. Immutable tags/rel
 - [Portability](PORTABILITY.md) — language, platform, representation, locale, bridge, ABI and compatibility boundaries.
 - [UI parity](UI_PARITY.md) — shared controller ownership, desktop-layout responsibilities and native-shell parity boundaries.
 - [Linux Mint / GNOME Calculator parity](MINT_PARITY.md) — exact Mint 22.x replacement baseline, adopted behaviours and remaining architectural differences.
+- [Advanced Tools](TOOLS.md) — user-facing tool catalogue, command forms, examples, numeric domains and limits.
 
 ## Maintenance rule
 
@@ -33,5 +34,3 @@ When a change moves an ownership boundary, support boundary, numerical contract,
 
 Avoid copying the same capability/status statement into several files. Historical release detail belongs in Git tags/releases; implementation commentary belongs near the owning code/tests unless it establishes a maintained cross-cutting contract.
 
-
-- [TOOLS.md](TOOLS.md) — user-facing Advanced Tools catalogue, command forms, examples, numeric domains and limits.

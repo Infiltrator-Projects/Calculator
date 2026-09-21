@@ -23,13 +23,15 @@ Those semantics would be incorrect if implemented through the real-number expres
 
 ## Current real-number representation
 
-The current Standard/Scientific domain uses IEEE-754 binary64. This is a deliberate current constraint, not an assertion that binary64 is universally sufficient.
+Standard mode deliberately uses IEEE-754 binary64 because its contract is conventional immediate desktop-calculator interaction rather than arbitrary-precision symbolic mathematics.
 
-A new numeric representation should be introduced when a feature has a correctness requirement that binary64 cannot satisfy cleanly—for example exact decimal finance, arbitrary precision, complex values or symbolic manipulation. The trigger is a domain requirement with tests, not a desire to make the type system more elaborate.
+Scientific mode is a distinct arbitrary-precision real/complex domain backed by Boost.Multiprecision, with 50 decimal digits by default and a maintained ceiling of 1000 digits. Decimal literals and intermediate Scientific arithmetic remain in that domain; they are not silently routed through binary64. The public Session/Controller boundary carries real and imaginary components as decimal text so platform shells do not acquire a third-party multiprecision ABI.
+
+Exact decimal/rational tools, arbitrary-precision integer tools and Programmer fixed-width integers remain separate numeric domains because representation is part of their correctness contract. A further representation should be introduced only when a feature has a domain requirement that the existing representations cannot satisfy cleanly and that requirement can be stated and tested.
 
 ## Shared foundation boundary
 
-Common is used for stable, product-neutral facilities. Calculator currently relies on Common 1.19.10 for exact decimal-token conversion, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
+Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.20 for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
 
 Calculator-specific semantics stay local even when they could technically be generalized. Real unary/scientific transforms are shared inside Calculator because they are calculator-domain semantics; the controller and expression parser consume one core implementation rather than moving those rules into Common. Shared code is valuable only when the abstraction is clearer than the duplication it replaces.
 
@@ -61,7 +63,7 @@ The platform shell may choose native presentation mechanics, but labels and valu
 
 ## Advanced Tools workbench
 
-The twelve extended calculation families live behind one on-demand Tools surface instead of adding permanent keypad rows. This preserves the compact primary calculator while keeping engineering, conversion, network, storage, date/time, statistics, graph/equation, exact, arbitrary-precision and complex capabilities directly accessible.
+The fourteen extended calculation families live behind one on-demand Tools surface instead of adding permanent keypad rows. This preserves the compact primary calculator while keeping engineering, conversion, network, storage, date/time, constants, statistics, graph/equation, exact, arbitrary-precision, complex, financial and number-utility capabilities directly accessible.
 
 The workbench is not a terminal. Each native shell provides a tool selector, an explicit prompt, an editable example/input control, a Run action, selectable output and graph rendering where applicable. The small command grammar belongs to each tool domain and is documented in TOOLS.md. Evaluation remains in shared C++; platform code owns only controls and graph drawing.
 

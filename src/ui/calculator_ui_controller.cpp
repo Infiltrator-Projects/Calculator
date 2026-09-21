@@ -481,6 +481,9 @@ std::size_t Controller::normalized_cursor(std::size_t cursor) const noexcept {
                           : std::min(cursor, state_.expression.size());
 }
 
+// Cache one side-effect-free interpretation of the current expression after
+// each state mutation. Native shells query enablement/labels repeatedly, so
+// reparsing there would be both wasteful and a source of semantic drift.
 void Controller::refresh_evaluation_cache() {
     real_cache_ = {};
     scientific_cache_ = {};
@@ -627,6 +630,10 @@ void Controller::calculate_standard() {
     set_status("READY");
 }
 
+// Equals is the side-effect boundary: Standard records the cached immediate
+// result, Programmer records the fixed-width result/context, and Scientific
+// delegates to Session::evaluate_scientific so assignments/functions/history
+// are committed exactly once.
 void Controller::calculate() {
     if (state_.mode == Mode::Programmer) {
         calculate_programmer();
@@ -677,6 +684,9 @@ void Controller::clear_calculation() {
     }
 }
 
+// Standard CE removes the operand containing the editing cursor, not the whole
+// expression. Top-level binary operators delimit operands; signs that belong to
+// exponents/unary terms are deliberately not treated as delimiters.
 std::size_t Controller::clear_entry(std::size_t cursor) {
     if (state_.mode != Mode::Standard) return normalized_cursor(cursor);
 
@@ -884,6 +894,9 @@ void Controller::programmer_mode_change(Command command) {
     else set_status(programmer_status_text());
 }
 
+// Standard preview tolerates a trailing binary operator so an in-progress
+// immediate calculation still displays the committed left operand. It never
+// records history or mutates Session state.
 void Controller::update_standard_preview() {
     if (state_.mode != Mode::Standard || state_.expression.empty()) return;
 
@@ -961,6 +974,9 @@ bool Controller::expression_can_calculate() const {
     return real_cache_.ok;
 }
 
+// Enablement is a product rule, not a widget convenience. Keeping it here
+// ensures GTK, Win32 and SwiftUI expose the same legal command set for the same
+// Controller state.
 bool Controller::command_enabled(Command command) const {
     if (state_.mode == Mode::Scientific) {
         command = effective_scientific_command(command);
@@ -1054,6 +1070,9 @@ bool Controller::command_enabled(Command command) const {
     }
 }
 
+// Dispatch is the authoritative transition table for calculator commands.
+ // Platform shells supply intent plus cursor position and render the resulting
+ // ViewState; they do not duplicate mode-specific state transitions.
 DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
     if (!command_enabled(command)) {
         return {normalized_cursor(cursor), false};

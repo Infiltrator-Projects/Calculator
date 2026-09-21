@@ -11,7 +11,7 @@ This is a direction document, not a dated promise. The released source and tests
 
 ## Completed capability families
 
-Calculator 0.2.0 completes the previously listed feature families:
+Across the 0.2.x release line, Calculator completed the previously listed feature families:
 
 - engineering calculator functions
 - unit conversion

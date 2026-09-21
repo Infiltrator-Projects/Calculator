@@ -140,6 +140,9 @@ std::optional<ParsedFunctionDefinition> function_definition(
 
 Session::Session(std::size_t history_limit) : history_limit_(history_limit) {}
 
+// Preview and evaluate intentionally share grammar/context but differ in side
+// effects. Preview is used for command enablement/live display and must never
+// define functions, assign variables, update "_", or append history.
 Result Session::preview(
     const std::string& input, AngleUnit angle_unit) const {
     std::string definition_error;
@@ -210,6 +213,9 @@ Result Session::evaluate(
 }
 
 
+// The Scientific pair mirrors the binary64 pair above, but assignments and
+// memory/history preserve ScientificValue text so precision is not silently
+// reduced at the Session boundary.
 ScientificResult Session::preview_scientific(
     const std::string& input, AngleUnit angle_unit,
     unsigned decimal_digits) const {
@@ -432,6 +438,9 @@ std::string Session::variables_text() const {
     return out.str();
 }
 
+// Persistence loading is transactional. Parse and validate the entire file
+// into temporary maps first; only a fully valid document replaces live state.
+ // The volatile "_" previous-result binding is deliberately preserved.
 bool Session::load_variables_text(std::string_view text) {
     ScientificVariables loaded_scientific;
     Variables loaded_legacy;
@@ -543,6 +552,8 @@ std::string Session::function_definitions_text() const {
     return out.str();
 }
 
+// Function persistence follows the same all-or-nothing rule as variables so a
+// damaged file cannot leave a partially loaded function namespace.
 bool Session::load_function_definitions_text(std::string_view text) {
     Functions loaded;
     std::size_t begin = 0;

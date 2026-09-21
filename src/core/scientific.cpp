@@ -18,10 +18,17 @@
 namespace calculator {
 namespace {
 
+// The backend is compiled once at the maintained maximum precision. User
+// precision controls parsing/serialization policy, not the C++ ABI or backend
+// type. ScientificValue is the stable text boundary outside this translation
+// unit, so no Boost.Multiprecision type leaks into Session/UI/platform code.
 using Real = boost::multiprecision::number<
     boost::multiprecision::backends::cpp_bin_float<kScientificMaxDigits>>;
 using Complex = boost::multiprecision::cpp_complex<kScientificMaxDigits>;
 
+// Both expression nesting and user-function recursion are bounded separately:
+// one protects native parser stack depth, the other prevents cyclic/custom
+// function expansion from becoming an unbounded recursive evaluation.
 constexpr std::size_t kMaxParseDepth = 256;
 constexpr std::size_t kMaxFunctionDepth = 64;
 
@@ -73,6 +80,9 @@ const Real& e_value() {
     return value;
 }
 
+// Normalization accepts user-facing Unicode/convenience spellings while the
+// parser itself stays ASCII and deterministic. This pass changes spelling only;
+ // it must not introduce precedence or evaluation semantics of its own.
 std::string normalize_expression_spelling(std::string_view input) {
     const auto subscript_digit = [](
         std::string_view remaining, int& digit, std::size_t& bytes) {
@@ -424,6 +434,9 @@ std::string engineering_component(
     return out.str();
 }
 
+// Serialize across the public boundary as decimal components. The chosen
+// digit count is sufficient for the requested Scientific presentation contract
+// while keeping third-party numeric types private to this implementation.
 ScientificValue pack_value(const Complex& value, unsigned digits) {
     return {
         component_string(real_part(value), digits),
@@ -435,6 +448,9 @@ Complex unpack_value(const ScientificValue& value) {
     return Complex(Real(value.real), Real(value.imag));
 }
 
+// Recursive-descent parser for the Scientific domain. Operator precedence is
+// encoded by the call graph (expression -> term -> unary -> power -> postfix ->
+// primary); callers must not reproduce or "fix up" precedence in UI code.
 class Parser {
 public:
     Parser(
@@ -1127,6 +1143,9 @@ private:
 
 } // namespace
 
+// This is the only public construction path from expression text into the
+// multiprecision engine: normalize spelling, clamp the requested precision and
+// execute the bounded parser. Ordinary user errors stay in ScientificResult.
 ScientificResult evaluate_scientific(
     const std::string& expression,
     const ScientificVariables& variables,
@@ -1151,6 +1170,9 @@ std::string scientific_value_expression(
     return "(" + value.real + ")+(" + value.imag + ")*i";
 }
 
+// Formatting reparses the stored decimal components into the same high-
+ // precision backend; there is deliberately no intermediate conversion to
+ // double, including for complex values.
 std::string format_scientific_value(
     const ScientificValue& value,
     unsigned decimal_digits,

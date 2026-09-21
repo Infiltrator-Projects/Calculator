@@ -36,8 +36,9 @@ struct HistoryEntry {
 };
 
 // Process-local calculator state shared across evaluations. Session owns
-// variables, memory-set state and bounded history; it delegates all mathematical
-// semantics to the calculation engines.
+// variables, user functions, memory-set state and history; it delegates all
+// mathematical semantics to the calculation engines. History is unbounded by
+// default and may be explicitly bounded for embedders/tests.
 class Session {
 public:
     // A zero limit means unbounded history, matching mature desktop
@@ -65,6 +66,9 @@ public:
         AngleUnit angle_unit = AngleUnit::Radians,
         unsigned decimal_digits = kScientificDefaultDigits);
 
+    // Memory is one logical register with binary64 and Scientific views.
+    // Storing through either domain marks it present; memory_empty() is about
+    // presence, not whether the numerical value happens to be zero.
     void memory_clear();
     void memory_store(double value);
     void memory_add(double value);
@@ -90,6 +94,9 @@ public:
         std::string input, std::string output, bool ok,
         HistoryKind kind, HistoryContext context = {});
 
+    // Variable/function text forms are Calculator-owned persistence formats.
+    // Load operations validate into temporary state and commit only a fully
+    // valid document, so malformed persistence cannot partially replace state.
     void set_variable(std::string name, double value);
     std::optional<double> variable(const std::string& name) const;
     const Variables& variables() const noexcept;
@@ -103,6 +110,9 @@ public:
     std::string function_definitions_text() const;
     bool load_function_definitions_text(std::string_view text);
 
+    // History entries retain rendered output plus mode-specific context so
+    // recall can restore Programmer radix/width/signed state without re-parsing
+    // old display text. References remain valid only until Session mutates.
     const std::deque<HistoryEntry>& history() const noexcept;
     std::size_t history_count() const noexcept;
     std::optional<HistoryEntry> history_from_newest(

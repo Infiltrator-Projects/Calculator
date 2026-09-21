@@ -55,6 +55,9 @@ struct CalculatorHistoryRow: Identifiable {
     let ok: Bool
 }
 
+// Swift owns presentation state only. CalculatorBridge/Controller remain the
+// authority for calculation, command enablement, history and mode semantics;
+ // sync() replaces this observable snapshot after every bridge mutation.
 @MainActor
 final class CalculatorModel: ObservableObject {
     @Published var mode: CalcMode = .standard

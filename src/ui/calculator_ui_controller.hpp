@@ -62,13 +62,20 @@ public:
     // Sentinel meaning "operate at the current end of the expression".
     static constexpr std::size_t kEnd = static_cast<std::size_t>(-1);
 
+    // Borrowed view of controller-owned state; callers must not retain it
+    // across a mutating Controller operation.
     const ViewState& state() const noexcept { return state_; }
 
+    // Direct setters are state mutations: they refresh cached evaluation and
+    // derived presentation state so shells never need to evaluate independently.
     void set_expression(std::string expression);
     void set_mode(Mode mode);
     void set_angle_unit(AngleUnit unit);
     void set_programmer_context(
         ProgrammerBase base, IntegerWidth width, bool signed_display);
+    // History is ordered newest-first at the indexed/recall API boundary.
+    // history_revision() changes only when history content changes and allows
+    // native shells to avoid rebuilding unchanged history surfaces.
     std::string history_text(
         std::size_t limit = 50,
         std::string_view newline = "\n") const;
@@ -78,6 +85,8 @@ public:
         std::size_t index_from_newest) const;
     bool recall_history(std::size_t index_from_newest);
     void clear_history() noexcept;
+    // Derived representation surfaces are generated from the current cached
+    // result; they never cause platform-specific re-evaluation.
     std::vector<AdditionalResult> additional_results() const;
     std::string additional_results_text() const;
     std::string programmer_representations_text() const;
@@ -88,11 +97,16 @@ public:
     std::string variables_text() const;
     bool load_variables_text(std::string_view text);
 
+    // Display preferences affect presentation only; they do not change the
+    // underlying Standard or Scientific numeric representation.
     const DisplayPreferences& display_preferences() const noexcept {
         return display_preferences_;
     }
     void set_display_preferences(DisplayPreferences preferences);
 
+    // button_label() and command_enabled() are authoritative UI semantics for
+    // every shell. dispatch() is the sole command state-transition entry point;
+    // its returned cursor is expressed in the shared expression byte index.
     std::string button_label(
         Command command, std::string_view fallback) const;
     bool command_enabled(Command command) const;
