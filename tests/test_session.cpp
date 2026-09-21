@@ -114,6 +114,37 @@ int main(){
     expect_value(session.evaluate("x * 2"),20.0,"stored variable");
     expect_value(session.evaluate("_ + 1"),21.0,"last result variable");
 
+    const auto precise_seventh = session.evaluate_scientific(
+        "1/7", calculator::AngleUnit::Radians, 80);
+    if(!precise_seventh.ok ||
+       calculator::format_scientific_value(
+           precise_seventh.value, 80).size() < 60U)
+        fail("scientific Session should retain high precision");
+
+    const auto complex_assignment = session.evaluate_scientific(
+        "z=sqrt(-1)", calculator::AngleUnit::Radians, 80);
+    if(!complex_assignment.ok ||
+       calculator::format_scientific_value(
+           complex_assignment.value, 80)!="i")
+        fail("scientific Session complex assignment failed");
+    const auto complex_use = session.evaluate_scientific(
+        "z*z", calculator::AngleUnit::Radians, 80);
+    if(!complex_use.ok ||
+       calculator::format_scientific_value(
+           complex_use.value, 80)!="-1")
+        fail("scientific Session complex variable lost precision");
+
+    const std::string precise_variables = session.variables_text();
+    calculator::Session precise_restore;
+    if(!precise_restore.load_variables_text(precise_variables))
+        fail("precise variable persistence load failed");
+    const auto restored_complex = precise_restore.evaluate_scientific(
+        "z", calculator::AngleUnit::Radians, 80);
+    if(!restored_complex.ok ||
+       calculator::format_scientific_value(
+           restored_complex.value, 80)!="i")
+        fail("complex variable persistence failed");
+
     session.memory_clear();
     if(!session.memory_empty()) fail("cleared memory should be empty");
     session.memory_store(12.5);
