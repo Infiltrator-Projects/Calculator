@@ -30,6 +30,13 @@ struct ScientificResult {
 constexpr unsigned kScientificDefaultDigits = 50;
 constexpr unsigned kScientificMaxDigits = 1000;
 
+enum class ScientificDisplayFormat {
+    General,
+    Fixed,
+    Scientific,
+    Engineering
+};
+
 ScientificResult evaluate_scientific(
     const std::string& expression,
     const ScientificVariables& variables = ScientificVariables{},
@@ -45,6 +52,12 @@ std::string format_scientific_value(
 std::string format_engineering_value(
     const ScientificValue& value,
     unsigned significant_digits = 13);
+std::string format_scientific_display(
+    const ScientificValue& value,
+    ScientificDisplayFormat format,
+    unsigned precision,
+    bool trailing_zeroes,
+    bool group_thousands);
 
 bool scientific_value_to_double(
     const ScientificValue& value, double& output) noexcept;
