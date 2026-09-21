@@ -2,6 +2,7 @@
 #pragma once
 
 #include "calculator.hpp"
+#include "scientific.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -55,11 +56,28 @@ public:
         const std::string& input,
         AngleUnit angle_unit = AngleUnit::Radians);
 
+    ScientificResult preview_scientific(
+        const std::string& input,
+        AngleUnit angle_unit = AngleUnit::Radians,
+        unsigned decimal_digits = kScientificDefaultDigits) const;
+    ScientificResult evaluate_scientific(
+        const std::string& input,
+        AngleUnit angle_unit = AngleUnit::Radians,
+        unsigned decimal_digits = kScientificDefaultDigits);
+
     void memory_clear();
     void memory_store(double value);
     void memory_add(double value);
     void memory_subtract(double value);
     double memory_recall() const noexcept;
+    void memory_store_scientific(ScientificValue value);
+    void memory_add_scientific(
+        const ScientificValue& value,
+        unsigned decimal_digits = kScientificDefaultDigits);
+    void memory_subtract_scientific(
+        const ScientificValue& value,
+        unsigned decimal_digits = kScientificDefaultDigits);
+    ScientificValue memory_recall_scientific() const;
 
     // Distinguishes "never set/cleared" from a legitimate stored numeric zero.
     bool memory_empty() const noexcept;
@@ -75,6 +93,7 @@ public:
     void set_variable(std::string name, double value);
     std::optional<double> variable(const std::string& name) const;
     const Variables& variables() const noexcept;
+    const ScientificVariables& scientific_variables() const noexcept;
     std::string variables_text() const;
     bool load_variables_text(std::string_view text);
 
@@ -98,8 +117,10 @@ private:
     std::size_t history_limit_;
     std::uint64_t history_revision_ = 0;
     double memory_ = 0.0;
+    ScientificValue scientific_memory_{};
     bool memory_set_ = false;
     Variables variables_;
+    ScientificVariables scientific_variables_;
     Functions functions_;
     std::deque<HistoryEntry> history_;
 };
