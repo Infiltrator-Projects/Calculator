@@ -165,12 +165,28 @@ std::vector<AdditionalResult> Controller::additional_results() const {
         };
     }
 
-    const Result result =
-        state_.mode == Mode::Standard
-            ? evaluate_immediate(state_.expression)
-            : calculator::evaluate(
-                  state_.expression, session_.variables(),
-                  session_.functions(), state_.angle_unit);
+    if (state_.mode == Mode::Scientific) {
+        const ScientificResult result =
+            session_.preview_scientific(
+                state_.expression, state_.angle_unit,
+                scientific_digits_);
+        if (!result.ok) {
+            return {{"Error", result.error}};
+        }
+        if (!result.display.empty()) {
+            return {{"Result", result.display}};
+        }
+        return {
+            {"Decimal", calculator::format_scientific_value(
+                result.value, scientific_digits_)},
+            {"Scientific", calculator::format_scientific_value(
+                result.value, scientific_digits_, true)},
+            {"Engineering", calculator::format_engineering_value(
+                result.value, 13U)}
+        };
+    }
+
+    const Result result = evaluate_immediate(state_.expression);
     if (!result.ok) {
         return {{"Error", result.error}};
     }
@@ -247,8 +263,13 @@ void Controller::set_display_preferences(DisplayPreferences preferences) {
         std::min<unsigned>(preferences.decimal_places, 15U);
     display_preferences_ = preferences;
 
-    if (state_.mode != Mode::Programmer &&
-        real_cache_.ok && real_cache_.display.empty()) {
+    if (state_.mode == Mode::Scientific &&
+        scientific_cache_.ok &&
+        scientific_cache_.display.empty()) {
+        state_.result =
+            format_scientific_result(scientific_cache_.value);
+    } else if (state_.mode == Mode::Standard &&
+               real_cache_.ok && real_cache_.display.empty()) {
         state_.result = format_real(real_cache_.value);
     }
 }
@@ -331,9 +352,23 @@ std::string Controller::format_display(double value) const {
 }
 
 std::string Controller::format_real(double value) const {
-    return state_.mode == Mode::Scientific && state_.scientific_notation
-        ? calculator::format_scientific_value(value)
-        : format_display(value);
+    return format_display(value);
+}
+
+std::string Controller::format_scientific_result(
+    const ScientificValue& value) const {
+    if (state_.scientific_notation ||
+        display_preferences_.format == ResultFormat::Scientific) {
+        return calculator::format_scientific_value(
+            value, scientific_digits_, true);
+    }
+    if (display_preferences_.format == ResultFormat::Engineering) {
+        return calculator::format_engineering_value(
+            value, std::max(
+                2U, display_preferences_.decimal_places + 1U));
+    }
+    return calculator::format_scientific_value(
+        value, scientific_digits_);
 }
 
 Command Controller::effective_scientific_command(Command command) const {
@@ -432,6 +467,7 @@ std::size_t Controller::normalized_cursor(std::size_t cursor) const noexcept {
 
 void Controller::refresh_evaluation_cache() {
     real_cache_ = {};
+    scientific_cache_ = {};
     programmer_cache_ = {};
     if (state_.expression.empty()) return;
 
@@ -442,8 +478,9 @@ void Controller::refresh_evaluation_cache() {
     } else if (state_.mode == Mode::Standard) {
         real_cache_ = evaluate_immediate(state_.expression);
     } else {
-        real_cache_ = session_.preview(
-            state_.expression, state_.angle_unit);
+        scientific_cache_ = session_.preview_scientific(
+            state_.expression, state_.angle_unit,
+            scientific_digits_);
     }
 }
 
@@ -478,6 +515,22 @@ bool Controller::current_value(double& value) {
     }
 
     value = real_cache_.value;
+    return true;
+}
+
+bool Controller::current_scientific_value(
+    ScientificValue& value) {
+    if (!scientific_cache_.ok ||
+        !scientific_cache_.display.empty()) {
+        state_.result = "Error: " +
+            (scientific_cache_.error.empty()
+                 ? std::string("expression is not a numeric value")
+                 : scientific_cache_.error);
+        set_status("CALCULATION ERROR", true);
+        return false;
+    }
+
+    value = scientific_cache_.value;
     return true;
 }
 
@@ -568,8 +621,10 @@ void Controller::calculate() {
         return;
     }
 
-    const Result result =
-        session_.evaluate(state_.expression, state_.angle_unit);
+    const ScientificResult result =
+        session_.evaluate_scientific(
+            state_.expression, state_.angle_unit,
+            scientific_digits_);
     refresh_evaluation_cache();
     if (!result.ok) {
         state_.result = "Error: " + result.error;
@@ -577,14 +632,16 @@ void Controller::calculate() {
         return;
     }
 
-    state_.result =
-        result.display.empty() ? format_real(result.value) : result.display;
+    state_.result = result.display.empty()
+        ? format_scientific_result(result.value)
+        : result.display;
     set_status(scientific_status_text());
 }
 
 void Controller::clear_calculation() {
     state_.expression.clear();
     real_cache_ = {};
+    scientific_cache_ = {};
     programmer_cache_ = {};
     state_.result = "0";
 
@@ -716,43 +773,62 @@ void Controller::unary_transform(Command command) {
 }
 
 void Controller::scientific_transform(Command command) {
-    double value = 0.0;
-    if (!current_value(value)) return;
+    ScientificValue value;
+    if (!current_scientific_value(value)) return;
 
     command = effective_scientific_command(command);
+    const std::string operand =
+        scientific_value_expression(value);
 
-    RealFunction function = RealFunction::Abs;
+    std::string expression;
     switch (command) {
-    case Command::Square: function = RealFunction::Square; break;
-    case Command::Cube: function = RealFunction::Cube; break;
-    case Command::SquareRoot: function = RealFunction::SquareRoot; break;
-    case Command::CubeRoot: function = RealFunction::Cbrt; break;
-    case Command::Reciprocal: function = RealFunction::Reciprocal; break;
-    case Command::Sin: function = RealFunction::Sin; break;
-    case Command::Cos: function = RealFunction::Cos; break;
-    case Command::Tan: function = RealFunction::Tan; break;
-    case Command::Asin: function = RealFunction::Asin; break;
-    case Command::Acos: function = RealFunction::Acos; break;
-    case Command::Atan: function = RealFunction::Atan; break;
-    case Command::Sinh: function = RealFunction::Sinh; break;
-    case Command::Cosh: function = RealFunction::Cosh; break;
-    case Command::Tanh: function = RealFunction::Tanh; break;
-    case Command::Asinh: function = RealFunction::Asinh; break;
-    case Command::Acosh: function = RealFunction::Acosh; break;
-    case Command::Atanh: function = RealFunction::Atanh; break;
-    case Command::Ln: function = RealFunction::Ln; break;
-    case Command::Log10: function = RealFunction::Log10; break;
-    case Command::Exp: function = RealFunction::Exp; break;
-    case Command::TwoPower: function = RealFunction::TwoPower; break;
-    case Command::TenPower: function = RealFunction::TenPower; break;
-    case Command::Abs: function = RealFunction::Abs; break;
-    case Command::Floor: function = RealFunction::Floor; break;
-    case Command::Ceil: function = RealFunction::Ceil; break;
-    default: return;
+    case Command::Negate:
+        expression = "-(" + operand + ")";
+        break;
+    case Command::Square:
+        expression = "square(" + operand + ")";
+        break;
+    case Command::Cube:
+        expression = "cube(" + operand + ")";
+        break;
+    case Command::SquareRoot:
+        expression = "sqrt(" + operand + ")";
+        break;
+    case Command::CubeRoot:
+        expression = "cbrt(" + operand + ")";
+        break;
+    case Command::Reciprocal:
+        expression = "1/(" + operand + ")";
+        break;
+    case Command::Sin: expression = "sin(" + operand + ")"; break;
+    case Command::Cos: expression = "cos(" + operand + ")"; break;
+    case Command::Tan: expression = "tan(" + operand + ")"; break;
+    case Command::Asin: expression = "asin(" + operand + ")"; break;
+    case Command::Acos: expression = "acos(" + operand + ")"; break;
+    case Command::Atan: expression = "atan(" + operand + ")"; break;
+    case Command::Sinh: expression = "sinh(" + operand + ")"; break;
+    case Command::Cosh: expression = "cosh(" + operand + ")"; break;
+    case Command::Tanh: expression = "tanh(" + operand + ")"; break;
+    case Command::Asinh: expression = "asinh(" + operand + ")"; break;
+    case Command::Acosh: expression = "acosh(" + operand + ")"; break;
+    case Command::Atanh: expression = "atanh(" + operand + ")"; break;
+    case Command::Ln: expression = "ln(" + operand + ")"; break;
+    case Command::Log10: expression = "log(" + operand + ")"; break;
+    case Command::Exp: expression = "exp(" + operand + ")"; break;
+    case Command::TwoPower: expression = "exp2(" + operand + ")"; break;
+    case Command::TenPower: expression = "exp10(" + operand + ")"; break;
+    case Command::Abs: expression = "abs(" + operand + ")"; break;
+    case Command::Floor: expression = "floor(" + operand + ")"; break;
+    case Command::Ceil: expression = "ceil(" + operand + ")"; break;
+    default:
+        return;
     }
 
-    const Result transformed = calculator::apply_real_function(
-        function, value, state_.angle_unit);
+    const ScientificResult transformed =
+        calculator::evaluate_scientific(
+            expression, session_.scientific_variables(),
+            session_.functions(), state_.angle_unit,
+            scientific_digits_);
     if (!transformed.ok) {
         set_status(
             transformed.error == "division by zero"
@@ -762,8 +838,10 @@ void Controller::scientific_transform(Command command) {
         return;
     }
 
-    state_.expression = format_real(transformed.value);
-    state_.result = state_.expression;
+    state_.expression =
+        scientific_value_expression(transformed.value);
+    state_.result =
+        format_scientific_result(transformed.value);
     refresh_evaluation_cache();
     set_status(scientific_status_text());
 }
@@ -853,12 +931,17 @@ bool Controller::expression_ends_with_binary_operator() const {
 bool Controller::expression_has_value() const {
     if (state_.expression.empty()) return false;
     if (state_.mode == Mode::Programmer) return programmer_cache_.ok;
+    if (state_.mode == Mode::Scientific) {
+        return scientific_cache_.ok &&
+               scientific_cache_.display.empty();
+    }
     return real_cache_.ok && real_cache_.display.empty();
 }
 
 bool Controller::expression_can_calculate() const {
     if (state_.expression.empty()) return false;
     if (state_.mode == Mode::Programmer) return programmer_cache_.ok;
+    if (state_.mode == Mode::Scientific) return scientific_cache_.ok;
     return real_cache_.ok;
 }
 
@@ -1004,9 +1087,10 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
             return {normalized_cursor(cursor), false};
         case Command::ToggleScientificNotation: {
             state_.scientific_notation = !state_.scientific_notation;
-            double value = 0.0;
-            if (current_value(value)) {
-                state_.result = format_real(value);
+            ScientificValue value;
+            if (current_scientific_value(value)) {
+                state_.result =
+                    format_scientific_result(value);
                 state_.fault = false;
             }
             set_status(scientific_status_text());
@@ -1077,18 +1161,48 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         return {normalized_cursor(cursor), false};
     case Command::MemoryRecall:
         set_status("MEMORY RECALL");
-        return insert(calculator::format_value(session_.memory_recall()), cursor);
+        if (state_.mode == Mode::Scientific) {
+            return insert(
+                scientific_value_expression(
+                    session_.memory_recall_scientific()),
+                cursor);
+        }
+        return insert(
+            calculator::format_value(session_.memory_recall()),
+            cursor);
     case Command::MemoryStore:
     case Command::MemoryAdd:
     case Command::MemorySubtract: {
-        double value = 0.0;
-        if (current_value(value)) {
-            if (effective == Command::MemoryStore) session_.memory_store(value);
-            else if (effective == Command::MemoryAdd) session_.memory_add(value);
-            else session_.memory_subtract(value);
-            set_status(effective == Command::MemoryStore
-                           ? "MEMORY STORED"
-                           : "MEMORY UPDATED");
+        if (state_.mode == Mode::Scientific) {
+            ScientificValue value;
+            if (current_scientific_value(value)) {
+                if (effective == Command::MemoryStore) {
+                    session_.memory_store_scientific(value);
+                } else if (effective == Command::MemoryAdd) {
+                    session_.memory_add_scientific(
+                        value, scientific_digits_);
+                } else {
+                    session_.memory_subtract_scientific(
+                        value, scientific_digits_);
+                }
+                set_status(effective == Command::MemoryStore
+                               ? "MEMORY STORED"
+                               : "MEMORY UPDATED");
+            }
+        } else {
+            double value = 0.0;
+            if (current_value(value)) {
+                if (effective == Command::MemoryStore) {
+                    session_.memory_store(value);
+                } else if (effective == Command::MemoryAdd) {
+                    session_.memory_add(value);
+                } else {
+                    session_.memory_subtract(value);
+                }
+                set_status(effective == Command::MemoryStore
+                               ? "MEMORY STORED"
+                               : "MEMORY UPDATED");
+            }
         }
         return {normalized_cursor(cursor), false};
     }
