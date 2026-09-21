@@ -342,5 +342,29 @@ if(CALCULATOR_ENABLE_MPFR_ORACLE_TESTS)
     add_test(
         NAME calculator-mpfr-oracle
         COMMAND calculator-mpfr-oracle-test)
+
+    find_path(CALCULATOR_MPC_INCLUDE_DIR mpc.h REQUIRED)
+    find_library(CALCULATOR_MPC_LIBRARY NAMES mpc REQUIRED)
+    add_executable(calculator-precision-oracle-test
+        tests/test_precision_oracle.cpp
+    )
+    target_include_directories(
+        calculator-precision-oracle-test PRIVATE
+        "${CALCULATOR_MPFR_INCLUDE_DIR}"
+        "${CALCULATOR_MPC_INCLUDE_DIR}")
+    target_link_libraries(
+        calculator-precision-oracle-test PRIVATE
+        calculator-core
+        "${CALCULATOR_MPC_LIBRARY}"
+        "${CALCULATOR_MPFR_LIBRARY}")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(
+            calculator-precision-oracle-test PRIVATE
+            -Wall -Wextra -Wpedantic -Wshadow
+            -Wconversion -Wsign-conversion)
+    endif()
+    add_test(
+        NAME calculator-precision-oracle
+        COMMAND calculator-precision-oracle-test)
 endif()
 
