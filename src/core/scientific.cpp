@@ -48,6 +48,12 @@ bool is_real(const Complex& value) {
     return is_zero(imag_part(value));
 }
 
+Real complex_magnitude(const Complex& value) {
+    const Real real = real_part(value);
+    const Real imag = imag_part(value);
+    return sqrt(real * real + imag * imag);
+}
+
 bool is_finite(const Real& value) {
     return boost::multiprecision::isfinite(value);
 }
@@ -762,7 +768,7 @@ private:
                 return Complex(real_part(input) < 0 ? -1 : 1);
             }
             return input /
-                Complex(boost::multiprecision::abs(input));
+                Complex(complex_magnitude(input));
         }
 
         try {
@@ -840,7 +846,7 @@ private:
                     Complex(10), input);
             }
             if (name == "abs") {
-                return Complex(boost::multiprecision::abs(input));
+                return Complex(complex_magnitude(input));
             }
             if (name == "conj") {
                 return boost::multiprecision::conj(input);
@@ -947,7 +953,7 @@ private:
                 error_ = "missing closing absolute-value bar";
                 return {};
             }
-            return Complex(boost::multiprecision::abs(value));
+            return Complex(complex_magnitude(value));
         }
 
         if (position_ < input_.size() &&
