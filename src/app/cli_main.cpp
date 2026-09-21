@@ -48,14 +48,17 @@ void save_functions(const calculator::Session& session) {
 }
 
 bool solve(calculator::Session& session, const std::string& expression) {
-    const auto result = session.evaluate(
-        expression, calculator::AngleUnit::Degrees);
+    const auto result = session.evaluate_scientific(
+        expression, calculator::AngleUnit::Degrees,
+        calculator::kScientificDefaultDigits);
     if (!result.ok) {
         std::cerr << "Error: " << result.error << '\n';
         return false;
     }
     std::cout << (result.display.empty()
-                      ? calculator::format_value(result.value)
+                      ? calculator::format_scientific_value(
+                            result.value,
+                            calculator::kScientificDefaultDigits)
                       : result.display)
               << '\n';
     return true;
