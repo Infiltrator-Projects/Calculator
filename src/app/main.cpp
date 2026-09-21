@@ -3,6 +3,8 @@
 #include "../core/advanced_tools.hpp"
 #include "../ui/calculator_theme.hpp"
 
+#include <cstdint>
+#include <limits>
 #include <gtk/gtk.h>
 #include <pango/pangocairo.h>
 
@@ -433,10 +435,22 @@ const ThemePalette& active_palette() {
 
 void refresh_history_dock() {
     if (!history_text) return;
+
+    static std::uint64_t rendered_revision =
+        std::numeric_limits<std::uint64_t>::max();
+    static GtkWidget* rendered_widget = nullptr;
+    const std::uint64_t revision = controller.history_revision();
+    if (rendered_widget == history_text &&
+        rendered_revision == revision) {
+        return;
+    }
+
     GtkTextBuffer* buffer =
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(history_text));
     const std::string text = controller.history_text(50, "\n");
     gtk_text_buffer_set_text(buffer, text.c_str(), -1);
+    rendered_widget = history_text;
+    rendered_revision = revision;
 }
 
 bool font_family_available(const char* wanted) {

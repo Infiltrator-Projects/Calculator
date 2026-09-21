@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -491,16 +492,19 @@ void render_state(std::size_t cursor = Controller::kEnd) {
         }
     }
 
-    for (const auto& buttons :
-         {&g_standard_buttons, &g_scientific_buttons, &g_programmer_buttons}) {
-        for (HWND button : *buttons) {
-            const int id = GetDlgCtrlID(button);
-            const auto it = g_key_specs.find(id);
-            if (it != g_key_specs.end() && it->second != nullptr) {
-                EnableWindow(
-                    button,
-                    g_controller.command_enabled(it->second->command) ? TRUE : FALSE);
-            }
+    const std::vector<HWND>* active_buttons =
+        state.mode == Mode::Standard
+            ? &g_standard_buttons
+            : (state.mode == Mode::Scientific
+                ? &g_scientific_buttons
+                : &g_programmer_buttons);
+    for (HWND button : *active_buttons) {
+        const int id = GetDlgCtrlID(button);
+        const auto it = g_key_specs.find(id);
+        if (it != g_key_specs.end() && it->second != nullptr) {
+            EnableWindow(
+                button,
+                g_controller.command_enabled(it->second->command) ? TRUE : FALSE);
         }
     }
 
@@ -532,8 +536,16 @@ std::wstring history_text() {
 }
 
 void refresh_history() {
-    const std::wstring text = history_text();
-    if (g_history_edit != nullptr) {
+    static std::uint64_t list_revision =
+        std::numeric_limits<std::uint64_t>::max();
+    static std::uint64_t dock_revision =
+        std::numeric_limits<std::uint64_t>::max();
+    static HWND rendered_list = nullptr;
+    static HWND rendered_dock = nullptr;
+
+    const std::uint64_t revision = g_controller.history_revision();
+    if (g_history_edit != nullptr &&
+        (rendered_list != g_history_edit || list_revision != revision)) {
         SendMessageW(g_history_edit, LB_RESETCONTENT, 0, 0);
         const std::size_t count = g_controller.history_count();
         if (count == 0) {
@@ -551,12 +563,17 @@ void refresh_history() {
                     reinterpret_cast<LPARAM>(row.c_str()));
             }
         }
+        rendered_list = g_history_edit;
+        list_revision = revision;
     }
-    if (g_history_dock != nullptr) {
-        SetWindowTextW(g_history_dock, text.c_str());
+
+    if (g_history_dock != nullptr &&
+        (rendered_dock != g_history_dock || dock_revision != revision)) {
+        SetWindowTextW(g_history_dock, history_text().c_str());
+        rendered_dock = g_history_dock;
+        dock_revision = revision;
     }
 }
-
 void show_tools() {
     if (g_tools_window != nullptr && IsWindow(g_tools_window)) {
         ShowWindow(g_tools_window, SW_SHOWNORMAL);

@@ -74,6 +74,14 @@ int main() {
     CHECK(controller.state().result == "0");
     CHECK(!controller.command_enabled(Command::ClearEntry));
 
+    controller.set_expression("12+34*56");
+    clear_entry = controller.dispatch(Command::ClearEntry, 4);
+    CHECK(controller.state().expression == "12+*56");
+    CHECK(clear_entry.cursor == 3);
+    controller.dispatch(Command::Digit5, clear_entry.cursor);
+    CHECK(controller.state().expression == "12+5*56");
+
+    controller.dispatch(Command::Clear);
     controller.dispatch(Command::Digit2);
     controller.dispatch(Command::Add);
     controller.dispatch(Command::Digit3);
@@ -102,6 +110,29 @@ int main() {
     CHECK(controller.command_enabled(Command::Equals));
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "3");
+
+    const std::uint64_t before_definition_history =
+        controller.history_revision();
+    controller.set_expression("inc(x)=x+1");
+    CHECK(controller.command_enabled(Command::Equals));
+    CHECK(!controller.command_enabled(Command::MemoryStore));
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "Function defined: inc");
+    CHECK(controller.history_revision() == before_definition_history + 1U);
+    controller.set_expression("inc(2)");
+    CHECK(controller.command_enabled(Command::Equals));
+    CHECK(controller.command_enabled(Command::MemoryStore));
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "3");
+
+    controller.set_expression("saved=7");
+    CHECK(controller.command_enabled(Command::Equals));
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "7");
+    controller.set_expression("saved*2");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "14");
+
     controller.set_mode(Mode::Standard);
 
     controller.set_expression("6");

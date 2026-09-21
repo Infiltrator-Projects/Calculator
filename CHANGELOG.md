@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.9 — 2026-09-21
+
+- Cache expression validity/value once per state mutation so command enablement no longer reparses the same expression for every visible control; Scientific validation now uses the full Session variable/function/assignment context.
+- Add side-effect-free Session preview semantics so persisted custom functions and direct assignments are valid before Equals without mutating state during UI enablement checks.
+- Make Standard CE cursor-aware for editable expressions, and stop Windows/GTK history surfaces from rebuilding unchanged history on every render by tracking a shared history revision.
+- Restrict Win32 command-state updates to the active calculator mode and add regression coverage for custom functions, assignments, cursor-aware CE and history revisions.
+
 ## 0.2.8 — 2026-09-21
 
 - Add a first-class Standard-mode CE action that clears only the current operand while preserving the pending expression and resets the entry display to zero.

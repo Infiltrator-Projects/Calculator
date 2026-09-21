@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.9) unstable; urgency=medium
+
+  * Cache Controller expression validation and result state.
+  * Add Session preview and history revision contracts.
+  * Make Standard CE cursor-aware and avoid unchanged history rebuilds.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 11:55:00 +1000
+
 infiltrator-calculator (0.2.8) unstable; urgency=medium
 
   * Add Standard-mode CE current-entry clearing semantics.

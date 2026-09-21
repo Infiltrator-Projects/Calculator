@@ -139,6 +139,30 @@ std::optional<ParsedFunctionDefinition> function_definition(
 
 Session::Session(std::size_t history_limit) : history_limit_(history_limit) {}
 
+Result Session::preview(
+    const std::string& input, AngleUnit angle_unit) const {
+    std::string definition_error;
+    const auto definition = function_definition(input, definition_error);
+    if (!definition_error.empty()) {
+        return {false, 0.0, definition_error};
+    }
+    if (definition) {
+        return {
+            true, 0.0, {},
+            "Function defined: " + definition->name};
+    }
+
+    std::string expression;
+    const auto assignment = assignment_name(input, expression);
+    if (assignment && reserved_identifier(*assignment)) {
+        return {false, 0.0, "cannot assign reserved constant"};
+    }
+
+    return calculator::evaluate(
+        assignment ? expression : input,
+        variables_, functions_, angle_unit);
+}
+
 Result Session::evaluate(
     const std::string& input, AngleUnit angle_unit) {
     std::string definition_error;
@@ -194,6 +218,7 @@ void Session::record_history_text(std::string input, std::string output,
                                   HistoryContext context) {
     history_.push_back(
         {kind, context, std::move(input), std::move(output), ok});
+    ++history_revision_;
     if (history_limit_ != 0U) {
         while (history_.size() > history_limit_) history_.pop_front();
     }
@@ -383,6 +408,14 @@ std::string Session::history_text(std::size_t limit,
     return text;
 }
 
-void Session::clear_history() noexcept { history_.clear(); }
+void Session::clear_history() noexcept {
+    if (history_.empty()) return;
+    history_.clear();
+    ++history_revision_;
+}
+
+std::uint64_t Session::history_revision() const noexcept {
+    return history_revision_;
+}
 
 } // namespace calculator

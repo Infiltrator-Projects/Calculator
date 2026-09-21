@@ -68,11 +68,11 @@ The Tools workbench is intentionally on-demand. It keeps the main Standard/Scien
 
 - reusable variables;
 - calculator memory, including explicit store (MS), recall, clear and arithmetic update state; and
-- bounded calculation history.
+- calculation history, unbounded by default with an optional explicit limit for embedders/tests.
 
 The session delegates mathematical evaluation to the core. It does not implement an alternate expression grammar.
 
-History is bounded by construction so an indefinitely running UI cannot grow it without limit. Session also owns the canonical bounded history-text projection, while Controller exposes it to platform shells; GTK, Win32 and SwiftUI therefore do not reach through the controller to reconstruct session presentation independently. Variables, memory and history are currently session state rather than durable user data.
+History is unbounded by default to match the maintained desktop behaviour, while embedders/tests may request an explicit Session limit. Session owns a monotonically advancing history revision and the canonical bounded history-text projection used by compact docks; platform shells update history views only when that revision changes instead of rebuilding history on every keystroke. Variables, memory and history are currently session state rather than durable user data.
 
 ## Shared interaction layer
 

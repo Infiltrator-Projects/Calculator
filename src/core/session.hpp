@@ -4,6 +4,7 @@
 #include "calculator.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <optional>
 #include <string>
@@ -45,6 +46,11 @@ public:
     // Supports direct assignment as name=expression. The identifier must begin
     // with an alphabetic character or '_' and '=' immediately follows the name.
     // Every evaluation, including an error, is recorded in bounded history.
+    // Side-effect-free validation/evaluation using the same variables,
+    // functions and assignment/definition grammar as evaluate().
+    Result preview(
+        const std::string& input,
+        AngleUnit angle_unit = AngleUnit::Radians) const;
     Result evaluate(
         const std::string& input,
         AngleUnit angle_unit = AngleUnit::Radians);
@@ -86,9 +92,11 @@ public:
         std::size_t limit = 50,
         std::string_view newline = "\n") const;
     void clear_history() noexcept;
+    std::uint64_t history_revision() const noexcept;
 
 private:
     std::size_t history_limit_;
+    std::uint64_t history_revision_ = 0;
     double memory_ = 0.0;
     bool memory_set_ = false;
     Variables variables_;

@@ -13,11 +13,13 @@ namespace calculator::ui {
 void Controller::set_expression(std::string expression) {
     state_.expression = std::move(expression);
     state_.fault = false;
+    refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
 }
 
 void Controller::set_mode(Mode mode) {
     state_.mode = mode;
+    refresh_evaluation_cache();
     if (mode == Mode::Scientific) {
         set_status(scientific_status_text());
     } else if (mode == Mode::Programmer) {
@@ -29,6 +31,7 @@ void Controller::set_mode(Mode mode) {
 
 void Controller::set_angle_unit(AngleUnit unit) {
     state_.angle_unit = unit;
+    refresh_evaluation_cache();
     if (state_.mode == Mode::Scientific) set_status(scientific_status_text());
 }
 
@@ -37,6 +40,7 @@ void Controller::set_programmer_context(
     state_.programmer_base = base;
     state_.programmer_width = width;
     state_.programmer_signed = signed_display;
+    refresh_evaluation_cache();
     if (state_.mode == Mode::Programmer) {
         set_status(programmer_status_text());
         if (!state_.expression.empty()) calculate_programmer(false);
@@ -50,6 +54,10 @@ std::string Controller::history_text(std::size_t limit,
 
 std::size_t Controller::history_count() const noexcept {
     return session_.history_count();
+}
+
+std::uint64_t Controller::history_revision() const noexcept {
+    return session_.history_revision();
 }
 
 std::optional<HistoryEntry> Controller::history_entry(
@@ -83,6 +91,7 @@ bool Controller::recall_history(std::size_t index_from_newest) {
     }
 
     state_.expression = entry->input;
+    refresh_evaluation_cache();
     state_.result = entry->output;
     state_.fault = !entry->ok;
     if (!entry->ok) {
@@ -106,7 +115,9 @@ std::string Controller::function_definitions_text() const {
 }
 
 bool Controller::load_function_definitions_text(std::string_view text) {
-    return session_.load_function_definitions_text(text);
+    const bool loaded = session_.load_function_definitions_text(text);
+    if (loaded) refresh_evaluation_cache();
+    return loaded;
 }
 
 std::string Controller::variables_text() const {
@@ -114,7 +125,9 @@ std::string Controller::variables_text() const {
 }
 
 bool Controller::load_variables_text(std::string_view text) {
-    return session_.load_variables_text(text);
+    const bool loaded = session_.load_variables_text(text);
+    if (loaded) refresh_evaluation_cache();
+    return loaded;
 }
 
 std::vector<AdditionalResult> Controller::additional_results() const {
@@ -224,6 +237,7 @@ bool Controller::toggle_programmer_bit(unsigned bit) {
     state_.result = format_programmer(
         value, state_.programmer_base, state_.programmer_width,
         state_.programmer_signed);
+    refresh_evaluation_cache();
     set_status(programmer_status_text());
     return true;
 }
@@ -233,17 +247,9 @@ void Controller::set_display_preferences(DisplayPreferences preferences) {
         std::min<unsigned>(preferences.decimal_places, 15U);
     display_preferences_ = preferences;
 
-    double value = 0.0;
-    const Result parsed =
-        state_.mode == Mode::Programmer
-            ? Result{}
-            : (state_.mode == Mode::Standard
-                ? evaluate_immediate(state_.expression)
-                : calculator::evaluate(
-                      state_.expression, session_.variables(),
-                      session_.functions(), state_.angle_unit));
-    if (state_.mode != Mode::Programmer && parsed.ok) {
-        state_.result = format_real(parsed.value);
+    if (state_.mode != Mode::Programmer &&
+        real_cache_.ok && real_cache_.display.empty()) {
+        state_.result = format_real(real_cache_.value);
     }
 }
 
@@ -424,10 +430,28 @@ std::size_t Controller::normalized_cursor(std::size_t cursor) const noexcept {
                           : std::min(cursor, state_.expression.size());
 }
 
+void Controller::refresh_evaluation_cache() {
+    real_cache_ = {};
+    programmer_cache_ = {};
+    if (state_.expression.empty()) return;
+
+    if (state_.mode == Mode::Programmer) {
+        programmer_cache_ = evaluate_programmer(
+            state_.expression, state_.programmer_base,
+            state_.programmer_width);
+    } else if (state_.mode == Mode::Standard) {
+        real_cache_ = evaluate_immediate(state_.expression);
+    } else {
+        real_cache_ = session_.preview(
+            state_.expression, state_.angle_unit);
+    }
+}
+
 DispatchResult Controller::insert(std::string_view text, std::size_t cursor) {
     const std::size_t position = normalized_cursor(cursor);
     state_.expression.insert(position, text.data(), text.size());
     state_.fault = false;
+    refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
     return {position + text.size(), true};
 }
@@ -438,38 +462,33 @@ DispatchResult Controller::backspace(std::size_t cursor) {
 
     state_.expression.erase(position - 1, 1);
     state_.fault = false;
+    refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
     return {position - 1, true};
 }
 
 bool Controller::current_value(double& value) {
-    const Result result =
-        state_.mode == Mode::Standard
-            ? evaluate_immediate(state_.expression)
-            : calculator::evaluate(
-                  state_.expression, session_.variables(),
-                  session_.functions(), state_.angle_unit);
-
-    if (!result.ok) {
-        state_.result = "Error: " + result.error;
+    if (!real_cache_.ok || !real_cache_.display.empty()) {
+        state_.result = "Error: " +
+            (real_cache_.error.empty()
+                 ? std::string("expression is not a numeric value")
+                 : real_cache_.error);
         set_status("CALCULATION ERROR", true);
         return false;
     }
 
-    value = result.value;
+    value = real_cache_.value;
     return true;
 }
 
 bool Controller::current_programmer_value(std::uint64_t& value) {
-    const ProgrammerResult result = evaluate_programmer(
-        state_.expression, state_.programmer_base, state_.programmer_width);
-    if (!result.ok) {
-        state_.result = "Error: " + result.error;
+    if (!programmer_cache_.ok) {
+        state_.result = "Error: " + programmer_cache_.error;
         set_status("PROGRAMMER ERROR", true);
         return false;
     }
 
-    value = result.value;
+    value = programmer_cache_.value;
     return true;
 }
 
@@ -490,8 +509,7 @@ std::string Controller::programmer_status_text() const {
 }
 
 void Controller::calculate_programmer(bool record_history) {
-    const ProgrammerResult result = evaluate_programmer(
-        state_.expression, state_.programmer_base, state_.programmer_width);
+    const ProgrammerResult& result = programmer_cache_;
 
     HistoryContext context{};
     switch (state_.programmer_base) {
@@ -527,17 +545,16 @@ void Controller::calculate_programmer(bool record_history) {
 }
 
 void Controller::calculate_standard() {
-    const Result result = evaluate_immediate(state_.expression);
     session_.record_history(
-        state_.expression, result, HistoryKind::Standard);
+        state_.expression, real_cache_, HistoryKind::Standard);
 
-    if (!result.ok) {
-        state_.result = "Error: " + result.error;
+    if (!real_cache_.ok) {
+        state_.result = "Error: " + real_cache_.error;
         set_status("CALCULATION ERROR", true);
         return;
     }
 
-    state_.result = format_display(result.value);
+    state_.result = format_display(real_cache_.value);
     set_status("READY");
 }
 
@@ -553,6 +570,7 @@ void Controller::calculate() {
 
     const Result result =
         session_.evaluate(state_.expression, state_.angle_unit);
+    refresh_evaluation_cache();
     if (!result.ok) {
         state_.result = "Error: " + result.error;
         set_status("CALCULATION ERROR", true);
@@ -566,6 +584,8 @@ void Controller::calculate() {
 
 void Controller::clear_calculation() {
     state_.expression.clear();
+    real_cache_ = {};
+    programmer_cache_ = {};
     state_.result = "0";
 
     // Clear returns Scientific display notation to its ordinary fixed form.
@@ -584,22 +604,16 @@ void Controller::clear_calculation() {
     }
 }
 
-void Controller::clear_entry() {
-    if (state_.mode != Mode::Standard) return;
+std::size_t Controller::clear_entry(std::size_t cursor) {
+    if (state_.mode != Mode::Standard) return normalized_cursor(cursor);
 
-    std::size_t end = state_.expression.size();
-    while (end > 0 &&
-           std::isspace(static_cast<unsigned char>(
-               state_.expression[end - 1]))) {
-        --end;
-    }
-
-    std::size_t start = end;
-    int parenthesis_depth = 0;
+    const std::size_t point = normalized_cursor(cursor);
+    std::size_t segment_start = 0;
+    std::size_t segment_end = state_.expression.size();
+    int depth = 0;
 
     const auto sign_is_unary = [this](std::size_t position) {
         if (position == 0) return true;
-
         std::size_t previous = position;
         while (previous > 0 &&
                std::isspace(static_cast<unsigned char>(
@@ -607,7 +621,6 @@ void Controller::clear_entry() {
             --previous;
         }
         if (previous == 0) return true;
-
         const char before = state_.expression[previous - 1];
         return before == 'e' || before == 'E' ||
                before == '+' || before == '-' ||
@@ -615,45 +628,51 @@ void Controller::clear_entry() {
                before == '^' || before == '(';
     };
 
-    for (std::size_t cursor = end; cursor > 0; --cursor) {
-        const std::size_t position = cursor - 1;
-        const char ch = state_.expression[position];
-
-        if (ch == ')') {
-            ++parenthesis_depth;
-            start = position;
+    for (std::size_t i = 0; i < state_.expression.size(); ++i) {
+        const char ch = state_.expression[i];
+        if (ch == '(') {
+            ++depth;
             continue;
         }
-        if (ch == '(') {
-            if (parenthesis_depth > 0) {
-                --parenthesis_depth;
-                start = position;
-                continue;
-            }
+        if (ch == ')') {
+            if (depth > 0) --depth;
+            continue;
+        }
+        if (depth != 0 ||
+            (ch != '+' && ch != '-' && ch != '*' &&
+             ch != '/' && ch != '^')) {
+            continue;
+        }
+        if ((ch == '+' || ch == '-') && sign_is_unary(i)) continue;
+
+        if (point <= i && point >= segment_start) {
+            segment_end = i;
             break;
         }
-
-        if (parenthesis_depth == 0 &&
-            (ch == '+' || ch == '-' || ch == '*' ||
-             ch == '/' || ch == '^')) {
-            if ((ch == '+' || ch == '-') && sign_is_unary(position)) {
-                start = position;
-                continue;
-            }
-            start = position + 1;
-            break;
-        }
-
-        start = position;
+        segment_start = i + 1U;
     }
 
-    if (start < state_.expression.size()) {
-        state_.expression.erase(start);
+    while (segment_start < segment_end &&
+           std::isspace(static_cast<unsigned char>(
+               state_.expression[segment_start]))) {
+        ++segment_start;
+    }
+    while (segment_end > segment_start &&
+           std::isspace(static_cast<unsigned char>(
+               state_.expression[segment_end - 1U]))) {
+        --segment_end;
     }
 
+    if (segment_start < segment_end) {
+        state_.expression.erase(
+            segment_start, segment_end - segment_start);
+    }
+
+    refresh_evaluation_cache();
     state_.result = "0";
     state_.fault = false;
     set_status("READY");
+    return segment_start;
 }
 
 void Controller::unary_transform(Command command) {
@@ -664,6 +683,7 @@ void Controller::unary_transform(Command command) {
         value = -value;
         state_.expression = format_real(value);
         state_.result = state_.expression;
+        refresh_evaluation_cache();
         set_status("READY");
         return;
     }
@@ -689,6 +709,7 @@ void Controller::unary_transform(Command command) {
 
     state_.expression = format_real(transformed.value);
     state_.result = state_.expression;
+    refresh_evaluation_cache();
     set_status(state_.mode == Mode::Scientific
                    ? scientific_status_text()
                    : "READY");
@@ -743,6 +764,7 @@ void Controller::scientific_transform(Command command) {
 
     state_.expression = format_real(transformed.value);
     state_.result = state_.expression;
+    refresh_evaluation_cache();
     set_status(scientific_status_text());
 }
 
@@ -763,12 +785,19 @@ void Controller::programmer_mode_change(Command command) {
         return;
     }
 
+    refresh_evaluation_cache();
     if (!state_.expression.empty()) calculate_programmer(false);
     else set_status(programmer_status_text());
 }
 
 void Controller::update_standard_preview() {
     if (state_.mode != Mode::Standard || state_.expression.empty()) return;
+
+    if (real_cache_.ok) {
+        state_.result = format_display(real_cache_.value);
+        set_status("READY");
+        return;
+    }
 
     std::string preview = state_.expression;
     while (!preview.empty() &&
@@ -823,19 +852,14 @@ bool Controller::expression_ends_with_binary_operator() const {
 
 bool Controller::expression_has_value() const {
     if (state_.expression.empty()) return false;
+    if (state_.mode == Mode::Programmer) return programmer_cache_.ok;
+    return real_cache_.ok && real_cache_.display.empty();
+}
 
-    if (state_.mode == Mode::Programmer) {
-        const ProgrammerResult result = evaluate_programmer(
-            state_.expression, state_.programmer_base, state_.programmer_width);
-        return result.ok;
-    }
-
-    if (state_.mode == Mode::Standard) {
-        return evaluate_immediate(state_.expression).ok;
-    }
-
-    return calculator::evaluate(
-        state_.expression, session_.variables()).ok;
+bool Controller::expression_can_calculate() const {
+    if (state_.expression.empty()) return false;
+    if (state_.mode == Mode::Programmer) return programmer_cache_.ok;
+    return real_cache_.ok;
 }
 
 bool Controller::command_enabled(Command command) const {
@@ -856,7 +880,7 @@ bool Controller::command_enabled(Command command) const {
     case Command::Backspace:
         return !state_.expression.empty();
     case Command::Equals:
-        return expression_has_value();
+        return expression_can_calculate();
     case Command::Percent:
     case Command::Reciprocal:
     case Command::Square:
@@ -1004,8 +1028,8 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         return {normalized_cursor(cursor), false};
     case Command::ClearEntry: {
         const std::size_t previous_size = state_.expression.size();
-        clear_entry();
-        return {state_.expression.size(),
+        const std::size_t next_cursor = clear_entry(cursor);
+        return {next_cursor,
                 state_.expression.size() != previous_size};
     }
     case Command::Clear:
@@ -1087,6 +1111,7 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
             expression_ends_with_binary_operator() &&
             normalized_cursor(cursor) == state_.expression.size()) {
             state_.expression.back() = text.front();
+            refresh_evaluation_cache();
             update_standard_preview();
             return {state_.expression.size(), true};
         }

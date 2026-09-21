@@ -6,6 +6,7 @@
 #include "calculator_ui_contract.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -72,6 +73,7 @@ public:
         std::size_t limit = 50,
         std::string_view newline = "\n") const;
     std::size_t history_count() const noexcept;
+    std::uint64_t history_revision() const noexcept;
     std::optional<HistoryEntry> history_entry(
         std::size_t index_from_newest) const;
     bool recall_history(std::size_t index_from_newest);
@@ -108,7 +110,8 @@ private:
     void calculate_standard();
     void calculate_programmer(bool record_history = true);
     void clear_calculation();
-    void clear_entry();
+    std::size_t clear_entry(std::size_t cursor);
+    void refresh_evaluation_cache();
     void update_standard_preview();
     void unary_transform(Command command);
     void scientific_transform(Command command);
@@ -123,11 +126,14 @@ private:
     bool current_number_has_decimal() const;
     bool has_unmatched_open_parenthesis() const;
     bool expression_has_value() const;
+    bool expression_can_calculate() const;
     bool expression_ends_with_binary_operator() const;
 
     Session session_;
     ViewState state_;
     DisplayPreferences display_preferences_;
+    Result real_cache_;
+    ProgrammerResult programmer_cache_;
 };
 
 } // namespace calculator::ui
