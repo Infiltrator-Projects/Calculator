@@ -33,6 +33,7 @@ jobs:
             dpkg-dev \
             g++ \
             libgtk-4-dev \
+            libmpc-dev \
             libmpfr-dev \
             pkg-config
 
