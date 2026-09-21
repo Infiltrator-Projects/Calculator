@@ -23,6 +23,8 @@ targets:
       - path: Bridge
       - path: ../src/core/calculator.cpp
       - path: ../src/core/calculator.hpp
+      - path: ../src/core/scientific.cpp
+      - path: ../src/core/scientific.hpp
       - path: ../src/core/advanced_tools.cpp
       - path: ../src/core/advanced_tools.hpp
       - path: ../src/core/session.cpp
@@ -60,7 +62,11 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/Calculator-Bridging-Header.h"
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../src/core"
+          - "$(SRCROOT)/../src/boost-multiprecision/include"
           - "$(SRCROOT)/../src/infiltratr-common/include"
+        GCC_PREPROCESSOR_DEFINITIONS:
+          - "$(inherited)"
+          - "BOOST_MP_STANDALONE=1"
         CODE_SIGN_STYLE: Automatic
     preBuildScripts:
       - name: Bundle canonical MB Corpo fonts

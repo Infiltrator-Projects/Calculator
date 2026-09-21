@@ -28,6 +28,12 @@ endif()
 
 set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.10")
 set(INFILTRATR_COMMON_EXPECTED_COMMIT "33e69c0a462b56d388881d89c4eb49f72fa0b0fe")
+set(CALCULATOR_MULTIPRECISION_EXPECTED_COMMIT "1f7acd34fe929573c131e869867dc1d12b8080b6")
+set(CALCULATOR_MULTIPRECISION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/boost-multiprecision")
+
+if(NOT EXISTS "${CALCULATOR_MULTIPRECISION_DIR}/include/boost/multiprecision/cpp_complex.hpp")
+    message(FATAL_ERROR "Calculator requires the pinned Boost.Multiprecision source dependency")
+endif()
 
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/infiltratr-common/VERSION" INFILTRATR_COMMON_VERSION)
 string(STRIP "${INFILTRATR_COMMON_VERSION}" INFILTRATR_COMMON_VERSION)
@@ -58,6 +64,21 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
             "${INFILTRATR_COMMON_EXPECTED_COMMIT}; found "
             "${INFILTRATR_COMMON_COMMIT}")
     endif()
+
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${CALCULATOR_MULTIPRECISION_DIR}" rev-parse HEAD
+        RESULT_VARIABLE CALCULATOR_MULTIPRECISION_GIT_RESULT
+        OUTPUT_VARIABLE CALCULATOR_MULTIPRECISION_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(NOT CALCULATOR_MULTIPRECISION_GIT_RESULT EQUAL 0 OR
+       NOT CALCULATOR_MULTIPRECISION_COMMIT STREQUAL CALCULATOR_MULTIPRECISION_EXPECTED_COMMIT)
+        message(FATAL_ERROR
+            "Calculator requires Boost.Multiprecision commit "
+            "${CALCULATOR_MULTIPRECISION_EXPECTED_COMMIT}; found "
+            "${CALCULATOR_MULTIPRECISION_COMMIT}")
+    endif()
 endif()
 
 # Common is an implementation dependency, not part of Calculator's install
@@ -69,14 +90,17 @@ include(
 
 add_library(calculator-core STATIC
     src/core/calculator.cpp
+    src/core/scientific.cpp
     src/core/advanced_tools.cpp
     src/core/session.cpp
     src/core/programmer.cpp
 )
 
-target_include_directories(calculator-core PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/core"
+target_include_directories(calculator-core
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/core"
+    PRIVATE "${CALCULATOR_MULTIPRECISION_DIR}/include"
 )
+target_compile_definitions(calculator-core PRIVATE BOOST_MP_STANDALONE)
 
 target_link_libraries(calculator-core PUBLIC
     InfiltratrCommon::Portable
@@ -260,6 +284,12 @@ add_executable(calculator-test
 )
 target_link_libraries(calculator-test PRIVATE calculator-core)
 add_test(NAME calculator-core COMMAND calculator-test)
+
+add_executable(calculator-scientific-test
+    tests/test_scientific.cpp
+)
+target_link_libraries(calculator-scientific-test PRIVATE calculator-core)
+add_test(NAME calculator-scientific COMMAND calculator-scientific-test)
 
 add_executable(calculator-advanced-tools-test
     tests/test_advanced_tools.cpp
