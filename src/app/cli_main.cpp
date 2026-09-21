@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../core/session.hpp"
 
+#include <infiltratr/posix.h>
+
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -26,25 +27,39 @@ std::filesystem::path user_function_path() {
 void load_functions(calculator::Session& session) {
     const auto path = user_function_path();
     if (path.empty()) return;
-    std::ifstream input(path, std::ios::binary);
-    if (!input) return;
-    std::ostringstream contents;
-    contents << input.rdbuf();
-    if (!session.load_function_definitions_text(contents.str())) {
+
+    const std::string native_path = path.string();
+    char* contents = nullptr;
+    std::size_t length = 0U;
+    const InfiltratrIoResult status =
+        infiltratr_read_text_file_alloc(
+            native_path.c_str(), &contents, &length);
+    if (status != INFILTRATR_IO_OK) {
+        std::free(contents);
+        return;
+    }
+
+    const bool loaded = session.load_function_definitions_text(
+        std::string_view(contents, length));
+    std::free(contents);
+    if (!loaded) {
         std::cerr << "Warning: ignored malformed custom-functions file: "
-                  << path.string() << '\n';
+                  << native_path << '\n';
     }
 }
 
 void save_functions(const calculator::Session& session) {
     const auto path = user_function_path();
     if (path.empty()) return;
-    std::error_code error;
-    std::filesystem::create_directories(path.parent_path(), error);
-    if (error) return;
-    std::ofstream output(path, std::ios::binary | std::ios::trunc);
-    if (!output) return;
-    output << session.function_definitions_text();
+
+    const std::string directory = path.parent_path().string();
+    if (infiltratr_mkdir_parents(directory.c_str(), 0700U) != 0) return;
+
+    const std::string text = session.function_definitions_text();
+    const std::string native_path = path.string();
+    (void)infiltratr_atomic_file_write_bytes(
+        native_path.c_str(), INFILTRATR_ATOMIC_FILE_PRIVATE,
+        text.data(), text.size());
 }
 
 bool solve(calculator::Session& session, const std::string& expression) {

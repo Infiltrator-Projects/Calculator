@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "calculator_ui_controller.hpp"
 
+#include <infiltratr/core.h>
+
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -687,7 +689,7 @@ std::size_t Controller::clear_entry(std::size_t cursor) {
         if (position == 0) return true;
         std::size_t previous = position;
         while (previous > 0 &&
-               std::isspace(static_cast<unsigned char>(
+               infiltratr_ascii_is_space(static_cast<unsigned char>(
                    state_.expression[previous - 1]))) {
             --previous;
         }
@@ -724,12 +726,12 @@ std::size_t Controller::clear_entry(std::size_t cursor) {
     }
 
     while (segment_start < segment_end &&
-           std::isspace(static_cast<unsigned char>(
+           infiltratr_ascii_is_space(static_cast<unsigned char>(
                state_.expression[segment_start]))) {
         ++segment_start;
     }
     while (segment_end > segment_start &&
-           std::isspace(static_cast<unsigned char>(
+           infiltratr_ascii_is_space(static_cast<unsigned char>(
                state_.expression[segment_end - 1U]))) {
         --segment_end;
     }
@@ -893,7 +895,7 @@ void Controller::update_standard_preview() {
 
     std::string preview = state_.expression;
     while (!preview.empty() &&
-           std::isspace(static_cast<unsigned char>(preview.back()))) {
+           infiltratr_ascii_is_space(static_cast<unsigned char>(preview.back()))) {
         preview.pop_back();
     }
     if (preview.empty()) return;
@@ -903,7 +905,7 @@ void Controller::update_standard_preview() {
         preview.pop_back();
     } else if (last == '-' && preview.size() > 1U) {
         const char previous = preview[preview.size() - 2U];
-        if (std::isdigit(static_cast<unsigned char>(previous)) ||
+        if (infiltratr_ascii_is_digit(static_cast<unsigned char>(previous)) ||
             previous == '.' || previous == '%') {
             preview.pop_back();
         }
@@ -921,7 +923,7 @@ bool Controller::current_number_has_decimal() const {
     for (auto it = state_.expression.rbegin(); it != state_.expression.rend(); ++it) {
         const char ch = *it;
         if (ch == '.') return true;
-        if (!std::isdigit(static_cast<unsigned char>(ch))) break;
+        if (!infiltratr_ascii_is_digit(static_cast<unsigned char>(ch))) break;
     }
     return false;
 }

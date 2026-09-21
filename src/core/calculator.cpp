@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "calculator.hpp"
 
+#include <infiltratr/core.h>
 #include <infiltratr/token.h>
 
 #include <cctype>
@@ -231,7 +232,7 @@ private:
 
     void skip_space() {
         while (position_ < input_.size() &&
-               std::isspace(static_cast<unsigned char>(input_[position_]))) ++position_;
+               infiltratr_ascii_is_space(static_cast<unsigned char>(input_[position_]))) ++position_;
     }
 
     bool consume(char c) {
@@ -261,7 +262,7 @@ private:
         }
         const std::size_t end = position_ + keyword.size();
         if (end < input_.size() &&
-            (std::isalnum(static_cast<unsigned char>(input_[end])) ||
+            (infiltratr_ascii_is_alnum(static_cast<unsigned char>(input_[end])) ||
              input_[end] == '_')) {
             return false;
         }
@@ -274,14 +275,14 @@ private:
         if (position_ >= input_.size()) return false;
         const unsigned char next =
             static_cast<unsigned char>(input_[position_]);
-        if (input_[position_] == '(' || std::isalpha(next) ||
+        if (input_[position_] == '(' || infiltratr_ascii_is_alpha(next) ||
             input_[position_] == '_') {
             return true;
         }
-        if (std::isdigit(next) || input_[position_] == '.') {
+        if (infiltratr_ascii_is_digit(next) || input_[position_] == '.') {
             std::size_t previous = position_;
             while (previous > 0U &&
-                   std::isspace(static_cast<unsigned char>(
+                   infiltratr_ascii_is_space(static_cast<unsigned char>(
                        input_[previous - 1U]))) {
                 --previous;
             }
@@ -418,7 +419,7 @@ private:
         skip_space();
         const std::size_t start = position_;
         while (position_ < input_.size() &&
-               (std::isalnum(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) ++position_;
+               (infiltratr_ascii_is_alnum(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) ++position_;
         return std::string(input_.substr(start, position_ - start));
     }
 
@@ -571,7 +572,7 @@ private:
         }
 
         if (position_ < input_.size() &&
-            (std::isalpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) {
+            (infiltratr_ascii_is_alpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) {
             const std::string name = parse_identifier();
             if (const ConstantInfo* constant = lookup_constant(name)) {
                 return constant->value;
@@ -729,7 +730,7 @@ private:
 
     void skip_space() {
         while (position_ < input_.size() &&
-               std::isspace(static_cast<unsigned char>(input_[position_]))) {
+               infiltratr_ascii_is_space(static_cast<unsigned char>(input_[position_]))) {
             ++position_;
         }
     }

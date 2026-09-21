@@ -26,8 +26,8 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.10")
-set(INFILTRATR_COMMON_EXPECTED_COMMIT "33e69c0a462b56d388881d89c4eb49f72fa0b0fe")
+set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.20")
+set(INFILTRATR_COMMON_EXPECTED_COMMIT "336ab8f7f8b7364b6296c7560fc67b242b27eb9d")
 set(CALCULATOR_MULTIPRECISION_EXPECTED_COMMIT "1f7acd34fe929573c131e869867dc1d12b8080b6")
 set(CALCULATOR_MULTIPRECISION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/boost-multiprecision")
 
@@ -257,11 +257,15 @@ if(CALCULATOR_BUILD_DESKTOP)
         add_executable(infiltrator-calc-cli
             src/app/cli_main.cpp
         )
-        target_link_libraries(infiltrator-calc-cli PRIVATE calculator-core)
+        target_link_libraries(infiltrator-calc-cli PRIVATE
+            calculator-core
+            InfiltratrCommon::Common
+        )
         install(TARGETS infiltrator-calc-cli RUNTIME DESTINATION bin)
 
         target_link_libraries(infiltrator-calc PRIVATE
             calculator-ui
+            InfiltratrCommon::Common
             PkgConfig::GTK4
         )
 

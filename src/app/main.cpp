@@ -3,6 +3,9 @@
 #include "../core/advanced_tools.hpp"
 #include "../ui/calculator_theme.hpp"
 
+#include <infiltratr/core.h>
+#include <infiltratr/posix.h>
+
 #include <cstdint>
 #include <limits>
 #include <gtk/gtk.h>
@@ -12,6 +15,7 @@
 #include <cctype>
 #include <cstdio>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -68,6 +72,18 @@ Controller controller;
 ThemeMode theme_mode = ThemeMode::System;
 bool effective_dark_theme = true;
 
+bool ensure_private_directory(const char* path) {
+    return path && *path &&
+           infiltratr_mkdir_parents(path, 0700U) == 0;
+}
+
+bool write_private_file(const char* path, std::string_view data) {
+    return path &&
+           infiltratr_atomic_file_write_bytes(
+               path, INFILTRATR_ATOMIC_FILE_PRIVATE,
+               data.data(), data.size()) == 0;
+}
+
 // Calculator has exactly three approved MB Corpo faces: S Regular, S Bold
 // and A Condensed Regular. GTK selects the S regular/bold face by weight and
 // the A condensed face for display text; no fourth family is selected here.
@@ -91,11 +107,7 @@ bool system_prefers_dark() {
 
     bool dark = prefer_dark != FALSE;
     if (theme_name) {
-        std::string name(theme_name);
-        std::transform(
-            name.begin(), name.end(), name.begin(),
-            [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-        dark = dark || name.find("dark") != std::string::npos;
+        dark = dark || infiltratr_ascii_contains_ci(theme_name, "dark");
         g_free(theme_name);
     }
     return dark;
@@ -110,11 +122,14 @@ ThemeMode load_theme_mode() {
     if (g_file_get_contents(path, &contents, &length, nullptr) && contents) {
         std::string value(contents, length);
         while (!value.empty() &&
-               std::isspace(static_cast<unsigned char>(value.back()))) {
+               infiltratr_ascii_is_space(
+                   static_cast<unsigned char>(value.back()))) {
             value.pop_back();
         }
-        if (value == "day") mode = ThemeMode::Day;
-        else if (value == "night") mode = ThemeMode::Night;
+        ThemeMode parsed = ThemeMode::System;
+        if (calculator::ui::theme_mode_parse(value.c_str(), parsed)) {
+            mode = parsed;
+        }
     }
     g_free(contents);
     g_free(path);
@@ -145,11 +160,10 @@ void load_user_variables() {
 void save_user_variables() {
     gchar* directory = g_build_filename(
         g_get_user_data_dir(), "infiltrator-calc", nullptr);
-    if (g_mkdir_with_parents(directory, 0700) == 0) {
+    if (ensure_private_directory(directory)) {
         gchar* path = g_build_filename(directory, "variables", nullptr);
         const std::string text = controller.variables_text();
-        if (!g_file_set_contents(
-                path, text.data(), static_cast<gssize>(text.size()), nullptr)) {
+        if (!write_private_file(path, text)) {
             g_printerr(
                 "Calculator could not persist variables to %s\n", path);
         }
@@ -181,11 +195,10 @@ void load_user_functions() {
 void save_user_functions() {
     gchar* directory = g_build_filename(
         g_get_user_data_dir(), "infiltrator-calc", nullptr);
-    if (g_mkdir_with_parents(directory, 0700) == 0) {
+    if (ensure_private_directory(directory)) {
         gchar* path = g_build_filename(directory, "custom-functions", nullptr);
         const std::string text = controller.function_definitions_text();
-        if (!g_file_set_contents(
-                path, text.data(), static_cast<gssize>(text.size()), nullptr)) {
+        if (!write_private_file(path, text)) {
             g_printerr(
                 "Calculator could not persist custom functions to %s\n",
                 path);
@@ -252,7 +265,7 @@ void load_display_preferences() {
 void save_display_preferences() {
     gchar* directory = g_build_filename(
         g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (g_mkdir_with_parents(directory, 0700) != 0) {
+    if (!ensure_private_directory(directory)) {
         g_free(directory);
         return;
     }
@@ -273,8 +286,8 @@ void save_display_preferences() {
     gsize length = 0;
     gchar* data = g_key_file_to_data(key, &length, nullptr);
     if (data) {
-        if (!g_file_set_contents(
-                path, data, static_cast<gssize>(length), nullptr)) {
+        if (!write_private_file(
+                path, std::string_view(data, static_cast<std::size_t>(length)))) {
             g_printerr(
                 "Calculator could not persist presentation preferences to %s\n",
                 path);
@@ -365,7 +378,7 @@ void save_desktop_state(GtkWidget* window) {
     if (!window) return;
     gchar* directory = g_build_filename(
         g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (g_mkdir_with_parents(directory, 0700) != 0) {
+    if (!ensure_private_directory(directory)) {
         g_free(directory);
         return;
     }
@@ -394,8 +407,8 @@ void save_desktop_state(GtkWidget* window) {
     gsize length = 0;
     gchar* data = g_key_file_to_data(key, &length, nullptr);
     if (data) {
-        (void)g_file_set_contents(
-            path, data, static_cast<gssize>(length), nullptr);
+        (void)write_private_file(
+            path, std::string_view(data, static_cast<std::size_t>(length)));
         g_free(data);
     }
     g_key_file_unref(key);
@@ -414,12 +427,10 @@ gboolean on_main_close_request(GtkWindow* window, gpointer) {
 void save_theme_mode() {
     gchar* directory = g_build_filename(
         g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (g_mkdir_with_parents(directory, 0700) == 0) {
+    if (ensure_private_directory(directory)) {
         gchar* path = g_build_filename(directory, "theme", nullptr);
-        const char* value = "system\n";
-        if (theme_mode == ThemeMode::Day) value = "day\n";
-        else if (theme_mode == ThemeMode::Night) value = "night\n";
-        (void)g_file_set_contents(path, value, -1, nullptr);
+        const char* value = calculator::ui::theme_mode_key(theme_mode);
+        (void)write_private_file(path, value);
         g_free(path);
     }
     g_free(directory);
@@ -1047,7 +1058,7 @@ void save_conversion_preferences(ToolWindowState* state) {
 
     gchar* directory = g_build_filename(
         g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (g_mkdir_with_parents(directory, 0700) != 0) {
+    if (!ensure_private_directory(directory)) {
         g_free(directory);
         return;
     }
@@ -1059,7 +1070,8 @@ void save_conversion_preferences(ToolWindowState* state) {
     gsize length = 0;
     gchar* data = g_key_file_to_data(key, &length, nullptr);
     if (data) {
-        (void)g_file_set_contents(path, data, static_cast<gssize>(length), nullptr);
+        (void)write_private_file(
+            path, std::string_view(data, static_cast<std::size_t>(length)));
         g_free(data);
     }
     g_key_file_unref(key);

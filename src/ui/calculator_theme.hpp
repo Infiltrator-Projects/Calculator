@@ -28,6 +28,19 @@ inline ThemeMode next_theme_mode(ThemeMode mode) {
             static_cast<InfiltratrThemeMode>(mode)));
 }
 
+inline const char* theme_mode_key(ThemeMode mode) {
+    const char* key = infiltratr_theme_mode_key(
+        static_cast<InfiltratrThemeMode>(mode));
+    return key ? key : "system";
+}
+
+inline bool theme_mode_parse(const char* text, ThemeMode& mode) {
+    InfiltratrThemeMode parsed = INFILTRATR_THEME_SYSTEM;
+    if (!infiltratr_theme_mode_parse(text, &parsed)) return false;
+    mode = static_cast<ThemeMode>(parsed);
+    return true;
+}
+
 inline const ThemePalette& resolved_palette(ThemeMode mode,
                                             bool system_is_dark) {
     return *infiltratr_theme_resolve(

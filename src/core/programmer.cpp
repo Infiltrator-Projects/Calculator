@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "programmer.hpp"
 
+#include <infiltratr/core.h>
+
 #include <cctype>
 #include <cstddef>
 #include <iomanip>
@@ -100,7 +102,7 @@ private:
 
     void skip_space() {
         while (position_ < input_.size() &&
-               std::isspace(static_cast<unsigned char>(input_[position_]))) ++position_;
+               infiltratr_ascii_is_space(static_cast<unsigned char>(input_[position_]))) ++position_;
     }
 
     bool consume(char c) {
@@ -130,14 +132,14 @@ private:
                 static_cast<unsigned char>(input_[position_ + i]);
             const unsigned char expected =
                 static_cast<unsigned char>(word[i]);
-            if (std::tolower(actual) != std::tolower(expected)) return false;
+            if (infiltratr_ascii_to_lower(actual) != infiltratr_ascii_to_lower(expected)) return false;
         }
 
         const std::size_t end = position_ + word.size();
         if (end < input_.size()) {
             const unsigned char next =
                 static_cast<unsigned char>(input_[end]);
-            if (std::isalnum(next) || next == '_') return false;
+            if (infiltratr_ascii_is_alnum(next) || next == '_') return false;
         }
 
         position_ = end;

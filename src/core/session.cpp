@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "session.hpp"
 
+#include <infiltratr/core.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -15,12 +17,12 @@ namespace {
 std::string trim_copy(std::string_view text) {
     std::size_t begin = 0;
     while (begin < text.size() &&
-           std::isspace(static_cast<unsigned char>(text[begin]))) {
+           infiltratr_ascii_is_space(static_cast<unsigned char>(text[begin]))) {
         ++begin;
     }
     std::size_t end = text.size();
     while (end > begin &&
-           std::isspace(static_cast<unsigned char>(text[end - 1U]))) {
+           infiltratr_ascii_is_space(static_cast<unsigned char>(text[end - 1U]))) {
         --end;
     }
     return std::string(text.substr(begin, end - begin));
@@ -28,9 +30,9 @@ std::string trim_copy(std::string_view text) {
 
 bool valid_identifier(const std::string& name) {
     if (name.empty()) return false;
-    if (!std::isalpha(static_cast<unsigned char>(name.front())) && name.front() != '_') return false;
+    if (!infiltratr_ascii_is_alpha(static_cast<unsigned char>(name.front())) && name.front() != '_') return false;
     for (char c : name) {
-        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_') return false;
+        if (!infiltratr_ascii_is_alnum(static_cast<unsigned char>(c)) && c != '_') return false;
     }
     return true;
 }
@@ -47,10 +49,10 @@ bool reserved_identifier(const std::string& name) {
 
 std::optional<std::string> assignment_name(const std::string& input, std::string& expression) {
     std::size_t left = 0;
-    while (left < input.size() && std::isspace(static_cast<unsigned char>(input[left]))) ++left;
+    while (left < input.size() && infiltratr_ascii_is_space(static_cast<unsigned char>(input[left]))) ++left;
     std::size_t name_end = left;
     while (name_end < input.size() &&
-           (std::isalnum(static_cast<unsigned char>(input[name_end])) || input[name_end] == '_')) ++name_end;
+           (infiltratr_ascii_is_alnum(static_cast<unsigned char>(input[name_end])) || input[name_end] == '_')) ++name_end;
     if (name_end == left || name_end >= input.size() || input[name_end] != '=') return std::nullopt;
 
     std::string name = input.substr(left, name_end - left);

@@ -2,11 +2,11 @@
 #include "advanced_tools.hpp"
 #include "calculator.hpp"
 
-#include <infiltratr/token.h>
+#include <infiltratr/arithmetic.h>
+#include <infiltratr/core.h>
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cctype>
 #include <cmath>
 #include <complex>
@@ -80,10 +80,10 @@ ToolResult failure(std::string text) {
 std::string trim(std::string_view value) {
     std::size_t first = 0;
     while (first < value.size() &&
-           std::isspace(static_cast<unsigned char>(value[first]))) ++first;
+           infiltratr_ascii_is_space(static_cast<unsigned char>(value[first]))) ++first;
     std::size_t last = value.size();
     while (last > first &&
-           std::isspace(static_cast<unsigned char>(value[last - 1]))) --last;
+           infiltratr_ascii_is_space(static_cast<unsigned char>(value[last - 1]))) --last;
     return std::string(value.substr(first, last - first));
 }
 
@@ -92,11 +92,11 @@ std::vector<std::string> split_ws(std::string_view value) {
     std::size_t i = 0;
     while (i < value.size()) {
         while (i < value.size() &&
-               std::isspace(static_cast<unsigned char>(value[i]))) ++i;
+               infiltratr_ascii_is_space(static_cast<unsigned char>(value[i]))) ++i;
         if (i == value.size()) break;
         const std::size_t begin = i;
         while (i < value.size() &&
-               !std::isspace(static_cast<unsigned char>(value[i]))) ++i;
+               !infiltratr_ascii_is_space(static_cast<unsigned char>(value[i]))) ++i;
         out.emplace_back(value.substr(begin, i - begin));
     }
     return out;
@@ -117,31 +117,20 @@ std::vector<std::string> split_semicolon(std::string_view value) {
 }
 
 bool parse_double(std::string_view text, double& value) {
-    const std::string s = trim(text);
-    if (s.empty()) return false;
-
-    // Use the same Common decimal-token contract as Calculator's expression
-    // parser. Floating-point std::from_chars is not available on every
-    // supported iOS deployment target, and platform-local fallbacks would
-    // create different accepted numeric syntax.
-    const char* cursor = s.data();
-    double parsed = 0.0;
-    if (!infiltratr_parse_double_token(&cursor, true, &parsed) ||
-        cursor != s.data() + s.size() ||
-        !std::isfinite(parsed)) {
-        return false;
-    }
-    value = parsed;
-    return true;
+    const std::string input(text);
+    return infiltratr_parse_double(input.c_str(), &value);
 }
 
-bool parse_u64(std::string_view text, std::uint64_t& value) {
-    const std::string s = trim(text);
-    if (s.empty()) return false;
-    const auto converted = std::from_chars(
-        s.data(), s.data() + s.size(), value);
-    return converted.ec == std::errc{} &&
-           converted.ptr == s.data() + s.size();
+bool parse_u64(std::string_view text, std::uint64_t& value,
+               unsigned int base = 10U) {
+    const std::string input(text);
+    return infiltratr_parse_u64(input.c_str(), base, &value);
+}
+
+bool parse_i64(std::string_view text, std::int64_t& value,
+               unsigned int base = 10U) {
+    const std::string input(text);
+    return infiltratr_parse_i64(input.c_str(), base, &value);
 }
 
 std::string number(double value) {
@@ -353,12 +342,9 @@ bool parse_ipv4(std::string_view text, std::uint32_t& address) {
             (part == 3 && end != std::string_view::npos)) return false;
         const std::string_view token = text.substr(
             begin, (end == std::string_view::npos ? text.size() : end) - begin);
-        unsigned value = 0;
-        const auto converted = std::from_chars(
-            token.data(), token.data() + token.size(), value);
-        if (token.empty() || converted.ec != std::errc{} ||
-            converted.ptr != token.data() + token.size() || value > 255U) return false;
-        out = (out << 8U) | value;
+        std::uint64_t value = 0;
+        if (!parse_u64(token, value) || value > 255U) return false;
+        out = (out << 8U) | static_cast<std::uint32_t>(value);
         begin = end == std::string_view::npos ? text.size() : end + 1U;
     }
     address = out;
@@ -383,11 +369,11 @@ ToolResult network_tool(std::string_view input) {
         if (slash == std::string::npos) return failure("CIDR prefix is required.");
         std::uint32_t address = 0;
         if (!parse_ipv4(std::string_view(fields[1]).substr(0, slash), address)) return failure("Invalid IPv4 address.");
-        unsigned prefix = 0;
+        std::uint64_t parsed_prefix = 0;
         const std::string_view p(fields[1].data() + slash + 1U, fields[1].size() - slash - 1U);
-        const auto converted = std::from_chars(p.data(), p.data()+p.size(), prefix);
-        if (p.empty() || converted.ec != std::errc{} ||
-            converted.ptr != p.data()+p.size() || prefix > 32U) return failure("IPv4 prefix must be 0..32.");
+        if (!parse_u64(p, parsed_prefix) || parsed_prefix > 32U)
+            return failure("IPv4 prefix must be 0..32.");
+        const unsigned prefix = static_cast<unsigned>(parsed_prefix);
         const std::uint32_t mask = prefix == 0U ? 0U : 0xffffffffU << (32U-prefix);
         const std::uint32_t network = address & mask;
         const std::uint32_t broadcast = network | ~mask;
@@ -494,11 +480,10 @@ ToolResult storage_tool(std::string_view input) {
             return failure("Usage: clusters file-bytes cluster-bytes");
         const std::uint64_t clusters =
             file / cluster + (file % cluster == 0U ? 0U : 1U);
-        if (clusters != 0U &&
-            clusters > std::numeric_limits<std::uint64_t>::max() / cluster) {
+        std::uint64_t allocated = 0U;
+        if (!infiltratr_u64_multiply_checked(clusters, cluster, &allocated)) {
             return failure("Allocated size exceeds the 64-bit storage domain.");
         }
-        const std::uint64_t allocated=clusters*cluster;
         return success("Clusters  "+std::to_string(clusters)+
                        "\nAllocated bytes  "+std::to_string(allocated)+
                        "\nSlack bytes  "+std::to_string(allocated-file));
@@ -516,8 +501,13 @@ int month_days(int y,int m) {
 bool parse_date(std::string_view s,int& y,int& m,int& d) {
     if(s.size()!=10 || s[4]!='-' || s[7]!='-') return false;
     auto part=[&](std::size_t pos,std::size_t n,int& v){
-        const auto r=std::from_chars(s.data()+pos,s.data()+pos+n,v);
-        return r.ec==std::errc{} && r.ptr==s.data()+pos+n;
+        std::uint64_t parsed = 0;
+        if (!parse_u64(s.substr(pos, n), parsed) ||
+            parsed > static_cast<std::uint64_t>(std::numeric_limits<int>::max())) {
+            return false;
+        }
+        v = static_cast<int>(parsed);
+        return true;
     };
     if(!part(0,4,y)||!part(5,2,m)||!part(8,2,d)) return false;
     return y>=1 && y<=9999 && m>=1 && m<=12 && d>=1 && d<=month_days(y,m);
@@ -569,8 +559,7 @@ ToolResult datetime_tool(std::string_view input) {
     if(f[0]=="add") {
         int y,m,d; std::int64_t delta=0;
         if(f.size()!=3U||!parse_date(f[1],y,m,d)) return failure("Usage: add YYYY-MM-DD days");
-        const auto conv=std::from_chars(f[2].data(),f[2].data()+f[2].size(),delta);
-        if(conv.ec!=std::errc{}||conv.ptr!=f[2].data()+f[2].size()) return failure("Invalid day offset.");
+        if(!parse_i64(f[2], delta)) return failure("Invalid day offset.");
         int oy; unsigned om,od;
         civil_from_days(
             days_from_civil(
@@ -587,7 +576,15 @@ ToolResult datetime_tool(std::string_view input) {
             return failure("Use UTC form YYYY-MM-DDTHH:MM:SSZ.");
         int y,m,d; if(!parse_date(std::string_view(t).substr(0,10),y,m,d)) return failure("Invalid date.");
         int hh=0,mm=0,ss=0;
-        auto p=[&](std::size_t pos,int& v){auto r=std::from_chars(t.data()+pos,t.data()+pos+2,v);return r.ec==std::errc{}&&r.ptr==t.data()+pos+2;};
+        auto p=[&](std::size_t pos,int& v){
+            std::uint64_t parsed = 0;
+            if (!parse_u64(std::string_view(t).substr(pos, 2U), parsed) ||
+                parsed > static_cast<std::uint64_t>(std::numeric_limits<int>::max())) {
+                return false;
+            }
+            v = static_cast<int>(parsed);
+            return true;
+        };
         if(!p(11,hh)||!p(14,mm)||!p(17,ss)||hh>23||mm>59||ss>59) return failure("Invalid UTC time.");
         const std::int64_t seconds =
             days_from_civil(
@@ -1135,7 +1132,7 @@ public:
     }
 private:
     std::string_view in_;std::size_t pos_=0;std::string error_;
-    void skip(){while(pos_<in_.size()&&std::isspace(static_cast<unsigned char>(in_[pos_])))++pos_;}
+    void skip(){while(pos_<in_.size()&&infiltratr_ascii_is_space(static_cast<unsigned char>(in_[pos_])))++pos_;}
     bool take(char c){skip();if(pos_<in_.size()&&in_[pos_]==c){++pos_;return true;}return false;}
     Exact expr(){Exact a=term();while(error_.empty()){if(take('+')){Exact b=term();a={a.n*b.d+b.n*a.d,a.d*b.d};}else if(take('-')){Exact b=term();a={a.n*b.d-b.n*a.d,a.d*b.d};}else break;}return a;}
     Exact term(){Exact a=unary();while(error_.empty()){if(take('*')){Exact b=unary();a={a.n*b.n,a.d*b.d};}else if(take('/')){Exact b=unary();if(b.n.zero()){error_="Division by zero.";return{};}BigInt bn=b.n.absolute();BigInt n=a.n*b.d;if(b.n.negative())n.negate();a={n,a.d*bn};}else break;if(a.n.decimal_digits()+a.d.decimal_digits()>20000U){error_="Exact result exceeds the 20,000-digit safety limit.";}}return a;}
@@ -1154,9 +1151,14 @@ private:
         int exponent=0;
         if(pos_<in_.size()&&(in_[pos_]=='e'||in_[pos_]=='E')){
             ++pos_;bool neg=false;if(pos_<in_.size()&&(in_[pos_]=='+'||in_[pos_]=='-')){neg=in_[pos_]=='-';++pos_;}
-            const std::size_t es=pos_;while(pos_<in_.size()&&std::isdigit(static_cast<unsigned char>(in_[pos_])))++pos_;
+            const std::size_t es=pos_;while(pos_<in_.size()&&infiltratr_ascii_is_digit(static_cast<unsigned char>(in_[pos_])))++pos_;
             if(es==pos_){error_="Malformed decimal exponent.";return{};}
-            auto r=std::from_chars(in_.data()+es,in_.data()+pos_,exponent);if(r.ec!=std::errc{}||exponent>4096){error_="Decimal exponent exceeds safety limit.";return{};}if(neg)exponent=-exponent;
+            std::uint64_t parsed_exponent = 0;
+            if(!parse_u64(in_.substr(es,pos_-es), parsed_exponent) ||
+               parsed_exponent > 4096U){
+                error_="Decimal exponent exceeds safety limit.";return{};
+            }
+            exponent=static_cast<int>(parsed_exponent);if(neg)exponent=-exponent;
         }
         long long scale=static_cast<long long>(fractional)-exponent;bool ok=true;
         if(scale>=0){BigInt d=power10(static_cast<std::size_t>(scale),ok);if(!ok){error_="Decimal scale exceeds safety limit.";return{};}return{n,d};}
@@ -1170,14 +1172,14 @@ public:
     ToolResult run(){BigInt v=expr();skip();if(!err_.empty())return failure(err_);if(pos_!=in_.size())return failure("Unexpected arbitrary-precision input.");return success(v.str());}
 private:
     std::string_view in_;std::size_t pos_=0;std::string err_;
-    void skip(){while(pos_<in_.size()&&std::isspace(static_cast<unsigned char>(in_[pos_])))++pos_;}
+    void skip(){while(pos_<in_.size()&&infiltratr_ascii_is_space(static_cast<unsigned char>(in_[pos_])))++pos_;}
     bool take(char c){skip();if(pos_<in_.size()&&in_[pos_]==c){++pos_;return true;}return false;}
     BigInt expr(){BigInt a=term();while(err_.empty()){if(take('+'))a=a+term();else if(take('-'))a=a-term();else break;}return a;}
     BigInt term(){BigInt a=unary();while(err_.empty()&&take('*')){a=a*unary();if(a.decimal_digits()>20000U)err_="Result exceeds the 20,000-digit safety limit.";}return a;}
     BigInt unary(){if(take('+'))return unary();if(take('-')){BigInt v=unary();v.negate();return v;}return power();}
     BigInt power(){BigInt a=postfix();if(err_.empty()&&take('^')){BigInt e=unary();std::uint32_t exp=0;if(!e.to_u32(exp)||exp>100000U){err_="Exponent must be a non-negative integer <= 100000.";return{};}bool ok=false;a=BigInt::pow(a,exp,ok);if(!ok)err_="Result exceeds the 20,000-digit safety limit.";}return a;}
     BigInt postfix(){BigInt a=primary();while(err_.empty()&&take('!')){std::uint32_t n=0;if(!a.to_u32(n)||n>1000U){err_="Factorial requires an integer from 0 to 1000.";return{};}BigInt r(1);for(std::uint32_t i=2;i<=n;++i)r=r*BigInt(i);a=r;}return a;}
-    BigInt primary(){if(take('(')){BigInt v=expr();if(!take(')')&&err_.empty())err_="Missing closing parenthesis.";return v;}skip();const std::size_t start=pos_;while(pos_<in_.size()&&std::isdigit(static_cast<unsigned char>(in_[pos_])))++pos_;if(start==pos_){err_="Expected an integer.";return{};}BigInt v;if(!BigInt::parse(in_.substr(start,pos_-start),v))err_="Invalid or oversized integer.";return v;}
+    BigInt primary(){if(take('(')){BigInt v=expr();if(!take(')')&&err_.empty())err_="Missing closing parenthesis.";return v;}skip();const std::size_t start=pos_;while(pos_<in_.size()&&infiltratr_ascii_is_digit(static_cast<unsigned char>(in_[pos_])))++pos_;if(start==pos_){err_="Expected an integer.";return{};}BigInt v;if(!BigInt::parse(in_.substr(start,pos_-start),v))err_="Invalid or oversized integer.";return v;}
 };
 
 
@@ -1294,13 +1296,10 @@ bool parse_code_point(std::string_view text, std::uint32_t& value) {
         base = 16;
     }
     if (text.empty()) return false;
-    unsigned long parsed = 0UL;
-    const auto converted = std::from_chars(
-        text.data(), text.data() + text.size(), parsed, base);
-    if (converted.ec != std::errc{} ||
-        converted.ptr != text.data() + text.size() ||
-        parsed > 0x10ffffUL ||
-        (parsed >= 0xd800UL && parsed <= 0xdfffUL)) {
+    std::uint64_t parsed = 0U;
+    if (!parse_u64(text, parsed, static_cast<unsigned int>(base)) ||
+        parsed > 0x10ffffU ||
+        (parsed >= 0xd800U && parsed <= 0xdfffU)) {
         return false;
     }
     value = static_cast<std::uint32_t>(parsed);
@@ -1373,11 +1372,11 @@ bool checked_permutation(std::uint64_t n, std::uint64_t r,
     result = 1U;
     for (std::uint64_t i = 0U; i < r; ++i) {
         const std::uint64_t factor = n - i;
-        if (factor != 0U &&
-            result > std::numeric_limits<std::uint64_t>::max() / factor) {
+        std::uint64_t multiplied = 0U;
+        if (!infiltratr_u64_multiply_checked(result, factor, &multiplied)) {
             return false;
         }
-        result *= factor;
+        result = multiplied;
     }
     return true;
 }
@@ -1398,12 +1397,12 @@ bool checked_combination(std::uint64_t n, std::uint64_t r,
             std::gcd(result, denominator);
         result /= second;
         denominator /= second;
-        if (numerator != 0U &&
-            result >
-                std::numeric_limits<std::uint64_t>::max() / numerator) {
+        std::uint64_t multiplied = 0U;
+        if (!infiltratr_u64_multiply_checked(
+                result, numerator, &multiplied)) {
             return false;
         }
-        result *= numerator;
+        result = multiplied;
         if (denominator != 1U) result /= denominator;
     }
     return true;
@@ -1464,10 +1463,11 @@ ToolResult number_utilities_tool(std::string_view input) {
         }
         if (a == 0U || b == 0U) return success("LCM  0");
         const std::uint64_t reduced = a / divisor;
-        if (reduced > std::numeric_limits<std::uint64_t>::max() / b) {
+        std::uint64_t lcm = 0U;
+        if (!infiltratr_u64_multiply_checked(reduced, b, &lcm)) {
             return failure("LCM exceeds the 64-bit utility domain.");
         }
-        return success("LCM  " + std::to_string(reduced * b));
+        return success("LCM  " + std::to_string(lcm));
     }
 
     if (f[0] == "perm" || f[0] == "comb") {

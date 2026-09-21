@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.11" date="2026-09-21">
+      <description>
+        <p>Move to Common 1.19.20 and consolidate shared numeric parsing, deterministic ASCII handling, checked arithmetic, theme persistence and durable POSIX publication.</p>
+      </description>
+    </release>
     <release version="0.2.10" date="2026-09-21">
       <description>
         <p>Complete integrated arbitrary-precision real/complex Scientific evaluation with shared cross-platform state, display formatting and independent MPFR/MPC validation.</p>

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.11 — 2026-09-21
+
+- Move Calculator to the reviewed Common 1.19.20 baseline.
+- Replace remaining duplicate complete numeric parsing and checked unsigned multiplication with Common contracts.
+- Use Common's deterministic ASCII classification/case-folding for Calculator grammar and Programmer keywords.
+- Use Common's canonical theme persistence keys/parser and durable POSIX directory/atomic-file primitives in the Linux and CLI persistence paths.
+- Keep Calculator-specific mathematical, parser-grammar, UI-state and platform-policy semantics local.
+
 ## 0.2.10 — 2026-09-21
 
 - Complete the final Linux Mint/GNOME Calculator replacement target with integrated arbitrary-precision real/complex Scientific evaluation in the shared C++ core.

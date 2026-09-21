@@ -2,6 +2,7 @@
 #include "scientific.hpp"
 
 #include <boost/multiprecision/cpp_complex.hpp>
+#include <infiltratr/core.h>
 
 #include <algorithm>
 #include <array>
@@ -206,7 +207,7 @@ bool is_builtin(std::string_view name) {
             return false;
         }
         for (std::size_t i = prefix.size(); i < name.size(); ++i) {
-            if (!std::isdigit(
+            if (!infiltratr_ascii_is_digit(
                     static_cast<unsigned char>(name[i]))) {
                 return false;
             }
@@ -482,7 +483,7 @@ private:
 
     void skip_space() {
         while (position_ < input_.size() &&
-               std::isspace(
+               infiltratr_ascii_is_space(
                    static_cast<unsigned char>(input_[position_]))) {
             ++position_;
         }
@@ -516,7 +517,7 @@ private:
         }
         const std::size_t end = position_ + keyword.size();
         if (end < input_.size() &&
-            (std::isalnum(
+            (infiltratr_ascii_is_alnum(
                  static_cast<unsigned char>(input_[end])) ||
              input_[end] == '_')) {
             return false;
@@ -532,15 +533,15 @@ private:
         const unsigned char next =
             static_cast<unsigned char>(input_[position_]);
         if (input_[position_] == '(' ||
-            std::isalpha(next) ||
+            infiltratr_ascii_is_alpha(next) ||
             input_[position_] == '_') {
             return true;
         }
 
-        if (std::isdigit(next) || input_[position_] == '.') {
+        if (infiltratr_ascii_is_digit(next) || input_[position_] == '.') {
             std::size_t previous = position_;
             while (previous > 0U &&
-                   std::isspace(static_cast<unsigned char>(
+                   infiltratr_ascii_is_space(static_cast<unsigned char>(
                        input_[previous - 1U]))) {
                 --previous;
             }
@@ -711,7 +712,7 @@ private:
         skip_space();
         const std::size_t start = position_;
         while (position_ < input_.size() &&
-               (std::isalnum(
+               (infiltratr_ascii_is_alnum(
                     static_cast<unsigned char>(input_[position_])) ||
                 input_[position_] == '_')) {
             ++position_;
@@ -950,7 +951,7 @@ private:
         bool any_digits = false;
 
         while (cursor < input_.size() &&
-               std::isdigit(
+               infiltratr_ascii_is_digit(
                    static_cast<unsigned char>(input_[cursor]))) {
             any_digits = true;
             ++cursor;
@@ -959,7 +960,7 @@ private:
         if (cursor < input_.size() && input_[cursor] == '.') {
             ++cursor;
             while (cursor < input_.size() &&
-                   std::isdigit(
+                   infiltratr_ascii_is_digit(
                        static_cast<unsigned char>(input_[cursor]))) {
                 any_digits = true;
                 ++cursor;
@@ -980,7 +981,7 @@ private:
             }
             const std::size_t exponent_digits = cursor;
             while (cursor < input_.size() &&
-                   std::isdigit(
+                   infiltratr_ascii_is_digit(
                        static_cast<unsigned char>(input_[cursor]))) {
                 ++cursor;
             }
@@ -1038,7 +1039,7 @@ private:
         }
 
         if (position_ < input_.size() &&
-            (std::isalpha(
+            (infiltratr_ascii_is_alpha(
                  static_cast<unsigned char>(input_[position_])) ||
              input_[position_] == '_')) {
             const std::string name = parse_identifier();

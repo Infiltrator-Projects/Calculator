@@ -6,8 +6,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ROOT / "src" / "infiltratr-common"
-EXPECTED_VERSION = "1.19.10"
-EXPECTED_COMMIT = "33e69c0a462b56d388881d89c4eb49f72fa0b0fe"
+EXPECTED_VERSION = "1.19.20"
+EXPECTED_COMMIT = "336ab8f7f8b7364b6296c7560fc67b242b27eb9d"
 
 assert (COMMON / "VERSION").read_text(encoding="utf-8").strip() == EXPECTED_VERSION
 
@@ -74,11 +74,11 @@ for field in (
     "success_border_rgb",
 ):
     assert field in design_header, (
-        f"Common 1.19.10 semantic palette field missing from public ABI: {field}"
+        f"Common 1.19.20 semantic palette field missing from public ABI: {field}"
     )
 
 # Calculator must consume Common through its published surface only. Common
-# 1.19.10 deliberately consolidated several internal helpers; importing those
+# 1.19.20 deliberately consolidated several internal helpers; importing those
 # private headers would couple Calculator to implementation detail rather than
 # the immutable public contract.
 private_common_headers = (
@@ -99,10 +99,25 @@ for base in (ROOT / "src", ROOT / "ios" / "Bridge"):
 
 for required in (
     "infiltratr_parse_double_token",
+    "infiltratr_parse_double",
+    "infiltratr_parse_u64",
+    "infiltratr_parse_i64",
+    "infiltratr_u64_multiply_checked",
+    "infiltratr_ascii_is_space",
+    "infiltratr_ascii_is_alpha",
+    "infiltratr_ascii_is_alnum",
+    "infiltratr_ascii_is_digit",
+    "infiltratr_ascii_to_lower",
+    "infiltratr_ascii_contains_ci",
+    "infiltratr_theme_mode_key",
+    "infiltratr_theme_mode_parse",
+    "infiltratr_mkdir_parents",
+    "infiltratr_atomic_file_write_bytes",
+    "infiltratr_read_text_file_alloc",
     "infiltratr_design_metrics",
     "infiltratr_typography",
 ):
-    assert required in calls, f"Calculator is not consuming Common 1.19.10 {required}"
+    assert required in calls, f"Calculator is not consuming Common 1.19.20 {required}"
 
 typography_assets = (
     COMMON / "cmake" / "InfiltratrTypographyAssets.cmake"
@@ -155,7 +170,7 @@ for palette_name in ("day", "night"):
         "success_border",
     ):
         assert role in semantic_palette, (
-            f"Common 1.19.10 {palette_name} palette missing semantic role: {role}"
+            f"Common 1.19.20 {palette_name} palette missing semantic role: {role}"
         )
 
 canonical_fonts = design_contract["typography"]["font_files"]
