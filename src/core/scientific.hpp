@@ -42,6 +42,9 @@ std::string format_scientific_value(
     const ScientificValue& value,
     unsigned decimal_digits = kScientificDefaultDigits,
     bool scientific_notation = false);
+std::string format_engineering_value(
+    const ScientificValue& value,
+    unsigned significant_digits = 13);
 
 bool scientific_value_to_double(
     const ScientificValue& value, double& output) noexcept;
