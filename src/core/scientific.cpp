@@ -272,6 +272,70 @@ std::string component_string(
     return text;
 }
 
+std::string engineering_component(
+    const Real& value, unsigned significant_digits) {
+    if (value == 0) return "0e+00";
+
+    const bool negative = value < 0;
+    const Real magnitude = negative ? -value : value;
+    std::ostringstream scientific;
+    scientific.imbue(std::locale::classic());
+    scientific << std::scientific
+               << std::setprecision(
+                      static_cast<int>(
+                          std::max(1U, significant_digits) - 1U))
+               << magnitude;
+    const std::string text = scientific.str();
+    const std::size_t exponent_position = text.find('e');
+    if (exponent_position == std::string::npos) {
+        return component_string(value, significant_digits, true);
+    }
+
+    int exponent = 0;
+    try {
+        exponent = std::stoi(text.substr(exponent_position + 1U));
+    } catch (...) {
+        return component_string(value, significant_digits, true);
+    }
+
+    int remainder = exponent % 3;
+    if (remainder < 0) remainder += 3;
+    const int engineering_exponent = exponent - remainder;
+
+    std::string digits;
+    for (std::size_t i = 0; i < exponent_position; ++i) {
+        if (text[i] != '.') digits.push_back(text[i]);
+    }
+    while (!digits.empty() && digits.back() == '0') {
+        digits.pop_back();
+    }
+    if (digits.empty()) digits = "0";
+
+    const std::size_t integer_digits =
+        1U + static_cast<std::size_t>(remainder);
+    if (digits.size() < integer_digits) {
+        digits.append(integer_digits - digits.size(), '0');
+    }
+
+    std::string mantissa;
+    if (negative) mantissa.push_back('-');
+    mantissa.append(digits.data(), integer_digits);
+    if (digits.size() > integer_digits) {
+        mantissa.push_back('.');
+        mantissa.append(
+            digits.data() + integer_digits,
+            digits.size() - integer_digits);
+    }
+
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << mantissa << 'e'
+        << (engineering_exponent < 0 ? '-' : '+')
+        << std::setw(2) << std::setfill('0')
+        << std::abs(engineering_exponent);
+    return out.str();
+}
+
 ScientificValue pack_value(const Complex& value, unsigned digits) {
     return {
         component_string(real_part(value), digits),
@@ -1024,6 +1088,29 @@ std::string format_scientific_value(
         return real + " + " + imag + "i";
     } catch (...) {
         return "0";
+    }
+}
+
+std::string format_engineering_value(
+    const ScientificValue& value,
+    unsigned significant_digits) {
+    try {
+        const Complex parsed = unpack_value(value);
+        const std::string real =
+            engineering_component(
+                real_part(parsed), significant_digits);
+        const std::string imag =
+            engineering_component(
+                imag_part(parsed), significant_digits);
+
+        if (imag == "0e+00") return real;
+        if (real == "0e+00") return imag + "i";
+        if (!imag.empty() && imag.front() == '-') {
+            return real + " - " + imag.substr(1U) + "i";
+        }
+        return real + " + " + imag + "i";
+    } catch (...) {
+        return "0e+00";
     }
 }
 
