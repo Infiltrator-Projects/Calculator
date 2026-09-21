@@ -278,6 +278,84 @@ std::string component_string(
     return text;
 }
 
+std::string trim_fraction_zeroes(std::string text) {
+    const std::size_t exponent = text.find_first_of("eE");
+    const std::size_t mantissa_end =
+        exponent == std::string::npos ? text.size() : exponent;
+    const std::size_t dot = text.find('.');
+    if (dot == std::string::npos || dot >= mantissa_end) {
+        return text;
+    }
+
+    std::size_t end = mantissa_end;
+    while (end > dot + 1U && text[end - 1U] == '0') --end;
+    if (end == dot + 1U) --end;
+    text.erase(end, mantissa_end - end);
+    return text;
+}
+
+std::string group_integer_digits(std::string text) {
+    const std::size_t exponent = text.find_first_of("eE");
+    const std::size_t mantissa_end =
+        exponent == std::string::npos ? text.size() : exponent;
+    const std::size_t dot = text.find('.');
+    const std::size_t integer_end =
+        dot != std::string::npos && dot < mantissa_end
+            ? dot : mantissa_end;
+    const std::size_t first_digit =
+        !text.empty() &&
+        (text.front() == '-' || text.front() == '+')
+            ? 1U : 0U;
+    if (integer_end <= first_digit + 3U) return text;
+
+    for (std::size_t position = integer_end;
+         position > first_digit + 3U;) {
+        position -= 3U;
+        text.insert(position, 1U, ',');
+    }
+    return text;
+}
+
+std::string display_component(
+    const Real& value,
+    ScientificDisplayFormat format,
+    unsigned precision,
+    bool trailing_zeroes,
+    bool group_thousands) {
+    if (format == ScientificDisplayFormat::General) {
+        std::string text = component_string(
+            value, std::max(1U, precision));
+        return group_thousands
+            ? group_integer_digits(std::move(text))
+            : text;
+    }
+
+    if (format == ScientificDisplayFormat::Engineering) {
+        return engineering_component(
+            value, std::max(2U, precision));
+    }
+
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    if (format == ScientificDisplayFormat::Fixed) {
+        out << std::fixed;
+    } else {
+        out << std::scientific;
+    }
+    out << std::setprecision(static_cast<int>(precision)) << value;
+
+    std::string text = out.str();
+    if (!trailing_zeroes) {
+        text = trim_fraction_zeroes(std::move(text));
+    }
+    if (group_thousands &&
+        format == ScientificDisplayFormat::Fixed) {
+        text = group_integer_digits(std::move(text));
+    }
+    if (text == "-0") text = "0";
+    return text;
+}
+
 std::string engineering_component(
     const Real& value, unsigned significant_digits) {
     if (value == 0) return "0e+00";
@@ -1117,6 +1195,39 @@ std::string format_engineering_value(
         return real + " + " + imag + "i";
     } catch (...) {
         return "0e+00";
+    }
+}
+
+std::string format_scientific_display(
+    const ScientificValue& value,
+    ScientificDisplayFormat format,
+    unsigned precision,
+    bool trailing_zeroes,
+    bool group_thousands) {
+    try {
+        const Complex parsed = unpack_value(value);
+        const Real real_value = real_part(parsed);
+        const Real imag_value = imag_part(parsed);
+
+        const std::string real = display_component(
+            real_value, format, precision,
+            trailing_zeroes, group_thousands);
+        const std::string imag = display_component(
+            imag_value, format, precision,
+            trailing_zeroes, group_thousands);
+
+        if (is_zero(imag_value)) return real;
+        if (is_zero(real_value)) {
+            if (imag == "1") return "i";
+            if (imag == "-1") return "-i";
+            return imag + "i";
+        }
+        if (!imag.empty() && imag.front() == '-') {
+            return real + " - " + imag.substr(1U) + "i";
+        }
+        return real + " + " + imag + "i";
+    } catch (...) {
+        return "0";
     }
 }
 
