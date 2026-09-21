@@ -608,7 +608,7 @@ ToolResult datetime_tool(std::string_view input) {
             v = static_cast<int>(parsed);
             return true;
         };
-        if(!p(11,23U)||!p(14,59U)||!p(17,59U))
+        if(!p(11,23U,hh)||!p(14,59U,mm)||!p(17,59U,ss))
             return failure("Invalid UTC time.");
         const std::int64_t seconds =
             days_from_civil(
