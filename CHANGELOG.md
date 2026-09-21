@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.14 — 2026-09-21
+
+- Complete the post-edit documentation audit by correcting remaining stale architecture, portability and UI-parity statements about Scientific binary64 use, the Tools catalogue, history persistence and future result domains.
+- Make the binary64/Common decimal-parser boundary explicit so maintained documentation no longer implies that arbitrary-precision Scientific literals pass through `double`.
+- Document the Objective-C++ bridge dictionary schemas and remove unnecessary release-number coupling from the maintained Tools catalogue description.
+
 ## 0.2.13 — 2026-09-21
 
 - Bring canonical design, decisions, numerics, roadmap and README documentation back into agreement with the released arbitrary-precision Scientific domain, fourteen-tool catalogue, unbounded default history and Common 1.19.20 baseline.

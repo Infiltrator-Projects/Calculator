@@ -40,7 +40,7 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 src/core/scientific.* owns the arbitrary-precision real/complex expression domain used by Scientific calculations and precise reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation without routing Scientific intermediates through binary64. src/core/calculator.* remains the binary64 foundation used by Standard mode and supporting finite-real facilities.
 
-Calculator decides where the expression grammar expects a number, then Common 1.19.20's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. This removes private scanner mechanics without transferring Calculator's operator/function grammar into Common.
+For the binary64 expression path in `src/core/calculator.*`, Calculator decides where the grammar expects a number and Common 1.19.20's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. Scientific decimal literals are instead parsed directly into its multiprecision domain. This removes duplicate binary64 scanner mechanics without transferring Calculator's operator/function grammar into Common or routing Scientific input through `double`.
 
 Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
@@ -56,7 +56,7 @@ Signedness affects decimal presentation of the resulting bit pattern. It does no
 
 ### Advanced tool domains
 
-`src/core/advanced_tools.*` owns the twelve non-keypad calculation families. It is a portable C++ layer over explicit domain contracts rather than a platform helper: engineering formulae, dimensional unit conversion, IPv4/CIDR and transfer calculations, storage/filesystem calculations, civil-date arithmetic, constants, descriptive statistics, graph sampling, real root solving, exact decimal/rational arithmetic, arbitrary-precision integer arithmetic and complex arithmetic.
+`src/core/advanced_tools.*` owns the fourteen non-keypad calculation families. It is a portable C++ layer over explicit domain contracts rather than a platform helper: engineering formulae, dimensional unit conversion, IPv4/CIDR and transfer calculations, storage/filesystem calculations, civil-date arithmetic, constants, descriptive statistics, graph sampling, real root solving, exact decimal/rational arithmetic, arbitrary-precision integer arithmetic, complex arithmetic, financial calculations and number utilities.
 
 Graphing and equation solving reuse the Scientific expression evaluator with a supplied `x` variable; they do not carry a second expression grammar. Graph sampling is shared, while each shell renders the resulting point sequence natively. Exact decimal arithmetic uses decimal literals as exact rationals rather than converting them through binary64. Arbitrary precision is a separate integer domain with an explicit 20,000-digit safety ceiling. Complex arithmetic is an explicit pair-of-binary64 domain and is not silently mixed into the ordinary real parser.
 
@@ -72,7 +72,7 @@ The Tools workbench is intentionally on-demand. It keeps the main Standard/Scien
 
 The session delegates mathematical evaluation to the core. It does not implement an alternate expression grammar.
 
-History is unbounded by default to match the maintained desktop behaviour, while embedders/tests may request an explicit Session limit. Session owns a monotonically advancing history revision and the canonical bounded history-text projection used by compact docks; platform shells update history views only when that revision changes instead of rebuilding history on every keystroke. Variables, memory and history are currently session state rather than durable user data.
+History is unbounded by default to match the maintained desktop behaviour, while embedders/tests may request an explicit Session limit. Session owns a monotonically advancing history revision and the canonical bounded history-text projection used by compact docks; platform shells update history views only when that revision changes instead of rebuilding history on every keystroke. Variables and user-defined functions are Session-owned semantic state that Linux may persist through Calculator-owned text formats; memory and calculation history remain process/session-local.
 
 ## Shared interaction layer
 
@@ -158,7 +158,7 @@ Common is a build/link dependency only. Calculator adds it with `EXCLUDE_FROM_AL
 
 ## Structured history and recall
 
-History is a bounded domain model rather than a platform-owned text log. Each entry records its Calculator mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, fixed width and signed-display context so recall is deterministic even for values that cannot be represented exactly by binary64.
+History is a structured domain model, unbounded by default unless an explicit Session limit is supplied, rather than a platform-owned text log. Each entry records its Calculator mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, fixed width and signed-display context so recall is deterministic even for values that cannot be represented exactly by binary64.
 
 The shared Controller exposes newest-first history access and recall. Platform shells render and select those entries but do not reconstruct mode state or reinterpret history themselves. Wide desktop history docking remains a non-interactive summary; explicit recall is handled by the dedicated history surface.
 
@@ -176,4 +176,4 @@ Additional Results is a Calculator-owned representation model, not another calcu
 
 Standard exposes decimal, scientific and engineering forms of its finite binary64 value. Scientific builds General/Fixed/Scientific/Engineering representations directly from its retained arbitrary-precision real/complex value. Programmer exposes hexadecimal, signed-or-unsigned decimal, octal and grouped binary forms of the same masked fixed-width bit pattern. Platform shells do not re-evaluate expressions, down-convert precise Scientific values or reinterpret signedness to build these rows.
 
-This deliberately creates an extensible result surface before future exact, unit, complex or symbolic domains are introduced. New result families can extend the shared model without increasing keypad density or creating platform-specific mathematics.
+This deliberately creates an extensible result surface for future unit, symbolic or other representation families. Existing exact and complex domains remain owned by their current calculation engines; new result families can extend the shared model without increasing keypad density or creating platform-specific mathematics.

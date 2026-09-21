@@ -13,9 +13,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSDictionary<NSString *, NSNumber *> *)designMetrics
     NS_SWIFT_NAME(designMetrics());
 
-// snapshot returns the complete Swift-facing controller state. Callers should
-// treat unknown future keys as additive and must not infer calculation rules
-// from the transport representation.
+// snapshot returns value copies under these stable keys: mode, expression,
+ // display, status, fault, angleUnit, scientificSecond, scientificHyperbolic,
+ // scientificNotation, programmerBase, programmerWidth and programmerSigned.
+ // Callers should treat unknown future keys as additive and must not infer
+ // calculation rules from the transport representation.
 - (NSDictionary *)snapshot;
 - (void)setExpression:(NSString *)expression;
 - (void)selectMode:(NSInteger)mode;
@@ -24,8 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)additionalResultsText;
 - (NSString *)programmerRepresentationsText;
 
-// Tool catalogue/evaluation results are serialized views of the shared C++
- // engine. The bridge does not evaluate or format tool mathematics itself.
+// Tool catalogue rows contain index/name/prompt/example. Evaluation results
+ // contain ok/output/error/points, where each point carries x/y/valid. These are
+ // serialized views of the shared C++ engine; the bridge does not evaluate or
+ // format tool mathematics itself.
 - (NSArray<NSDictionary *> *)advancedToolCatalog;
 - (NSDictionary *)evaluateAdvancedToolAtIndex:(NSInteger)index
                                       input:(NSString *)input

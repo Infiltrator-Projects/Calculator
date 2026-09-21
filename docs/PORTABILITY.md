@@ -22,11 +22,13 @@ A platform may adapt shared state for native presentation; it must not reinterpr
 
 ## Real-number representation
 
-Standard and Scientific currently use C++ `double`, relying on the supported toolchains/platforms providing the conventional IEEE-754 binary64 representation.
+Standard uses C++ `double` and relies on the supported toolchains/platforms providing conventional IEEE-754 binary64 behaviour.
 
-Code must not assume that formatted decimal text is the exact internal value. Numerical semantics and tolerance expectations are defined in [NUMERICS.md](NUMERICS.md).
+Scientific uses Calculator's explicit Boost.Multiprecision real/complex backend. That backend remains private to the Scientific implementation; Session, Controller and platform boundaries carry real and imaginary components as decimal text so no third-party multiprecision ABI crosses into GTK, Win32, Objective-C++ or Swift.
 
-If support is added for a platform with materially different floating-point semantics, that is a compatibility decision requiring explicit validation rather than an automatic consequence of successful compilation.
+Formatted decimal text must not be confused with the internal value of a binary64 domain, while Scientific boundary text is deliberately the stable transport representation of its retained precise components. Numerical semantics and tolerance expectations are defined in [NUMERICS.md](NUMERICS.md).
+
+Support for a platform with materially different binary floating-point or multiprecision behaviour is a compatibility decision requiring explicit validation rather than an automatic consequence of successful compilation.
 
 ## Fixed-width integer representation
 

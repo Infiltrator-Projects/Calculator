@@ -56,7 +56,7 @@ Where behaviour is important enough to document as a contract, it should also be
 
 ## Additional Results
 
-Primary calculation stays visually dominant. Secondary representations belong in an on-demand Additional Results surface rather than being permanently inserted into the keypad or display card. This follows the project's compact-window rule and gives future exact/unit/symbolic representations a stable home.
+Primary calculation stays visually dominant. Secondary representations belong in an on-demand Additional Results surface rather than being permanently inserted into the keypad or display card. This follows the project's compact-window rule and gives future unit, symbolic or other secondary representations a stable home.
 
 The platform shell may choose native presentation mechanics, but labels and values come from the shared Controller. Programmer's existing Bases surface is the domain-specific form of the same representation model.
 

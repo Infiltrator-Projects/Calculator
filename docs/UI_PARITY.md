@@ -62,6 +62,6 @@ Parity means that shared behaviour has one authoritative owner and each platform
 
 ## Advanced Tools parity
 
-All three release shells expose the same twelve-item Tools catalogue from `calculator::tools::catalog()` and call `calculator::tools::evaluate()` for results. Platform code must not reproduce engineering formulae, unit factors, CIDR arithmetic, statistics, root finding, exact arithmetic or complex arithmetic.
+All three release shells expose the same fourteen-item Tools catalogue from `calculator::tools::catalog()` and call `calculator::tools::evaluate()` for results. Platform code must not reproduce engineering formulae, unit factors, CIDR arithmetic, statistics, root finding, exact arithmetic, complex arithmetic, financial calculations or number-utility logic.
 
 Linux uses a GTK workbench and Cairo graph rendering. Windows uses a native Win32 workbench and GDI graph rendering. iPhone uses a SwiftUI sheet and Canvas graph rendering through the Objective-C++ bridge. These presentations may differ in layout, but tool names, prompts/examples, evaluation semantics, text results and graph samples originate in the shared core.

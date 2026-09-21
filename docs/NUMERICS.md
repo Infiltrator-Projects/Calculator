@@ -26,11 +26,11 @@ Scientific decimal literals are parsed directly into that multiprecision domain,
 
 Formatting does not create precision. Standard binary64 presentation remains distinct from Scientific multiprecision presentation, Programmer fixed-width integers and the specialist exact/arbitrary tool domains.
 
-## Decimal token conversion
+## Binary64 decimal token conversion
 
-Calculator owns expression grammar and decides when a numeric operand is expected. Common 1.19.20 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
+In the binary64 expression path, Calculator owns grammar and decides when a numeric operand is expected. Common 1.19.20 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
 
-Calculator therefore no longer carries a private decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned.
+That path therefore no longer carries a private binary64 decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned. Scientific is deliberately different: its decimal literals are parsed directly into the multiprecision real/complex domain and never pass through this binary64 conversion.
 
 ## Scientific expression grammar
 
@@ -76,9 +76,9 @@ Programmer semantics should be validated with exact integer expectations rather 
 
 ## Constants and elementary functions
 
-`pi` and `e` are current built-in constants and are reserved identifiers: variable assignment cannot replace them. Trigonometric, inverse-trigonometric, hyperbolic/inverse-hyperbolic, logarithmic, exponential, root, rounding and absolute-value functions use the C++ standard math implementation over the binary64 domain.
+`pi` and `e` are built-in constants and are reserved identifiers: variable assignment cannot replace them. Standard/supporting binary64 transforms use the C++ standard mathematical facilities over `double`; Scientific evaluates its corresponding real/complex operations in the Boost.Multiprecision backend and retains the configured precision through intermediate results.
 
-The project does not claim bit-for-bit transcendental equality across different standard libraries. Regression tests should use mathematically justified tolerances for real-valued functions while exact parser/Programmer contracts use exact comparisons where appropriate.
+The project does not claim bit-for-bit transcendental equality across different binary64 standard libraries or multiprecision backend implementations. Regression tests therefore use mathematically justified tolerances appropriate to the represented domain, while exact parser/Programmer contracts use exact comparisons where appropriate.
 
 New constants or functions should document source/definition, accepted domain, representation and meaningful boundary cases before being treated as complete.
 

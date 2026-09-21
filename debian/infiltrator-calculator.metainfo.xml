@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.14" date="2026-09-21">
+      <description>
+        <p>Complete the documentation and commentary consistency audit across architecture, portability, numeric contracts and the iPhone bridge.</p>
+      </description>
+    </release>
     <release version="0.2.13" date="2026-09-21">
       <description>
         <p>Synchronise maintained documentation and strengthen API/implementation commentary for the current Calculator architecture.</p>

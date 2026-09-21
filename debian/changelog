@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.14) unstable; urgency=medium
+
+  * Complete the documentation/commentary audit after a repository-wide consistency pass.
+  * Correct remaining stale Scientific, Tools, history and portability contracts.
+  * Document the iPhone bridge transport schemas more precisely.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 16:09:00 +1000
+
 infiltrator-calculator (0.2.13) unstable; urgency=medium
 
   * Synchronise canonical documentation with current numeric, tool and Common contracts.
