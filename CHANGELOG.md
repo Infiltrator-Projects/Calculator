@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7 — 2026-09-21
+
+- Replace the stale Windows ICO with the canonical Calculator graphite and #00ADEF artwork so the executable, title bar and taskbar use the same product identity as the maintained Linux application.
+- Keep the Windows result display at the shared canonical height and give the large result text and status line separate geometry, preventing the right-aligned result from being clipped by the READY/status area.
+- Add regression guards for both the exact Windows icon asset and the unclipped result/status layout contract.
+
 ## 0.2.6 — 2026-09-20
 
 - Add GNOME/Mint-compatible Ctrl+N independent Calculator windows without sharing GTK widget/controller state.

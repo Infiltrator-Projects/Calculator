@@ -1060,25 +1060,34 @@ void layout_main(HWND window) {
 
     y += sx(window, responsive.compact_controls ? 40 : 46);
 
-    const int display_height = sx(
-        window, responsive.compact_controls ? 92 : metrics.display_height);
+    // Keep the display at its canonical height even when Standard mode uses
+    // compact controls. The 32-point result face needs its own vertical band;
+    // compressing the display to 92 logical pixels let its glyph box collide
+    // visually with the status line and clip at normal Windows DPI settings.
+    const int display_height = sx(window, metrics.display_height);
     g_display_rect = RECT{
         calc_left, y, calc_right, y + display_height};
     const int display_padding = sx(window, responsive.compact_controls ? 9 : 12);
+    const int status_height = sx(window, 16);
+    const int status_bottom = sx(window, 6);
+    const int status_top =
+        y + display_height - status_bottom - status_height;
+    const int result_top = y + sx(window, 30);
+    const int result_gap = sx(window, 4);
+    const int result_right_inset = sx(window, 4);
     MoveWindow(
         g_expression,
         calc_left + display_padding, y + sx(window, 7),
         content_width - display_padding * 2, sx(window, 24), TRUE);
     MoveWindow(
         g_result,
-        calc_left + display_padding, y + sx(window, 30),
-        content_width - display_padding * 2,
-        sx(window, responsive.compact_controls ? 38 : 46), TRUE);
+        calc_left + display_padding, result_top,
+        std::max(0, content_width - display_padding * 2 - result_right_inset),
+        std::max(0, status_top - result_gap - result_top), TRUE);
     MoveWindow(
         g_status,
-        calc_left + display_padding,
-        y + display_height - sx(window, 22),
-        content_width - display_padding * 2, sx(window, 16), TRUE);
+        calc_left + display_padding, status_top,
+        content_width - display_padding * 2, status_height, TRUE);
 
     y += display_height + sx(window, 8);
 

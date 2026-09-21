@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from hashlib import sha256
 from pathlib import Path
 
 linux = Path("src/app/main.cpp").read_text(encoding="utf-8")
@@ -342,7 +343,20 @@ for needle in (
 
 assert "CALCULATOR_ICON_RESOURCE=1001" in cmake
 assert "assets/windows/calculator.ico" in cmake
-assert Path("assets/windows/calculator.ico").is_file()
+windows_icon = Path("assets/windows/calculator.ico")
+assert windows_icon.is_file()
+assert sha256(windows_icon.read_bytes()).hexdigest() == (
+    "b70a853adeba4d164220e2db4c9725f9fa6ab09e3df930db5023dba1a1162b54"
+), "Windows Calculator icon drifted from the canonical artwork"
+
+for needle in (
+    "const int display_height = sx(window, metrics.display_height);",
+    "const int status_top =",
+    "const int result_right_inset = sx(window, 4);",
+):
+    assert needle in windows, f"Windows unclipped display contract missing: {needle}"
+assert "responsive.compact_controls ? 92 : metrics.display_height" not in windows
+
 assert Path("ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json").is_file()
 assert Path("ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png").is_file()
 
