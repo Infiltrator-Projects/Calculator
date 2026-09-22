@@ -373,6 +373,7 @@ int main() {
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseHex);
     controller.dispatch(Command::Width8);
+    controller.set_expression("");
 
     const std::string zero_representations =
         controller.programmer_representations_text();
