@@ -165,6 +165,23 @@ int main() {
         "sin(30)", calculator::AngleUnit::Degrees, 100);
     if (!result.ok || text(result) != "0.5")
         fail("sin(30 degrees) must be 0.5");
+    // Exact quadrant angles should stay exact rather than exposing tiny
+    // transcendental residues from a finite representation of pi.
+    result = eval("sin(pi)", calculator::AngleUnit::Radians, 100);
+    if (!result.ok || text(result) != "0")
+        fail("sin(pi) must be exactly zero");
+    result = eval("cos(pi/2)", calculator::AngleUnit::Radians, 100);
+    if (!result.ok || text(result) != "0")
+        fail("cos(pi/2) must be exactly zero");
+    result = eval("tan(pi)", calculator::AngleUnit::Radians, 100);
+    if (!result.ok || text(result) != "0")
+        fail("tan(pi) must be exactly zero");
+    result = eval("cos(90)", calculator::AngleUnit::Degrees, 100);
+    if (!result.ok || text(result) != "0")
+        fail("cos(90 degrees) must be exactly zero");
+    result = eval("sin(180)", calculator::AngleUnit::Degrees, 100);
+    if (!result.ok || text(result) != "0")
+        fail("sin(180 degrees) must be exactly zero");
     result = eval(
         "sin(50)", calculator::AngleUnit::Gradians, 100);
     if (!result.ok || text(result) !=

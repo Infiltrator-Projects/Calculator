@@ -142,6 +142,33 @@ Complex principal_power(
     }
 
     try {
+        if (is_real(base) && real_part(base) < 0 &&
+            is_real(exponent)) {
+            const Real exponent_real = real_part(exponent);
+            const Real doubled = exponent_real * 2;
+            if (floor(doubled) == doubled) {
+                // A real half-integer exponent on the negative-real branch
+                // has an exact quadrantal phase. Preserve the exact zero
+                // component instead of manufacturing a tiny cos(pi/2)
+                // residue through exp(exponent*log(base)).
+                Real phase = boost::multiprecision::fmod(
+                    doubled, Real(4));
+                if (phase < 0) phase += 4;
+                const int quadrant = phase.convert_to<int>();
+
+                const Real magnitude = boost::multiprecision::pow(
+                    -real_part(base), exponent_real);
+                if (!is_finite(magnitude)) {
+                    valid = false;
+                    return {};
+                }
+                if (quadrant == 0) return Complex(magnitude);
+                if (quadrant == 1) return Complex(0, magnitude);
+                if (quadrant == 2) return Complex(-magnitude);
+                return Complex(0, -magnitude);
+            }
+        }
+
         Complex result;
         if (is_real(base) && real_part(base) < 0) {
             // Force the same upper-lip principal branch as principal_log().
@@ -161,8 +188,8 @@ Complex principal_power(
     }
 }
 
-bool tangent_pole(
-    const Complex& input, AngleUnit unit) {
+bool exact_quadrant(
+    const Complex& input, AngleUnit unit, int& quadrant) {
     if (!is_real(input)) return false;
     const Real value = real_part(input);
 
@@ -176,10 +203,19 @@ bool tangent_pole(
     }
 
     if (floor(half_turn_units) != half_turn_units) return false;
-    Real parity = boost::multiprecision::fmod(
-        half_turn_units < 0 ? -half_turn_units : half_turn_units,
-        Real(2));
-    return parity == 1;
+
+    Real remainder = boost::multiprecision::fmod(
+        half_turn_units, Real(4));
+    if (remainder < 0) remainder += 4;
+    quadrant = remainder.convert_to<int>();
+    return quadrant >= 0 && quadrant <= 3;
+}
+
+bool tangent_pole(
+    const Complex& input, AngleUnit unit) {
+    int quadrant = 0;
+    return exact_quadrant(input, unit, quadrant) &&
+        (quadrant == 1 || quadrant == 3);
 }
 
 // Normalization accepts user-facing Unicode/convenience spellings while the
@@ -1009,16 +1045,30 @@ private:
 
         try {
             if (name == "sin") {
+                int quadrant = 0;
+                if (exact_quadrant(input, angle_unit_, quadrant)) {
+                    if (quadrant == 0 || quadrant == 2) return {};
+                    return Complex(quadrant == 1 ? 1 : -1);
+                }
                 return boost::multiprecision::sin(
                     to_radians(input));
             }
             if (name == "cos") {
+                int quadrant = 0;
+                if (exact_quadrant(input, angle_unit_, quadrant)) {
+                    if (quadrant == 1 || quadrant == 3) return {};
+                    return Complex(quadrant == 0 ? 1 : -1);
+                }
                 return boost::multiprecision::cos(
                     to_radians(input));
             }
             if (name == "tan") {
-                if (tangent_pole(input, angle_unit_)) {
-                    error_ = "function domain error";
+                int quadrant = 0;
+                if (exact_quadrant(input, angle_unit_, quadrant)) {
+                    if (quadrant == 1 || quadrant == 3) {
+                        error_ = "function domain error";
+                        return {};
+                    }
                     return {};
                 }
                 return boost::multiprecision::tan(
