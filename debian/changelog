@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.21) unstable; urgency=medium
+
+  * Prefer GTK's mature accelerated GL renderer on Linux when no explicit renderer is selected.
+  * Preserve explicit GSK_RENDERER overrides for diagnostics and compatibility.
+  * Add runtime idle-CPU regression coverage across default, GL and Cairo renderer paths.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 14:15:00 +1000
+
 infiltrator-calculator (0.2.20) unstable; urgency=medium
 
   * Forensically validate Scientific real/complex arithmetic with an 8192-bit MPFR/MPC oracle.

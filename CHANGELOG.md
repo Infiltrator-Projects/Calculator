@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.21 — 2026-09-22
+
+- Prefer GTK's mature accelerated `gl` renderer on Linux when `GSK_RENDERER` is not already set, avoiding the GTK 4.14 default-renderer path that can remain disproportionately CPU-active on affected Mint/Noble driver and compositor combinations.
+- Preserve explicit `GSK_RENDERER` selections so administrators and developers can still force Cairo, Vulkan or another supported renderer for diagnostics and compatibility.
+- Extend release CI from a source-only no-tick guard to a real packaged-GTK idle test that samples process CPU after startup under the application default, explicit GL and Cairo renderer selections.
+
 ## 0.2.20 — 2026-09-22
 
 - Forensically validate Scientific mode with a new 8192-bit MPFR/MPC oracle covering deterministic complex arithmetic fuzz, every Scientific function family, complex principal branches/branch cuts, DEG/RAD/GRAD conversion, constants and requested precision from 16 through 1000 digits.

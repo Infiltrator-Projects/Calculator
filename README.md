@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.2.20  
+**Current source version:** 0.2.21  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.20  
 **Design contract:** shared Design v1  
@@ -118,6 +118,8 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
+
+On Linux, Calculator respects an explicit `GSK_RENDERER` selection. When none is supplied it prefers GTK's mature accelerated `gl` renderer; this avoids the GTK 4.14 default-renderer idle-CPU regression observed on affected Mint/Noble graphics stacks without forcing software rendering. Release CI measures packaged idle CPU under the application default, explicit GL and Cairo paths.
 
 On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. MPFR is optional for ordinary builds; release CI enables the dedicated high-precision numerical oracle with `-DCALCULATOR_ENABLE_MPFR_ORACLE_TESTS=ON` and `libmpfr-dev`. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
 

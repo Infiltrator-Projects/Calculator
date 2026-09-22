@@ -2265,9 +2265,23 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_grab_focus(expression_entry);
 }
 
+void configure_linux_renderer() {
+    // GTK 4.14 made the newer NGL path the default on Noble/Mint-class
+    // systems. Calculator is a static 2D desktop surface and does not depend
+    // on NGL-specific features, while some driver/compositor combinations can
+    // keep that renderer disproportionately busy even when the application is
+    // otherwise idle. Prefer the mature accelerated GL renderer, but preserve
+    // any explicit administrator/user choice for diagnostics or compatibility.
+    const char* renderer = g_getenv("GSK_RENDERER");
+    if (!renderer || renderer[0] == '\0') {
+        g_setenv("GSK_RENDERER", "gl", FALSE);
+    }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
+    configure_linux_renderer();
     GApplicationFlags flags = G_APPLICATION_DEFAULT_FLAGS;
     const char* independent = g_getenv("INFILTRATOR_CALC_NEW_INSTANCE");
     if (independent && independent[0] != '\0') {

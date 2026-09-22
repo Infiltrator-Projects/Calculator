@@ -66,6 +66,17 @@ assert "gtk_widget_add_tick_callback" not in linux, (
     "Linux responsive layout regressed to a permanent frame-clock poll"
 )
 assert "responsive_tick(" not in linux
+
+# GTK 4.14's default renderer can exhibit driver/compositor-specific idle CPU
+# regressions on Mint/Noble systems. Calculator prefers the mature accelerated
+# GL path unless the caller explicitly selected another GSK renderer.
+for needle in (
+    'const char* renderer = g_getenv("GSK_RENDERER");',
+    'g_setenv("GSK_RENDERER", "gl", FALSE);',
+    "configure_linux_renderer();",
+):
+    assert needle in linux, f"Linux renderer idle-CPU policy missing: {needle}"
+
 for needle in (
     '"notify::default-width"',
     '"notify::default-height"',
