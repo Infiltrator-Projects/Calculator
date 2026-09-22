@@ -124,9 +124,9 @@ int main() {
     expect_text("(1+i)*(1-i)", "2");
     expect_text("(1+i)^2", "2i");
     expect_text("sqrt(-1)", "i");
-    result = eval("ln(-1)");
-    if (!result.ok || result.value.real != "0" ||
-        result.value.imag.rfind(
+    const auto branch_result = eval("ln(-1)");
+    if (!branch_result.ok || branch_result.value.real != "0" ||
+        branch_result.value.imag.rfind(
             "3.141592653589793238462643383279", 0) != 0U) {
         fail("ln(-1) must use the +pi principal branch");
     }
