@@ -92,6 +92,10 @@ add_library(calculator-core STATIC
     src/core/calculator.cpp
     src/core/scientific.cpp
     src/core/advanced_tools.cpp
+    src/core/advanced_tools_conversion.cpp
+    src/core/advanced_tools_analysis.cpp
+    src/core/advanced_tools_exact.cpp
+    src/core/advanced_tools_number.cpp
     src/core/session.cpp
     src/core/programmer.cpp
 )

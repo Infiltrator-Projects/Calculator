@@ -26,7 +26,12 @@ targets:
       - path: ../src/core/scientific.cpp
       - path: ../src/core/scientific.hpp
       - path: ../src/core/advanced_tools.cpp
+      - path: ../src/core/advanced_tools_conversion.cpp
+      - path: ../src/core/advanced_tools_analysis.cpp
+      - path: ../src/core/advanced_tools_exact.cpp
+      - path: ../src/core/advanced_tools_number.cpp
       - path: ../src/core/advanced_tools.hpp
+      - path: ../src/core/advanced_tools_internal.hpp
       - path: ../src/core/session.cpp
       - path: ../src/core/session.hpp
       - path: ../src/core/programmer.cpp
