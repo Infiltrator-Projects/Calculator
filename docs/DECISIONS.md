@@ -44,6 +44,8 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 ## ADR-006 — Numerical edge behaviour is part of feature completion
 
+**Status.** Active, with the former contextual-percentage clause superseded by ADR-016.
+
 **Decision.** Invalid domains, integer width/radix rules, overflow behaviour, contextual percentages and disabled-state rules are product contracts.
 
 **Rationale.** Calculator defects usually appear at boundaries rather than in simple arithmetic.
@@ -118,6 +120,8 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 ## ADR-014 — Scientific owns an arbitrary-precision real/complex domain
 
+**Status.** Active for numeric-domain separation; the former Standard immediate-execution semantic is superseded by ADR-016.
+
 **Decision.** Standard remains an IEEE-754 binary64 immediate-calculator domain. Scientific uses Calculator's Boost.Multiprecision real/complex domain at 50 decimal digits by default with a maintained ceiling of 1000 digits. Programmer remains an explicit fixed-width integer domain, while exact decimal/rational and arbitrary-precision integer tools retain their own representations.
 
 **Rationale.** Representation determines what correctness claims are possible. Scientific expressions need precision and complex-domain behaviour that binary64 cannot provide without silent loss, while Standard's interaction contract does not benefit from importing that complexity.
@@ -131,3 +135,12 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** Common 1.19.20 provides product-neutral numeric parsing and ranges, deterministic ASCII handling, checked arithmetic, theme/palette/metrics/typography contracts and POSIX persistence primitives. Keeping those mechanics shared reduces duplicated infrastructure without moving Calculator-specific grammar, numeric-domain policy or interaction semantics into Common.
 
 **Consequence.** Calculator's portable core remains linked to `InfiltratrCommon::Portable`; POSIX helpers are confined to Linux/CLI application layers. Historical ADR-011 and ADR-012 remain useful provenance but no longer describe the active dependency baseline.
+
+## ADR-016 — Standard arithmetic follows conventional mathematical precedence
+
+**Decision.** Standard mode evaluates written infix arithmetic with conventional mathematical precedence. Multiplication and division bind before addition and subtraction, exponentiation binds above them, parentheses explicitly group, and postfix `%` means division by 100. Standard remains a smaller binary64 capability surface: named constants, variables and functions are not accepted there.
+
+**Rationale.** Calculator is a greenfield application and does not need to preserve the immediate-execution semantics of historical four-function hardware. Once the interface displays an infix expression such as `200 + 200 / 2`, that expression should have its conventional mathematical meaning and therefore evaluate to `300`. Mode selection may change available operations and numeric representation, but it should not silently change the meaning of shared arithmetic operators.
+
+**Consequence.** Standard and Scientific agree on shared operator precedence. Historical left-to-right accumulation and contextual pending-operator percentage behaviour are removed rather than retained as compatibility quirks. Regression tests protect `200 + 200 / 2 = 300`, literal postfix percentage behaviour and Standard's rejection of Scientific named terms.
+

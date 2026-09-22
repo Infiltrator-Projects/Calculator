@@ -87,9 +87,16 @@ int main() {
     controller.dispatch(Command::Digit3);
     controller.dispatch(Command::Multiply);
     controller.dispatch(Command::Digit4);
-    CHECK(controller.state().result == "20");
+    CHECK(controller.state().result == "14");
     controller.dispatch(Command::Equals);
-    CHECK(controller.state().result == "20");
+    CHECK(controller.state().result == "14");
+
+    // Regression: Standard displays and evaluates an infix mathematical
+    // expression, so multiplication/division bind before addition/subtraction.
+    controller.set_expression("200+200/2");
+    CHECK(controller.state().result == "300");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "300");
 
     controller.dispatch(Command::Clear);
     controller.set_expression("100");
@@ -98,7 +105,7 @@ int main() {
     controller.dispatch(Command::Digit0);
     controller.dispatch(Command::Percent);
     controller.dispatch(Command::Equals);
-    CHECK(controller.state().result == "110");
+    CHECK(controller.state().result == "100.1");
 
     controller.set_expression("sqrt(9)");
     CHECK(!controller.command_enabled(Command::Equals));

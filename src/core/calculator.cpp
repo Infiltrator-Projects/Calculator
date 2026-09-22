@@ -185,7 +185,10 @@ DecimalTokenStatus parse_decimal_token(std::string_view input,
     return DecimalTokenStatus::Ok;
 }
 
-// Scientific/expression grammar (highest-level production first):
+// Binary64 expression grammar (highest-level production first). Standard and
+// supporting real-expression evaluation share these arithmetic precedence
+// rules; Standard disables named constants/functions/variables while retaining
+// the same mathematical interpretation of an expression:
 // expression -> term {(+|-) term}
 // term       -> unary {(*|/) unary}
 // unary      -> (+|-) unary | power
@@ -200,9 +203,11 @@ public:
     Parser(std::string_view input, const Variables& variables,
            const Functions* functions = nullptr,
            std::size_t function_depth = 0,
-           AngleUnit angle_unit = AngleUnit::Radians)
+           AngleUnit angle_unit = AngleUnit::Radians,
+           bool allow_named_terms = true)
         : input_(input), variables_(variables), functions_(functions),
-          function_depth_(function_depth), angle_unit_(angle_unit) {}
+          function_depth_(function_depth), angle_unit_(angle_unit),
+          allow_named_terms_(allow_named_terms) {}
 
     Result run() {
         skip_space();
@@ -221,6 +226,7 @@ private:
     const Functions* functions_ = nullptr;
     std::size_t function_depth_ = 0;
     AngleUnit angle_unit_ = AngleUnit::Radians;
+    bool allow_named_terms_ = true;
     std::size_t position_ = 0;
     std::size_t recursion_depth_ = 0;
     std::string error_;
@@ -275,8 +281,10 @@ private:
         if (position_ >= input_.size()) return false;
         const unsigned char next =
             static_cast<unsigned char>(input_[position_]);
-        if (input_[position_] == '(' || infiltratr_ascii_is_alpha(next) ||
-            input_[position_] == '_') {
+        if (input_[position_] == '(') return true;
+        if (allow_named_terms_ &&
+            (infiltratr_ascii_is_alpha(next) ||
+             input_[position_] == '_')) {
             return true;
         }
         if (infiltratr_ascii_is_digit(next) || input_[position_] == '.') {
@@ -316,7 +324,7 @@ private:
                     return 0.0;
                 }
                 left /= right;
-            } else if (consume_keyword("mod")) {
+            } else if (allow_named_terms_ && consume_keyword("mod")) {
                 const double right = parse_unary();
                 if (right == 0.0) {
                     error_ = "modulus by zero";
@@ -450,7 +458,7 @@ private:
 
         Parser nested(
             definition.expression, scoped, functions_, function_depth_ + 1U,
-            angle_unit_);
+            angle_unit_, allow_named_terms_);
         const Result result = nested.run();
         if (!result.ok) {
             error_ = result.error;
@@ -573,6 +581,10 @@ private:
 
         if (position_ < input_.size() &&
             (infiltratr_ascii_is_alpha(static_cast<unsigned char>(input_[position_])) || input_[position_] == '_')) {
+            if (!allow_named_terms_) {
+                error_ = "unsupported standard expression";
+                return 0.0;
+            }
             const std::string name = parse_identifier();
             if (const ConstantInfo* constant = lookup_constant(name)) {
                 return constant->value;
@@ -660,106 +672,6 @@ private:
     }
 };
 
-// Standard mode intentionally models a desktop calculator rather than the
-// Scientific grammar: binary operations are committed left-to-right as entered,
-// and a percentage operand is interpreted in the context of the pending
-// operator. Keeping this separate prevents mode-specific exceptions from
-// contaminating the mathematical expression parser.
-class ImmediateParser {
-public:
-    explicit ImmediateParser(std::string_view input) : input_(input) {}
-
-    Result run() {
-        skip_space();
-        if (input_.empty()) return fail("empty expression");
-
-        bool percent = false;
-        double value = parse_operand(percent);
-        if (!error_.empty()) return fail(error_.c_str());
-        if (percent) value /= 100.0;
-
-        while (error_.empty()) {
-            skip_space();
-            if (position_ == input_.size()) break;
-
-            const char op = input_[position_];
-            if (op != '+' && op != '-' && op != '*' &&
-                op != '/' && op != '^') {
-                return fail("unsupported immediate expression");
-            }
-            ++position_;
-
-            bool right_percent = false;
-            double right = parse_operand(right_percent);
-            if (!error_.empty()) return fail(error_.c_str());
-
-            if (right_percent) {
-                if (op == '+' || op == '-') right = value * right / 100.0;
-                else right /= 100.0;
-            }
-
-            switch (op) {
-            case '+': value += right; break;
-            case '-': value -= right; break;
-            case '*': value *= right; break;
-            case '/':
-                if (right == 0.0) return fail("division by zero");
-                value /= right;
-                break;
-            case '^':
-                value = std::pow(value, right);
-                break;
-            default:
-                break;
-            }
-
-            if (!std::isfinite(value)) return fail("non-finite result");
-        }
-
-        return {true, value, {}};
-    }
-
-private:
-    std::string_view input_;
-    std::size_t position_ = 0;
-    std::string error_;
-
-    Result fail(const char* message) const {
-        return {false, 0.0, message ? message : "invalid expression"};
-    }
-
-    void skip_space() {
-        while (position_ < input_.size() &&
-               infiltratr_ascii_is_space(static_cast<unsigned char>(input_[position_]))) {
-            ++position_;
-        }
-    }
-
-    double parse_operand(bool& percent) {
-        skip_space();
-        if (position_ >= input_.size()) {
-            error_ = "expected a number";
-            return 0.0;
-        }
-
-        double value = 0.0;
-        const DecimalTokenStatus status =
-            parse_decimal_token(input_, position_, true, value);
-        if (status == DecimalTokenStatus::None) {
-            error_ = "unsupported immediate expression";
-            return 0.0;
-        }
-        if (status == DecimalTokenStatus::Invalid) {
-            error_ = "invalid number";
-            return 0.0;
-        }
-
-        skip_space();
-        percent = position_ < input_.size() && input_[position_] == '%';
-        if (percent) ++position_;
-        return value;
-    }
-};
 
 } // namespace
 
@@ -1030,9 +942,12 @@ Result evaluate(const std::string& expression, const Variables& variables,
     return Parser(normalized, variables, &functions, 0U, angle_unit).run();
 }
 
-Result evaluate_immediate(const std::string& expression) {
+Result evaluate_standard(const std::string& expression) {
+    static const Variables empty_variables;
     const std::string normalized = normalize_expression_spelling(expression);
-    return ImmediateParser(normalized).run();
+    return Parser(
+        normalized, empty_variables, nullptr, 0U,
+        AngleUnit::Radians, false).run();
 }
 
 } // namespace calculator

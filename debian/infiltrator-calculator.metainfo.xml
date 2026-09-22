@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.18" date="2026-09-22">
+      <description>
+        <p>Make Standard mode use conventional mathematical operator precedence and literal postfix percentages instead of historical immediate-execution arithmetic.</p>
+      </description>
+    </release>
     <release version="0.2.17" date="2026-09-22">
       <description>
         <p>Fix excessive idle CPU usage on Linux by replacing permanent frame-clock polling with event-driven responsive layout updates.</p>

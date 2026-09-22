@@ -92,10 +92,11 @@ Result evaluate(const std::string& expression, const Variables& variables,
                 const Functions& functions,
                 AngleUnit angle_unit = AngleUnit::Radians);
 
-// Standard calculator semantics: apply binary operations from left to right.
-// Contextual percentages follow conventional desktop-calculator behaviour
-// (100 + 10% -> 110, 100 * 10% -> 10).
-Result evaluate_immediate(const std::string& expression);
+// Standard-mode arithmetic uses the same conventional mathematical operator
+// precedence as the expression engine, but rejects named constants, variables
+// and functions. Postfix '%' has its literal mathematical meaning: divide the
+// preceding value by 100.
+Result evaluate_standard(const std::string& expression);
 
 // Canonical real-valued unary/scientific transform used by both expression
 // evaluation and interactive controls. AngleUnit affects only trigonometric

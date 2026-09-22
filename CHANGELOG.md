@@ -6,6 +6,13 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.18 — 2026-09-22
+
+- Make Standard mode evaluate displayed infix expressions with conventional mathematical operator precedence instead of historical immediate left-to-right execution.
+- Give postfix `%` one literal mathematical meaning in Standard: divide the preceding value by 100, removing contextual pending-operator percentage behaviour.
+- Keep Standard's smaller capability surface by rejecting named constants, variables and functions while sharing the binary64 arithmetic parser.
+- Add direct core and shared-controller regressions for `200 + 200 / 2 = 300` and update maintained architecture/numerics/design documentation to make the greenfield rule explicit.
+
 ## 0.2.17 — 2026-09-22
 
 - Remove the Linux GTK permanent frame-clock callback used for responsive layout polling; it kept Calculator active while idle and could drive very high CPU usage, especially under software rendering or remote desktops.

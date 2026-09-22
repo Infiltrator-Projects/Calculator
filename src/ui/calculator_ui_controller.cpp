@@ -193,7 +193,7 @@ std::vector<AdditionalResult> Controller::additional_results() const {
         };
     }
 
-    const Result result = evaluate_immediate(state_.expression);
+    const Result result = evaluate_standard(state_.expression);
     if (!result.ok) {
         return {{"Error", result.error}};
     }
@@ -500,7 +500,7 @@ void Controller::refresh_evaluation_cache() {
             state_.expression, state_.programmer_base,
             state_.programmer_width);
     } else if (state_.mode == Mode::Standard) {
-        real_cache_ = evaluate_immediate(state_.expression);
+        real_cache_ = evaluate_standard(state_.expression);
     } else {
         scientific_cache_ = session_.preview_scientific(
             state_.expression, state_.angle_unit,
@@ -635,8 +635,9 @@ void Controller::calculate_standard() {
     set_status("READY");
 }
 
-// Equals is the side-effect boundary: Standard records the cached immediate
-// result, Programmer records the fixed-width result/context, and Scientific
+// Equals is the side-effect boundary: Standard records the cached
+// precedence-aware binary64 result, Programmer records the fixed-width
+// result/context, and Scientific
 // delegates to Session::evaluate_scientific so assignments/functions/history
 // are committed exactly once.
 void Controller::calculate() {
@@ -900,8 +901,9 @@ void Controller::programmer_mode_change(Command command) {
 }
 
 // Standard preview tolerates a trailing binary operator so an in-progress
-// immediate calculation still displays the committed left operand. It never
-// records history or mutates Session state.
+// mathematical expression still displays the valid prefix. The preview uses
+// the same precedence-aware Standard evaluator as Equals and never records
+// history or mutates Session state.
 void Controller::update_standard_preview() {
     if (state_.mode != Mode::Standard || state_.expression.empty()) return;
 
@@ -930,7 +932,7 @@ void Controller::update_standard_preview() {
     }
 
     if (preview.empty()) return;
-    const Result result = evaluate_immediate(preview);
+    const Result result = evaluate_standard(preview);
     if (result.ok) {
         state_.result = format_display(result.value);
         set_status("READY");

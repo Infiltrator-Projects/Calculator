@@ -13,7 +13,7 @@ This allows the core to be tested independently and prevents Linux, Windows and 
 
 A desktop Standard calculator and a mathematical expression evaluator answer different interaction expectations.
 
-Standard mode applies binary operations in entry order and uses contextual percentage semantics. Scientific mode evaluates a grammar with mathematical precedence, right-associative exponentiation, functions, parentheses and variables. Preserving these as separate evaluators makes the distinction explicit and testable instead of hiding mode-dependent exceptions inside one parser.
+Standard and Scientific modes give shared arithmetic operators the same conventional mathematical meaning: exponentiation, multiplication/division and addition/subtraction follow normal precedence, and parentheses are explicit grouping. Standard deliberately exposes a smaller numeric-only capability surface over binary64; Scientific adds constants, functions, variables and arbitrary-precision real/complex evaluation. Mode selection changes capability and representation, not the meaning of a written arithmetic expression.
 
 ## Why Programmer is a separate numeric domain
 
@@ -23,7 +23,7 @@ Those semantics would be incorrect if implemented through the real-number expres
 
 ## Current real-number representation
 
-Standard mode deliberately uses IEEE-754 binary64 because its contract is conventional immediate desktop-calculator interaction rather than arbitrary-precision symbolic mathematics.
+Standard mode deliberately uses IEEE-754 binary64 because it is the compact everyday arithmetic domain; Scientific uses arbitrary precision where its broader mathematical capability justifies it.
 
 Scientific mode is a distinct arbitrary-precision real/complex domain backed by Boost.Multiprecision, with 50 decimal digits by default and a maintained ceiling of 1000 digits. Decimal literals and intermediate Scientific arithmetic remain in that domain; they are not silently routed through binary64. The public Session/Controller boundary carries real and imaginary components as decimal text so platform shells do not acquire a third-party multiprecision ABI.
 

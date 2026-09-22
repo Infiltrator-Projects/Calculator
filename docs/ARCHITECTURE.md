@@ -44,9 +44,11 @@ For the binary64 expression path in `src/core/calculator.*`, Calculator decides 
 
 Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
-### Standard immediate evaluation
+### Standard arithmetic evaluation
 
-Standard mode deliberately uses a separate immediate evaluator. Binary operators are applied from left to right in conventional desktop-calculator order, and percentage interpretation is contextual to the pending operator. This is a user-interaction semantic, not a variant of the Scientific grammar.
+Standard mode uses the binary64 arithmetic parser with named constants, variables and functions disabled. Its smaller keypad and grammar surface are a UI/capability distinction, not permission to redefine arithmetic: written infix expressions use conventional operator precedence, exponentiation remains right-associative, parentheses override precedence, and postfix `%` means division by 100.
+
+The same parsed expression therefore has the same mathematical operator meaning in Standard and Scientific modes; the modes differ in available functions and numeric representation/precision, not in whether multiplication and division bind before addition and subtraction.
 
 ### Programmer domain
 
@@ -104,11 +106,11 @@ Common is an exact git submodule dependency. Common 1.19.20 owns reusable facili
 
 Calculator must consume Common through its published public surface. It must not include Common private headers such as internal ASCII/read helpers, because doing so would reverse the intended ownership boundary. Common's expanded semantic appearance roles are consumed where their meanings fit Calculator; connection-specific roles remain unused because Calculator has no connection concept.
 
-Calculator owns expression grammar, immediate-calculator behaviour, Programmer-mode width semantics, calculator state, command semantics and calculator-specific layout. Code is moved into Common only when it has a stable product-neutral contract and a demonstrated shared consumer.
+Calculator owns expression grammar, Standard-mode capability restrictions, Programmer-mode width semantics, calculator state, command semantics and calculator-specific layout. Code is moved into Common only when it has a stable product-neutral contract and a demonstrated shared consumer.
 
 ## Numerical representation
 
-Standard uses the binary64 real-number domain for conventional immediate-calculator semantics; Scientific uses the shared arbitrary-precision real/complex domain; Programmer uses explicit fixed-width integer bit patterns. Representation is part of the contract rather than an implementation detail hidden by formatting.
+Standard uses the binary64 real-number domain with conventional mathematical operator precedence; Scientific uses the shared arbitrary-precision real/complex domain; Programmer uses explicit fixed-width integer bit patterns. Representation is part of the contract rather than an implementation detail hidden by formatting.
 
 The detailed numerical model, parser semantics, evidence hierarchy, display policy and cross-platform expectations are maintained in [NUMERICS.md](NUMERICS.md). Cross-platform representation and ABI assumptions are maintained in [PORTABILITY.md](PORTABILITY.md).
 
@@ -120,7 +122,7 @@ Platform shells translate those results into presentation state; they do not rei
 
 ## Verification and release boundary
 
-The test suite covers the expression grammar, bounded parser depth, immediate semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI compiles both the Simulator and unsigned ARM64 device targets; the Simulator is test evidence, not a public release artifact.
+The test suite covers expression grammar, bounded parser depth, Standard precedence semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI compiles both the Simulator and unsigned ARM64 device targets; the Simulator is test evidence, not a public release artifact.
 
 A release is published only after Linux, Windows and iOS jobs succeed from the same source revision. Public binaries and a deterministic source bundle containing the exact Common checkout are derived from that revision, and the Debian package is then verified through the Package Repository publication path. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
 

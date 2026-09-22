@@ -36,16 +36,23 @@ void expect_error(const char* expression) {
     }
 }
 
-void expect_immediate(const char* expression, double expected) {
-    const auto result = calculator::evaluate_immediate(expression);
+void expect_standard(const char* expression, double expected) {
+    const auto result = calculator::evaluate_standard(expression);
     if (!result.ok) {
-        fail(std::string("immediate ") + expression + " -> " + result.error);
+        fail(std::string("standard ") + expression + " -> " + result.error);
         return;
     }
 
     const double tolerance = 1e-12 * std::max(1.0, std::abs(expected));
     if (std::abs(result.value - expected) > tolerance) {
-        fail(std::string("immediate ") + expression + " wrong value");
+        fail(std::string("standard ") + expression + " wrong value");
+    }
+}
+
+void expect_standard_error(const char* expression) {
+    const auto result = calculator::evaluate_standard(expression);
+    if (result.ok || result.error.empty()) {
+        fail(std::string("standard ") + expression + " should fail");
     }
 }
 
@@ -100,13 +107,17 @@ int main() {
     expect_value("3!^2", 36);
     expect_value("sqrt(16)+log(100)", 6);
 
-    // Standard-mode immediate semantics are deliberately left-to-right.
-    expect_immediate("2+3*4", 20);
-    expect_immediate("100+10%", 110);
-    expect_immediate("100-10%", 90);
-    expect_immediate("100*10%", 10);
-    expect_immediate("100/10%", 1000);
-    expect_immediate("2^3+1", 9);
+    // Standard mode is intentionally simpler than Scientific, not
+    // mathematically different. Written expressions use conventional
+    // precedence and '%' is a literal postfix division by 100.
+    expect_standard("2+3*4", 14);
+    expect_standard("200+200/2", 300);
+    expect_standard("(2+3)*4", 20);
+    expect_standard("100+10%", 100.1);
+    expect_standard("100*10%", 10);
+    expect_standard("2^3+1", 9);
+    expect_standard_error("sqrt(9)");
+    expect_standard_error("pi");
 
     // Syntax, conversion and mathematical-domain failures.
     expect_error("");

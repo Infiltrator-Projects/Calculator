@@ -56,13 +56,13 @@ Scientific elementary and complex operations execute in the shared multiprecisio
 
 Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Inputs whose nested parentheses or unary operators exceed the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
 
-## Standard immediate semantics
+## Standard arithmetic semantics
 
-Standard mode is intentionally not the Scientific grammar. Binary operations are committed left-to-right as entered, matching conventional immediate desktop-calculator interaction.
+Standard mode is intentionally smaller than Scientific, but it is not a second definition of arithmetic. It uses the binary64 expression grammar with named constants, variables and functions disabled. Conventional operator precedence applies: exponentiation before multiplication/division before addition/subtraction, with parentheses providing explicit grouping.
 
-Percentage is contextual: addition/subtraction interpret the right-hand percentage relative to the current accumulated value, while multiplication/division interpret it as a fraction of 100.
+Postfix `%` has one literal meaning in Standard as it does in expression mathematics: divide the preceding value by 100. Therefore `100 + 10%` is `100.1`, `100 * 10%` is `10`, and `200 + 200 / 2` is `300`.
 
-Thus `100 + 10%` produces 110 while `100 * 10%` produces 10. This is a Calculator interaction contract protected by regression tests; it is not presented as a universal mathematical grammar.
+This rule is deliberate for the greenfield Calculator design. Historical immediate-execution behaviour is not preserved merely for compatibility with older four-function calculators, because an expression displayed as infix mathematics should evaluate according to that mathematics.
 
 ## Programmer domain
 
@@ -113,7 +113,7 @@ The maintained numerical basis includes:
 - IEEE Std 754-2019 / ISO/IEC 60559:2020 for floating-point arithmetic concepts and binary formats;
 - ISO/IEC 14882:2017 (C++17) and the supported standard-library implementations for C++ `double`, `<cmath>` and `std::to_chars` interfaces used by the project;
 - conventional mathematical definitions for elementary functions and operator precedence; and
-- Calculator-owned regression tests for interaction semantics such as contextual percentage and immediate left-to-right evaluation where no single mathematical standard defines desktop-calculator behaviour.
+- Calculator-owned regression tests for Standard capability restrictions, conventional precedence and literal postfix percentage semantics.
 
 External references establish specific rules; they do not make another calculator implementation the specification for this project.
 

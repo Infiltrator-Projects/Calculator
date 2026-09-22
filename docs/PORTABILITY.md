@@ -72,7 +72,7 @@ Compatibility naming is an explicit migration concern, not an excuse for stale u
 
 ## Dependency boundary
 
-Common is pinned exactly and supplies reusable product-neutral primitives whose contract matches Calculator's needs. Calculator retains expression grammar, immediate-calculator behaviour, Programmer policy and calculator-specific interaction.
+Common is pinned exactly and supplies reusable product-neutral primitives whose contract matches Calculator's needs. Calculator retains expression grammar, Standard-mode capability policy, Programmer policy and calculator-specific interaction.
 
 If Calculator has a stronger implementation of a genuinely generic mechanism, improve Common until the shared contract preserves those advantages; do not weaken the Calculator domain simply to increase reuse.
 

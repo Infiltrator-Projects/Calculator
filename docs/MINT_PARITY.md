@@ -10,7 +10,7 @@ The comparison is made against the upstream GNOME Calculator 41.1 source and hel
 
 Calculator provides Standard, Scientific and Programmer calculation modes plus a shared native Tools workbench. The current implementation covers or exceeds the Mint baseline in these areas:
 
-- ordinary and order-of-operations expressions, contextual percentages, memory and recallable history;
+- ordinary order-of-operations expressions, literal postfix percentages, memory and recallable history;
 - DEG/RAD/GRAD trigonometry, inverse and hyperbolic functions, logarithms, roots, powers, factorial and physical constants;
 - Programmer BIN/OCT/DEC/HEX, 8/16/32/64-bit widths, signed/unsigned interpretation, Boolean operations, shifts plus rotate/NAND/NOR, and simultaneous radix representations;
 - the complete mature financial family Ctrm/Ddb/Fv/Gpm/Pmt/Pv/Rate/Sln/Syd/Term;
@@ -44,7 +44,7 @@ Scientific mode now carries first-class arbitrary-precision real and complex val
 
 The production backend uses Boost.Multiprecision standalone cpp_bin_float / cpp_complex with a maintained ceiling of 1000 decimal digits and a default Scientific precision of 50 digits. MPFR/MPC remain independent release-CI oracle dependencies rather than runtime requirements.
 
-Standard mode intentionally retains its conventional immediate-calculator binary64 interaction semantics, and Programmer mode retains exact fixed-width integer semantics. Currency conversion remains an explicit non-goal and is not a Mint-parity defect.
+Standard mode intentionally uses conventional mathematical precedence in its binary64 arithmetic domain, and Programmer mode retains exact fixed-width integer semantics. Currency conversion remains an explicit non-goal and is not a Mint-parity defect.
 
 Completion evidence includes shared Scientific parser tests, precise Session/Controller persistence tests, cross-platform builds, independent MPFR/MPC oracle regression, sanitizers and native Linux/Windows/iPhone CI.
 
