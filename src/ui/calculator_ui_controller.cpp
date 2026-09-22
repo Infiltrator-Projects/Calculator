@@ -133,11 +133,14 @@ bool Controller::load_variables_text(std::string_view text) {
 }
 
 std::vector<AdditionalResult> Controller::additional_results() const {
-    if (state_.expression.empty()) return {};
-
     if (state_.mode == Mode::Programmer) {
+        // Programmer has a well-defined zero bit-pattern even before the user
+        // types an expression. Keep Bases/Bits useful in that initial state and
+        // consistent with programmer_bits(), which already exposes zero bits.
+        const std::string expression =
+            state_.expression.empty() ? "0" : state_.expression;
         const ProgrammerResult result = evaluate_programmer(
-            state_.expression, state_.programmer_base,
+            expression, state_.programmer_base,
             state_.programmer_width);
         if (!result.ok) {
             return {{"Error", result.error}};
@@ -166,6 +169,8 @@ std::vector<AdditionalResult> Controller::additional_results() const {
             {"BIN", grouped_binary(representations.binary)}
         };
     }
+
+    if (state_.expression.empty()) return {};
 
     if (state_.mode == Mode::Scientific) {
         const ScientificResult result =

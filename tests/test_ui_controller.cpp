@@ -373,6 +373,14 @@ int main() {
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseHex);
     controller.dispatch(Command::Width8);
+
+    const std::string zero_representations =
+        controller.programmer_representations_text();
+    CHECK(zero_representations.find("HEX  0") != std::string::npos);
+    CHECK(zero_representations.find("DEC  0") != std::string::npos);
+    CHECK(zero_representations.find("OCT  0") != std::string::npos);
+    CHECK(zero_representations.find("BIN  0000 0000") != std::string::npos);
+
     controller.set_expression("FF");
     const std::string representations =
         controller.programmer_representations_text();

@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.16) unstable; urgency=medium
+
+  * Preserve multiline Advanced Tools results on Windows.
+  * Replace the Windows Bases warning MessageBox with native representations and bits.
+  * Make empty Programmer representations resolve to the zero bit-pattern.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 10:42:00 +1000
+
 infiltrator-calculator (0.2.15) unstable; urgency=medium
 
   * Keep graph data light on Night and dark on Day across all native shells.

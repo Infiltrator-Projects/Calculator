@@ -53,7 +53,7 @@ This is semantic parity rather than pixel/layout parity: calculator state and co
 
 `calculator-ui-controller` exercises shared desktop behaviour independently of GTK and Win32, including arithmetic, explicit memory store/update, Scientific angle/2nd/HYP/F-E state, Programmer extended bitwise operations and cursor-aware editing.
 
-Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
+Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. Programmer Bases/Bits is a native interactive surface on both desktop shells rather than a platform-specific informational dialog; the initial empty Programmer state represents the zero bit-pattern consistently. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
 
 ## Parity definition
 
@@ -64,4 +64,4 @@ Parity means that shared behaviour has one authoritative owner and each platform
 
 All three release shells expose the same fourteen-item Tools catalogue from `calculator::tools::catalog()` and call `calculator::tools::evaluate()` for results. Platform code must not reproduce engineering formulae, unit factors, CIDR arithmetic, statistics, root finding, exact arithmetic, complex arithmetic, financial calculations or number-utility logic.
 
-Linux uses a GTK workbench and Cairo graph rendering. Windows uses a native Win32 workbench and GDI graph rendering. iPhone uses a SwiftUI sheet and Canvas graph rendering through the Objective-C++ bridge. Graph data curves and tool-result text use Common's semantic text role so they resolve light on Night surfaces and dark on Day surfaces; graph axes retain the subdued status-border role. These presentations may differ in layout, but tool names, prompts/examples, evaluation semantics, text results and graph samples originate in the shared core.
+Linux uses a GTK workbench and Cairo graph rendering. Windows uses a native Win32 workbench and GDI graph rendering. iPhone uses a SwiftUI sheet and Canvas graph rendering through the Objective-C++ bridge. Graph data curves and tool-result text use Common's semantic text role so they resolve light on Night surfaces and dark on Day surfaces; graph axes retain the subdued status-border role. Shared tool output uses LF internally, while the Win32 shell normalizes it to CRLF before assigning multiline EDIT text so structured results remain line-separated. These presentations may differ in layout, but tool names, prompts/examples, evaluation semantics, text results and graph samples originate in the shared core.

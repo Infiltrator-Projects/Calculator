@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.16" date="2026-09-22">
+      <description>
+        <p>Fix Windows Advanced Tools multiline output and bring Programmer Bases/Bits into native parity with Linux.</p>
+      </description>
+    </release>
     <release version="0.2.15" date="2026-09-22">
       <description>
         <p>Fix Advanced Tools graph and result contrast so plotted data and output remain readable in both Day and Night themes.</p>

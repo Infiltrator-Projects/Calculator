@@ -13,12 +13,14 @@
 #include "../ui/calculator_theme.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <limits>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -27,6 +29,7 @@ namespace {
 constexpr wchar_t kMainClass[] = L"CalculatorWindow";
 constexpr wchar_t kHistoryClass[] = L"CalculatorHistoryWindow";
 constexpr wchar_t kToolsClass[] = L"CalculatorToolsWindow";
+constexpr wchar_t kBasesClass[] = L"CalculatorBasesWindow";
 
 constexpr int kIdHistory = 1001;
 constexpr int kIdTheme = 1002;
@@ -44,6 +47,8 @@ constexpr int kIdToolSelector = 4001;
 constexpr int kIdToolInput = 4002;
 constexpr int kIdToolRun = 4003;
 constexpr int kIdToolOutput = 4004;
+constexpr int kIdBaseBitFirst = 5000;
+constexpr int kIdBaseBitLast = kIdBaseBitFirst + 63;
 
 using calculator::ui::ThemeMode;
 using calculator::ui::ThemePalette;
@@ -118,6 +123,11 @@ HWND g_history_window = nullptr;
 HWND g_history_edit = nullptr;
 HWND g_history_dock = nullptr;
 HWND g_tools_window = nullptr;
+HWND g_bases_window = nullptr;
+HWND g_bases_title = nullptr;
+HWND g_bases_output = nullptr;
+HWND g_bases_hint = nullptr;
+std::array<HWND, 64> g_base_bit_buttons{};
 HWND g_tool_selector = nullptr;
 HWND g_tool_prompt = nullptr;
 HWND g_tool_input = nullptr;
@@ -170,6 +180,18 @@ std::wstring utf8_to_wide(const std::string& text) {
                         text.data(), static_cast<int>(text.size()),
                         wide.data(), count);
     return wide;
+}
+
+std::wstring win32_multiline_text(std::string_view text) {
+    std::string normalized;
+    normalized.reserve(text.size() + text.size() / 8U);
+    char previous = '\0';
+    for (char ch : text) {
+        if (ch == '\n' && previous != '\r') normalized.push_back('\r');
+        normalized.push_back(ch);
+        previous = ch;
+    }
+    return utf8_to_wide(normalized);
 }
 
 std::string wide_to_utf8(const std::wstring& text) {
@@ -455,6 +477,7 @@ bool copy_text_to_clipboard(HWND owner, const std::wstring& text) {
 
 void show_grid(std::vector<HWND>& buttons, bool visible);
 void refresh_history();
+void refresh_bases_window();
 void redraw_button(HWND button);
 void redraw_active_grid();
 void redraw_mode_buttons();
@@ -518,6 +541,7 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     }
 
     refresh_history();
+    refresh_bases_window();
     redraw_mode_buttons();
     redraw_active_grid();
     InvalidateRect(g_status, nullptr, TRUE);
@@ -597,6 +621,21 @@ void show_tools() {
         g_main, nullptr, g_instance, nullptr);
 }
 
+void show_bases() {
+    if (g_bases_window != nullptr && IsWindow(g_bases_window)) {
+        refresh_bases_window();
+        ShowWindow(g_bases_window, SW_SHOWNORMAL);
+        SetForegroundWindow(g_bases_window);
+        return;
+    }
+
+    g_bases_window = CreateWindowExW(
+        WS_EX_TOOLWINDOW, kBasesClass, L"Programmer Representations & Bits",
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN,
+        CW_USEDEFAULT, CW_USEDEFAULT, sx(g_main, 640), sx(g_main, 540),
+        g_main, nullptr, g_instance, nullptr);
+}
+
 void show_history() {
     if (g_history_window != nullptr && IsWindow(g_history_window)) {
         refresh_history();
@@ -616,6 +655,8 @@ ButtonKind button_kind(int id, const ButtonSpec* spec) {
     if (id == kIdHistory || id == kIdTheme || id == kIdTools ||
         id == kIdBases || id == kIdResults || id == kIdToolRun)
         return ButtonKind::Toolbar;
+    if (id >= kIdBaseBitFirst && id <= kIdBaseBitLast)
+        return ButtonKind::Utility;
     if (id == kIdModeStandard || id == kIdModeScientific ||
         id == kIdModeProgrammer) return ButtonKind::Mode;
     if (spec == nullptr) return ButtonKind::Operation;
@@ -644,6 +685,12 @@ bool is_selected_button(int id, const ButtonSpec* spec) {
     if (id == kIdModeStandard) return state.mode == Mode::Standard;
     if (id == kIdModeScientific) return state.mode == Mode::Scientific;
     if (id == kIdModeProgrammer) return state.mode == Mode::Programmer;
+    if (id >= kIdBaseBitFirst && id <= kIdBaseBitLast) {
+        const unsigned display = static_cast<unsigned>(id - kIdBaseBitFirst);
+        const unsigned bit = 63U - display;
+        const auto bits = g_controller.programmer_bits();
+        return bit < bits.size() && bits[bit];
+    }
     if (spec == nullptr) return false;
 
     switch (spec->command) {
@@ -1211,6 +1258,7 @@ void apply_theme(bool persist) {
     apply_theme_to_window(g_main);
     apply_theme_to_window(g_history_window);
     apply_theme_to_window(g_tools_window);
+    apply_theme_to_window(g_bases_window);
     if (persist) save_theme_mode();
 }
 
@@ -1334,6 +1382,12 @@ void apply_fonts_to_controls() {
     apply_font(g_footer, g_small_font);
     apply_font(g_history_dock, g_ui_font);
     apply_font(g_history_edit, g_ui_font);
+    apply_font(g_bases_title, g_title_font);
+    apply_font(g_bases_output, g_ui_font);
+    apply_font(g_bases_hint, g_small_font);
+    for (HWND button : g_base_bit_buttons) {
+        apply_font(button, g_ui_bold_font);
+    }
 
     for (HWND button : g_mode_buttons) apply_font(button, g_ui_bold_font);
     for (HWND button : g_standard_buttons) apply_font(button, g_ui_bold_font);
@@ -1490,7 +1544,7 @@ void run_selected_tool(HWND window) {
     const std::string text = g_tool_result.ok
         ? g_tool_result.output
         : "Error: " + g_tool_result.error;
-    SetWindowTextW(g_tool_output, utf8_to_wide(text).c_str());
+    SetWindowTextW(g_tool_output, win32_multiline_text(text).c_str());
     SendMessageW(window, WM_SIZE, 0, 0);
     InvalidateRect(window, nullptr, TRUE);
 }
@@ -1722,6 +1776,12 @@ LRESULT CALLBACK tools_proc(HWND window, UINT message,
 
     case WM_CTLCOLORSTATIC: {
         HDC dc = reinterpret_cast<HDC>(wparam);
+        const HWND control = reinterpret_cast<HWND>(lparam);
+        if (control == g_tool_output) {
+            SetTextColor(dc, kText);
+            SetBkColor(dc, kInput);
+            return reinterpret_cast<LRESULT>(g_input_brush);
+        }
         SetTextColor(dc, kDetailLabel);
         SetBkColor(dc, kBackground);
         return reinterpret_cast<LRESULT>(g_background_brush);
@@ -1767,6 +1827,206 @@ LRESULT CALLBACK tools_proc(HWND window, UINT message,
     default:
         break;
     }
+    return DefWindowProcW(window, message, wparam, lparam);
+}
+
+
+void refresh_bases_window() {
+    if (g_bases_window == nullptr || !IsWindow(g_bases_window) ||
+        g_bases_output == nullptr) {
+        return;
+    }
+
+    SetWindowTextW(
+        g_bases_output,
+        win32_multiline_text(
+            g_controller.programmer_representations_text()).c_str());
+
+    const auto bits = g_controller.programmer_bits();
+    const bool programmer_mode =
+        g_controller.state().mode == Mode::Programmer;
+    for (unsigned display = 0; display < 64U; ++display) {
+        HWND button = g_base_bit_buttons[display];
+        if (button == nullptr) continue;
+        const unsigned bit = 63U - display;
+        const bool enabled = programmer_mode && bit < bits.size();
+        const bool active = enabled && bits[bit];
+        SetWindowTextW(button, active ? L"1" : L"0");
+        EnableWindow(button, enabled ? TRUE : FALSE);
+        redraw_button(button);
+    }
+}
+
+void layout_bases_window(HWND window) {
+    RECT client{};
+    GetClientRect(window, &client);
+
+    const int margin = sx(window, 16);
+    const int gap = sx(window, 6);
+    int y = margin;
+
+    const int title_height = sx(window, 28);
+    MoveWindow(
+        g_bases_title, margin, y,
+        std::max(0, static_cast<int>(client.right) - margin * 2),
+        title_height, TRUE);
+    y += title_height + gap;
+
+    const int output_height = sx(window, 96);
+    MoveWindow(
+        g_bases_output, margin, y,
+        std::max(0, static_cast<int>(client.right) - margin * 2),
+        output_height, TRUE);
+    y += output_height + gap;
+
+    const int hint_height = sx(window, 24);
+    MoveWindow(
+        g_bases_hint, margin, y,
+        std::max(0, static_cast<int>(client.right) - margin * 2),
+        hint_height, TRUE);
+    y += hint_height + gap;
+
+    const int available_width =
+        std::max(0, static_cast<int>(client.right) - margin * 2 - gap * 7);
+    const int available_height =
+        std::max(0, static_cast<int>(client.bottom) - y - margin - gap * 7);
+    const int cell_width = std::max(sx(window, 34), available_width / 8);
+    const int cell_height = std::max(sx(window, 28), available_height / 8);
+
+    for (unsigned display = 0; display < 64U; ++display) {
+        HWND button = g_base_bit_buttons[display];
+        if (button == nullptr) continue;
+        const int column = static_cast<int>(display % 8U);
+        const int row = static_cast<int>(display / 8U);
+        MoveWindow(
+            button,
+            margin + column * (cell_width + gap),
+            y + row * (cell_height + gap),
+            cell_width, cell_height, TRUE);
+    }
+}
+
+LRESULT CALLBACK bases_proc(HWND window, UINT message,
+                            WPARAM wparam, LPARAM lparam) {
+    switch (message) {
+    case WM_CREATE: {
+        // CreateWindowExW delivers WM_CREATE before show_bases() receives the
+        // returned HWND, so publish it here before refresh_bases_window().
+        g_bases_window = window;
+        apply_nonclient_theme(window);
+
+        g_bases_title = CreateWindowExW(
+            0, L"STATIC", L"Programmer Representations & Bits",
+            WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX,
+            0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+
+        g_bases_output = CreateWindowExW(
+            WS_EX_CLIENTEDGE, L"EDIT", L"",
+            WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY |
+                ES_AUTOVSCROLL | WS_VSCROLL,
+            0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+
+        g_bases_hint = CreateWindowExW(
+            0, L"STATIC",
+            L"Click a bit to toggle it. Bit 63 is upper-left; bit 0 is lower-right.",
+            WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX,
+            0, 0, 0, 0, window, nullptr, g_instance, nullptr);
+
+        apply_font(g_bases_title, g_title_font);
+        apply_font(g_bases_output, g_ui_font);
+        apply_font(g_bases_hint, g_small_font);
+        apply_control_theme(g_bases_output);
+
+        g_base_bit_buttons.fill(nullptr);
+        for (unsigned display = 0; display < 64U; ++display) {
+            const int id = kIdBaseBitFirst + static_cast<int>(display);
+            g_base_bit_buttons[display] =
+                create_button(window, id, L"0", g_ui_bold_font);
+        }
+
+        refresh_bases_window();
+        layout_bases_window(window);
+        return 0;
+    }
+
+    case WM_SIZE:
+        layout_bases_window(window);
+        return 0;
+
+    case WM_GETMINMAXINFO: {
+        auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
+        info->ptMinTrackSize.x = sx(window, 520);
+        info->ptMinTrackSize.y = sx(window, 460);
+        return 0;
+    }
+
+    case WM_COMMAND: {
+        const int id = LOWORD(wparam);
+        if (id >= kIdBaseBitFirst && id <= kIdBaseBitLast) {
+            const unsigned display =
+                static_cast<unsigned>(id - kIdBaseBitFirst);
+            const unsigned bit = 63U - display;
+            if (g_controller.toggle_programmer_bit(bit)) {
+                render_state();
+                refresh_bases_window();
+            }
+            return 0;
+        }
+        break;
+    }
+
+    case WM_CTLCOLORSTATIC: {
+        HDC dc = reinterpret_cast<HDC>(wparam);
+        const HWND control = reinterpret_cast<HWND>(lparam);
+        if (control == g_bases_output) {
+            SetBkMode(dc, OPAQUE);
+            SetTextColor(dc, kText);
+            SetBkColor(dc, kPanel);
+            return reinterpret_cast<LRESULT>(g_panel_brush);
+        }
+        SetBkMode(dc, TRANSPARENT);
+        SetTextColor(dc, control == g_bases_title ? kHeading : kDetailLabel);
+        return reinterpret_cast<LRESULT>(g_background_brush);
+    }
+
+    case WM_CTLCOLOREDIT: {
+        HDC dc = reinterpret_cast<HDC>(wparam);
+        SetTextColor(dc, kText);
+        SetBkColor(dc, kPanel);
+        return reinterpret_cast<LRESULT>(g_panel_brush);
+    }
+
+    case WM_DRAWITEM:
+        if (draw_button(
+                reinterpret_cast<const DRAWITEMSTRUCT*>(lparam))) {
+            return TRUE;
+        }
+        break;
+
+    case WM_ERASEBKGND: {
+        HDC dc = reinterpret_cast<HDC>(wparam);
+        RECT rect{};
+        GetClientRect(window, &rect);
+        FillRect(dc, &rect, g_background_brush);
+        return 1;
+    }
+
+    case WM_CLOSE:
+        DestroyWindow(window);
+        return 0;
+
+    case WM_DESTROY:
+        g_bases_window = nullptr;
+        g_bases_title = nullptr;
+        g_bases_output = nullptr;
+        g_bases_hint = nullptr;
+        g_base_bit_buttons.fill(nullptr);
+        return 0;
+
+    default:
+        break;
+    }
+
     return DefWindowProcW(window, message, wparam, lparam);
 }
 
@@ -1849,12 +2109,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             return 0;
         }
         if (id == kIdBases) {
-            const std::wstring text = utf8_to_wide(
-                g_controller.programmer_representations_text());
-            MessageBoxW(
-                window, text.c_str(),
-                L"Programmer Representations",
-                MB_OK | MB_ICONINFORMATION);
+            show_bases();
             return 0;
         }
         if (id == kIdResult && HIWORD(wparam) == STN_CLICKED) {
@@ -2046,9 +2301,14 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     tools_class.lpfnWndProc = tools_proc;
     tools_class.lpszClassName = kToolsClass;
 
+    WNDCLASSEXW bases_class = main_class;
+    bases_class.lpfnWndProc = bases_proc;
+    bases_class.lpszClassName = kBasesClass;
+
     if (RegisterClassExW(&main_class) == 0 ||
         RegisterClassExW(&history_class) == 0 ||
-        RegisterClassExW(&tools_class) == 0) {
+        RegisterClassExW(&tools_class) == 0 ||
+        RegisterClassExW(&bases_class) == 0) {
         destroy_resources();
         return 1;
     }

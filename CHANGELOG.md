@@ -6,6 +6,13 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.16 — 2026-09-22
+
+- Preserve Advanced Tools structured output on Windows by normalizing shared LF line endings to Win32 CRLF before assigning multiline EDIT text.
+- Replace the Windows Programmer Bases information MessageBox with a native Programmer Representations & Bits window matching the Linux capability, including interactive 64-bit toggles and shared controller state.
+- Treat the empty Programmer expression as the zero bit-pattern for representations, matching the displayed zero result and existing bit-grid semantics.
+- Add regression coverage for Windows multiline Tools output, native Bases/Bits parity and zero-state Programmer representations.
+
 ## 0.2.15 — 2026-09-22
 
 - Fix Advanced Tools graph contrast across Linux, Windows and iPhone by using Common's semantic text role for plotted data: light on Night surfaces and dark on Day surfaces.

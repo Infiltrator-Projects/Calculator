@@ -427,10 +427,20 @@ for needle in (
 for needle in (
     "kIdBases",
     'L"Bases"',
+    "kBasesClass",
+    "show_bases()",
+    "bases_proc",
+    "refresh_bases_window()",
     "programmer_representations_text()",
-    'L"Programmer Representations"',
+    "programmer_bits()",
+    "toggle_programmer_bit(",
+    'L"Programmer Representations & Bits"',
 ):
-    assert needle in windows, f"Windows Programmer representations missing: {needle}"
+    assert needle in windows, f"Windows Programmer representations/bits parity missing: {needle}"
+
+assert 'MessageBoxW(\n                window, text.c_str(),\n                L"Programmer Representations"' not in windows, (
+    "Windows Bases regressed to the old warning/information MessageBox"
+)
 
 for needle in (
     "additionalResultsText",
@@ -492,6 +502,10 @@ for needle in (
     'L"Tools"',
 ):
     assert needle in windows, f"Windows advanced tools surface missing: {needle}"
+
+assert "win32_multiline_text(text)" in windows, (
+    "Windows Tools output no longer normalizes shared LF text to Win32 CRLF"
+)
 
 for needle in (
     "advancedToolCatalog",
