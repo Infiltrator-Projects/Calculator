@@ -154,11 +154,11 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Unary transforms, Standard memory recall and future binary64 state-transfer paths must use `serialize_value()`, while `format_value()` and display preferences remain presentation-only. Regression tests verify exact bit-for-bit round trips over boundary values and 50,000 deterministic finite binary64 samples, plus controller tests with rounded/grouped display preferences and memory overflow/range cases.
 
-## ADR-018 — Common 1.19.23 is the current public shared-foundation boundary
+## ADR-018 — Common 1.19.24 is the current public shared-foundation boundary
 
-**Decision.** Calculator pins immutable Common 1.19.23 at commit `a9cf2957cffeefe6001830916b8a32c2ef58a551` and consumes only published Common interfaces whose contracts are at least as strong as the Calculator behaviour they replace.
+**Decision.** Calculator pins immutable Common 1.19.24 at commit `748e089ae175329471d4cf375522c44081371bd5` and consumes only published Common interfaces whose contracts are at least as strong as the Calculator behaviour they replace.
 
-**Rationale.** Common 1.19.23 retains the numeric parsing, deterministic ASCII, checked arithmetic, theme/palette/metrics/typography and POSIX persistence contracts already used by Calculator while hardening bounded text handling and descriptor-anchored durable atomic publication. Its promoted local-civil day-phase primitive was reviewed but is not a substitute for Calculator's Gregorian civil-date transforms, so no unrelated temporal coupling is introduced merely to increase reuse.
+**Rationale.** Common 1.19.24 retains the numeric parsing, deterministic ASCII, checked arithmetic, theme/palette/metrics/typography and POSIX persistence contracts already used by Calculator while hardening bounded text handling and descriptor-anchored durable atomic publication. The 1.19.24 delta preserves those interfaces while hardening existing graphics range clipping and aliased surface operations. Its promoted local-civil day-phase primitive remains reviewed but is not a substitute for Calculator's Gregorian civil-date transforms, so no unrelated temporal coupling is introduced merely to increase reuse.
 
 **Consequence.** Calculator inherits the stronger Common persistence implementation without changing Calculator-owned arithmetic, date-tool semantics, session/controller behaviour or native-platform ownership. Scientific engineering-exponent parsing also uses Common's deterministic signed-integer parser, eliminating the final local `std::stoi` path. ADR-015 remains provenance only.
 

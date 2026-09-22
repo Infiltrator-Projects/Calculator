@@ -40,7 +40,7 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 src/core/scientific.* owns the arbitrary-precision real/complex expression domain used by Scientific calculations and precise reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation without routing Scientific intermediates through binary64. src/core/calculator.* remains the binary64 foundation used by Standard mode and supporting finite-real facilities.
 
-For the binary64 expression path in `src/core/calculator.*`, Calculator decides where the grammar expects a number and Common 1.19.23's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. Scientific decimal literals are instead parsed directly into its multiprecision domain. This removes duplicate binary64 scanner mechanics without transferring Calculator's operator/function grammar into Common or routing Scientific input through `double`.
+For the binary64 expression path in `src/core/calculator.*`, Calculator decides where the grammar expects a number and Common 1.19.24's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. Scientific decimal literals are instead parsed directly into its multiprecision domain. This removes duplicate binary64 scanner mechanics without transferring Calculator's operator/function grammar into Common or routing Scientific input through `double`.
 
 Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
@@ -104,7 +104,7 @@ SwiftUI owns touch-native composition, platform appearance observation and prese
 
 ## Common boundary
 
-Common is an exact git submodule dependency. Common 1.19.23 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette and structural roles, rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts together with Common's complete numeric parsers, deterministic ASCII grammar helpers, checked arithmetic, theme persistence keys and POSIX durable-file primitives while deliberately retaining its stricter no-fallback font policy.
+Common is an exact git submodule dependency. Common 1.19.24 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette and structural roles, rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts together with Common's complete numeric parsers, deterministic ASCII grammar helpers, checked arithmetic, theme persistence keys and POSIX durable-file primitives while deliberately retaining its stricter no-fallback font policy.
 
 Calculator must consume Common through its published public surface. It must not include Common private headers such as internal ASCII/read helpers, because doing so would reverse the intended ownership boundary. Common's expanded semantic appearance roles are consumed where their meanings fit Calculator; connection-specific roles remain unused because Calculator has no connection concept.
 
@@ -167,7 +167,7 @@ History is a structured domain model, unbounded by default unless an explicit Se
 The shared Controller exposes newest-first history access and recall. Platform shells render and select those entries but do not reconstruct mode state or reinterpret history themselves. Wide desktop history docking remains a non-interactive summary; explicit recall is handled by the dedicated history surface.
 
 
-## Common 1.19.23 semantic presentation boundary
+## Common 1.19.24 semantic presentation boundary
 
 Calculator treats Common's semantic design palette as data, not as a product-specific widget implementation. Native shells resolve the same Common Day/Night structure and map only semantically relevant roles: headings/results, summaries/input text, kicker/detail/note text, status borders, selected summaries, warning states and focus/hover accents. Connection-specific roles remain unused because Calculator has no connection concept; consuming every field mechanically would weaken rather than strengthen the ownership model.
 
