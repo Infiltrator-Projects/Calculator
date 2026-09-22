@@ -7,8 +7,11 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <limits>
+#include <string>
 #include <string_view>
 
 namespace {
@@ -163,6 +166,142 @@ void check_values(OracleFunction function, const std::array<double, N>& values) 
     }
 }
 
+std::uint64_t bits(double value) {
+    std::uint64_t raw = 0U;
+    static_assert(sizeof(raw) == sizeof(value));
+    std::memcpy(&raw, &value, sizeof(raw));
+    return raw;
+}
+
+double mpfr_binary(char op, double left, double right) {
+    mpfr_t a;
+    mpfr_t b;
+    mpfr_t result;
+    mpfr_init2(a, 256);
+    mpfr_init2(b, 256);
+    mpfr_init2(result, 256);
+    mpfr_set_d(a, left, MPFR_RNDN);
+    mpfr_set_d(b, right, MPFR_RNDN);
+    switch (op) {
+    case '+': mpfr_add(result, a, b, MPFR_RNDN); break;
+    case '-': mpfr_sub(result, a, b, MPFR_RNDN); break;
+    case '*': mpfr_mul(result, a, b, MPFR_RNDN); break;
+    case '/': mpfr_div(result, a, b, MPFR_RNDN); break;
+    default: mpfr_set_nan(result); break;
+    }
+    const double converted = mpfr_get_d(result, MPFR_RNDN);
+    mpfr_clear(result);
+    mpfr_clear(b);
+    mpfr_clear(a);
+    return converted;
+}
+
+void check_standard_binary(char op, double left, double right) {
+    if (op == '/' && right == 0.0) return;
+
+    const std::string expression =
+        calculator::serialize_value(left) + op +
+        calculator::serialize_value(right);
+    const auto actual = calculator::evaluate_standard(expression);
+    const double expected = mpfr_binary(op, left, right);
+
+    if (!std::isfinite(expected)) {
+        if (actual.ok) {
+            std::cerr << "FAIL: Standard " << expression
+                      << " should reject a non-finite binary64 result\n";
+            ++failures;
+        }
+        return;
+    }
+
+    if (!actual.ok) {
+        std::cerr << "FAIL: Standard " << expression
+                  << " unexpectedly failed: " << actual.error << '\n';
+        ++failures;
+        return;
+    }
+    if (bits(actual.value) != bits(expected)) {
+        std::cerr << "FAIL: Standard " << expression
+                  << " differs from MPFR rounded binary64 reference\n";
+        ++failures;
+    }
+}
+
+void check_standard_power(double base, double exponent) {
+    const std::string expression =
+        calculator::serialize_value(base) + "^" +
+        calculator::serialize_value(exponent);
+    const auto actual = calculator::evaluate_standard(expression);
+
+    mpfr_t a;
+    mpfr_t b;
+    mpfr_t result;
+    mpfr_init2(a, 256);
+    mpfr_init2(b, 256);
+    mpfr_init2(result, 256);
+    mpfr_set_d(a, base, MPFR_RNDN);
+    mpfr_set_d(b, exponent, MPFR_RNDN);
+    mpfr_pow(result, a, b, MPFR_RNDN);
+    const double expected = mpfr_get_d(result, MPFR_RNDN);
+    mpfr_clear(result);
+    mpfr_clear(b);
+    mpfr_clear(a);
+
+    if (!std::isfinite(expected)) {
+        if (actual.ok) {
+            std::cerr << "FAIL: Standard power " << expression
+                      << " should reject non-finite result\n";
+            ++failures;
+        }
+        return;
+    }
+    if (!actual.ok || !close_to_reference(actual.value, expected)) {
+        std::cerr << "FAIL: Standard power " << expression
+                  << " differs from MPFR reference\n";
+        ++failures;
+    }
+}
+
+void check_standard_oracle() {
+    const std::array<double, 15> values{
+        -std::numeric_limits<double>::max(),
+        -1.0e200, -1.0e20, -3.0, -1.0, -0.1,
+        -std::numeric_limits<double>::denorm_min(),
+        0.0,
+        std::numeric_limits<double>::denorm_min(),
+        0.1, 1.0, 3.0, 1.0e20, 1.0e200,
+        std::numeric_limits<double>::max()
+    };
+    constexpr std::array<char, 4> operators{'+', '-', '*', '/'};
+
+    for (double left : values) {
+        for (double right : values) {
+            for (char op : operators) {
+                check_standard_binary(op, left, right);
+            }
+        }
+    }
+
+    constexpr std::array<double, 8> bases{
+        0.5, 1.5, 2.0, 3.0, 10.0, 16.0, 100.0, 1.0e10
+    };
+    constexpr std::array<double, 9> exponents{
+        -10.0, -3.0, -0.5, 0.0, 0.5, 1.0, 2.0, 3.0, 10.0
+    };
+    for (double base : bases) {
+        for (double exponent : exponents) {
+            check_standard_power(base, exponent);
+        }
+    }
+
+    const auto invalid_negative_fraction =
+        calculator::evaluate_standard("(-2)^0.5");
+    if (invalid_negative_fraction.ok) {
+        std::cerr << "FAIL: Standard negative fractional power must fail\n";
+        ++failures;
+    }
+}
+
 } // namespace
 
 int main() {
@@ -222,6 +361,11 @@ int main() {
     check_values(OracleFunction::Asinh, positive);
     check_values(OracleFunction::Acosh, acosh_domain);
     check_values(OracleFunction::Atanh, atanh_domain);
+
+    // Independently validate Standard's complete binary arithmetic path:
+    // exact decimal state serialization, parser dispatch, IEEE-754 rounding,
+    // non-finite rejection and power results against a 256-bit MPFR oracle.
+    check_standard_oracle();
 
     if (failures != 0) {
         std::cerr << failures << " MPFR oracle test(s) failed\n";

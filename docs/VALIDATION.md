@@ -10,7 +10,9 @@ The repository currently uses:
 
 - `.github/workflows/release.yml`
 
-The `tests/` tree covers expression grammar and nesting limits, Standard precedence and percentage semantics, gradian/inverse/hyperbolic Scientific transforms and F-E formatting, Programmer width/radix/ROL/ROR/NAND/NOR behaviour and simultaneous multi-radix representations, explicit memory store/update state, structured history ordering/context/recall, Additional Results and engineering-notation representation, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
+The `tests/` tree covers expression grammar and nesting limits, Standard precedence and percentage semantics, exact binary64 state serialization, display/state isolation, memory range invariants, gradian/inverse/hyperbolic Scientific transforms and F-E formatting, Programmer width/radix/ROL/ROR/NAND/NOR behaviour and simultaneous multi-radix representations, explicit memory store/update state, structured history ordering/context/recall, Additional Results and engineering-notation representation, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
+
+The dedicated `calculator-standard-math` forensic suite exhaustively enumerates all two-operator `+ - * /` precedence combinations over a signed operand set, checks explicit left/right grouping, verifies power/unary/postfix/domain boundaries, and proves decimal computational-state round-tripping for curated IEEE-754 boundaries plus 50,000 deterministic finite binary64 bit patterns. Controller regressions additionally prove that fixed-decimal and thousands-grouping presentation cannot alter subsequent unary arithmetic or memory recall.
 
 Every `main` push and manual workflow dispatch runs the cross-platform verification jobs. Release publication remains gated to explicit `Release ...` commits. Verification:
 
@@ -58,7 +60,7 @@ The validation system is evidence, not a proof of all possible numerical or plat
 
 ## Independent numerical oracle
 
-Release CI enables CALCULATOR_ENABLE_MPFR_ORACLE_TESTS. The legacy MPFR oracle continues to protect deliberate binary64 paths. In addition, calculator-precision-oracle links only its test executable to MPFR/MPC at 4096-bit reference precision and compares the production Scientific multiprecision backend against independent real/complex expectations with an 85-decimal-digit tolerance for the maintained 100-digit test cases. MPFR/MPC are therefore validation evidence, not shipped runtime dependencies or a second production calculation engine.
+Release CI enables CALCULATOR_ENABLE_MPFR_ORACLE_TESTS. The MPFR oracle independently cross-checks Standard binary `+ - * /` over representative extreme/subnormal/ordinary operands against 256-bit reference arithmetic rounded back to binary64, verifies non-finite rejection, and compares Standard powers against the same high-precision reference. The legacy transcendental oracle continues to protect deliberate binary64 paths. In addition, calculator-precision-oracle links only its test executable to MPFR/MPC at 4096-bit reference precision and compares the production Scientific multiprecision backend against independent real/complex expectations with an 85-decimal-digit tolerance for the maintained 100-digit test cases. MPFR/MPC are therefore validation evidence, not shipped runtime dependencies or a second production calculation engine.
 
 ## Semantic appearance and focus regression
 

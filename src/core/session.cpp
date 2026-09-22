@@ -345,29 +345,65 @@ void Session::memory_clear() {
     memory_ = 0.0;
     scientific_memory_ = {};
     memory_set_ = false;
+    memory_binary64_valid_ = false;
 }
-void Session::memory_store(double value) {
+
+bool Session::memory_store(double value) {
+    if (!std::isfinite(value)) return false;
+
     memory_ = value;
     scientific_memory_ = scientific_value_from_double(value);
     memory_set_ = true;
+    memory_binary64_valid_ = true;
+    return true;
 }
-void Session::memory_add(double value) {
-    memory_ += value;
-    scientific_memory_ = scientific_value_from_double(memory_);
+
+bool Session::memory_add(double value) {
+    if (!std::isfinite(value) ||
+        (memory_set_ && !memory_binary64_valid_)) {
+        return false;
+    }
+
+    const double left = memory_set_ ? memory_ : 0.0;
+    const double result = left + value;
+    if (!std::isfinite(result)) return false;
+
+    memory_ = result;
+    scientific_memory_ = scientific_value_from_double(result);
     memory_set_ = true;
+    memory_binary64_valid_ = true;
+    return true;
 }
-void Session::memory_subtract(double value) {
-    memory_ -= value;
-    scientific_memory_ = scientific_value_from_double(memory_);
+
+bool Session::memory_subtract(double value) {
+    if (!std::isfinite(value) ||
+        (memory_set_ && !memory_binary64_valid_)) {
+        return false;
+    }
+
+    const double left = memory_set_ ? memory_ : 0.0;
+    const double result = left - value;
+    if (!std::isfinite(result)) return false;
+
+    memory_ = result;
+    scientific_memory_ = scientific_value_from_double(result);
     memory_set_ = true;
+    memory_binary64_valid_ = true;
+    return true;
 }
+
 double Session::memory_recall() const noexcept { return memory_; }
+
+bool Session::memory_binary64_available() const noexcept {
+    return memory_set_ && memory_binary64_valid_;
+}
 
 void Session::memory_store_scientific(ScientificValue value) {
     scientific_memory_ = std::move(value);
     double approximate = 0.0;
-    memory_ = scientific_value_to_double(
-        scientific_memory_, approximate) ? approximate : 0.0;
+    memory_binary64_valid_ = scientific_value_to_double(
+        scientific_memory_, approximate);
+    memory_ = memory_binary64_valid_ ? approximate : 0.0;
     memory_set_ = true;
 }
 

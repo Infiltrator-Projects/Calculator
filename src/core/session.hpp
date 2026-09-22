@@ -70,10 +70,11 @@ public:
     // Storing through either domain marks it present; memory_empty() is about
     // presence, not whether the numerical value happens to be zero.
     void memory_clear();
-    void memory_store(double value);
-    void memory_add(double value);
-    void memory_subtract(double value);
+    bool memory_store(double value);
+    bool memory_add(double value);
+    bool memory_subtract(double value);
     double memory_recall() const noexcept;
+    bool memory_binary64_available() const noexcept;
     void memory_store_scientific(ScientificValue value);
     void memory_add_scientific(
         const ScientificValue& value,
@@ -129,6 +130,7 @@ private:
     double memory_ = 0.0;
     ScientificValue scientific_memory_{};
     bool memory_set_ = false;
+    bool memory_binary64_valid_ = false;
     Variables variables_;
     ScientificVariables scientific_variables_;
     Functions functions_;

@@ -26,6 +26,8 @@ Scientific decimal literals are parsed directly into that multiprecision domain,
 
 Formatting does not create precision. Standard binary64 presentation remains distinct from Scientific multiprecision presentation, Programmer fixed-width integers and the specialist exact/arbitrary tool domains.
 
+Standard therefore has two deliberately separate decimal-output paths. `format_value()` and display preferences are presentation and may round, group or otherwise format a value for a person. `serialize_value()` is computational state: it emits the shortest locale-independent decimal that round-trips to the exact same finite binary64 value. Interactive unary operations, memory recall and any other binary64 state boundary must use the latter and must never reconstruct computation from rounded display text.
+
 ## Binary64 decimal token conversion
 
 In the binary64 expression path, Calculator owns grammar and decides when a numeric operand is expected. Common 1.19.20 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
@@ -63,6 +65,8 @@ Standard mode is intentionally smaller than Scientific, but it is not a second d
 Postfix `%` has one literal meaning in Standard as it does in expression mathematics: divide the preceding value by 100. Therefore `100 + 10%` is `100.1`, `100 * 10%` is `10`, and `200 + 200 / 2` is `300`.
 
 This rule is deliberate for the greenfield Calculator design. Historical immediate-execution behaviour is not preserved merely for compatibility with older four-function calculators, because an expression displayed as infix mathematics should evaluate according to that mathematics.
+
+The same principle applies after an operation. Display rounding is not state rounding. If Standard computes a finite binary64 value, subsequent operations consume that exact binary64 value, serialized losslessly when it must re-enter expression state. A user preference such as fixed three-decimal display or thousands grouping may change what is shown, but cannot change later arithmetic. Standard memory likewise retains a finite binary64 value exactly; overflow is rejected without mutating the register, and a Scientific memory value outside binary64 range remains valid Scientific memory but is unavailable for Standard recall rather than being replaced with a fabricated approximation.
 
 ## Programmer domain
 

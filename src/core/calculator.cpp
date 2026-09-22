@@ -7,6 +7,7 @@
 #include <cctype>
 #include <charconv>
 #include <cmath>
+#include <limits>
 #include <random>
 #include <string>
 #include <string_view>
@@ -810,6 +811,21 @@ std::string format_value(double value) {
         buffer, buffer + sizeof(buffer),
         value, std::chars_format::general, 15);
     if (converted.ec != std::errc{}) return "0";
+    return std::string(buffer, converted.ptr);
+}
+
+std::string serialize_value(double value) {
+    if (!std::isfinite(value)) return {};
+
+    char buffer[64] = {};
+    // The precision-free floating to_chars overload is specified to choose the
+    // shortest representation that round-trips through the matching parser.
+    // Common's decimal-token parser performs exact correctly-rounded binary64
+    // conversion, so this is a lossless state boundary rather than formatting.
+    const auto converted = std::to_chars(
+        buffer, buffer + sizeof(buffer),
+        value, std::chars_format::general);
+    if (converted.ec != std::errc{}) return {};
     return std::string(buffer, converted.ptr);
 }
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <string>
 
 static int failures = 0;
@@ -147,12 +148,46 @@ int main(){
 
     session.memory_clear();
     if(!session.memory_empty()) fail("cleared memory should be empty");
-    session.memory_store(12.5);
+    if(session.memory_binary64_available())
+        fail("cleared memory should have no binary64 view");
+    if(!session.memory_store(12.5))
+        fail("finite memory store should succeed");
     if(session.memory_empty()) fail("memory store should make memory available");
+    if(!session.memory_binary64_available())
+        fail("finite memory should have a binary64 view");
     if(std::abs(session.memory_recall()-12.5)>1e-12) fail("memory store wrong");
-    session.memory_add(2.5);
-    session.memory_subtract(5.0);
+    if(!session.memory_add(2.5) || !session.memory_subtract(5.0))
+        fail("finite memory update should succeed");
     if(std::abs(session.memory_recall()-10.0)>1e-12) fail("memory state wrong");
+
+    session.memory_store(std::numeric_limits<double>::max());
+    if(session.memory_add(std::numeric_limits<double>::max()))
+        fail("overflowing memory add must fail");
+    if(session.memory_recall()!=std::numeric_limits<double>::max())
+        fail("failed memory add must not mutate memory");
+    if(session.memory_subtract(-std::numeric_limits<double>::max()))
+        fail("overflowing memory subtract must fail");
+    if(session.memory_recall()!=std::numeric_limits<double>::max())
+        fail("failed memory subtract must not mutate memory");
+    if(session.memory_store(std::numeric_limits<double>::infinity()))
+        fail("non-finite memory store must fail");
+    if(session.memory_recall()!=std::numeric_limits<double>::max())
+        fail("failed non-finite memory store must not mutate memory");
+
+    const auto huge_scientific_memory = calculator::evaluate_scientific(
+        "1e1000", {}, {}, calculator::AngleUnit::Radians, 80);
+    if(!huge_scientific_memory.ok)
+        fail("scientific memory range fixture should evaluate");
+    else {
+        session.memory_store_scientific(huge_scientific_memory.value);
+        if(session.memory_empty())
+            fail("scientific-only memory should remain logically populated");
+        if(session.memory_binary64_available())
+            fail("unrepresentable scientific memory must not invent a binary64 value");
+        if(session.memory_add(1.0))
+            fail("binary64 memory update must reject an unrepresentable register");
+    }
+
     session.memory_clear();
     if(!session.memory_empty()) fail("second memory clear should be empty");
 

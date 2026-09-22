@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.19" date="2026-09-22">
+      <description>
+        <p>Preserve exact Standard binary64 state across unary operations and memory, reject range loss, and add exhaustive precedence, round-trip and MPFR oracle testing.</p>
+      </description>
+    </release>
     <release version="0.2.18" date="2026-09-22">
       <description>
         <p>Make Standard mode use conventional mathematical operator precedence and literal postfix percentages instead of historical immediate-execution arithmetic.</p>

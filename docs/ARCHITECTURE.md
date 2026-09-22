@@ -50,6 +50,8 @@ Standard mode uses the binary64 arithmetic parser with named constants, variable
 
 The same parsed expression therefore has the same mathematical operator meaning in Standard and Scientific modes; the modes differ in available functions and numeric representation/precision, not in whether multiplication and division bind before addition and subtraction.
 
+Standard also separates computational state from presentation. Binary64 values crossing back into expression state use a shortest exact round-trip decimal serialization; result formatting remains free to round or group for display. Memory maintains an explicit binary64-availability invariant so overflow or a Scientific-only out-of-range value cannot silently become a different Standard value.
+
 ### Programmer domain
 
 `src/core/programmer.*` owns fixed-width integer calculation. Values are represented as bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Arithmetic overflow wraps by masking to that width; this is intentional Programmer-mode behaviour rather than an unchecked error in the general arithmetic domain. NAND/NOR and ROL/ROR live in the same width-aware layer, so masking and rotate-count semantics are portable and testable.

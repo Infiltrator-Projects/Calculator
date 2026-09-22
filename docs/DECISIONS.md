@@ -144,3 +144,11 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Standard and Scientific agree on shared operator precedence. Historical left-to-right accumulation and contextual pending-operator percentage behaviour are removed rather than retained as compatibility quirks. Regression tests protect `200 + 200 / 2 = 300`, literal postfix percentage behaviour and Standard's rejection of Scientific named terms.
 
+## ADR-017 — Presentation never becomes Standard computational state
+
+**Decision.** Standard binary64 values that must cross a textual state boundary use Calculator's lossless shortest round-trip decimal serialization. Human-facing result formatting, fixed-decimal preferences, grouping and other presentation transformations are never reparsed as computation. Standard memory accepts only finite binary64 state; an overflowing update fails transactionally, and a Scientific memory value that cannot be represented as binary64 remains present but is unavailable to Standard recall.
+
+**Rationale.** IEEE-754 rounding is an intentional property of Standard's numeric domain; additional rounding caused by a UI formatter is not. Reconstructing state from 15 displayed digits, fixed-decimal text or grouped text can change later results and can even make Calculator unable to parse its own prior value. The computation/presentation boundary must therefore be explicit.
+
+**Consequence.** Unary transforms, Standard memory recall and future binary64 state-transfer paths must use `serialize_value()`, while `format_value()` and display preferences remain presentation-only. Regression tests verify exact bit-for-bit round trips over boundary values and 50,000 deterministic finite binary64 samples, plus controller tests with rounded/grouped display preferences and memory overflow/range cases.
+

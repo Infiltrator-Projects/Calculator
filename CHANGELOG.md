@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.19 — 2026-09-22
+
+- Separate Standard computational state from presentation with exact shortest-round-trip binary64 serialization.
+- Fix unary transforms so fixed precision, grouping and ordinary display rounding can never change subsequent arithmetic.
+- Fix Standard memory recall to preserve the exact stored binary64 value; reject overflowing memory updates transactionally and keep Scientific-only out-of-range memory unavailable rather than substituting zero.
+- Add a dedicated Standard mathematical forensic suite covering precedence/grouping matrices, power/unary/postfix/domain boundaries and 50,000 deterministic finite binary64 round trips.
+- Extend the Linux MPFR oracle to cross-check Standard binary arithmetic and powers against independent 256-bit reference calculations.
+- Document the computation/presentation boundary and memory invariants as ADR-017.
+
 ## 0.2.18 — 2026-09-22
 
 - Make Standard mode evaluate displayed infix expressions with conventional mathematical operator precedence instead of historical immediate left-to-right execution.

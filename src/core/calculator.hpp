@@ -77,11 +77,18 @@ enum class RealFunction {
 };
 
 // UI display contract for the real-number domain. Uses locale-independent
-// general notation with 15 significant digits so every platform presents the
-// same binary64 result.
+// general notation with 15 significant digits. This is presentation only and
+// must never be fed back into computation as a substitute for the binary64
+// value.
 std::string format_value(double value);
 std::string format_scientific_value(double value);
 std::string format_engineering_value(double value);
+
+// Canonical finite-binary64 state serialization. The returned decimal is the
+// shortest locale-independent representation that round-trips to the exact
+// same binary64 value through Calculator/Common parsing. Returns an empty
+// string for a non-finite input.
+std::string serialize_value(double value);
 
 // Evaluate the mathematical expression grammar in the binary64 domain.
 // Overloads progressively add variable/function scope; failures are returned

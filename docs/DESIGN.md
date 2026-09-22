@@ -23,7 +23,7 @@ Those semantics would be incorrect if implemented through the real-number expres
 
 ## Current real-number representation
 
-Standard mode deliberately uses IEEE-754 binary64 because it is the compact everyday arithmetic domain; Scientific uses arbitrary precision where its broader mathematical capability justifies it.
+Standard mode deliberately uses IEEE-754 binary64 because it is the compact everyday arithmetic domain; Scientific uses arbitrary precision where its broader mathematical capability justifies it. Within Standard, the binary64 value is authoritative: display formatting may round for readability but is never allowed to feed back into later computation.
 
 Scientific mode is a distinct arbitrary-precision real/complex domain backed by Boost.Multiprecision, with 50 decimal digits by default and a maintained ceiling of 1000 digits. Decimal literals and intermediate Scientific arithmetic remain in that domain; they are not silently routed through binary64. The public Session/Controller boundary carries real and imaginary components as decimal text so platform shells do not acquire a third-party multiprecision ABI.
 

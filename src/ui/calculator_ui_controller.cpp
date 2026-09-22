@@ -358,10 +358,6 @@ std::string Controller::format_display(double value) const {
     return text;
 }
 
-std::string Controller::format_real(double value) const {
-    return format_display(value);
-}
-
 std::string Controller::format_scientific_result(
     const ScientificValue& value) const {
     if (state_.scientific_notation) {
@@ -770,8 +766,12 @@ void Controller::unary_transform(Command command) {
 
     if (command == Command::Negate) {
         value = -value;
-        state_.expression = format_real(value);
-        state_.result = state_.expression;
+        state_.expression = calculator::serialize_value(value);
+        if (state_.expression.empty()) {
+            set_status("CALCULATION ERROR", true);
+            return;
+        }
+        state_.result = format_display(value);
         refresh_evaluation_cache();
         set_status("READY");
         return;
@@ -796,8 +796,12 @@ void Controller::unary_transform(Command command) {
         return;
     }
 
-    state_.expression = format_real(transformed.value);
-    state_.result = state_.expression;
+    state_.expression = calculator::serialize_value(transformed.value);
+    if (state_.expression.empty()) {
+        set_status("CALCULATION ERROR", true);
+        return;
+    }
+    state_.result = format_display(transformed.value);
     refresh_evaluation_cache();
     set_status(state_.mode == Mode::Scientific
                    ? scientific_status_text()
@@ -991,12 +995,19 @@ bool Controller::command_enabled(Command command) const {
 
     switch (command) {
     case Command::MemoryClear:
-    case Command::MemoryRecall:
         return !session_.memory_empty();
+    case Command::MemoryRecall:
+        return state_.mode == Mode::Scientific
+            ? !session_.memory_empty()
+            : session_.memory_binary64_available();
     case Command::MemoryStore:
+        return expression_has_value();
     case Command::MemoryAdd:
     case Command::MemorySubtract:
-        return expression_has_value();
+        return expression_has_value() &&
+               (state_.mode == Mode::Scientific ||
+                session_.memory_empty() ||
+                session_.memory_binary64_available());
     case Command::ClearEntry:
         return state_.mode == Mode::Standard && !state_.expression.empty();
     case Command::Backspace:
@@ -1209,8 +1220,12 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
                     session_.memory_recall_scientific()),
                 cursor);
         }
+        if (!session_.memory_binary64_available()) {
+            set_status("MEMORY RANGE ERROR", true);
+            return {normalized_cursor(cursor), false};
+        }
         return insert(
-            calculator::format_value(session_.memory_recall()),
+            calculator::serialize_value(session_.memory_recall()),
             cursor);
     case Command::MemoryStore:
     case Command::MemoryAdd:
@@ -1234,16 +1249,21 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         } else {
             double value = 0.0;
             if (current_value(value)) {
+                bool stored = false;
                 if (effective == Command::MemoryStore) {
-                    session_.memory_store(value);
+                    stored = session_.memory_store(value);
                 } else if (effective == Command::MemoryAdd) {
-                    session_.memory_add(value);
+                    stored = session_.memory_add(value);
                 } else {
-                    session_.memory_subtract(value);
+                    stored = session_.memory_subtract(value);
                 }
-                set_status(effective == Command::MemoryStore
-                               ? "MEMORY STORED"
-                               : "MEMORY UPDATED");
+                if (stored) {
+                    set_status(effective == Command::MemoryStore
+                                   ? "MEMORY STORED"
+                                   : "MEMORY UPDATED");
+                } else {
+                    set_status("MEMORY RANGE ERROR", true);
+                }
             }
         }
         return {normalized_cursor(cursor), false};

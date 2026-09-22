@@ -289,6 +289,12 @@ add_executable(calculator-test
 target_link_libraries(calculator-test PRIVATE calculator-core)
 add_test(NAME calculator-core COMMAND calculator-test)
 
+add_executable(calculator-standard-math-test
+    tests/test_standard_math.cpp
+)
+target_link_libraries(calculator-standard-math-test PRIVATE calculator-core)
+add_test(NAME calculator-standard-math COMMAND calculator-standard-math-test)
+
 add_executable(calculator-scientific-test
     tests/test_scientific.cpp
 )

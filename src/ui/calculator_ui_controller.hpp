@@ -135,7 +135,6 @@ private:
     void set_status(std::string text, bool fault = false);
     std::string scientific_status_text() const;
     std::string programmer_status_text() const;
-    std::string format_real(double value) const;
     std::string format_scientific_result(
         const ScientificValue& value) const;
     std::string format_display(double value) const;

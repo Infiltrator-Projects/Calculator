@@ -3,7 +3,10 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <iostream>
+#include <limits>
 #include <string>
 
 using namespace calculator::ui;
@@ -19,6 +22,13 @@ void check(bool condition, const char* expression) {
 }
 
 #define CHECK(expression) check(static_cast<bool>(expression), #expression)
+
+std::uint64_t double_bits(double value) {
+    std::uint64_t result = 0U;
+    static_assert(sizeof(result) == sizeof(value));
+    std::memcpy(&result, &value, sizeof(result));
+    return result;
+}
 } // namespace
 
 int main() {
@@ -168,6 +178,91 @@ int main() {
     CHECK(controller.state().expression == "12");
     controller.dispatch(Command::MemoryClear);
     CHECK(!controller.command_enabled(Command::MemoryRecall));
+
+    // Computational state must never be rebuilt from rounded presentation.
+    // Unary transforms preserve the exact binary64 value even when the visible
+    // result is deliberately rounded by display preferences.
+    calculator::ui::DisplayPreferences forensic_fixed{};
+    forensic_fixed.format = calculator::ui::ResultFormat::Fixed;
+    forensic_fixed.decimal_places = 3;
+    forensic_fixed.group_thousands = true;
+    forensic_fixed.trailing_zeroes = true;
+    controller.set_display_preferences(forensic_fixed);
+    controller.set_expression("2");
+    controller.dispatch(Command::SquareRoot);
+    const double sqrt_two = std::sqrt(2.0);
+    const auto sqrt_state =
+        calculator::evaluate_standard(controller.state().expression);
+    CHECK(sqrt_state.ok);
+    CHECK(double_bits(sqrt_state.value) == double_bits(sqrt_two));
+    CHECK(controller.state().result == "1.414");
+    CHECK(controller.state().expression.find(',') == std::string::npos);
+
+    controller.dispatch(Command::Square);
+    const double squared_sqrt_two = sqrt_two * sqrt_two;
+    const auto squared_state =
+        calculator::evaluate_standard(controller.state().expression);
+    CHECK(squared_state.ok);
+    CHECK(double_bits(squared_state.value) ==
+          double_bits(squared_sqrt_two));
+    CHECK(controller.state().result == "2.000");
+
+    controller.set_expression("1000000");
+    controller.dispatch(Command::Square);
+    CHECK(controller.state().result == "1,000,000,000,000.000");
+    CHECK(controller.state().expression.find(',') == std::string::npos);
+    CHECK(calculator::evaluate_standard(
+              controller.state().expression).ok);
+
+    // Memory recall is also a computational-state boundary: a binary64 value
+    // must round-trip exactly rather than through the 15-digit display format.
+    controller.set_display_preferences({});
+    controller.set_expression("1/7");
+    const auto seventh =
+        calculator::evaluate_standard(controller.state().expression);
+    CHECK(seventh.ok);
+    controller.dispatch(Command::MemoryStore);
+    controller.dispatch(Command::Clear);
+    controller.dispatch(Command::MemoryRecall);
+    const auto recalled_seventh =
+        calculator::evaluate_standard(controller.state().expression);
+    CHECK(recalled_seventh.ok);
+    CHECK(double_bits(recalled_seventh.value) ==
+          double_bits(seventh.value));
+    controller.dispatch(Command::Reciprocal);
+    CHECK(controller.state().result == "7");
+    controller.dispatch(Command::MemoryClear);
+
+    controller.set_expression(
+        calculator::serialize_value(
+            std::numeric_limits<double>::max()));
+    controller.dispatch(Command::MemoryStore);
+    controller.dispatch(Command::MemoryAdd);
+    CHECK(controller.state().fault);
+    CHECK(controller.state().status == "MEMORY RANGE ERROR");
+    controller.dispatch(Command::Clear);
+    CHECK(controller.command_enabled(Command::MemoryRecall));
+    controller.dispatch(Command::MemoryRecall);
+    const auto preserved_max =
+        calculator::evaluate_standard(controller.state().expression);
+    CHECK(preserved_max.ok);
+    CHECK(double_bits(preserved_max.value) ==
+          double_bits(std::numeric_limits<double>::max()));
+    controller.dispatch(Command::MemoryClear);
+
+    // A Scientific value outside binary64 remains valid memory, but Standard
+    // must not silently substitute zero or another approximate value.
+    controller.set_mode(Mode::Scientific);
+    controller.set_expression("1e1000");
+    controller.dispatch(Command::MemoryStore);
+    CHECK(controller.command_enabled(Command::MemoryRecall));
+    controller.set_mode(Mode::Standard);
+    CHECK(controller.command_enabled(Command::MemoryClear));
+    CHECK(!controller.command_enabled(Command::MemoryRecall));
+    controller.set_expression("5");
+    controller.dispatch(Command::MemoryStore);
+    CHECK(controller.command_enabled(Command::MemoryRecall));
+    controller.dispatch(Command::MemoryClear);
 
     controller.set_mode(Mode::Scientific);
     CHECK(controller.state().status == "SCIENTIFIC · DEG");
