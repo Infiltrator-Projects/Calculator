@@ -468,14 +468,8 @@ public:
           digits_(digits) {}
 
     ScientificResult run() {
-        skip_space();
-        if (input_.empty()) return fail("empty expression");
-
-        const Complex value = parse_expression();
-        skip_space();
-        if (!error_.empty()) return fail(error_.c_str());
-        if (position_ != input_.size()) return fail("unexpected input");
-        if (!is_finite(value)) return fail("non-finite result");
+        Complex value;
+        if (!run_internal(value)) return fail(error_.c_str());
         return {true, pack_value(value, digits_), {}, {}};
     }
 
@@ -489,6 +483,32 @@ private:
     std::size_t position_ = 0;
     std::size_t recursion_depth_ = 0;
     std::string error_;
+
+    // Internal nested evaluation stays in the full backend precision. The
+    // requested decimal precision is applied only when a value crosses the
+    // public ScientificValue boundary; a user-defined function inside one
+    // expression must not acquire an extra rounding step merely because it
+    // was factored into a function.
+    bool run_internal(Complex& value) {
+        skip_space();
+        if (input_.empty()) {
+            error_ = "empty expression";
+            return false;
+        }
+
+        value = parse_expression();
+        skip_space();
+        if (!error_.empty()) return false;
+        if (position_ != input_.size()) {
+            error_ = "unexpected input";
+            return false;
+        }
+        if (!is_finite(value)) {
+            error_ = "non-finite result";
+            return false;
+        }
+        return true;
+    }
 
     ScientificResult fail(const char* message) {
         if (error_.empty()) {
@@ -774,19 +794,23 @@ private:
 
         ScientificVariables scoped = variables_;
         for (std::size_t i = 0; i < arguments.size(); ++i) {
+            // Function arguments are an internal expression boundary, not a
+            // public precision boundary. Retain maximum maintained digits so
+            // factoring an expression into a user function does not reduce
+            // its numerical quality.
             scoped[definition.parameters[i]] =
-                pack_value(arguments[i], digits_);
+                pack_value(arguments[i], kScientificMaxDigits);
         }
 
         Parser nested(
             definition.expression, scoped, functions_,
             function_depth_ + 1U, angle_unit_, digits_);
-        const ScientificResult result = nested.run();
-        if (!result.ok) {
-            error_ = result.error;
+        Complex result;
+        if (!nested.run_internal(result)) {
+            error_ = nested.error_;
             return {};
         }
-        return unpack_value(result.value);
+        return result;
     }
 
     Complex to_radians(const Complex& value) const {
@@ -1260,7 +1284,8 @@ std::string format_scientific_display(
 bool scientific_value_to_double(
     const ScientificValue& value, double& output) noexcept {
     try {
-        if (value.imag != "0") return false;
+        const Real imaginary(value.imag);
+        if (!is_zero(imaginary)) return false;
         const Real parsed(value.real);
         output = parsed.convert_to<double>();
         return std::isfinite(output);

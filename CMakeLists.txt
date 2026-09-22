@@ -301,6 +301,12 @@ add_executable(calculator-scientific-test
 target_link_libraries(calculator-scientific-test PRIVATE calculator-core)
 add_test(NAME calculator-scientific COMMAND calculator-scientific-test)
 
+add_executable(calculator-scientific-math-test
+    tests/test_scientific_math.cpp
+)
+target_link_libraries(calculator-scientific-math-test PRIVATE calculator-core)
+add_test(NAME calculator-scientific-math COMMAND calculator-scientific-math-test)
+
 add_executable(calculator-advanced-tools-test
     tests/test_advanced_tools.cpp
 )
@@ -376,5 +382,27 @@ if(CALCULATOR_ENABLE_MPFR_ORACLE_TESTS)
     add_test(
         NAME calculator-precision-oracle
         COMMAND calculator-precision-oracle-test)
+
+    add_executable(calculator-scientific-oracle-test
+        tests/test_scientific_oracle.cpp
+    )
+    target_include_directories(
+        calculator-scientific-oracle-test PRIVATE
+        "${CALCULATOR_MPFR_INCLUDE_DIR}"
+        "${CALCULATOR_MPC_INCLUDE_DIR}")
+    target_link_libraries(
+        calculator-scientific-oracle-test PRIVATE
+        calculator-core
+        "${CALCULATOR_MPC_LIBRARY}"
+        "${CALCULATOR_MPFR_LIBRARY}")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(
+            calculator-scientific-oracle-test PRIVATE
+            -Wall -Wextra -Wpedantic -Wshadow
+            -Wconversion -Wsign-conversion)
+    endif()
+    add_test(
+        NAME calculator-scientific-oracle
+        COMMAND calculator-scientific-oracle-test)
 endif()
 
