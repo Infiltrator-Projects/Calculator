@@ -55,24 +55,41 @@ void expect_error(const std::string& expression) {
     }
 }
 
-long double real_as_long_double(
-    const calculator::ScientificResult& result) {
-    if (!result.ok || result.value.imag != "0") {
-        return std::numeric_limits<long double>::quiet_NaN();
+bool component_below_power_of_ten(
+    const std::string& component, int negative_power) {
+    if (component == "0" || component == "-0") return true;
+
+    const std::size_t exponent_position =
+        component.find_first_of("eE");
+    if (exponent_position != std::string::npos) {
+        try {
+            const int exponent =
+                std::stoi(component.substr(exponent_position + 1U));
+            return exponent < -negative_power;
+        } catch (...) {
+            return false;
+        }
     }
+
     try {
-        return std::stold(result.value.real);
+        const long double value = std::stold(component);
+        const long double tolerance =
+            std::pow(10.0L, -static_cast<long double>(negative_power));
+        return std::fabs(value) < tolerance;
     } catch (...) {
-        return std::numeric_limits<long double>::quiet_NaN();
+        return false;
     }
 }
 
 void expect_near_zero(
     const std::string& expression,
-    long double tolerance = 1e-80L) {
+    int trustworthy_digits = 80) {
     const auto result = eval(expression, calculator::AngleUnit::Radians, 100);
-    const long double value = real_as_long_double(result);
-    if (!std::isfinite(value) || std::fabs(value) > tolerance) {
+    if (!result.ok ||
+        !component_below_power_of_ten(
+            result.value.real, trustworthy_digits) ||
+        !component_below_power_of_ten(
+            result.value.imag, trustworthy_digits)) {
         fail(expression + " identity residual too large: " + text(result, 30));
     }
 }
@@ -107,6 +124,13 @@ int main() {
     expect_text("(1+i)*(1-i)", "2");
     expect_text("(1+i)^2", "2i");
     expect_text("sqrt(-1)", "i");
+    result = eval("ln(-1)");
+    if (!result.ok || result.value.real != "0" ||
+        result.value.imag.rfind(
+            "3.141592653589793238462643383279", 0) != 0U) {
+        fail("ln(-1) must use the +pi principal branch");
+    }
+    expect_text("(-1)^0.5", "i");
     expect_text("cbrt(-8)", "-2");
     expect_text("root3(-8)", "-2");
     expect_text("log2(32)", "5");
@@ -250,6 +274,15 @@ int main() {
     expect_error("100001!");
     expect_error("root0(2)");
     expect_error("log1(2)");
+    expect_error("tan(pi/2)");
+    {
+        const auto degree_pole = eval(
+            "tan(90)", calculator::AngleUnit::Degrees, 100);
+        if (degree_pole.ok) fail("tan(90 degrees) must be undefined");
+        const auto grad_pole = eval(
+            "tan(100)", calculator::AngleUnit::Gradians, 100);
+        if (grad_pole.ok) fail("tan(100 gradians) must be undefined");
+    }
     expect_error("unknown(2)");
 
     std::string nested(300, '(');

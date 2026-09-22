@@ -301,7 +301,13 @@ void check_function_matrix() {
         check_mpc_unary("atanh", real, imag, mpc_atanh);
         check_mpc_unary("sqrt", real, imag, mpc_sqrt);
         check_mpc_unary("exp", real, imag, mpc_exp);
-        check_mpc_unary("ln", real, imag, mpc_log);
+        if (real != "0" || imag != "0") {
+            check_mpc_unary("ln", real, imag, mpc_log);
+        } else {
+            ++comparisons;
+            const auto zero_log = evaluate("ln(0)");
+            if (zero_log.ok) fail("ln(0)", "must reject non-finite result");
+        }
     }
 
     // log10(z), exp2(z), exp10(z), square(z), cube(z), abs(z), conj(z),
@@ -312,22 +318,30 @@ void check_function_matrix() {
         if (!set_complex(input.get(), real, imag)) continue;
 
         {
-            MpcValue log_value;
-            MpcValue denominator;
-            MpcValue expected;
-            mpc_log(log_value.get(), input.get(), MPC_RNDNN);
-            MpfrValue ten;
-            mpfr_set_ui(ten.get(), 10U, MPFR_RNDN);
-            mpfr_log(ten.get(), ten.get(), MPFR_RNDN);
-            mpc_set_fr(denominator.get(), ten.get(), MPC_RNDNN);
-            mpc_div(
-                expected.get(), log_value.get(),
-                denominator.get(), MPC_RNDNN);
             const std::string expression =
                 "log(" + complex_expression(real, imag) + ")";
-            check_result(
-                expression, evaluate(expression),
-                expected.get(), 100);
+            if (real == "0" && imag == "0") {
+                ++comparisons;
+                const auto zero_log = evaluate(expression);
+                if (zero_log.ok) {
+                    fail(expression, "must reject non-finite result");
+                }
+            } else {
+                MpcValue log_value;
+                MpcValue denominator;
+                MpcValue expected;
+                mpc_log(log_value.get(), input.get(), MPC_RNDNN);
+                MpfrValue ten;
+                mpfr_set_ui(ten.get(), 10U, MPFR_RNDN);
+                mpfr_log(ten.get(), ten.get(), MPFR_RNDN);
+                mpc_set_fr(denominator.get(), ten.get(), MPC_RNDNN);
+                mpc_div(
+                    expected.get(), log_value.get(),
+                    denominator.get(), MPC_RNDNN);
+                check_result(
+                    expression, evaluate(expression),
+                    expected.get(), 100);
+            }
         }
 
         for (const auto& [name, base_ui] :
@@ -498,6 +512,13 @@ void check_function_matrix() {
         set_real(right.get(), values.second);
         mpfr_fmod(
             remainder.get(), left.get(), right.get(), MPFR_RNDN);
+        if (mpfr_sgn(remainder.get()) < 0) {
+            MpfrValue magnitude;
+            mpfr_abs(magnitude.get(), right.get(), MPFR_RNDN);
+            mpfr_add(
+                remainder.get(), remainder.get(),
+                magnitude.get(), MPFR_RNDN);
+        }
         MpcValue expected;
         mpc_set_fr(expected.get(), remainder.get(), MPC_RNDNN);
         const std::string expression =
@@ -588,6 +609,11 @@ void check_branch_cuts() {
     constexpr const char* eps = "1e-40";
     constexpr const char* neg_eps = "-1e-40";
 
+    // Exact negative-real input uses the conventional upper-lip principal
+    // branch rather than a platform-dependent signed-zero choice.
+    check_power("-2", "0", "0.5", "0");
+    check_power("-2", "0", "0.3", "0.2");
+
     for (const char* imag : {eps, neg_eps}) {
         check_mpc_unary("sqrt", "-2", imag, mpc_sqrt);
         check_mpc_unary("ln", "-2", imag, mpc_log);
@@ -627,6 +653,25 @@ void check_angle_units() {
             for (const auto& fn :
                  std::array<std::pair<const char*, int>, 3>{{
                      {"sin", 0}, {"cos", 1}, {"tan", 2}}}) {
+                const bool pole =
+                    fn.second == 2 &&
+                    ((unit == calculator::AngleUnit::Degrees &&
+                      (value == "90" || value == "-90" ||
+                       value == "270" || value == "-270")) ||
+                     (unit == calculator::AngleUnit::Gradians &&
+                      (value == "100" || value == "-100" ||
+                       value == "300" || value == "-300")));
+                const std::string expression =
+                    std::string(fn.first) + "(" + value + ")";
+                if (pole) {
+                    ++comparisons;
+                    const auto actual = evaluate(expression, 100, unit);
+                    if (actual.ok) {
+                        fail(expression, "tangent pole must be undefined");
+                    }
+                    continue;
+                }
+
                 MpfrValue expected_real;
                 if (fn.second == 0) {
                     mpfr_sin(
@@ -641,14 +686,26 @@ void check_angle_units() {
                 MpcValue expected;
                 mpc_set_fr(
                     expected.get(), expected_real.get(), MPC_RNDNN);
-                const std::string expression =
-                    std::string(fn.first) + "(" + value + ")";
                 check_result(
                     expression,
                     evaluate(expression, 100, unit),
                     expected.get(), 100);
             }
         }
+    }
+
+    for (const auto& pole :
+         std::array<std::pair<calculator::AngleUnit, const char*>, 4>{{
+             {calculator::AngleUnit::Degrees, "-90"},
+             {calculator::AngleUnit::Degrees, "270"},
+             {calculator::AngleUnit::Gradians, "100"},
+             {calculator::AngleUnit::Gradians, "-300"}
+         }}) {
+        ++comparisons;
+        const std::string expression =
+            "tan(" + std::string(pole.second) + ")";
+        const auto actual = evaluate(expression, 100, pole.first);
+        if (actual.ok) fail(expression, "tangent pole must be undefined");
     }
 
     for (const std::string value :

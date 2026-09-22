@@ -80,6 +80,108 @@ const Real& e_value() {
     return value;
 }
 
+bool real_integer_exponent(const Complex& value, long long& exponent) {
+    if (!is_real(value)) return false;
+    const Real real = real_part(value);
+    if (floor(real) != real) return false;
+
+    const Real minimum(std::numeric_limits<long long>::min());
+    const Real maximum(std::numeric_limits<long long>::max());
+    if (real < minimum || real > maximum) return false;
+
+    exponent = real.convert_to<long long>();
+    return true;
+}
+
+Complex integer_power(
+    Complex base, long long exponent, bool& valid) {
+    valid = true;
+    if (exponent == 0) return Complex(1);
+    if (exponent < 0 && is_zero(base)) {
+        valid = false;
+        return {};
+    }
+
+    const bool reciprocal = exponent < 0;
+    std::uint64_t remaining = reciprocal
+        ? static_cast<std::uint64_t>(-(exponent + 1LL)) + 1ULL
+        : static_cast<std::uint64_t>(exponent);
+
+    Complex result(1);
+    while (remaining != 0U) {
+        if ((remaining & 1U) != 0U) result *= base;
+        remaining >>= 1U;
+        if (remaining != 0U) base *= base;
+    }
+
+    if (reciprocal) result = Complex(1) / result;
+    if (!is_finite(result)) valid = false;
+    return valid ? result : Complex{};
+}
+
+Complex principal_log(const Complex& value) {
+    // Boost's complex log chooses the lower lip of the negative-real branch
+    // cut for an exact +0 imaginary component on some platforms. Calculator
+    // adopts the conventional principal argument (-pi, pi], so an exact
+    // negative real value is on the +pi side of the cut.
+    if (is_real(value) && real_part(value) < 0) {
+        return Complex(
+            boost::multiprecision::log(-real_part(value)),
+            pi_value());
+    }
+    return boost::multiprecision::log(value);
+}
+
+Complex principal_power(
+    const Complex& base, const Complex& exponent, bool& valid) {
+    valid = true;
+
+    long long integral = 0;
+    if (real_integer_exponent(exponent, integral)) {
+        return integer_power(base, integral, valid);
+    }
+
+    try {
+        Complex result;
+        if (is_real(base) && real_part(base) < 0) {
+            // Force the same upper-lip principal branch as principal_log().
+            result = boost::multiprecision::exp(
+                exponent * principal_log(base));
+        } else {
+            result = boost::multiprecision::pow(base, exponent);
+        }
+        if (!is_finite(result)) {
+            valid = false;
+            return {};
+        }
+        return result;
+    } catch (...) {
+        valid = false;
+        return {};
+    }
+}
+
+bool tangent_pole(
+    const Complex& input, AngleUnit unit) {
+    if (!is_real(input)) return false;
+    const Real value = real_part(input);
+
+    Real half_turn_units;
+    if (unit == AngleUnit::Degrees) {
+        half_turn_units = value / 90;
+    } else if (unit == AngleUnit::Gradians) {
+        half_turn_units = value / 100;
+    } else {
+        half_turn_units = value / (pi_value() / 2);
+    }
+
+    if (floor(half_turn_units) != half_turn_units) return false;
+    Real parity = boost::multiprecision::fmod(
+        half_turn_units < 0 ? -half_turn_units : half_turn_units,
+        Real(2));
+    return parity == 1;
+}
+
 // Normalization accepts user-facing Unicode/convenience spellings while the
 // parser itself stays ASCII and deterministic. This pass changes spelling only;
  // it must not introduce precedence or evaluation semantics of its own.
@@ -652,13 +754,12 @@ private:
         if (error_.empty() &&
             (consume('^') || consume_text("**"))) {
             const Complex right = parse_unary();
-            try {
-                left = boost::multiprecision::pow(left, right);
-            } catch (...) {
+            bool valid = true;
+            left = principal_power(left, right, valid);
+            if (!valid) {
                 error_ = "invalid power result";
                 return {};
             }
-            if (!is_finite(left)) error_ = "invalid power result";
         }
         return left;
     }
@@ -734,8 +835,9 @@ private:
             } else {
                 long long exponent = 0;
                 if (!parse_superscript_exponent(exponent)) break;
-                value = boost::multiprecision::pow(value, exponent);
-                if (!is_finite(value)) {
+                bool valid = true;
+                value = integer_power(value, exponent, valid);
+                if (!valid) {
                     error_ = "invalid power result";
                     return {};
                 }
@@ -841,7 +943,7 @@ private:
                 error_ = "function domain error";
                 return {};
             }
-            return boost::multiprecision::log(input) /
+            return principal_log(input) /
                 boost::multiprecision::log(Complex(parameter));
         }
 
@@ -852,12 +954,24 @@ private:
             }
             if (is_real(input) && real_part(input) < 0 &&
                 (parameter % 2U) != 0U) {
-                return -boost::multiprecision::pow(
+                bool valid = true;
+                const Complex magnitude = principal_power(
                     Complex(-real_part(input)),
-                    Complex(Real(1) / parameter));
+                    Complex(Real(1) / parameter), valid);
+                if (!valid) {
+                    error_ = "function domain error";
+                    return {};
+                }
+                return -magnitude;
             }
-            return boost::multiprecision::pow(
-                input, Complex(Real(1) / parameter));
+            bool valid = true;
+            const Complex result = principal_power(
+                input, Complex(Real(1) / parameter), valid);
+            if (!valid) {
+                error_ = "function domain error";
+                return {};
+            }
+            return result;
         }
 
         if (name == "frac" || name == "int" ||
@@ -903,6 +1017,10 @@ private:
                     to_radians(input));
             }
             if (name == "tan") {
+                if (tangent_pole(input, angle_unit_)) {
+                    error_ = "function domain error";
+                    return {};
+                }
                 return boost::multiprecision::tan(
                     to_radians(input));
             }
@@ -931,30 +1049,58 @@ private:
                 return boost::multiprecision::asinh(input);
             }
             if (name == "acosh") {
-                return boost::multiprecision::acosh(input);
+                Complex result = boost::multiprecision::acosh(input);
+                if (is_real(input) && imag_part(result) < 0) {
+                    result = Complex(
+                        real_part(result), -imag_part(result));
+                }
+                return result;
             }
             if (name == "atanh") {
-                return boost::multiprecision::atanh(input);
+                Complex result = boost::multiprecision::atanh(input);
+                if (is_real(input) && imag_part(result) < 0) {
+                    result = Complex(
+                        real_part(result), -imag_part(result));
+                }
+                return result;
             }
             if (name == "sqrt") {
-                return boost::multiprecision::sqrt(input);
+                Complex result = boost::multiprecision::sqrt(input);
+                if (is_real(input) && real_part(input) < 0 &&
+                    imag_part(result) < 0) {
+                    result = Complex(
+                        real_part(result), -imag_part(result));
+                }
+                return result;
             }
             if (name == "cbrt") {
+                bool valid = true;
                 if (is_real(input) && real_part(input) < 0) {
-                    return -boost::multiprecision::pow(
+                    const Complex magnitude = principal_power(
                         Complex(-real_part(input)),
-                        Complex(Real(1) / 3));
+                        Complex(Real(1) / 3), valid);
+                    if (!valid) {
+                        error_ = "function domain error";
+                        return {};
+                    }
+                    return -magnitude;
                 }
-                return boost::multiprecision::pow(
-                    input, Complex(Real(1) / 3));
+                const Complex result = principal_power(
+                    input, Complex(Real(1) / 3), valid);
+                if (!valid) {
+                    error_ = "function domain error";
+                    return {};
+                }
+                return result;
             }
             if (name == "square") return input * input;
             if (name == "cube") return input * input * input;
             if (name == "ln") {
-                return boost::multiprecision::log(input);
+                return principal_log(input);
             }
             if (name == "log") {
-                return boost::multiprecision::log10(input);
+                return principal_log(input) /
+                    boost::multiprecision::log(Complex(10));
             }
             if (name == "exp") {
                 return boost::multiprecision::exp(input);
