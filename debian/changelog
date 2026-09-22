@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.15) unstable; urgency=medium
+
+  * Keep graph data light on Night and dark on Day across all native shells.
+  * Fix Linux Tools result text contrast in Day mode.
+  * Add cross-platform graph/result contrast regression checks.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 10:28:00 +1000
+
 infiltrator-calculator (0.2.14) unstable; urgency=medium
 
   * Complete the documentation/commentary audit after a repository-wide consistency pass.

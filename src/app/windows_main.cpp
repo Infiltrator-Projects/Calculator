@@ -1569,8 +1569,10 @@ void paint_tool_graph(HWND window, HDC dc) {
     SelectObject(dc, old_pen);
     DeleteObject(axis_pen);
 
+    // Common's text role is light on Night and dark on Day, giving the graph
+    // data line guaranteed contrast without platform-specific colour constants.
     HPEN graph_pen = CreatePen(
-        PS_SOLID, std::max(1, sx(window, 2)), kAccentHover);
+        PS_SOLID, std::max(1, sx(window, 2)), kText);
     old_pen = SelectObject(dc, graph_pen);
     bool drawing = false;
     for (const auto& point : g_tool_result.points) {
@@ -1726,7 +1728,8 @@ LRESULT CALLBACK tools_proc(HWND window, UINT message,
     }
     case WM_CTLCOLOREDIT: {
         HDC dc = reinterpret_cast<HDC>(wparam);
-        SetTextColor(dc, kSummary);
+        const HWND control = reinterpret_cast<HWND>(lparam);
+        SetTextColor(dc, control == g_tool_output ? kText : kSummary);
         SetBkColor(dc, kInput);
         return reinterpret_cast<LRESULT>(g_input_brush);
     }

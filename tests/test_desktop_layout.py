@@ -277,6 +277,25 @@ for needle in (
 ):
     assert needle in ios, f"iPhone Common/accessibility semantic usage missing: {needle}"
 
+
+# Graph data and tool-result text must use Common's contrast-safe text role:
+# light on Night, dark on Day. GTK TextView requires styling its inner text node
+# explicitly because it may otherwise retain the host theme's foreground.
+assert "set_colour(palette.text_rgb);" in linux, (
+    "Linux graph curve no longer uses the Common text role"
+)
+assert 'gtk_widget_add_css_class(state->output, "tool-output");' in linux
+assert '".tool-output,.tool-output text{background:" + card + ";color:" + text + "}"' in linux
+assert "PS_SOLID, std::max(1, sx(window, 2)), kText" in windows, (
+    "Windows graph curve no longer uses the Common text role"
+)
+assert "control == g_tool_output ? kText : kSummary" in windows, (
+    "Windows tool result no longer uses the Common text role"
+)
+assert "context.stroke(path, with: .color(palette.text), lineWidth: 2)" in ios, (
+    "iPhone graph curve no longer uses the Common text role"
+)
+
 for needle in (
     "../src/ui/calculator_ui_controller.cpp",
     "../src/ui/calculator_ui_controller.hpp",

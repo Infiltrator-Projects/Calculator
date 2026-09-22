@@ -1237,7 +1237,10 @@ void draw_tool_graph(GtkDrawingArea*, cairo_t* cr, int width, int height,
         cairo_stroke(cr);
     }
 
-    set_colour(palette.accent_foreground_rgb);
+    // Use Common's contrast-safe text role for plotted data: light on Night
+    // and dark on Day. accent_foreground is intended for text placed on an
+    // accent fill and can disappear against a graph panel.
+    set_colour(palette.text_rgb);
     cairo_set_line_width(cr, 2.0);
     bool drawing = false;
     for (const auto& point : state->result.points) {
@@ -1395,6 +1398,7 @@ void show_advanced_tools(GtkWidget*, gpointer) {
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(state->output), TRUE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(state->output), GTK_WRAP_WORD_CHAR);
     gtk_widget_add_css_class(state->output, "history-row");
+    gtk_widget_add_css_class(state->output, "tool-output");
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), state->output);
 
     state->graph = gtk_drawing_area_new();
@@ -1738,6 +1742,12 @@ void apply_css(GtkWidget* window) {
             "px;color:" + text + ";font-size:12px;text-align:left}"
         ".history-row:hover{background:" + card_hover +
             ";border-color:" + accent_hover + "}"
+        // GtkTextView has an inner text node which does not reliably inherit
+        // the colour from the outer widget when the app theme is forced away
+        // from the host theme. Bind both nodes to Common's contrast-safe text
+        // role so tool results are dark on Day and light on Night.
+        ".tool-output,.tool-output text{background:" + card + ";color:" + text + "}"
+        ".tool-output text selection{background:" + selected + ";color:" + selected_summary + "}"
         ".calc-button:focus,.toolbar-button:focus,.mode-tab:focus{outline:2px solid " +
             accent_hover + ";outline-offset:1px}"
         ".compact .brand-title{font-size:17px}"

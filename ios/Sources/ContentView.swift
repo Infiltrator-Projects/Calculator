@@ -715,7 +715,9 @@ private struct ToolGraphView: View {
                         drawing = true
                     }
                 }
-                context.stroke(path, with: .color(palette.accentForeground), lineWidth: 2)
+                // Common's text role resolves light on Night and dark on Day,
+                // so the plotted data remains visible against either panel.
+                context.stroke(path, with: .color(palette.text), lineWidth: 2)
             }
         }
         .accessibilityLabel("Graph")

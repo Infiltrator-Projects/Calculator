@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.15 — 2026-09-22
+
+- Fix Advanced Tools graph contrast across Linux, Windows and iPhone by using Common's semantic text role for plotted data: light on Night surfaces and dark on Day surfaces.
+- Fix Linux Advanced Tools result text disappearing in Day mode by explicitly styling GtkTextView's inner text node instead of relying on host-theme inheritance.
+- Align Windows tool-result foreground with the same contrast-safe Common text role and add cross-platform source regression protection.
+
 ## 0.2.14 — 2026-09-21
 
 - Complete the post-edit documentation audit by correcting remaining stale architecture, portability and UI-parity statements about Scientific binary64 use, the Tools catalogue, history persistence and future result domains.
