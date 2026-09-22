@@ -788,6 +788,13 @@ void show_history(GtkWidget*, gpointer) {
             label += entry->output;
 
             GtkWidget* recall = gtk_button_new_with_label(label.c_str());
+            // GTK CSS has no text-align property. Align the native label
+            // directly so history recall rows remain left-aligned without
+            // relying on an invalid stylesheet declaration.
+            if (GtkWidget* child = gtk_button_get_child(GTK_BUTTON(recall));
+                GTK_IS_LABEL(child)) {
+                gtk_label_set_xalign(GTK_LABEL(child), 0.0F);
+            }
             gtk_widget_add_css_class(recall, "history-row");
             gtk_widget_set_halign(recall, GTK_ALIGN_FILL);
             gtk_widget_set_hexpand(recall, TRUE);
@@ -1690,72 +1697,72 @@ void apply_css(GtkWidget* window) {
     const std::string warning_border = hex_colour(p.warning_border_rgb);
 
     const std::string css =
-        "*{font-family:\"" + ui + "\";font-weight:400}"
-        "window,.shell{background:" + background + ";color:" + text + "}"
-        ".shell{padding:" + std::to_string(metrics.shell_padding) + "px}"
-        ".calculator-column{background:" + background + "}"
-        ".header{margin-bottom:0}"
-        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + heading + "}"
+        "*{font-family:\"" + ui + "\";font-weight:400;}"
+        "window,.shell{background:" + background + ";color:" + text + ";}"
+        ".shell{padding:" + std::to_string(metrics.shell_padding) + "px;}"
+        ".calculator-column{background:" + background + ";}"
+        ".header{margin-bottom:0;}"
+        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + heading + ";}"
         ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
             "border-radius:" + std::to_string(design.control_radius) + "px;min-height:28px;padding:0 " +
-            std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700}"
-        ".toolbar-button:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + "}"
+            std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700;}"
+        ".toolbar-button:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + ";}"
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
-            std::to_string(design.compact_spacing / 2U) + "px}"
+            std::to_string(design.compact_spacing / 2U) + "px;}"
         ".mode-tab{background:transparent;color:" + kicker + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
-            "min-height:28px;font-size:11px;font-weight:700;padding:0 8px}"
-        ".mode-tab:hover{background:" + surface_hover + ";color:" + text + "}"
-        ".mode-tab.selected{background:" + primary + ";color:" + primary_text + "}"
+            "min-height:28px;font-size:11px;font-weight:700;padding:0 8px;}"
+        ".mode-tab:hover{background:" + surface_hover + ";color:" + text + ";}"
+        ".mode-tab.selected{background:" + primary + ";color:" + primary_text + ";}"
         ".display{background:" + panel + ";border:1px solid " + status_border + ";border-radius:" +
             std::to_string(design.card_radius) + "px;padding:" +
-            std::to_string(design.control_spacing) + "px}"
+            std::to_string(design.control_spacing) + "px;}"
         ".expression{background:" + input + ";color:" + summary + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
-            "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none}"
-        ".expression:focus{border:0;outline:none;box-shadow:none}"
-        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + heading + ";padding-top:2px}"
-        ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + note + "}"
-        ".status.fault{color:" + fault + "}"
+            "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none;}"
+        ".expression:focus{border:0;outline:none;box-shadow:none;}"
+        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + heading + ";padding-top:2px;}"
+        ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + note + ";}"
+        ".status.fault{color:" + fault + ";}"
         ".calc-button{border:1px solid " + border + ";border-radius:" +
             std::to_string(design.control_radius) + "px;min-height:" +
-            std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0}"
-        ".calc-button:disabled{opacity:.38}"
-        ".calc-button.number{background:" + card + ";color:" + title + "}"
-        ".calc-button.number:hover{background:" + card_hover + ";border-color:" + accent_hover + "}"
-        ".calc-button.operation{background:" + operation + ";color:" + text + "}"
-        ".calc-button.operation:hover{background:" + operation_hover + ";border-color:" + accent_hover + "}"
-        ".calc-button.utility{background:" + surface + ";color:" + muted + ";font-size:12px}"
-        ".calc-button.utility:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + "}"
-        ".calc-button.utility.selected{background:" + selected + ";color:" + selected_summary + ";border-color:" + accent_hover + "}"
+            std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0;}"
+        ".calc-button:disabled{opacity:.38;}"
+        ".calc-button.number{background:" + card + ";color:" + title + ";}"
+        ".calc-button.number:hover{background:" + card_hover + ";border-color:" + accent_hover + ";}"
+        ".calc-button.operation{background:" + operation + ";color:" + text + ";}"
+        ".calc-button.operation:hover{background:" + operation_hover + ";border-color:" + accent_hover + ";}"
+        ".calc-button.utility{background:" + surface + ";color:" + muted + ";font-size:12px;}"
+        ".calc-button.utility:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + ";}"
+        ".calc-button.utility.selected{background:" + selected + ";color:" + selected_summary + ";border-color:" + accent_hover + ";}"
         ".calc-button.memory-button{background:transparent;color:" + muted + ";border-color:transparent;"
-            "border-radius:" + std::to_string(design.small_radius) + "px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:11px}"
-        ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent}"
-        ".calc-button.clear{background:" + card + ";color:" + warning_muted + ";border-color:" + warning_border + "}"
-        ".calc-button.clear:hover{background:" + card_hover + ";color:" + warning + ";border-color:" + warning + "}"
-        ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:15px;font-weight:700}"
-        ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + "}"
+            "border-radius:" + std::to_string(design.small_radius) + "px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:11px;}"
+        ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent;}"
+        ".calc-button.clear{background:" + card + ";color:" + warning_muted + ";border-color:" + warning_border + ";}"
+        ".calc-button.clear:hover{background:" + card_hover + ";color:" + warning + ";border-color:" + warning + ";}"
+        ".calc-button.equals{background:" + primary + ";color:" + primary_text + ";border-color:" + primary + ";font-size:15px;font-weight:700;}"
+        ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + ";}"
         ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px;padding:" +
-            std::to_string(design.control_spacing) + "px}"
-        ".history-text{background:" + panel + ";color:" + detail_label + ";font-size:12px}"
-        ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px}"
+            std::to_string(design.control_spacing) + "px;}"
+        ".history-text{background:" + panel + ";color:" + detail_label + ";font-size:12px;}"
+        ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px;}"
         ".history-row{background:" + card + ";padding:" +
             std::to_string(design.control_spacing) +
             "px;border:1px solid " + border + ";border-radius:" +
             std::to_string(design.control_radius) +
-            "px;color:" + text + ";font-size:12px;text-align:left}"
+            "px;color:" + text + ";font-size:12px;}"
         ".history-row:hover{background:" + card_hover +
-            ";border-color:" + accent_hover + "}"
+            ";border-color:" + accent_hover + ";}"
         // GtkTextView has an inner text node which does not reliably inherit
         // the colour from the outer widget when the app theme is forced away
         // from the host theme. Bind both nodes to Common's contrast-safe text
         // role so tool results are dark on Day and light on Night.
-        ".tool-output,.tool-output text{background:" + card + ";color:" + text + "}"
-        ".tool-output text selection{background:" + selected + ";color:" + selected_summary + "}"
+        ".tool-output,.tool-output text{background:" + card + ";color:" + text + ";}"
+        ".tool-output text selection{background:" + selected + ";color:" + selected_summary + ";}"
         ".calc-button:focus,.toolbar-button:focus,.mode-tab:focus{outline:2px solid " +
-            accent_hover + ";outline-offset:1px}"
-        ".compact .brand-title{font-size:17px}"
-        ".compact .display{padding:7px}"
-        ".compact .calc-button{min-height:30px;font-size:13px}"
-        ".compact .mode-tab{min-height:25px}";
+            accent_hover + ";outline-offset:1px;}"
+        ".compact .brand-title{font-size:17px;}"
+        ".compact .display{padding:7px;}"
+        ".compact .calc-button{min-height:30px;font-size:13px;}"
+        ".compact .mode-tab{min-height:25px;}";
 
     if (!css_provider) {
         css_provider = gtk_css_provider_new();
