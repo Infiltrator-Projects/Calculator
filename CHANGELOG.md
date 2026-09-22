@@ -6,6 +6,13 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.26 — 2026-09-22
+
+- Move Calculator from Common 1.19.23 to released Common 1.19.24 at immutable commit `748e089ae175329471d4cf375522c44081371bd5`.
+- Inherit Common's hardened graphics clipping, alias-safe in-place surface operations and overflow-safe nearest-neighbour mapping without changing Calculator's public or domain semantics.
+- Refresh maintained Common-boundary documentation and regression expectations to the exact 1.19.24 release.
+- Revalidate Linux, Windows, iPhone and ASan/UBSan builds, including the warning-fatal packaged Linux GUI smoke test introduced by 0.2.25.
+
 ## 0.2.25 — 2026-09-22
 
 - Fix the Linux GTK application stylesheet after local Cinnamon validation exposed parser warnings that CI had previously tolerated.

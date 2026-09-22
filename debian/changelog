@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.26) unstable; urgency=medium
+
+  * Pin the exact released Common 1.19.24 foundation.
+  * Inherit hardened shared graphics range and alias handling.
+  * Revalidate all supported build/test targets.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 18:18:00 +1000
+
 infiltrator-calculator (0.2.25) unstable; urgency=medium
 
   * Fix malformed Linux GTK CSS and native history-row alignment.
