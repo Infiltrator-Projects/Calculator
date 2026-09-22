@@ -1611,15 +1611,17 @@ void fill_grid(GtkWidget* grid, const ButtonSpec* specs, std::size_t count) {
     }
 }
 
-void update_responsive_layout(GtkWidget* window) {
+void update_responsive_layout_for_size(int width, int height) {
     if (!calculator_column || !history_dock || !history_button) return;
-
-    const int width = gtk_widget_get_width(window);
-    const int height = gtk_widget_get_height(window);
     if (width <= 0 || height <= 0) return;
 
     const auto layout =
         calculator::ui::responsive_layout(width, height);
+    if (responsive_layout_initialized &&
+        layout.layout_class == last_layout_class) {
+        return;
+    }
+
     last_layout_class = layout.layout_class;
     responsive_layout_initialized = true;
 
@@ -1633,19 +1635,19 @@ void update_responsive_layout(GtkWidget* window) {
     }
 }
 
-gboolean responsive_tick(
-    GtkWidget* widget, GdkFrameClock*, gpointer) {
-    const int width = gtk_widget_get_width(widget);
-    const int height = gtk_widget_get_height(widget);
-    if (width <= 0 || height <= 0) return G_SOURCE_CONTINUE;
+void update_responsive_layout(GtkWidget* window) {
+    update_responsive_layout_for_size(
+        gtk_widget_get_width(window),
+        gtk_widget_get_height(window));
+}
 
-    const auto layout =
-        calculator::ui::responsive_layout(width, height);
-    if (!responsive_layout_initialized ||
-        layout.layout_class != last_layout_class) {
-        update_responsive_layout(widget);
-    }
-    return G_SOURCE_CONTINUE;
+void on_window_default_size_changed(
+    GObject* object, GParamSpec*, gpointer) {
+    int width = 0;
+    int height = 0;
+    gtk_window_get_default_size(
+        GTK_WINDOW(object), &width, &height);
+    update_responsive_layout_for_size(width, height);
 }
 
 void apply_css(GtkWidget* window) {
@@ -2247,7 +2249,19 @@ void activate(GtkApplication* app, gpointer) {
 
     gtk_window_present(GTK_WINDOW(window));
     update_responsive_layout(window);
-    gtk_widget_add_tick_callback(window, responsive_tick, nullptr, nullptr);
+
+    // GTK 4 updates GtkWindow:default-width/default-height when the user
+    // resizes a normal toplevel. Respond to those size changes instead of
+    // attaching a frame-clock tick callback: a permanent tick keeps the frame
+    // clock active even while Calculator is idle and can consume substantial
+    // CPU under software rendering/remote desktops.
+    g_signal_connect(
+        window, "notify::default-width",
+        G_CALLBACK(on_window_default_size_changed), nullptr);
+    g_signal_connect(
+        window, "notify::default-height",
+        G_CALLBACK(on_window_default_size_changed), nullptr);
+
     gtk_widget_grab_focus(expression_entry);
 }
 

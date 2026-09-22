@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.17) unstable; urgency=medium
+
+  * Remove permanent GTK frame-clock polling from the Linux shell.
+  * Make responsive layout react to window size notifications instead.
+  * Add an idle-CPU regression guard for Linux.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 11:02:00 +1000
+
 infiltrator-calculator (0.2.16) unstable; urgency=medium
 
   * Preserve multiline Advanced Tools results on Windows.

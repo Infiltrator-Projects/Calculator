@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.17 — 2026-09-22
+
+- Remove the Linux GTK permanent frame-clock callback used for responsive layout polling; it kept Calculator active while idle and could drive very high CPU usage, especially under software rendering or remote desktops.
+- Make Linux responsive layout event-driven using GtkWindow default-width/default-height property notifications, with no continuous idle polling.
+- Add regression coverage forbidding a permanent GTK tick callback in the Linux shell.
+
 ## 0.2.16 — 2026-09-22
 
 - Preserve Advanced Tools structured output on Windows by normalizing shared LF line endings to Win32 CRLF before assigning multiline EDIT text.

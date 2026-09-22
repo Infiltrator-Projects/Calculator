@@ -59,6 +59,20 @@ for needle in (
 ):
     assert needle in windows, f"Windows Common typography/design contract missing: {needle}"
 
+# Linux responsive layout must be event-driven. A permanent GTK frame-clock
+# callback keeps the application rendering while completely idle and caused
+# severe CPU usage on software-rendered/remote desktop sessions.
+assert "gtk_widget_add_tick_callback" not in linux, (
+    "Linux responsive layout regressed to a permanent frame-clock poll"
+)
+assert "responsive_tick(" not in linux
+for needle in (
+    '"notify::default-width"',
+    '"notify::default-height"',
+    "on_window_default_size_changed",
+):
+    assert needle in linux, f"Linux event-driven responsive sizing missing: {needle}"
+
 for name, source in (("Linux GTK", linux), ("Windows Win32", windows)):
     assert '../ui/calculator_ui_controller.hpp' in source, (
         f"{name} does not consume the shared calculator UI controller"

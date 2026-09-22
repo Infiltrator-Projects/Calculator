@@ -53,7 +53,7 @@ This is semantic parity rather than pixel/layout parity: calculator state and co
 
 `calculator-ui-controller` exercises shared desktop behaviour independently of GTK and Win32, including arithmetic, explicit memory store/update, Scientific angle/2nd/HYP/F-E state, Programmer extended bitwise operations and cursor-aware editing.
 
-Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. Programmer Bases/Bits is a native interactive surface on both desktop shells rather than a platform-specific informational dialog; the initial empty Programmer state represents the zero bit-pattern consistently. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
+Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. Linux responsive layout is resize-event-driven through GtkWindow size-property notifications; it must not use a permanent frame-clock callback while the calculator is idle. Programmer Bases/Bits is a native interactive surface on both desktop shells rather than a platform-specific informational dialog; the initial empty Programmer state represents the zero bit-pattern consistently. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
 
 ## Parity definition
 
