@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.25" date="2026-09-22">
+      <description>
+        <p>Fix Linux GTK stylesheet parsing and make application GTK warnings release-blocking in packaged smoke tests.</p>
+      </description>
+    </release>
     <release version="0.2.24" date="2026-09-22">
       <description>
         <p>Modularise Advanced Tools into domain-focused implementation units while preserving behaviour and the Common 1.19.23 boundary.</p>

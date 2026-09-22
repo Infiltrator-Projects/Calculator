@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.25) unstable; urgency=medium
+
+  * Fix malformed Linux GTK CSS and native history-row alignment.
+  * Make Calculator-owned GTK warnings fatal in packaged Linux smoke tests.
+  * Keep Common pinned to released 1.19.23.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 18:10:00 +1000
+
 infiltrator-calculator (0.2.24) unstable; urgency=medium
 
   * Modularise the Advanced Tools core into domain-focused implementation units.

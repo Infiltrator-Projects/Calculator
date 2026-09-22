@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.25 — 2026-09-22
+
+- Fix the Linux GTK application stylesheet after local Cinnamon validation exposed parser warnings that CI had previously tolerated.
+- Terminate all generated GTK CSS declarations correctly and replace unsupported `text-align` styling with native GTK label alignment.
+- Strengthen the packaged Linux idle/runtime smoke test so Calculator-owned GTK warnings are fatal, while explicitly disabling only the absent accessibility bus in the headless Xvfb test environment.
+- Update the desktop-layout regression contract to forbid unsupported `text-align` CSS and require the native history-label alignment path.
+- Revalidate Linux, Windows, iPhone and ASan/UBSan builds before release; Linux packaged GUI warning-fatal smoke testing passes.
+- Common remains pinned exactly to released 1.19.23 at `a9cf2957cffeefe6001830916b8a32c2ef58a551`.
+
 ## 0.2.24 — 2026-09-22
 
 - Split the 1,672-line Advanced Tools implementation into domain-focused translation units while preserving the existing public `advanced_tools.hpp` API and all fourteen tool behaviours.
