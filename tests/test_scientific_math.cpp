@@ -305,12 +305,21 @@ int main() {
     // Cross-platform stack safety: exceed the maintained parser recursion
     // bound by a modest amount rather than relying on the host stack to absorb
     // hundreds of recursive grammar frames.
-    std::string nested(96, '(');
+    std::string nested(32, '(');
     nested += "1";
-    nested.append(96, ')');
+    nested.append(32, ')');
     result = eval(nested);
     if (result.ok || result.error != "expression nesting too deep")
         fail("parser nesting limit must fail deterministically");
+
+    std::string safe_nested(8, '(');
+    safe_nested += "1";
+    safe_nested.append(8, ')');
+    result = eval(safe_nested);
+    if (!result.ok || result.value.real != "1" ||
+        result.value.imag != "0") {
+        fail("ordinary nested expression should remain supported");
+    }
 
     calculator::Functions recursive;
     recursive["loop"] = {{"x"}, "loop(x)", {}};
