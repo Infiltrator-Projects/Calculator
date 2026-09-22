@@ -310,7 +310,13 @@ assert "set_colour(palette.text_rgb);" in linux, (
     "Linux graph curve no longer uses the Common text role"
 )
 assert 'gtk_widget_add_css_class(state->output, "tool-output");' in linux
-assert '".tool-output,.tool-output text{background:" + card + ";color:" + text + "}"' in linux
+assert '".tool-output,.tool-output text{background:" + card + ";color:" + text + ";}"' in linux
+assert "text-align:" not in linux, (
+    "Linux GTK CSS must not use unsupported text-align declarations"
+)
+assert "gtk_label_set_xalign(GTK_LABEL(child), 0.0F);" in linux, (
+    "Linux history recall labels must use native GTK alignment"
+)
 assert "PS_SOLID, std::max(1, sx(window, 2)), kText" in windows, (
     "Windows graph curve no longer uses the Common text role"
 )
