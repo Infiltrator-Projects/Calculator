@@ -1,3 +1,12 @@
+infiltrator-calculator (0.2.20) unstable; urgency=medium
+
+  * Forensically validate Scientific real/complex arithmetic with an 8192-bit MPFR/MPC oracle.
+  * Fix principal branches, exact integer/half-integer powers and exact trig quadrants.
+  * Preserve full internal precision across user-function factoring and Scientific state boundaries.
+  * Harden parser/function recursion and validate constants, angle units and 16-1000 digit precision.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 12:52:00 +1000
+
 infiltrator-calculator (0.2.19) unstable; urgency=medium
 
   * Preserve exact binary64 state across Standard unary transforms and memory recall.

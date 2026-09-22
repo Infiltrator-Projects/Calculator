@@ -20,7 +20,7 @@ A familiar result, another calculator's output or a plausible display string is 
 
 ## Real-number representation
 
-Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex: 50 decimal digits by default, selectable up to the maintained 1000-digit ceiling.
+Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex. The interactive controller currently evaluates at 50 decimal digits. The core evaluation API accepts requested precisions from 16 through the maintained 1000-digit ceiling, and release-CI oracle coverage exercises that full range.
 
 Scientific decimal literals are parsed directly into that multiprecision domain, and intermediate arithmetic/transcendental/complex results are not silently routed through binary64. The Session/Controller boundary stores real and imaginary components as decimal text so the shared public C++ state preserves the precise value without exposing a third-party multiprecision ABI.
 
@@ -54,9 +54,9 @@ Exponentiation is right-associative and binds more tightly than a leading sign: 
 
 Postfix `%` divides a value by 100 in expression mode. Scientific factorial accepts real non-negative integral inputs through the maintained 100000 safety ceiling and evaluates the product in the multiprecision real domain; invalid, complex or oversized factorial inputs fail explicitly.
 
-Scientific elementary and complex operations execute in the shared multiprecision backend. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. Roots, powers, reciprocal, logarithmic/exponential, real/imaginary/conjugate and rounding-related operations retain high precision where mathematically defined. Domain-invalid or non-finite results are explicit calculation failures rather than values silently propagated into the UI.
+Scientific elementary and complex operations execute in the shared multiprecision backend. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. Roots, powers, reciprocal, logarithmic/exponential, real/imaginary/conjugate and rounding-related operations retain high precision where mathematically defined. Complex logarithms and non-integer powers use the documented principal branch with argument in (-pi, pi], so an exact negative real lies on the +pi side of the cut. Exact integer powers use exponentiation by squaring, real half-integer powers of exact negative reals preserve their exact quadrantal phase, and exact trigonometric quadrant arguments are normalised to exact 0/±1 values rather than leaking tiny finite-pi residues. Domain-invalid or non-finite results are explicit calculation failures rather than values silently propagated into the UI.
 
-Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Inputs whose nested parentheses or unary operators exceed the maintained parser limit fail with `expression nesting too deep` rather than consuming unbounded native stack.
+Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Scientific parser and user-function recursion limits are deliberately conservative for the smallest supported native stacks, including Windows, and excessive nesting fails deterministically with `expression nesting too deep` or `function recursion too deep` rather than consuming unbounded native stack. User-defined function calls remain internal full-precision expression boundaries; factoring an expression into a function does not introduce an extra requested-precision rounding step.
 
 ## Standard arithmetic semantics
 

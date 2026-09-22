@@ -6,6 +6,16 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.20 — 2026-09-22
+
+- Forensically validate Scientific mode with a new 8192-bit MPFR/MPC oracle covering deterministic complex arithmetic fuzz, every Scientific function family, complex principal branches/branch cuts, DEG/RAD/GRAD conversion, constants and requested precision from 16 through 1000 digits.
+- Add a portable Scientific mathematical regression suite for grammar, precedence, exact complex algebra, identities, custom-function precision boundaries, state/display isolation and deterministic parser/resource failures.
+- Fix exact negative-real principal-branch handling so `ln(-1)` uses +pi, non-integer negative-real powers use the same principal branch, and real half-integer powers preserve exact quadrantal phases.
+- Replace generic complex power for exact integral exponents with bounded exponentiation-by-squaring and preserve exact trigonometric quadrant results instead of exposing tiny finite-pi residues.
+- Keep nested custom-function evaluation at full internal precision so factoring an expression into a user function cannot introduce an extra rounding boundary.
+- Tighten Scientific parser and function recursion bounds for cross-platform stack safety, fix ScientificValue-to-binary64 imaginary-zero handling, and add controller regressions proving display formatting and memory cannot alter retained Scientific state.
+- Extend independent constant validation across mathematical constants, SI-defined exact constants, current measured central values, derived hbar and the defining N_A*k_B gas-constant relation.
+
 ## 0.2.19 — 2026-09-22
 
 - Separate Standard computational state from presentation with exact shortest-round-trip binary64 serialization.

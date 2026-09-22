@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.2.19  
+**Current source version:** 0.2.20  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.20  
 **Design contract:** shared Design v1  
@@ -53,7 +53,7 @@ Calculator supports **System**, **Day** and **Night** appearance modes on Linux,
 Calculator has three explicitly switchable modes presented as a visible mode strip on desktop and iPhone, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
 
 - Standard — conventional precedence-aware arithmetic, literal postfix percentages, powers, unary operations and memory;
-- Scientific — integrated arbitrary-precision real/complex expression evaluation (50 decimal digits by default, up to 1000), trigonometric and inverse/hyperbolic trigonometric functions, logarithmic/exponential functions, roots and powers, factorial/percentage operations, DEG/RAD/GRAD angle units, a 2nd-function layer and shared General/Fixed/Scientific/Engineering display formatting; and
+- Scientific — integrated arbitrary-precision real/complex expression evaluation (50 decimal digits in the interactive controller; the core supports and is forensically validated across requested precisions from 16 through 1000 digits), trigonometric and inverse/hyperbolic trigonometric functions, logarithmic/exponential functions, roots and powers, factorial/percentage operations, DEG/RAD/GRAD angle units, a 2nd-function layer and shared General/Fixed/Scientific/Engineering display formatting; and
 - Programmer — binary, octal, decimal and hexadecimal fixed-width integer arithmetic, complement, AND/OR/XOR/NAND/NOR, shifts, rotate-left/right, 8/16/32/64-bit widths, unsigned/signed display, and an on-demand simultaneous BIN/OCT/DEC/HEX representation view. Width controls are explicitly labelled W8, W16, W32 and W64 so they do not conflict with numeric keypad entry.
 
 The calculator also provides reusable variables, structured calculation history that is unbounded by default (with an optional explicit bound for embedders/tests), exact Programmer-mode context and recall, explicit MC/MR/MS/M+/M− memory controls and a shared calculation-session layer above the parser. Scientific expressions can assign reusable variables such as `x=42`; the scientific constant catalogue now includes `pi`, `e`, `tau`, `phi` and widely used SI physical constants such as `c0`, `G`, `h`, `hbar`, `kB`, `NA`, `qe`, `me`, `mp`, `g0`, `eps0`, `mu0` and `Rgas`. Standard mode remains deliberately confined to numeric arithmetic rather than silently exposing Scientific constants, variables or functions; that smaller feature surface does not change the mathematical meaning of the operators it does expose.
