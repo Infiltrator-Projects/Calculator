@@ -29,8 +29,12 @@ using Complex = boost::multiprecision::cpp_complex<kScientificMaxDigits>;
 // Both expression nesting and user-function recursion are bounded separately:
 // one protects native parser stack depth, the other prevents cyclic/custom
 // function expansion from becoming an unbounded recursive evaluation.
-constexpr std::size_t kMaxParseDepth = 256;
-constexpr std::size_t kMaxFunctionDepth = 64;
+// These limits are deliberately conservative across the smallest supported
+// native stacks (notably Windows). They are product safety bounds, not
+// mathematical limits: ordinary calculator expressions should never need this
+// much recursive grammar or user-function expansion.
+constexpr std::size_t kMaxParseDepth = 64;
+constexpr std::size_t kMaxFunctionDepth = 32;
 
 unsigned clamp_digits(unsigned digits) {
     return std::max(16U, std::min(digits, kScientificMaxDigits));

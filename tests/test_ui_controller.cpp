@@ -265,7 +265,74 @@ int main() {
     controller.dispatch(Command::MemoryClear);
 
     controller.set_mode(Mode::Scientific);
-    CHECK(controller.state().status == "SCIENTIFIC · DEG");
+
+    // Scientific computational state is also independent of display rounding.
+    // Fixed/grouped presentation must not feed back through expression state,
+    // unary operations or the shared memory register.
+    controller.set_display_preferences(forensic_fixed);
+    controller.set_angle_unit(calculator::AngleUnit::Radians);
+    controller.set_expression("2");
+    const auto scientific_sqrt_expected =
+        calculator::evaluate_scientific(
+            "sqrt(2)", {}, {}, calculator::AngleUnit::Radians,
+            calculator::kScientificDefaultDigits);
+    CHECK(scientific_sqrt_expected.ok);
+    controller.dispatch(Command::SquareRoot);
+    CHECK(controller.state().result == "1.414");
+    CHECK(controller.state().expression.find(',') == std::string::npos);
+    const auto scientific_sqrt_actual =
+        calculator::evaluate_scientific(
+            controller.state().expression, {}, {},
+            calculator::AngleUnit::Radians,
+            calculator::kScientificDefaultDigits);
+    CHECK(scientific_sqrt_actual.ok);
+    CHECK(scientific_sqrt_actual.value.real ==
+          scientific_sqrt_expected.value.real);
+    CHECK(scientific_sqrt_actual.value.imag ==
+          scientific_sqrt_expected.value.imag);
+
+    controller.set_expression("1/7");
+    const auto scientific_seventh =
+        calculator::evaluate_scientific(
+            "1/7", {}, {}, calculator::AngleUnit::Radians,
+            calculator::kScientificDefaultDigits);
+    CHECK(scientific_seventh.ok);
+    controller.dispatch(Command::MemoryStore);
+    controller.dispatch(Command::Clear);
+    controller.dispatch(Command::MemoryRecall);
+    const auto scientific_recalled =
+        calculator::evaluate_scientific(
+            controller.state().expression, {}, {},
+            calculator::AngleUnit::Radians,
+            calculator::kScientificDefaultDigits);
+    CHECK(scientific_recalled.ok);
+    CHECK(scientific_recalled.value.real ==
+          scientific_seventh.value.real);
+    CHECK(scientific_recalled.value.imag ==
+          scientific_seventh.value.imag);
+
+    const auto scientific_reciprocal_expected =
+        calculator::evaluate_scientific(
+            "1/(" + calculator::scientific_value_expression(
+                scientific_seventh.value) + ")",
+            {}, {}, calculator::AngleUnit::Radians,
+            calculator::kScientificDefaultDigits);
+    CHECK(scientific_reciprocal_expected.ok);
+    controller.dispatch(Command::Reciprocal);
+    const auto scientific_reciprocal_actual =
+        calculator::evaluate_scientific(
+            controller.state().expression, {}, {},
+            calculator::AngleUnit::Radians,
+            calculator::kScientificDefaultDigits);
+    CHECK(scientific_reciprocal_actual.ok);
+    CHECK(scientific_reciprocal_actual.value.real ==
+          scientific_reciprocal_expected.value.real);
+    CHECK(scientific_reciprocal_actual.value.imag ==
+          scientific_reciprocal_expected.value.imag);
+    controller.dispatch(Command::MemoryClear);
+    controller.set_display_preferences({});
+
+    CHECK(controller.state().status == "SCIENTIFIC · RAD");
     controller.set_angle_unit(calculator::AngleUnit::Gradians);
     CHECK(controller.state().angle_unit == calculator::AngleUnit::Gradians);
     CHECK(controller.state().status == "SCIENTIFIC · GRAD");

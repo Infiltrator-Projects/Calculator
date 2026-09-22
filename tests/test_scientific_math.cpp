@@ -302,9 +302,12 @@ int main() {
     }
     expect_error("unknown(2)");
 
-    std::string nested(300, '(');
+    // Cross-platform stack safety: exceed the maintained parser recursion
+    // bound by a modest amount rather than relying on the host stack to absorb
+    // hundreds of recursive grammar frames.
+    std::string nested(96, '(');
     nested += "1";
-    nested.append(300, ')');
+    nested.append(96, ')');
     result = eval(nested);
     if (result.ok || result.error != "expression nesting too deep")
         fail("parser nesting limit must fail deterministically");
