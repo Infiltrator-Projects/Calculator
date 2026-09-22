@@ -35,7 +35,8 @@ jobs:
             libgtk-4-dev \
             libmpc-dev \
             libmpfr-dev \
-            pkg-config
+            pkg-config \
+            xvfb
 
       - name: Verify release version
         id: version
@@ -92,6 +93,43 @@ jobs:
             cat package-files.txt
             exit 1
           fi
+
+      - name: Smoke-test Linux idle CPU
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          package="dist/linux/calculator_${version}_amd64.deb"
+          sudo dpkg -i "$package"
+          sudo fc-cache -f
+
+          dbus-run-session -- xvfb-run -a bash -c '
+            set -euo pipefail
+            GSK_RENDERER=cairo infiltrator-calc >/tmp/calculator-idle.log 2>&1 &
+            pid=$!
+            trap "kill $pid 2>/dev/null || true" EXIT
+
+            sleep 5
+            if ! kill -0 "$pid" 2>/dev/null; then
+              cat /tmp/calculator-idle.log
+              echo "::error::Linux Calculator exited during idle CPU smoke test."
+              exit 1
+            fi
+
+            start_ticks=$(awk "{print \$14 + \$15}" "/proc/$pid/stat")
+            sleep 4
+            end_ticks=$(awk "{print \$14 + \$15}" "/proc/$pid/stat")
+            hz=$(getconf CLK_TCK)
+            delta=$((end_ticks - start_ticks))
+            limit=$((hz * 4 / 10))
+
+            echo "Linux idle CPU ticks over 4 seconds: $delta (10% one-core limit: $limit)"
+            if (( delta > limit )); then
+              cat /tmp/calculator-idle.log
+              echo "::error::Linux Calculator consumed excessive CPU while idle."
+              exit 1
+            fi
+          '
 
       - name: Upload Linux package
         uses: actions/upload-artifact@v4
