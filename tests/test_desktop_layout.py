@@ -565,7 +565,7 @@ for needle in (
 for needle in (
     "controller.history_count()",
     "controller.history_entry(index)",
-    "controller.recall_history(index)",
+    "controller.recall_history(history_index)",
 ):
     assert needle in linux, f"Linux structured history replay missing: {needle}"
 
