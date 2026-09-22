@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.24" date="2026-09-22">
+      <description>
+        <p>Modularise Advanced Tools into domain-focused implementation units while preserving behaviour and the Common 1.19.23 boundary.</p>
+      </description>
+    </release>
     <release version="0.2.23" date="2026-09-22">
       <description>
         <p>Complete the warning-clean code-polish pass and enforce the audited compiler-warning classes as regressions.</p>

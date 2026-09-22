@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.24) unstable; urgency=medium
+
+  * Modularise the Advanced Tools core into domain-focused implementation units.
+  * Keep its public API and Common 1.19.23 boundary unchanged.
+  * Add regression coverage for desktop/iPhone module wiring.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 15:55:00 +1000
+
 infiltrator-calculator (0.2.23) unstable; urgency=medium
 
   * Eliminate Calculator-owned compiler warnings found by the final forensic build-log audit.

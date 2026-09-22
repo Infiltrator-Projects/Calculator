@@ -52,6 +52,9 @@ jobs:
       - name: Verify Common integration contract
         run: python3 tests/test_common_contract.py
 
+      - name: Verify source modularity contract
+        run: python3 tests/test_source_structure.py
+
       - name: Verify compact Linux desktop layout
         run: python3 tests/test_desktop_layout.py
 

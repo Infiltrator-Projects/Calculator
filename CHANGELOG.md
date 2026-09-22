@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.24 — 2026-09-22
+
+- Split the 1,672-line Advanced Tools implementation into domain-focused translation units while preserving the existing public `advanced_tools.hpp` API and all fourteen tool behaviours.
+- Keep product-neutral parsing delegated to Common 1.19.23 through one private Calculator adapter boundary; no Calculator-specific tool semantics were moved into Common.
+- Update CMake and the explicit iPhone source manifest together so Linux, Windows and iPhone compile the same modular Advanced Tools implementation.
+- Add a source-structure regression check that prevents the dispatcher from absorbing the domain implementations again and verifies every private module remains wired into both desktop and iPhone builds.
+- Record the forensic boundary decision: the GTK and Win32 shells remain intact for now because their large anonymous-namespace state graphs need state encapsulation before a safe file split; the Standard and Scientific expression normalizers remain separate because their accepted spellings are not identical.
+- Revalidate the refactor through Linux, Windows, iPhone and sanitizer CI before cutting this release. Common remains pinned exactly to released 1.19.23 at `a9cf2957cffeefe6001830916b8a32c2ef58a551`.
+
 ## 0.2.23 — 2026-09-22
 
 - Finish the warning-clean code-polish pass: explicitly initialise every `Result` field, remove the unused custom-function parameter, remove GTK history-index shadowing and use GTK 4.14's non-deprecated CSS-provider API.
