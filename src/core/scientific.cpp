@@ -215,13 +215,6 @@ bool exact_quadrant(
     return quadrant >= 0 && quadrant <= 3;
 }
 
-bool tangent_pole(
-    const Complex& input, AngleUnit unit) {
-    int quadrant = 0;
-    return exact_quadrant(input, unit, quadrant) &&
-        (quadrant == 1 || quadrant == 3);
-}
-
 // Normalization accepts user-facing Unicode/convenience spellings while the
 // parser itself stays ASCII and deterministic. This pass changes spelling only;
  // it must not introduce precedence or evaluation semantics of its own.

@@ -331,6 +331,7 @@ int main() {
           scientific_reciprocal_expected.value.imag);
     controller.dispatch(Command::MemoryClear);
     controller.set_display_preferences({});
+    controller.set_angle_unit(calculator::AngleUnit::Radians);
 
     CHECK(controller.state().status == "SCIENTIFIC · RAD");
     controller.set_angle_unit(calculator::AngleUnit::Gradians);
