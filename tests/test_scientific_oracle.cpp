@@ -914,6 +914,66 @@ void check_constants() {
             item.first, evaluate(item.first),
             expected.get(), 100, 5U);
     }
+
+    // Current CODATA measured central values retained by Calculator. Their
+    // uncertainties are physical-data metadata, not arithmetic uncertainty;
+    // this oracle protects the published central decimal values themselves.
+    for (const auto& item :
+         std::array<std::pair<const char*, const char*>, 5>{{
+             {"G", "6.67430e-11"},
+             {"me", "9.1093837139e-31"},
+             {"mp", "1.67262192595e-27"},
+             {"eps0", "8.8541878188e-12"},
+             {"mu0", "1.25663706127e-6"}
+         }}) {
+        MpcValue expected;
+        if (!set_complex(expected.get(), item.second, "0")) {
+            fail(item.first, "CODATA constant oracle parse failed");
+            continue;
+        }
+        check_result(
+            item.first, evaluate(item.first),
+            expected.get(), 100, 5U);
+    }
+
+    // Reduced Planck constant is intentionally derived, so validate the
+    // derivation independently rather than repeating its production formula.
+    {
+        MpfrValue h;
+        MpfrValue pi;
+        MpfrValue denominator;
+        MpfrValue expected_real;
+        set_real(h.get(), "6.62607015e-34");
+        mpfr_const_pi(pi.get(), MPFR_RNDN);
+        mpfr_mul_ui(
+            denominator.get(), pi.get(), 2U, MPFR_RNDN);
+        mpfr_div(
+            expected_real.get(), h.get(),
+            denominator.get(), MPFR_RNDN);
+        MpcValue expected;
+        mpc_set_fr(expected.get(), expected_real.get(), MPC_RNDNN);
+        check_result(
+            "hbar", evaluate("hbar"),
+            expected.get(), 100);
+    }
+
+    // The exact molar gas constant must agree with the exact defining product
+    // N_A * k_B as well as with its canonical decimal spelling.
+    {
+        MpfrValue avogadro;
+        MpfrValue boltzmann;
+        MpfrValue expected_real;
+        set_real(avogadro.get(), "6.02214076e23");
+        set_real(boltzmann.get(), "1.380649e-23");
+        mpfr_mul(
+            expected_real.get(), avogadro.get(),
+            boltzmann.get(), MPFR_RNDN);
+        MpcValue expected;
+        mpc_set_fr(expected.get(), expected_real.get(), MPC_RNDNN);
+        check_result(
+            "Rgas definition", evaluate("Rgas"),
+            expected.get(), 100, 5U);
+    }
 }
 
 } // namespace
