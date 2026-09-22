@@ -524,12 +524,16 @@ std::string engineering_component(
         return component_string(value, significant_digits, true);
     }
 
-    int exponent = 0;
-    try {
-        exponent = std::stoi(text.substr(exponent_position + 1U));
-    } catch (...) {
+    const std::string exponent_text =
+        text.substr(exponent_position + 1U);
+    std::int64_t parsed_exponent = 0;
+    if (!infiltratr_parse_i64(
+            exponent_text.c_str(), 10, &parsed_exponent) ||
+        parsed_exponent < std::numeric_limits<int>::min() ||
+        parsed_exponent > std::numeric_limits<int>::max()) {
         return component_string(value, significant_digits, true);
     }
+    const int exponent = static_cast<int>(parsed_exponent);
 
     int remainder = exponent % 3;
     if (remainder < 0) remainder += 3;

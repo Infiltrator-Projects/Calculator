@@ -31,7 +31,7 @@ Exact decimal/rational tools, arbitrary-precision integer tools and Programmer f
 
 ## Shared foundation boundary
 
-Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.20 for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
+Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.23 for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
 
 Calculator-specific semantics stay local even when they could technically be generalized. Real unary/scientific transforms are shared inside Calculator because they are calculator-domain semantics; the controller and expression parser consume one core implementation rather than moving those rules into Common. Shared code is valuable only when the abstraction is clearer than the duplication it replaces.
 

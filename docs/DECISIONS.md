@@ -128,9 +128,11 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Scientific decimal literals and intermediate operations remain in the multiprecision backend. The Session/Controller boundary transports real and imaginary components as decimal text, preserving precision without exposing the third-party multiprecision ABI to platform shells.
 
-## ADR-015 — Common 1.19.20 is the current public shared-foundation boundary
+## ADR-015 — Common 1.19.20 shared-foundation boundary
 
-**Decision.** Calculator pins immutable Common 1.19.20 at commit `336ab8f7f8b7364b6296c7560fc67b242b27eb9d` and consumes only published Common interfaces whose contracts are at least as strong as the Calculator behaviour they replace.
+**Status.** Historical; superseded by ADR-018.
+
+**Decision.** Calculator pinned immutable Common 1.19.20 at commit `336ab8f7f8b7364b6296c7560fc67b242b27eb9d` and consumed only published Common interfaces whose contracts were at least as strong as the Calculator behaviour they replaced.
 
 **Rationale.** Common 1.19.20 provides product-neutral numeric parsing and ranges, deterministic ASCII handling, checked arithmetic, theme/palette/metrics/typography contracts and POSIX persistence primitives. Keeping those mechanics shared reduces duplicated infrastructure without moving Calculator-specific grammar, numeric-domain policy or interaction semantics into Common.
 
@@ -151,4 +153,12 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** IEEE-754 rounding is an intentional property of Standard's numeric domain; additional rounding caused by a UI formatter is not. Reconstructing state from 15 displayed digits, fixed-decimal text or grouped text can change later results and can even make Calculator unable to parse its own prior value. The computation/presentation boundary must therefore be explicit.
 
 **Consequence.** Unary transforms, Standard memory recall and future binary64 state-transfer paths must use `serialize_value()`, while `format_value()` and display preferences remain presentation-only. Regression tests verify exact bit-for-bit round trips over boundary values and 50,000 deterministic finite binary64 samples, plus controller tests with rounded/grouped display preferences and memory overflow/range cases.
+
+## ADR-018 — Common 1.19.23 is the current public shared-foundation boundary
+
+**Decision.** Calculator pins immutable Common 1.19.23 at commit `a9cf2957cffeefe6001830916b8a32c2ef58a551` and consumes only published Common interfaces whose contracts are at least as strong as the Calculator behaviour they replace.
+
+**Rationale.** Common 1.19.23 retains the numeric parsing, deterministic ASCII, checked arithmetic, theme/palette/metrics/typography and POSIX persistence contracts already used by Calculator while hardening bounded text handling and descriptor-anchored durable atomic publication. Its promoted local-civil day-phase primitive was reviewed but is not a substitute for Calculator's Gregorian civil-date transforms, so no unrelated temporal coupling is introduced merely to increase reuse.
+
+**Consequence.** Calculator inherits the stronger Common persistence implementation without changing Calculator-owned arithmetic, date-tool semantics, session/controller behaviour or native-platform ownership. Scientific engineering-exponent parsing also uses Common's deterministic signed-integer parser, eliminating the final local `std::stoi` path. ADR-015 remains provenance only.
 

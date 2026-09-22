@@ -6,6 +6,13 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.22 — 2026-09-22
+
+- Move Calculator from Common 1.19.20 to the current released Common 1.19.23 at immutable commit `a9cf2957cffeefe6001830916b8a32c2ef58a551`, inheriting its hardened bounded/POSIX atomic-publication implementation without changing Calculator domain ownership.
+- Replace the remaining Scientific engineering-exponent `std::stoi` path with Common's deterministic signed-integer parser plus explicit `int` bounds.
+- Refresh the maintained architecture, numeric, portability, validation and ADR contracts to the 1.19.23 boundary and add regression protection against reintroducing the duplicate exponent parser.
+- Reconfirm completion status: no open Calculator issues, no TODO/FIXME/stub markers in maintained implementation code, and no outstanding Mint-replacement feature family in the roadmap.
+
 ## 0.2.21 — 2026-09-22
 
 - Prefer GTK's mature accelerated `gl` renderer on Linux when `GSK_RENDERER` is not already set, avoiding the GTK 4.14 default-renderer path that can remain disproportionately CPU-active on affected Mint/Noble driver and compositor combinations.

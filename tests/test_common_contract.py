@@ -6,8 +6,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ROOT / "src" / "infiltratr-common"
-EXPECTED_VERSION = "1.19.20"
-EXPECTED_COMMIT = "336ab8f7f8b7364b6296c7560fc67b242b27eb9d"
+EXPECTED_VERSION = "1.19.23"
+EXPECTED_COMMIT = "a9cf2957cffeefe6001830916b8a32c2ef58a551"
 
 assert (COMMON / "VERSION").read_text(encoding="utf-8").strip() == EXPECTED_VERSION
 
@@ -55,6 +55,13 @@ missing = sorted(
 )
 assert not missing, f"Calculator calls APIs absent from Common public headers: {missing}"
 
+# Scientific engineering notation must use Common's deterministic integer
+# parser for its generated exponent rather than maintaining a second locale/
+# exception-based integer parse path.
+scientific = (ROOT / "src" / "core" / "scientific.cpp").read_text(encoding="utf-8")
+assert "std::stoi(" not in scientific
+assert 'infiltratr_parse_i64(' in scientific
+
 design_header = (COMMON / "include" / "infiltratr" / "design.h").read_text(
     encoding="utf-8"
 )
@@ -74,7 +81,7 @@ for field in (
     "success_border_rgb",
 ):
     assert field in design_header, (
-        f"Common 1.19.20 semantic palette field missing from public ABI: {field}"
+        f"Common 1.19.23 semantic palette field missing from public ABI: {field}"
     )
 
 # Calculator must consume Common through its published surface only. Common
@@ -121,7 +128,7 @@ for required in (
     "infiltratr_design_metrics",
     "infiltratr_typography",
 ):
-    assert required in calls, f"Calculator is not consuming Common 1.19.20 {required}"
+    assert required in calls, f"Calculator is not consuming Common 1.19.23 {required}"
 
 typography_assets = (
     COMMON / "cmake" / "InfiltratrTypographyAssets.cmake"
@@ -174,7 +181,7 @@ for palette_name in ("day", "night"):
         "success_border",
     ):
         assert role in semantic_palette, (
-            f"Common 1.19.20 {palette_name} palette missing semantic role: {role}"
+            f"Common 1.19.23 {palette_name} palette missing semantic role: {role}"
         )
 
 canonical_fonts = design_contract["typography"]["font_files"]

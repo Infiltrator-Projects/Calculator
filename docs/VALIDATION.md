@@ -64,7 +64,7 @@ Release CI enables CALCULATOR_ENABLE_MPFR_ORACLE_TESTS. The MPFR oracle independ
 
 ## Semantic appearance and focus regression
 
-Common 1.19.20 adds explicit semantic roles for heading, summary, kicker, detail/note, status borders, hover accents and warning states. Calculator regression tests assert those fields exist in the exact pinned Common public contract and that GTK, Win32 and SwiftUI consume the roles that match Calculator semantics. Desktop focus treatment is also checked at source-contract level so keyboard-visible focus is not accidentally removed during visual refactoring.
+Common 1.19.23 adds explicit semantic roles for heading, summary, kicker, detail/note, status borders, hover accents and warning states. Calculator regression tests assert those fields exist in the exact pinned Common public contract and that GTK, Win32 and SwiftUI consume the roles that match Calculator semantics. Desktop focus treatment is also checked at source-contract level so keyboard-visible focus is not accidentally removed during visual refactoring.
 
 
 ## Advanced Tools validation

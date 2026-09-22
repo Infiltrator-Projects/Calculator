@@ -30,7 +30,7 @@ Standard therefore has two deliberately separate decimal-output paths. `format_v
 
 ## Binary64 decimal token conversion
 
-In the binary64 expression path, Calculator owns grammar and decides when a numeric operand is expected. Common 1.19.20 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
+In the binary64 expression path, Calculator owns grammar and decides when a numeric operand is expected. Common 1.19.23 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
 
 That path therefore no longer carries a private binary64 decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned. Scientific is deliberately different: its decimal literals are parsed directly into the multiprecision real/complex domain and never pass through this binary64 conversion.
 

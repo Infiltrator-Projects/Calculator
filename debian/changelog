@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.22) unstable; urgency=medium
+
+  * Move to Common 1.19.23 and inherit its hardened persistence implementation.
+  * Use Common's deterministic signed-integer parser for Scientific engineering exponents.
+  * Refresh dependency, architecture and validation contracts for the final code-polish pass.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 14:45:00 +1000
+
 infiltrator-calculator (0.2.21) unstable; urgency=medium
 
   * Prefer GTK's mature accelerated GL renderer on Linux when no explicit renderer is selected.
