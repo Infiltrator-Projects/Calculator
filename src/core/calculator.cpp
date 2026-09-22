@@ -215,10 +215,10 @@ public:
         if (input_.empty()) return fail("empty expression");
         const double value = parse_expression();
         skip_space();
-        if (!error_.empty()) return {false, 0.0, error_};
+        if (!error_.empty()) return {false, 0.0, error_, {}};
         if (position_ != input_.size()) return fail("unexpected input");
         if (!std::isfinite(value)) return fail("non-finite result");
-        return {true, value, {}};
+        return {true, value, {}, {}};
     }
 
 private:
@@ -234,7 +234,7 @@ private:
 
     Result fail(const char* message) {
         if (error_.empty()) error_ = message;
-        return {false, 0.0, error_};
+        return {false, 0.0, error_, {}};
     }
 
     void skip_space() {
@@ -441,7 +441,7 @@ private:
     }
 
     double apply_custom_function(
-        const std::string& name, const FunctionDefinition& definition,
+        const FunctionDefinition& definition,
         const std::vector<double>& arguments) {
         if (arguments.size() != definition.parameters.size()) {
             error_ = "wrong function argument count";
@@ -633,7 +633,7 @@ private:
                         }
                     }
                     if (!error_.empty()) return 0.0;
-                    return apply_custom_function(name, *custom, arguments);
+                    return apply_custom_function(*custom, arguments);
                 }
 
                 const double argument = parse_expression();
@@ -646,7 +646,7 @@ private:
                 const double argument = parse_unary();
                 if (!error_.empty()) return 0.0;
                 return apply_custom_function(
-                    name, *custom, std::vector<double>{argument});
+                    *custom, std::vector<double>{argument});
             }
             if (is_builtin_function_name(function_name)) {
                 const double argument = parse_unary();
@@ -731,7 +731,7 @@ Result apply_real_function(RealFunction function, double value,
         value = std::sqrt(value);
         break;
     case RealFunction::Reciprocal:
-        if (value == 0.0) return {false, 0.0, "division by zero"};
+        if (value == 0.0) return {false, 0.0, "division by zero", {}};
         value = 1.0 / value;
         break;
     case RealFunction::Sin:
@@ -800,9 +800,9 @@ Result apply_real_function(RealFunction function, double value,
     }
 
     if (!std::isfinite(value)) {
-        return {false, 0.0, "function domain error"};
+        return {false, 0.0, "function domain error", {}};
     }
-    return {true, value, {}};
+    return {true, value, {}, {}};
 }
 
 std::string format_value(double value) {

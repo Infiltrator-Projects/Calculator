@@ -798,9 +798,9 @@ void show_history(GtkWidget*, gpointer) {
                 G_CALLBACK(+[](GtkButton*, gpointer data) {
                     const auto encoded = GPOINTER_TO_UINT(data);
                     if (encoded == 0U) return;
-                    const std::size_t index =
+                    const std::size_t history_index =
                         static_cast<std::size_t>(encoded - 1U);
-                    if (!controller.recall_history(index)) return;
+                    if (!controller.recall_history(history_index)) return;
 
                     render_state();
                     if (main_window) {
@@ -1764,7 +1764,7 @@ void apply_css(GtkWidget* window) {
             GTK_STYLE_PROVIDER(css_provider),
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
-    gtk_css_provider_load_from_data(css_provider, css.c_str(), -1);
+    gtk_css_provider_load_from_string(css_provider, css.c_str());
 
     if (theme_button) {
         const std::string label(

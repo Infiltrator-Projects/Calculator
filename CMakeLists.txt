@@ -121,12 +121,14 @@ target_link_libraries(calculator-ui PUBLIC
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     target_compile_options(calculator-ui PRIVATE
         -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
+        -Werror=missing-field-initializers -Werror=unused-parameter
     )
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     target_compile_options(calculator-core PRIVATE
         -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion
+        -Werror=missing-field-initializers -Werror=unused-parameter
     )
 endif()
 
@@ -241,6 +243,7 @@ if(CALCULATOR_BUILD_DESKTOP)
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(infiltrator-calc PRIVATE
                 -Wall -Wextra -Wpedantic -Wshadow
+                -Werror=shadow -Werror=deprecated-declarations
             )
             target_link_options(infiltrator-calc PRIVATE
                 -static-libgcc

@@ -32,12 +32,22 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.23" date="2026-09-22">
+      <description>
+        <p>Complete the warning-clean code-polish pass and enforce the audited compiler-warning classes as regressions.</p>
+      </description>
+    </release>
     <release version="0.2.22" date="2026-09-22">
       <description>
         <p>Finish the code-polish pass with Common 1.19.23, hardened persistence and deterministic Scientific engineering-exponent parsing.</p>
       </description>
     </release>
-    <release version="0.2.20" date="2026-09-22">
+    <release version="0.2.21" date="2026-09-22">
+      <description>
+        <p>Reduce Linux idle CPU on affected Mint/Noble graphics stacks by preferring GTK's mature accelerated GL renderer while preserving explicit renderer overrides.</p>
+      </description>
+    </release>
+        <release version="0.2.20" date="2026-09-22">
       <description>
         <p>Forensically validate Scientific mode across real/complex branches and 16-1000 digit precision, while fixing principal-branch, exact-power, quadrant and state-boundary defects.</p>
       </description>

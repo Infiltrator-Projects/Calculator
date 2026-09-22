@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.23 — 2026-09-22
+
+- Finish the warning-clean code-polish pass: explicitly initialise every `Result` field, remove the unused custom-function parameter, remove GTK history-index shadowing and use GTK 4.14's non-deprecated CSS-provider API.
+- Promote the warning classes exposed by the forensic Linux/macOS build-log audit to compiler errors on the targets that own them, preventing silent regression of incomplete aggregate initialisation, unused parameters, GTK shadowing and deprecated GTK calls.
+- Keep Common pinned exactly to released 1.19.23; no domain or feature semantics change in this release.
+
 ## 0.2.22 — 2026-09-22
 
 - Move Calculator from Common 1.19.20 to the current released Common 1.19.23 at immutable commit `a9cf2957cffeefe6001830916b8a32c2ef58a551`, inheriting its hardened bounded/POSIX atomic-publication implementation without changing Calculator domain ownership.

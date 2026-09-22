@@ -29,6 +29,8 @@ Every `main` push and manual workflow dispatch runs the cross-platform verificat
 
 Automated checks should cover ordinary behaviour, boundary/error cases and release/package contracts appropriate to the affected domain.
 
+The final code-polish pass also treats selected compiler diagnostics as regressions: incomplete `Result` aggregate initialisation and unused parameters are errors in shared GNU/Clang targets, while Linux GTK shadowing and deprecated GTK API use are errors in the native shell. Hosted-tool warnings from external Actions/Xcode components remain outside Calculator's source-warning contract.
+
 ## What platform evidence proves
 
 A successful iOS Simulator build proves that the Swift/Objective-C++/C++ application compiles for the Simulator environment. It is not evidence of physical-iPhone installation, signing, provisioning, hardware behaviour or App Store acceptance.
@@ -64,7 +66,7 @@ Release CI enables CALCULATOR_ENABLE_MPFR_ORACLE_TESTS. The MPFR oracle independ
 
 ## Semantic appearance and focus regression
 
-Common 1.19.23 adds explicit semantic roles for heading, summary, kicker, detail/note, status borders, hover accents and warning states. Calculator regression tests assert those fields exist in the exact pinned Common public contract and that GTK, Win32 and SwiftUI consume the roles that match Calculator semantics. Desktop focus treatment is also checked at source-contract level so keyboard-visible focus is not accidentally removed during visual refactoring.
+The pinned Common 1.19.23 contract retains explicit semantic roles for heading, summary, kicker, detail/note, status borders, hover accents and warning states. Calculator regression tests assert those fields exist in the exact pinned Common public contract and that GTK, Win32 and SwiftUI consume the roles that match Calculator semantics. Desktop focus treatment is also checked at source-contract level so keyboard-visible focus is not accidentally removed during visual refactoring.
 
 
 ## Advanced Tools validation

@@ -148,7 +148,7 @@ Result Session::preview(
     std::string definition_error;
     const auto definition = function_definition(input, definition_error);
     if (!definition_error.empty()) {
-        return {false, 0.0, definition_error};
+        return {false, 0.0, definition_error, {}};
     }
     if (definition) {
         return {
@@ -159,7 +159,7 @@ Result Session::preview(
     std::string expression;
     const auto assignment = assignment_name(input, expression);
     if (assignment && reserved_identifier(*assignment)) {
-        return {false, 0.0, "cannot assign reserved constant"};
+        return {false, 0.0, "cannot assign reserved constant", {}};
     }
 
     return calculator::evaluate(
@@ -172,7 +172,7 @@ Result Session::evaluate(
     std::string definition_error;
     const auto definition = function_definition(input, definition_error);
     if (!definition_error.empty()) {
-        Result result{false, 0.0, definition_error};
+        Result result{false, 0.0, definition_error, {}};
         record_history(input, result, HistoryKind::Scientific);
         return result;
     }
@@ -189,7 +189,7 @@ Result Session::evaluate(
     const auto assignment = assignment_name(input, expression);
 
     if (assignment && reserved_identifier(*assignment)) {
-        Result result{false, 0.0, "cannot assign reserved constant"};
+        Result result{false, 0.0, "cannot assign reserved constant", {}};
         record_history(input, result, HistoryKind::Scientific);
         return result;
     }

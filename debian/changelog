@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.23) unstable; urgency=medium
+
+  * Eliminate Calculator-owned compiler warnings found by the final forensic build-log audit.
+  * Use GTK's current CSS provider API and remove shadowed/unused code.
+  * Promote the audited warning classes to build errors to prevent regression.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 15:05:00 +1000
+
 infiltrator-calculator (0.2.22) unstable; urgency=medium
 
   * Move to Common 1.19.23 and inherit its hardened persistence implementation.
