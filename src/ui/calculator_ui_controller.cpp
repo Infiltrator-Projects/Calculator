@@ -277,7 +277,7 @@ void Controller::set_display_preferences(DisplayPreferences preferences) {
             format_scientific_result(scientific_cache_.value);
     } else if (state_.mode == Mode::Standard &&
                real_cache_.ok && real_cache_.display.empty()) {
-        state_.result = format_real(real_cache_.value);
+        state_.result = format_display(real_cache_.value);
     }
 }
 
