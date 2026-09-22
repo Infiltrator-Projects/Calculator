@@ -116,7 +116,7 @@ jobs:
 
               # GTK parser warnings are product defects, not benign diagnostics.
               # Make them fatal so malformed application CSS cannot ship green.
-              env G_DEBUG=fatal-warnings "$@" infiltrator-calc >"$log" 2>&1 &
+              env GTK_A11Y=none G_DEBUG=fatal-warnings "$@" infiltrator-calc >"$log" 2>&1 &
               pid=$!
               sleep 5
 
