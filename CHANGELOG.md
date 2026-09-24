@@ -4,7 +4,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 ## Unreleased
 
-No unreleased changes.
+- Repair the Linux desktop-layout source contract after shared-state migration removed obsolete persistence writers; CI now validates the current one-writer architecture instead of requiring deleted code.
+- Enforce an 8192-byte shared Advanced Tools input limit so GTK, Win32 and iPhone workbenches cannot bypass parser/resource bounds.
+- Extend the portable Controller persistence document to version 2 with selected mode, Scientific angle unit and Programmer radix/width/signed state while retaining v1 load compatibility.
+- Make Linux treat shared v2 semantic state as authoritative and retain older desktop semantic fields only as a migration source.
+- Add case-tolerant completion for built-in Scientific functions/constants while preserving exact user-defined identifier spelling.
+- Add human unit aliases and exact ratio definitions for selected definition-based conversions such as knots, points and Torr.
+- Add fixed-width Programmer byte-order reversal plus grouped binary/octal/hexadecimal presentation and expose Swap Endian through the native Linux, Windows and iPhone Programmer views.
+- Add individual history-entry deletion through Session/Controller and native Linux, Windows and iPhone history surfaces, alongside existing whole-history clearing.
+- Extend core/controller/cross-platform regression protection and maintained documentation for the new contracts.
 
 ## 0.2.28 — 2026-09-24
 
