@@ -71,6 +71,12 @@ int main(){
               "3.141592653589793238462643383279"),
           "constant pi retains Scientific precision");
     check(contains(evaluate(AdvancedTool::Statistics,"1,2,3,4,5"),"Mean  3"),"statistics mean");
+    const auto oversized_tool_input = evaluate(
+        AdvancedTool::Statistics,
+        std::string(calculator::tools::kMaxToolInputBytes + 1U, '1'));
+    check(!oversized_tool_input.ok &&
+          oversized_tool_input.error.find("input limit") != std::string::npos,
+          "Advanced Tools shared input limit");
 
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
     const auto precise_graph=evaluate(AdvancedTool::Graph,"real(i*x);-1;1;3");
