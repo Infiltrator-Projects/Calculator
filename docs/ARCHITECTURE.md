@@ -84,7 +84,9 @@ History is unbounded by default to match the maintained desktop behaviour, while
 
 `src/ui/calculator_ui_controller.*` owns calculator interaction state and command dispatch across all three platforms. GTK and Win32 render it directly; the iPhone Objective-C++ bridge exposes its state and command surface to SwiftUI. Platform code must not maintain competing calculator state machines.
 
-Scientific live preview and identifier completion are also controller-owned interaction semantics. Preview uses Session's side-effect-free Scientific path; Tab completion consumes the core function/constant catalogue plus Session variables/functions and never gives a platform shell its own parser.
+Scientific live preview, calculation precision and identifier completion are also controller-owned interaction semantics. Preview uses Session's side-effect-free Scientific path; calculation precision is clamped to the shared 16..1000 digit contract; Tab completion consumes the core function/constant catalogue plus Session variables/functions and never gives a platform shell its own parser.
+
+Controller also owns the versioned persistent-state document for reusable variables, custom functions, Scientific precision and result-presentation preferences. Linux, Windows and iPhone store exactly those bytes through their native mechanisms; no platform shell defines a competing persistence grammar.
 
 The shared desktop metrics remain logical units. GTK consumes them through its layout system; Win32 maps them through per-monitor DPI-aware platform scaling. SwiftUI does not consume those desktop geometry values.
 
