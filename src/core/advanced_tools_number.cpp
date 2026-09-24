@@ -3,6 +3,7 @@
 
 #include <infiltratr/arithmetic.h>
 #include <infiltratr/core.h>
+#include <infiltratr/utf8.h>
 
 #include <algorithm>
 #include <array>
@@ -185,25 +186,6 @@ bool decode_single_utf8(std::string_view text, std::uint32_t& code) {
     return true;
 }
 
-std::string encode_utf8(std::uint32_t code) {
-    std::string out;
-    if (code <= 0x7fU) {
-        out.push_back(static_cast<char>(code));
-    } else if (code <= 0x7ffU) {
-        out.push_back(static_cast<char>(0xc0U | (code >> 6U)));
-        out.push_back(static_cast<char>(0x80U | (code & 0x3fU)));
-    } else if (code <= 0xffffU) {
-        out.push_back(static_cast<char>(0xe0U | (code >> 12U)));
-        out.push_back(static_cast<char>(0x80U | ((code >> 6U) & 0x3fU)));
-        out.push_back(static_cast<char>(0x80U | (code & 0x3fU)));
-    } else {
-        out.push_back(static_cast<char>(0xf0U | (code >> 18U)));
-        out.push_back(static_cast<char>(0x80U | ((code >> 12U) & 0x3fU)));
-        out.push_back(static_cast<char>(0x80U | ((code >> 6U) & 0x3fU)));
-        out.push_back(static_cast<char>(0x80U | (code & 0x3fU)));
-    }
-    return out;
-}
 
 bool checked_permutation(std::uint64_t n, std::uint64_t r,
                          std::uint64_t& result) {
@@ -376,8 +358,15 @@ ToolResult number_utilities_tool(std::string_view input) {
         if (!parse_code_point(f[1], code)) {
             return failure("Code point must be a valid Unicode scalar.");
         }
+        char encoded[4];
+        std::size_t encoded_length = 0U;
+        if (!infiltratr_utf8_encode_codepoint(
+                code, encoded, sizeof(encoded), &encoded_length)) {
+            return failure("Code point must be a valid Unicode scalar.");
+        }
         std::ostringstream out;
-        out << "Character  " << encode_utf8(code) << "\nCode point  U+"
+        out << "Character  " << std::string(encoded, encoded_length)
+            << "\nCode point  U+"
             << std::uppercase << std::hex << std::setfill('0')
             << std::setw(code <= 0xffffU ? 4 : 6) << code
             << "\nDecimal  " << std::dec << code;

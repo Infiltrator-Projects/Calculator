@@ -135,6 +135,8 @@ int main(){
     check(contains(evaluate(AdvancedTool::NumberUtilities,"root 2 1e1000"),"1e+500"),"utility root uses multiprecision Scientific domain");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"char A"),"U+0041"),"utility character code");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"code U+20AC"),"€"),"utility unicode code");
+    check(evaluate(AdvancedTool::NumberUtilities,"code U+10FFFF").ok,"utility maximum Unicode scalar");
+    check(!evaluate(AdvancedTool::NumberUtilities,"code U+D800").ok,"utility rejects Unicode surrogate");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"twos 1 8"),"255"),"utility twos complement");
 
     check(calculator::tools::catalog().size()==14U,"expanded advanced tool catalogue");

@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.35 — 2026-09-25
+
+- Move Unicode scalar-to-UTF-8 byte encoding onto the new Common 1.19.27 public contract instead of carrying a Calculator-local encoder.
+- Preserve Calculator's Unicode scalar parsing and Number Utilities semantics while adding maximum-scalar and surrogate rejection regressions.
+- Pin the source, build contract and integration tests to exact Common 1.19.27 commit 3ef3710df6563df305b6d8e2dc9d1a41c61843ba.
+
 ## 0.2.34 — 2026-09-25
 
 - Align Linux mode tabs with the 30 px publisher desktop control height used by the surrounding toolbar controls.

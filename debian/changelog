@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.35) unstable; urgency=medium
+
+  * Reuse Common 1.19.27 for strict Unicode scalar-to-UTF-8 encoding.
+  * Remove the duplicate Calculator UTF-8 byte encoder and strengthen Unicode regression coverage.
+  * Pin the exact Common 1.19.27 release commit.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 07:00:00 +1000
+
 infiltrator-calculator (0.2.34) unstable; urgency=medium
 
   * Align Linux mode tabs with the 30 px publisher desktop control height.
