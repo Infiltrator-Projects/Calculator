@@ -224,6 +224,10 @@ NSInteger angle_value(calculator::AngleUnit unit) {
     return to_ns([self controller]->programmer_representations_text());
 }
 
+- (BOOL)swapProgrammerEndianness {
+    return [self controller]->swap_programmer_endianness() ? YES : NO;
+}
+
 - (NSString *)persistentStateText {
     return to_ns([self controller]->persistent_state_text());
 }
