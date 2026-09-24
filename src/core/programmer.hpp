@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace calculator {
 
@@ -42,5 +43,15 @@ std::string format_programmer(std::uint64_t value,
 // exact unsigned bit-pattern representations.
 ProgrammerRepresentations programmer_representations(
     std::uint64_t value, IntegerWidth width, bool signed_display);
+
+// Reverse byte order inside the selected fixed-width bit pattern. Eight-bit
+// values are unchanged; wider values remain masked to the selected width.
+std::uint64_t swap_programmer_endianness(
+    std::uint64_t value, IntegerWidth width) noexcept;
+
+// Presentation-only grouping for non-decimal Programmer output. It never
+// changes the expression/state representation consumed by the parser.
+std::string group_programmer_digits(
+    std::string_view digits, ProgrammerBase base);
 
 } // namespace calculator
