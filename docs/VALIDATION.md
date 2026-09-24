@@ -10,7 +10,7 @@ The repository currently uses:
 
 - `.github/workflows/release.yml`
 
-The `tests/` tree covers expression grammar and nesting limits, Scientific live preview/completion, canonical constant ownership, multiprecision unit conversion, calendar-aware date shifts/differences and Scientific-domain graph/root probes, Standard precedence and percentage semantics, exact binary64 state serialization, display/state isolation, memory range invariants, gradian/inverse/hyperbolic Scientific transforms and F-E formatting, Programmer width/radix/ROL/ROR/NAND/NOR behaviour and simultaneous multi-radix representations, explicit memory store/update state, structured history ordering/context/recall, Additional Results and engineering-notation representation, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
+The `tests/` tree covers expression grammar, the shared 8192-byte input bound and nesting limits, Scientific live preview/completion and 16–1000 digit precision selection, canonical constant ownership, multiprecision unit/storage conversion, versioned Controller-state serialization with transactional rejection of malformed state, calendar-aware date shifts/differences and Scientific-domain graph/root probes, Standard precedence and percentage semantics, exact binary64 state serialization, display/state isolation, memory range invariants, gradian/inverse/hyperbolic Scientific transforms and F-E formatting, Programmer width/radix/ROL/ROR/NAND/NOR behaviour and simultaneous multi-radix representations, explicit memory store/update state, structured history ordering/context/recall, Additional Results and engineering-notation representation, shared controller behaviour, desktop UI contracts and source-level cross-platform ownership rules.
 
 The dedicated `calculator-standard-math` forensic suite exhaustively enumerates all two-operator `+ - * /` precedence combinations over a signed operand set, checks explicit left/right grouping, verifies power/unary/postfix/domain boundaries, and proves decimal computational-state round-tripping for curated IEEE-754 boundaries plus 50,000 deterministic finite binary64 bit patterns. Controller regressions additionally prove that fixed-decimal and thousands-grouping presentation cannot alter subsequent unary arithmetic or memory recall.
 
@@ -18,7 +18,7 @@ Every `main` push and manual workflow dispatch runs the cross-platform verificat
 
 - builds and tests the shared core on supported build hosts;
 - runs the portable Calculator core/controller tests under Clang AddressSanitizer and UndefinedBehaviorSanitizer;
-- builds the native Windows application and runs a Win32 runtime/keypad smoke path;
+- builds the native Windows application and runs a Win32 runtime/keypad smoke path that also verifies the native Scientific-precision control remains present across mode switching;
 - builds the GTK/Linux target and Debian package, then enforces packaged idle-CPU limits for the capability-aware default renderer and explicit Cairo path; explicit GL is also exercised, but a hosted X server that reports no usable DRI3 device is treated as an environment limitation rather than a product-performance measurement;
 - enables Linux-only MPFR and MPC oracle tests that independently compare representative high-precision real and complex Scientific results without adding MPFR/MPC to Calculator's runtime;
 - compiles the iPhone application for iOS Simulator through the shared C++ controller and verifies AppIcon metadata;
