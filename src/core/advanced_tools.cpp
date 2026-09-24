@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <string>
 #include <string_view>
 
 namespace calculator::tools {
@@ -65,6 +66,12 @@ const ToolDescriptor& descriptor(AdvancedTool tool) noexcept {
 }
 
 ToolResult evaluate(AdvancedTool tool, std::string_view input) {
+    if (input.size() > kMaxToolInputBytes) {
+        return detail::failure(
+            "Tool input exceeds " + std::to_string(kMaxToolInputBytes) +
+            "-byte input limit.");
+    }
+
     switch (tool) {
     case AdvancedTool::Engineering:
         return detail::engineering_tool(input);
