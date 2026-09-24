@@ -45,6 +45,8 @@ int main(){
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 µL mL"),"0.001 mL"),"unit Unicode micro alias");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 knot mps"),"0.514444"),"exact knot definition");
     check(contains(evaluate(AdvancedTool::UnitConversion,"760 Torr atm"),"1 atm"),"exact Torr definition");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 hp W"),"745.69987158227022"),"exact mechanical horsepower definition");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 psi Pa"),"6894.757293168361"),"exact psi definition");
     check(contains(evaluate(AdvancedTool::Network,"subnet 192.168.10.42/24"),"Network  192.168.10.0"),"subnet network");
     check(contains(evaluate(AdvancedTool::Network,"cidr 254"),"/24"),"cidr sizing");
     check(!evaluate(AdvancedTool::Network,"subnet 192.168.1.1/33").ok,
