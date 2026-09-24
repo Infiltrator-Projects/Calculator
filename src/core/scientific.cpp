@@ -37,7 +37,7 @@ constexpr std::size_t kMaxParseDepth = 16;
 constexpr std::size_t kMaxFunctionDepth = 16;
 
 unsigned clamp_digits(unsigned digits) {
-    return std::max(16U, std::min(digits, kScientificMaxDigits));
+    return std::max(kScientificMinDigits, std::min(digits, kScientificMaxDigits));
 }
 
 Real real_part(const Complex& value) {
