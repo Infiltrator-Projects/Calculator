@@ -1825,7 +1825,7 @@ void apply_css(GtkWidget* window) {
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
             std::to_string(design.compact_spacing / 2U) + "px;}"
         ".mode-tab{background:transparent;color:" + kicker + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
-            "min-height:28px;font-size:11px;font-weight:700;padding:0 8px;}"
+            "min-height:30px;font-size:11px;font-weight:700;padding:0 8px;}"
         ".mode-tab:hover{background:" + surface_hover + ";color:" + text + ";}"
         ".mode-tab.selected{background:" + primary + ";color:" + primary_text + ";}"
         ".display{background:" + panel + ";border:1px solid " + status_border + ";border-radius:" +
