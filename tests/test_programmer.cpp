@@ -34,6 +34,10 @@ int main(){
     expect_ok("01011001 ror 3",ProgrammerBase::Binary,IntegerWidth::Bits8,0b00101011);
     expect_ok("0f nand 03",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0xfc);
     expect_ok("0f nor f0",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0x00);
+    expect_ok("0f xnor 03",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0xf3);
+    expect_ok("80 ashr 1",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0xc0);
+    expect_ok("7f ashr 1",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0x3f);
+    expect_ok("10 % 6",ProgrammerBase::Decimal,IntegerWidth::Bits8,4);
     expect_ok("1 rol 9",ProgrammerBase::Binary,IntegerWidth::Bits8,2);
     expect_ok("bswap 12",ProgrammerBase::Hexadecimal,IntegerWidth::Bits8,0x12);
     expect_ok("bswap 1234",ProgrammerBase::Hexadecimal,IntegerWidth::Bits16,0x3412);

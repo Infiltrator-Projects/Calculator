@@ -327,19 +327,33 @@ ToolResult number_utilities_tool(std::string_view input) {
 
     if (f[0] == "root") {
         std::uint64_t degree = 0U;
-        double value = 0.0;
-        if (f.size() != 3U || !parse_u64(f[1], degree) ||
-            degree == 0U || !parse_double(f[2], value)) {
+        if (f.size() != 3U || !parse_u64(f[1], degree) || degree == 0U) {
             return failure("Usage: root positive-integer-degree value.");
         }
-        if (value < 0.0 && degree % 2U == 0U) {
+        const ScientificResult source = calculator::evaluate_scientific(
+            f[2], {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        if (!source.ok || !source.display.empty() || source.value.imag != "0") {
+            return failure("Usage: root positive-integer-degree real-value.");
+        }
+        if ((degree % 2U) == 0U && !source.value.real.empty() &&
+            source.value.real.front() == '-') {
             return failure("Even root of a negative value has no real result.");
         }
-        const double magnitude =
-            std::pow(std::fabs(value), 1.0 / static_cast<double>(degree));
-        const double result = value < 0.0 ? -magnitude : magnitude;
-        if (!std::isfinite(result)) return failure("Root result is non-finite.");
-        return success("Root  " + number(result));
+
+        const std::string expression =
+            "root" + std::to_string(degree) + "(" +
+            calculator::scientific_value_expression(source.value) + ")";
+        const ScientificResult result = calculator::evaluate_scientific(
+            expression, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        if (!result.ok || !result.display.empty() || result.value.imag != "0") {
+            return failure(
+                result.error.empty()
+                    ? "Root result is outside the real tool domain."
+                    : result.error);
+        }
+        return success(
+            "Root  " +
+            calculator::format_scientific_value(result.value, 25U));
     }
 
     if (f[0] == "char") {
@@ -393,53 +407,159 @@ ToolResult number_utilities_tool(std::string_view input) {
     return failure("Unknown number utility operation.");
 }
 
-bool parse_complex_pair(std::string_view s,double& re,double& im) {
-    const std::size_t comma=s.find(',');if(comma==std::string_view::npos)return false;
-    return parse_double(s.substr(0,comma),re)&&parse_double(s.substr(comma+1),im);
+bool parse_complex_pair_scientific(
+    std::string_view text, ScientificValue& value) {
+    const std::size_t comma = text.find(',');
+    if (comma == std::string_view::npos ||
+        text.find(',', comma + 1U) != std::string_view::npos) {
+        return false;
+    }
+
+    const std::string real_text = trim(text.substr(0U, comma));
+    const std::string imag_text = trim(text.substr(comma + 1U));
+    if (real_text.empty() || imag_text.empty()) return false;
+
+    const ScientificResult real = calculator::evaluate_scientific(
+        real_text, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+    const ScientificResult imag = calculator::evaluate_scientific(
+        imag_text, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+    if (!real.ok || !imag.ok ||
+        !real.display.empty() || !imag.display.empty() ||
+        real.value.imag != "0" || imag.value.imag != "0") {
+        return false;
+    }
+
+    value.real = real.value.real;
+    value.imag = imag.value.real;
+    return true;
 }
-std::string complex_string(double re,double im){
-    std::string out=number(re);out+=im<0.0?" - ":" + ";out+=number(std::fabs(im));out+="i";return out;
+
+ScientificResult evaluate_tool_complex(std::string expression) {
+    return calculator::evaluate_scientific(
+        expression, {}, {}, AngleUnit::Radians, kToolScientificDigits);
 }
+
+std::string tool_complex_text(const ScientificValue& value) {
+    return calculator::format_scientific_value(value, 25U);
+}
+
+bool scientific_zero(const ScientificValue& value) {
+    return value.real == "0" && value.imag == "0";
+}
+
 ToolResult complex_tool(std::string_view input) {
-    const auto f=split_ws(input);if(f.empty())return failure("Enter a complex operation.");
-    double ar=0,ai=0,br=0,bi=0;
-    if(f[0]=="conj"||f[0]=="abs"||f[0]=="arg"||f[0]=="polar"){
-        if(f.size()!=2U||!parse_complex_pair(f[1],ar,ai))return failure("Usage: conj|abs|arg|polar real,imag");
-        const std::complex<double> value(ar,ai);
-        if(f[0]=="conj"){
-            const auto result=std::conj(value);
-            return success(complex_string(result.real(),result.imag()));
+    const auto f = split_ws(input);
+    if (f.empty()) return failure("Enter a complex operation.");
+
+    ScientificValue left;
+    ScientificValue right;
+    if (f[0] == "conj" || f[0] == "abs" ||
+        f[0] == "arg" || f[0] == "polar") {
+        if (f.size() != 2U || !parse_complex_pair_scientific(f[1], left)) {
+            return failure("Usage: conj|abs|arg|polar real,imag");
         }
-        const double mag=std::abs(value);
-        const double angle=std::arg(value);
-        if(!std::isfinite(mag)||!std::isfinite(angle)) return failure("Complex result is non-finite.");
-        if(f[0]=="abs")return success("Magnitude  "+number(mag));
-        if(f[0]=="arg")return success("Argument  "+number(angle)+" rad");
-        return success("Magnitude  "+number(mag)+"\nPhase  "+number(angle)+" rad");
+
+        const std::string operand =
+            calculator::scientific_value_expression(left);
+        if (f[0] == "conj") {
+            const ScientificResult result =
+                evaluate_tool_complex("conj(" + operand + ")");
+            if (!result.ok || !result.display.empty()) {
+                return failure(
+                    result.error.empty()
+                        ? "Complex conjugate failed."
+                        : result.error);
+            }
+            return success(tool_complex_text(result.value));
+        }
+
+        const ScientificResult magnitude =
+            evaluate_tool_complex("abs(" + operand + ")");
+        if (!magnitude.ok || !magnitude.display.empty()) {
+            return failure(
+                magnitude.error.empty()
+                    ? "Complex magnitude failed."
+                    : magnitude.error);
+        }
+
+        ScientificValue phase{};
+        if (!scientific_zero(left)) {
+            const ScientificResult logarithm =
+                evaluate_tool_complex("ln(" + operand + ")");
+            if (!logarithm.ok || !logarithm.display.empty()) {
+                return failure(
+                    logarithm.error.empty()
+                        ? "Complex argument failed."
+                        : logarithm.error);
+            }
+            phase.real = logarithm.value.imag;
+            phase.imag = "0";
+        }
+
+        if (f[0] == "abs") {
+            return success("Magnitude  " + tool_complex_text(magnitude.value));
+        }
+        if (f[0] == "arg") {
+            return success("Argument  " + tool_complex_text(phase) + " rad");
+        }
+        return success(
+            "Magnitude  " + tool_complex_text(magnitude.value) +
+            "\nPhase  " + tool_complex_text(phase) + " rad");
     }
-    if(f.size()!=3U||!parse_complex_pair(f[1],ar,ai)||!parse_complex_pair(f[2],br,bi))
+
+    if (f.size() != 3U ||
+        !parse_complex_pair_scientific(f[1], left) ||
+        !parse_complex_pair_scientific(f[2], right)) {
         return failure("Usage: add|sub|mul|div real,imag real,imag");
-
-    const std::complex<double> left(ar,ai);
-    const std::complex<double> right(br,bi);
-    std::complex<double> result;
-    if(f[0]=="add")result=left+right;
-    else if(f[0]=="sub")result=left-right;
-    else if(f[0]=="mul")result=left*right;
-    else if(f[0]=="div"){
-        if(right==std::complex<double>{})return failure("Complex division by zero.");
-        result=left/right;
-    } else return failure("Unknown complex operation.");
-
-    const double rr=result.real();
-    const double ri=result.imag();
-    const double mag=std::abs(result);
-    const double angle=std::arg(result);
-    if(!std::isfinite(rr)||!std::isfinite(ri)||
-       !std::isfinite(mag)||!std::isfinite(angle)){
-        return failure("Complex result is non-finite.");
     }
-    return success(complex_string(rr,ri)+"\nMagnitude  "+number(mag)+"\nPhase  "+number(angle)+" rad");
+    if (f[0] == "div" && scientific_zero(right)) {
+        return failure("Complex division by zero.");
+    }
+
+    const char* op = nullptr;
+    if (f[0] == "add") op = "+";
+    else if (f[0] == "sub") op = "-";
+    else if (f[0] == "mul") op = "*";
+    else if (f[0] == "div") op = "/";
+    else return failure("Unknown complex operation.");
+
+    const std::string left_expression =
+        calculator::scientific_value_expression(left);
+    const std::string right_expression =
+        calculator::scientific_value_expression(right);
+    const ScientificResult result = evaluate_tool_complex(
+        "(" + left_expression + ")" + op +
+        "(" + right_expression + ")");
+    if (!result.ok || !result.display.empty()) {
+        return failure(
+            result.error.empty()
+                ? "Complex calculation failed."
+                : result.error);
+    }
+
+    const std::string result_expression =
+        calculator::scientific_value_expression(result.value);
+    const ScientificResult magnitude =
+        evaluate_tool_complex("abs(" + result_expression + ")");
+    if (!magnitude.ok || !magnitude.display.empty()) {
+        return failure("Complex magnitude failed.");
+    }
+
+    ScientificValue phase{};
+    if (!scientific_zero(result.value)) {
+        const ScientificResult logarithm =
+            evaluate_tool_complex("ln(" + result_expression + ")");
+        if (!logarithm.ok || !logarithm.display.empty()) {
+            return failure("Complex argument failed.");
+        }
+        phase.real = logarithm.value.imag;
+        phase.imag = "0";
+    }
+
+    return success(
+        tool_complex_text(result.value) +
+        "\nMagnitude  " + tool_complex_text(magnitude.value) +
+        "\nPhase  " + tool_complex_text(phase) + " rad");
 }
 
 } // namespace calculator::tools::detail

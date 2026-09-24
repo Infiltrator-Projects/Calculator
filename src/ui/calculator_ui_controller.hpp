@@ -167,6 +167,9 @@ private:
     void calculate();
     void calculate_standard();
     void calculate_programmer(bool record_history = true);
+    void clear_standard_repeat() noexcept;
+    void capture_standard_repeat();
+    bool apply_standard_repeat();
     void clear_calculation();
     std::size_t clear_entry(std::size_t cursor);
     void refresh_evaluation_cache();
@@ -196,6 +199,13 @@ private:
     ScientificResult scientific_cache_;
     ProgrammerResult programmer_cache_;
     unsigned scientific_digits_ = kScientificDefaultDigits;
+
+    // Standard repeated-Equals is transient interaction state. It deliberately
+    // is not persisted: editing, mode changes and Clear invalidate it.
+    bool standard_repeat_valid_ = false;
+    char standard_repeat_operator_ = 0;
+    std::string standard_repeat_rhs_;
+    std::string standard_repeat_expression_;
 };
 
 } // namespace calculator::ui

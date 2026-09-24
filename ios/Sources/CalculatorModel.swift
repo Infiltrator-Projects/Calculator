@@ -137,7 +137,8 @@ final class CalculatorModel: ObservableObject {
         ["4", "5", "6", "+"],
         ["1", "2", "3", "="],
         ["0", "A", "B", "⌫"],
-        ["C", "D", "E", "F"]
+        ["C", "D", "E", "F"],
+        ["XNOR", "ASR", "BSWAP", "MOD"]
     ]
 
     var rows: [[String]] {

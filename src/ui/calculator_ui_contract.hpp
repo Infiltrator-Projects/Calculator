@@ -91,6 +91,10 @@ enum class Command {
     RotateRight,
     BitNand,
     BitNor,
+    BitXnor,
+    ShiftArithmeticRight,
+    ByteSwap,
+    Modulo,
     Digit0,
     Digit1,
     Digit2,
@@ -271,7 +275,7 @@ inline constexpr std::array<ButtonSpec, 40> kScientificKeypad{{
     {"=", ButtonRole::Equals, Command::Equals},
 }};
 
-inline constexpr std::array<ButtonSpec, 44> kProgrammerKeypad{{
+inline constexpr std::array<ButtonSpec, 48> kProgrammerKeypad{{
     {"BIN", ButtonRole::Utility, Command::BaseBin},
     {"OCT", ButtonRole::Utility, Command::BaseOct},
     {"DEC", ButtonRole::Utility, Command::BaseDec},
@@ -326,6 +330,11 @@ inline constexpr std::array<ButtonSpec, 44> kProgrammerKeypad{{
     {"D", ButtonRole::Number, Command::HexD},
     {"E", ButtonRole::Number, Command::HexE},
     {"F", ButtonRole::Number, Command::HexF},
+
+    {"XNOR", ButtonRole::Operation, Command::BitXnor},
+    {"ASR", ButtonRole::Operation, Command::ShiftArithmeticRight},
+    {"BSWAP", ButtonRole::Operation, Command::ByteSwap},
+    {"MOD", ButtonRole::Operation, Command::Modulo},
 }};
 
 inline constexpr std::string_view mode_name(Mode mode) {
@@ -391,6 +400,9 @@ inline constexpr std::string_view insertion_text(Command command) {
     case Command::RotateRight: return " ror ";
     case Command::BitNand: return " nand ";
     case Command::BitNor: return " nor ";
+    case Command::BitXnor: return " xnor ";
+    case Command::ShiftArithmeticRight: return " ashr ";
+    case Command::Modulo: return "%";
     default: return "";
     }
 }

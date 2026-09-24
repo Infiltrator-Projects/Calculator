@@ -120,6 +120,7 @@ int main(){
 
     check(contains(evaluate(AdvancedTool::Complex,"mul 1,2 3,-4"),"11 + 2i"),"complex multiply");
     check(!evaluate(AdvancedTool::Complex,"div 1,2 0,0").ok,"complex divide zero");
+    check(contains(evaluate(AdvancedTool::Complex,"mul 1e1000,0 2,0"),"2e+1000"),"complex tool uses multiprecision Scientific domain");
 
     check(contains(evaluate(AdvancedTool::Financial,"pmt 250000 0.005 360"),"1498.87"),"financial payment");
     check(contains(evaluate(AdvancedTool::Financial,"sln 10000 1000 9"),"1000"),"financial straight-line depreciation");
@@ -131,6 +132,7 @@ int main(){
     check(contains(evaluate(AdvancedTool::NumberUtilities,"gcd 84 30"),"6"),"utility gcd");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"comb 10 3"),"120"),"utility combinations");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"root 3 -8"),"-2"),"utility nth root");
+    check(contains(evaluate(AdvancedTool::NumberUtilities,"root 2 1e1000"),"1e+500"),"utility root uses multiprecision Scientific domain");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"char A"),"U+0041"),"utility character code");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"code U+20AC"),"€"),"utility unicode code");
     check(contains(evaluate(AdvancedTool::NumberUtilities,"twos 1 8"),"255"),"utility twos complement");

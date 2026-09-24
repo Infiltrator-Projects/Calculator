@@ -52,6 +52,10 @@ int main() {
     controller.dispatch(Command::Equals);
     CHECK(controller.state().expression == "3+3");
     CHECK(controller.state().result == "6");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "9");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "12");
 
     controller.dispatch(Command::Clear);
     CHECK(controller.state().expression.empty());
@@ -107,6 +111,8 @@ int main() {
     CHECK(controller.state().result == "300");
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "300");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "400");
 
     controller.dispatch(Command::Clear);
     controller.set_expression("100");
@@ -488,6 +494,31 @@ int main() {
     controller.dispatch(Command::Digit3);
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "CA");
+
+    controller.dispatch(Command::AllClear);
+    controller.dispatch(Command::BaseHex);
+    controller.dispatch(Command::Width8);
+    controller.set_expression("0F");
+    controller.dispatch(Command::BitXnor);
+    controller.set_expression(controller.state().expression + "03");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "F3");
+    controller.set_expression("80");
+    controller.dispatch(Command::ShiftArithmeticRight);
+    controller.dispatch(Command::Digit1);
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "C0");
+    controller.set_expression("1234");
+    controller.dispatch(Command::Width16);
+    controller.dispatch(Command::ByteSwap);
+    CHECK(controller.state().result == "3412");
+    controller.dispatch(Command::BaseDec);
+    controller.dispatch(Command::Width8);
+    controller.set_expression("10");
+    controller.dispatch(Command::Modulo);
+    controller.dispatch(Command::Digit6);
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "4");
 
     controller.dispatch(Command::AllClear);
     controller.dispatch(Command::HexC);

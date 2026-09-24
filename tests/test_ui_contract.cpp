@@ -24,7 +24,7 @@ int main() {
     static_assert(kStandardMemory.size() == 5);
     static_assert(kStandardKeypad.size() == 24);
     static_assert(kScientificKeypad.size() == 40);
-    static_assert(kProgrammerKeypad.size() == 44);
+    static_assert(kProgrammerKeypad.size() == 48);
 
     static_assert(kDesktopMetrics.default_width == 360);
     static_assert(kDesktopMetrics.default_height == 610);
@@ -101,7 +101,8 @@ int main() {
     CHECK(kScientificKeypad.front().command == Command::CycleAngleUnit);
     CHECK(kScientificKeypad.back().command == Command::Equals);
     CHECK(kProgrammerKeypad.front().command == Command::BaseBin);
-    CHECK(kProgrammerKeypad.back().command == Command::HexF);
+    CHECK(kProgrammerKeypad[43].command == Command::HexF);
+    CHECK(kProgrammerKeypad.back().command == Command::Modulo);
 
     CHECK(insertion_text(Command::Divide) == "/");
     CHECK(insertion_text(Command::Multiply) == "*");
@@ -113,6 +114,9 @@ int main() {
     CHECK(insertion_text(Command::RotateRight) == " ror ");
     CHECK(insertion_text(Command::BitNand) == " nand ");
     CHECK(insertion_text(Command::BitNor) == " nor ");
+    CHECK(insertion_text(Command::BitXnor) == " xnor ");
+    CHECK(insertion_text(Command::ShiftArithmeticRight) == " ashr ");
+    CHECK(insertion_text(Command::Modulo) == "%");
 
     CHECK(is_programmer_selector(Command::BaseHex));
     CHECK(is_programmer_selector(Command::Width64));

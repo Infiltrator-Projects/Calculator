@@ -163,6 +163,82 @@ void check_mpc_unary(
         expected.get(), digits);
 }
 
+void check_reciprocal_families() {
+    const auto set_one = [](MpcValue& one) {
+        mpc_set_ui(one.get(), 1U, MPC_RNDNN);
+    };
+
+    MpcValue input;
+    MpcValue intermediate;
+    MpcValue expected;
+    MpcValue one;
+    set_one(one);
+
+    set_complex(input.get(), "0.75", "0");
+    mpc_cos(intermediate.get(), input.get(), MPC_RNDNN);
+    mpc_div(expected.get(), one.get(), intermediate.get(), MPC_RNDNN);
+    check_result("sec(0.75)", evaluate("sec(0.75)"), expected.get(), 100);
+    mpc_sin(intermediate.get(), input.get(), MPC_RNDNN);
+    mpc_div(expected.get(), one.get(), intermediate.get(), MPC_RNDNN);
+    check_result("csc(0.75)", evaluate("csc(0.75)"), expected.get(), 100);
+    MpcValue cosine;
+    mpc_cos(cosine.get(), input.get(), MPC_RNDNN);
+    mpc_div(expected.get(), cosine.get(), intermediate.get(), MPC_RNDNN);
+    check_result("cot(0.75)", evaluate("cot(0.75)"), expected.get(), 100);
+
+    set_complex(input.get(), "2", "0");
+    mpc_div(intermediate.get(), one.get(), input.get(), MPC_RNDNN);
+    mpc_acos(expected.get(), intermediate.get(), MPC_RNDNN);
+    check_result("asec(2)", evaluate("asec(2)"), expected.get(), 100);
+    mpc_asin(expected.get(), intermediate.get(), MPC_RNDNN);
+    check_result("acsc(2)", evaluate("acsc(2)"), expected.get(), 100);
+
+    set_complex(input.get(), "-1", "0");
+    mpc_div(intermediate.get(), one.get(), input.get(), MPC_RNDNN);
+    mpc_atan(expected.get(), intermediate.get(), MPC_RNDNN);
+    check_result("acot(-1)", evaluate("acot(-1)"), expected.get(), 100);
+
+    {
+        MpfrValue pi;
+        mpfr_const_pi(pi.get(), MPFR_RNDN);
+        mpfr_div_ui(pi.get(), pi.get(), 2U, MPFR_RNDN);
+        mpc_set_fr(expected.get(), pi.get(), MPC_RNDNN);
+        check_result("acot(0)", evaluate("acot(0)"), expected.get(), 100);
+    }
+
+    set_complex(input.get(), "0.75", "0");
+    mpc_cosh(intermediate.get(), input.get(), MPC_RNDNN);
+    mpc_div(expected.get(), one.get(), intermediate.get(), MPC_RNDNN);
+    check_result("sech(0.75)", evaluate("sech(0.75)"), expected.get(), 100);
+    mpc_sinh(intermediate.get(), input.get(), MPC_RNDNN);
+    mpc_div(expected.get(), one.get(), intermediate.get(), MPC_RNDNN);
+    check_result("csch(0.75)", evaluate("csch(0.75)"), expected.get(), 100);
+    mpc_cosh(cosine.get(), input.get(), MPC_RNDNN);
+    mpc_div(expected.get(), cosine.get(), intermediate.get(), MPC_RNDNN);
+    check_result("coth(0.75)", evaluate("coth(0.75)"), expected.get(), 100);
+
+    set_complex(input.get(), "0.5", "0");
+    mpc_div(intermediate.get(), one.get(), input.get(), MPC_RNDNN);
+    mpc_acosh(expected.get(), intermediate.get(), MPC_RNDNN);
+    check_result("asech(0.5)", evaluate("asech(0.5)"), expected.get(), 100);
+
+    set_complex(input.get(), "2", "0");
+    mpc_div(intermediate.get(), one.get(), input.get(), MPC_RNDNN);
+    mpc_asinh(expected.get(), intermediate.get(), MPC_RNDNN);
+    check_result("acsch(2)", evaluate("acsch(2)"), expected.get(), 100);
+    mpc_atanh(expected.get(), intermediate.get(), MPC_RNDNN);
+    check_result("acoth(2)", evaluate("acoth(2)"), expected.get(), 100);
+
+    {
+        MpfrValue pi;
+        mpfr_const_pi(pi.get(), MPFR_RNDN);
+        mpfr_div_ui(pi.get(), pi.get(), 2U, MPFR_RNDN);
+        mpc_set_ui(expected.get(), 0U, MPC_RNDNN);
+        mpfr_set(mpc_imagref(expected.get()), pi.get(), MPFR_RNDN);
+        check_result("acoth(0)", evaluate("acoth(0)"), expected.get(), 100);
+    }
+}
+
 void check_binary(
     char op,
     const std::string& lr,
@@ -981,6 +1057,7 @@ void check_constants() {
 int main() {
     check_binary_fuzz();
     check_function_matrix();
+    check_reciprocal_families();
     check_branch_cuts();
     check_angle_units();
     check_precision_sweep();

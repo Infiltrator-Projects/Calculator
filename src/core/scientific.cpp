@@ -1137,12 +1137,14 @@ private:
                 return apply_function("asin", reciprocal_input);
             }
             if (name == "acot") {
-                // atan(1/z) has an avoidable singularity at zero. The
-                // equivalent principal form pi/2-atan(z) is finite there and
-                // follows Calculator's existing inverse-angle conversion.
-                return from_radians(
-                    Complex(pi_value() / 2) -
-                    boost::multiprecision::atan(input));
+                // Use the atan(1/z) principal branch used by mature
+                // calculator engines. Zero is its removable special case.
+                if (is_zero(input)) {
+                    return from_radians(Complex(pi_value() / 2));
+                }
+                const Complex reciprocal_input = reciprocal(input);
+                if (!error_.empty()) return {};
+                return apply_function("atan", reciprocal_input);
             }
             if (name == "sinh") {
                 return boost::multiprecision::sinh(input);
@@ -1202,6 +1204,11 @@ private:
                 return apply_function("asinh", reciprocal_input);
             }
             if (name == "acoth") {
+                // Principal acoth(0) is i*pi/2. Avoid manufacturing an
+                // infinity merely to feed it through atanh.
+                if (is_zero(input)) {
+                    return Complex(0, pi_value() / 2);
+                }
                 const Complex reciprocal_input = reciprocal(input);
                 if (!error_.empty()) return {};
                 return apply_function("atanh", reciprocal_input);

@@ -65,6 +65,23 @@ std::uint64_t rotate_right(std::uint64_t value, unsigned amount,
     return ((value >> amount) | (value << (bits - amount))) & mask;
 }
 
+std::uint64_t arithmetic_shift_right(
+    std::uint64_t value, unsigned amount, IntegerWidth width) {
+    const unsigned bits = width_bits(width);
+    const std::uint64_t mask = mask_for(width);
+    value &= mask;
+    if (amount == 0U) return value;
+    const bool negative =
+        (value & (std::uint64_t{1} << (bits - 1U))) != 0U;
+    if (amount >= bits) return negative ? mask : 0U;
+
+    const std::uint64_t shifted = value >> amount;
+    if (!negative) return shifted;
+    const std::uint64_t sign_fill =
+        (~std::uint64_t{0} << (bits - amount)) & mask;
+    return (shifted | sign_fill) & mask;
+}
+
 int digit_value(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -175,7 +192,15 @@ private:
 
     std::uint64_t parse_xor() {
         auto left = parse_and();
-        while (error_.empty() && consume('^')) left ^= parse_and();
+        while (error_.empty()) {
+            if (consume('^')) {
+                left ^= parse_and();
+            } else if (consume_word("xnor")) {
+                left = ~(left ^ parse_and()) & mask_for(width_);
+            } else {
+                break;
+            }
+        }
         return left & mask_for(width_);
     }
 
@@ -218,6 +243,14 @@ private:
                 const auto amount = parse_shift_amount();
                 if (amount >= 64) { error_ = "shift count out of range"; return 0; }
                 left = left >> static_cast<unsigned>(amount);
+            } else if (consume_word("ashr")) {
+                const auto amount = parse_shift_amount();
+                if (amount >= 64U) {
+                    error_ = "shift count out of range";
+                    return 0;
+                }
+                left = arithmetic_shift_right(
+                    left, static_cast<unsigned>(amount), width_);
             } else if (consume_word("rol")) {
                 const auto amount = parse_shift_amount();
                 left = rotate_left(
@@ -251,6 +284,10 @@ private:
                 const auto right = parse_unary();
                 if (right == 0) { error_ = "division by zero"; return 0; }
                 left = (left / right) & mask_for(width_);
+            } else if (consume('%')) {
+                const auto right = parse_unary();
+                if (right == 0) { error_ = "division by zero"; return 0; }
+                left = (left % right) & mask_for(width_);
             } else break;
         }
         return left & mask_for(width_);

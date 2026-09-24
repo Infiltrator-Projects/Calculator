@@ -13,6 +13,7 @@
 namespace calculator::ui {
 
 bool Controller::set_expression(std::string expression) {
+    if (expression != state_.expression) clear_standard_repeat();
     if (expression.size() > kMaxExpressionBytes) {
         state_.expression.clear();
         real_cache_ = {};
@@ -34,6 +35,7 @@ bool Controller::set_expression(std::string expression) {
 }
 
 void Controller::set_mode(Mode mode) {
+    if (mode != state_.mode) clear_standard_repeat();
     state_.mode = mode;
     refresh_evaluation_cache();
     if (mode == Mode::Scientific) {
@@ -87,6 +89,7 @@ std::optional<HistoryEntry> Controller::history_entry(
 }
 
 bool Controller::recall_history(std::size_t index_from_newest) {
+    clear_standard_repeat();
     const auto entry = session_.history_from_newest(index_from_newest);
     if (!entry) return false;
 
@@ -140,6 +143,7 @@ void Controller::clear_history() noexcept {
 }
 
 bool Controller::recall_memory(std::size_t index_from_newest) {
+    clear_standard_repeat();
     const auto entry = session_.memory_entry(index_from_newest);
     if (!entry || state_.mode == Mode::Programmer) return false;
 
@@ -941,6 +945,7 @@ void Controller::refresh_evaluation_cache() {
 }
 
 DispatchResult Controller::insert(std::string_view text, std::size_t cursor) {
+    clear_standard_repeat();
     const std::size_t position = normalized_cursor(cursor);
     if (text.size() > kMaxExpressionBytes - state_.expression.size()) {
         state_.result =
@@ -958,6 +963,7 @@ DispatchResult Controller::insert(std::string_view text, std::size_t cursor) {
 }
 
 DispatchResult Controller::backspace(std::size_t cursor) {
+    clear_standard_repeat();
     const std::size_t position = normalized_cursor(cursor);
     if (position == 0) return {0, false};
 
@@ -1064,17 +1070,122 @@ void Controller::calculate_programmer(bool record_history) {
     set_status(programmer_status_text());
 }
 
+void Controller::clear_standard_repeat() noexcept {
+    standard_repeat_valid_ = false;
+    standard_repeat_operator_ = 0;
+    standard_repeat_rhs_.clear();
+    standard_repeat_expression_.clear();
+}
+
+void Controller::capture_standard_repeat() {
+    clear_standard_repeat();
+    if (state_.mode != Mode::Standard || state_.expression.empty()) return;
+
+    const auto sign_is_unary = [this](std::size_t position) {
+        if (position == 0U) return true;
+        std::size_t previous = position;
+        while (previous > 0U &&
+               infiltratr_ascii_is_space(static_cast<unsigned char>(
+                   state_.expression[previous - 1U]))) {
+            --previous;
+        }
+        if (previous == 0U) return true;
+        const char before = state_.expression[previous - 1U];
+        return before == 'e' || before == 'E' ||
+               before == '+' || before == '-' ||
+               before == '*' || before == '/' ||
+               before == '^' || before == '(';
+    };
+
+    std::size_t best = std::string::npos;
+    int best_precedence = 99;
+    int depth = 0;
+    for (std::size_t i = 0U; i < state_.expression.size(); ++i) {
+        const char ch = state_.expression[i];
+        if (ch == '(') {
+            ++depth;
+            continue;
+        }
+        if (ch == ')') {
+            if (depth > 0) --depth;
+            continue;
+        }
+        if (depth != 0) continue;
+
+        int precedence = 99;
+        if (ch == '+' || ch == '-') precedence = 1;
+        else if (ch == '*' || ch == '/') precedence = 2;
+        else if (ch == '^') precedence = 3;
+        else continue;
+
+        if ((ch == '+' || ch == '-') && sign_is_unary(i)) continue;
+
+        // For left-associative operators the rightmost operator at the
+        // weakest precedence is the parse-tree root. Exponentiation is
+        // right-associative, so retain its first root candidate.
+        if (precedence < best_precedence ||
+            (precedence == best_precedence && ch != '^')) {
+            best = i;
+            best_precedence = precedence;
+        }
+    }
+
+    if (best == std::string::npos) return;
+    std::string rhs = state_.expression.substr(best + 1U);
+    const auto first = rhs.find_first_not_of(" 	
+");
+    if (first == std::string::npos) return;
+    const auto last = rhs.find_last_not_of(" 	
+");
+    rhs = rhs.substr(first, last - first + 1U);
+
+    standard_repeat_valid_ = true;
+    standard_repeat_operator_ = state_.expression[best];
+    standard_repeat_rhs_ = std::move(rhs);
+    standard_repeat_expression_ = state_.expression;
+}
+
+bool Controller::apply_standard_repeat() {
+    if (!standard_repeat_valid_ ||
+        state_.mode != Mode::Standard ||
+        state_.expression != standard_repeat_expression_ ||
+        !real_cache_.ok || !real_cache_.display.empty()) {
+        return false;
+    }
+
+    const std::string left = calculator::serialize_value(real_cache_.value);
+    if (left.empty()) return false;
+    std::string repeated = left;
+    repeated.push_back(standard_repeat_operator_);
+    repeated.push_back('(');
+    repeated += standard_repeat_rhs_;
+    repeated.push_back(')');
+    if (repeated.size() > kMaxExpressionBytes) return false;
+
+    state_.expression = std::move(repeated);
+    refresh_evaluation_cache();
+    return real_cache_.ok && real_cache_.display.empty();
+}
+
 void Controller::calculate_standard() {
+    const bool repeated = apply_standard_repeat();
+
     session_.record_history(
         state_.expression, real_cache_, HistoryKind::Standard);
 
     if (!real_cache_.ok) {
         state_.result = "Error: " + real_cache_.error;
+        clear_standard_repeat();
         set_status("CALCULATION ERROR", true);
         return;
     }
 
     state_.result = format_display(real_cache_.value);
+    if (repeated) {
+        standard_repeat_expression_ = state_.expression;
+    } else {
+        capture_standard_repeat();
+    }
     set_status("READY");
 }
 
@@ -1111,6 +1222,7 @@ void Controller::calculate() {
 }
 
 void Controller::clear_calculation() {
+    clear_standard_repeat();
     state_.expression.clear();
     real_cache_ = {};
     scientific_cache_ = {};
@@ -1137,6 +1249,7 @@ void Controller::clear_calculation() {
 // expression. Top-level binary operators delimit operands; signs that belong to
 // exponents/unary terms are deliberately not treated as delimiters.
 std::size_t Controller::clear_entry(std::size_t cursor) {
+    clear_standard_repeat();
     if (state_.mode != Mode::Standard) return normalized_cursor(cursor);
 
     const std::size_t point = normalized_cursor(cursor);
@@ -1208,6 +1321,7 @@ std::size_t Controller::clear_entry(std::size_t cursor) {
 }
 
 void Controller::unary_transform(Command command) {
+    clear_standard_repeat();
     double value = 0.0;
     if (!current_value(value)) return;
 
@@ -1543,7 +1657,12 @@ bool Controller::command_enabled(Command command) const {
     case Command::RotateRight:
     case Command::BitNand:
     case Command::BitNor:
+    case Command::BitXnor:
+    case Command::ShiftArithmeticRight:
+    case Command::Modulo:
         return !state_.expression.empty();
+    case Command::ByteSwap:
+        return state_.mode == Mode::Programmer;
     default:
         return true;
     }
@@ -1572,6 +1691,10 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         }
         if (command == Command::Backspace) {
             return backspace(cursor);
+        }
+        if (command == Command::ByteSwap) {
+            const bool changed = swap_programmer_endianness();
+            return {state_.expression.size(), changed};
         }
 
         const std::string_view text = insertion_text(command);
@@ -1747,6 +1870,7 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
              effective == Command::Power) &&
             expression_ends_with_binary_operator() &&
             normalized_cursor(cursor) == state_.expression.size()) {
+            clear_standard_repeat();
             state_.expression.back() = text.front();
             refresh_evaluation_cache();
             update_standard_preview();
