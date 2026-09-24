@@ -36,6 +36,8 @@ constexpr int kIdTheme = 1002;
 constexpr int kIdBases = 1003;
 constexpr int kIdResults = 1004;
 constexpr int kIdTools = 1005;
+constexpr int kIdPrecision = 1006;
+constexpr int kIdPrecisionBase = 6000;
 constexpr int kIdModeStandard = 1010;
 constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
@@ -114,6 +116,7 @@ HWND g_tools_button = nullptr;
 HWND g_results_button = nullptr;
 HWND g_bases_button = nullptr;
 HWND g_theme_button = nullptr;
+HWND g_precision_button = nullptr;
 HWND g_expression = nullptr;
 HWND g_result = nullptr;
 HWND g_status = nullptr;
@@ -283,6 +286,55 @@ void save_theme_mode() {
         key, L"ThemeMode", 0, REG_DWORD,
         reinterpret_cast<const BYTE*>(&value), sizeof(value));
     RegCloseKey(key);
+}
+
+void save_controller_state() {
+    HKEY key = nullptr;
+    if (RegCreateKeyExW(
+            HKEY_CURRENT_USER,
+            L"Software\\Infiltrator\\Calc",
+            0, nullptr, 0, KEY_SET_VALUE,
+            nullptr, &key, nullptr) != ERROR_SUCCESS) {
+        return;
+    }
+    const std::wstring state =
+        utf8_to_wide(g_controller.persistent_state_text());
+    const DWORD bytes = static_cast<DWORD>(
+        (state.size() + 1U) * sizeof(wchar_t));
+    (void)RegSetValueExW(
+        key, L"ControllerStateV1", 0, REG_SZ,
+        reinterpret_cast<const BYTE*>(state.c_str()), bytes);
+    RegCloseKey(key);
+}
+
+void load_controller_state() {
+    DWORD type = 0U;
+    DWORD bytes = 0U;
+    if (RegGetValueW(
+            HKEY_CURRENT_USER,
+            L"Software\\Infiltrator\\Calc",
+            L"ControllerStateV1",
+            RRF_RT_REG_SZ,
+            &type, nullptr, &bytes) != ERROR_SUCCESS ||
+        type != REG_SZ || bytes < sizeof(wchar_t) ||
+        bytes > static_cast<DWORD>(
+            (Controller::kMaxPersistentStateBytes + 1U) *
+            sizeof(wchar_t))) {
+        return;
+    }
+
+    std::vector<wchar_t> buffer(
+        static_cast<std::size_t>(bytes / sizeof(wchar_t)), L'\0');
+    if (RegGetValueW(
+            HKEY_CURRENT_USER,
+            L"Software\\Infiltrator\\Calc",
+            L"ControllerStateV1",
+            RRF_RT_REG_SZ,
+            &type, buffer.data(), &bytes) != ERROR_SUCCESS) {
+        return;
+    }
+    const std::wstring state(buffer.data());
+    (void)g_controller.load_persistent_state_text(wide_to_utf8(state));
 }
 
 void resolve_theme() {
@@ -499,6 +551,11 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     SetWindowTextW(g_result, utf8_to_wide(state.result).c_str());
     SetWindowTextW(g_status, utf8_to_wide(state.status).c_str());
     g_status_fault = state.fault;
+    if (g_precision_button != nullptr) {
+        const std::wstring precision =
+            std::to_wstring(g_controller.scientific_digits()) + L"d";
+        SetWindowTextW(g_precision_button, precision.c_str());
+    }
 
     show_grid(g_standard_buttons, state.mode == Mode::Standard);
     show_grid(g_scientific_buttons, state.mode == Mode::Scientific);
@@ -553,6 +610,7 @@ void dispatch_command(const ButtonSpec& spec) {
     const auto result =
         g_controller.dispatch(spec.command, expression_cursor());
     render_state(result.cursor);
+    if (spec.command == Command::Equals) save_controller_state();
     SetFocus(g_expression);
 }
 
@@ -561,6 +619,7 @@ void calculate_from_entry() {
     const auto result =
         g_controller.dispatch(Command::Equals, expression_cursor());
     render_state(result.cursor);
+    save_controller_state();
     SetFocus(g_expression);
 }
 
@@ -1075,7 +1134,7 @@ void layout_main(HWND window) {
     const bool show_bases =
         g_controller.state().mode == Mode::Programmer;
     const int toolbar_count =
-        (responsive.dock_history ? 1 : 2) + 2;
+        (responsive.dock_history ? 1 : 2) + 3;
     const int title_right =
         calc_right - toolbar_count * toolbar_width -
         (toolbar_count > 0 ? toolbar_count * gap : 0);
@@ -1103,6 +1162,12 @@ void layout_main(HWND window) {
         show_bases ? g_bases_button : g_results_button;
     MoveWindow(
         extra_button,
+        calc_right - (toolbar_slot + 1) * toolbar_width -
+            toolbar_slot * gap,
+        y, toolbar_width, toolbar_height, TRUE);
+    ++toolbar_slot;
+    MoveWindow(
+        g_precision_button,
         calc_right - (toolbar_slot + 1) * toolbar_width -
             toolbar_slot * gap,
         y, toolbar_width, toolbar_height, TRUE);
@@ -1245,6 +1310,42 @@ void apply_theme_to_window(HWND window) {
     InvalidateRect(window, nullptr, TRUE);
 }
 
+void show_precision_menu(HWND owner) {
+    static constexpr std::array<unsigned, 7> presets{{
+        16U, 25U, 50U, 100U, 250U, 500U, 1000U
+    }};
+    HMENU menu = CreatePopupMenu();
+    if (menu == nullptr) return;
+
+    const unsigned current = g_controller.scientific_digits();
+    for (std::size_t index = 0; index < presets.size(); ++index) {
+        const std::wstring label =
+            std::to_wstring(presets[index]) + L" digits";
+        UINT flags = MF_STRING;
+        if (presets[index] == current) flags |= MF_CHECKED;
+        AppendMenuW(
+            menu, flags,
+            static_cast<UINT_PTR>(kIdPrecisionBase +
+                                  static_cast<int>(index)),
+            label.c_str());
+    }
+
+    RECT button{};
+    GetWindowRect(g_precision_button, &button);
+    const int selected = TrackPopupMenu(
+        menu, TPM_RETURNCMD | TPM_RIGHTALIGN | TPM_TOPALIGN,
+        button.right, button.bottom, 0, owner, nullptr);
+    DestroyMenu(menu);
+
+    if (selected >= kIdPrecisionBase &&
+        selected < kIdPrecisionBase + static_cast<int>(presets.size())) {
+        g_controller.set_scientific_digits(
+            presets[static_cast<std::size_t>(selected - kIdPrecisionBase)]);
+        save_controller_state();
+        render_state();
+    }
+}
+
 void apply_theme(bool persist) {
     resolve_theme();
     recreate_theme_brushes();
@@ -1270,6 +1371,7 @@ void create_controls(HWND window) {
                                  WS_CHILD | SS_LEFT,
                                  0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     g_theme_button = create_button(window, kIdTheme, L"System", g_ui_bold_font);
+    g_precision_button = create_button(window, kIdPrecision, L"50d", g_ui_bold_font);
     g_tools_button = create_button(window, kIdTools, L"Tools", g_ui_bold_font);
     g_results_button = create_button(window, kIdResults, L"Results", g_ui_bold_font);
     g_bases_button = create_button(window, kIdBases, L"Bases", g_ui_bold_font);
@@ -1293,6 +1395,9 @@ void create_controls(HWND window) {
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_RIGHT | ES_AUTOHSCROLL,
         0, 0, 0, 0, window, nullptr, g_instance, nullptr);
     apply_control_theme(g_expression);
+    SendMessageW(
+        g_expression, EM_SETLIMITTEXT,
+        static_cast<WPARAM>(Controller::kMaxExpressionBytes), 0);
 
     g_result = CreateWindowExW(
         0, L"STATIC", L"0",
@@ -1384,6 +1489,7 @@ void apply_fonts_to_controls() {
     apply_font(g_title, g_title_font);
     apply_font(g_subtitle, g_small_font);
     apply_font(g_theme_button, g_ui_bold_font);
+    apply_font(g_precision_button, g_ui_bold_font);
     apply_font(g_tools_button, g_ui_bold_font);
     apply_font(g_results_button, g_ui_bold_font);
     apply_font(g_bases_button, g_ui_bold_font);
@@ -2111,6 +2217,10 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
             apply_theme(true);
             return 0;
         }
+        if (id == kIdPrecision) {
+            show_precision_menu(window);
+            return 0;
+        }
         if (id == kIdResults) {
             const std::wstring text = utf8_to_wide(
                 g_controller.additional_results_text());
@@ -2231,6 +2341,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         return 0;
 
     case WM_DESTROY:
+        save_controller_state();
         PostQuitMessage(0);
         return 0;
 
@@ -2278,6 +2389,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     InitCommonControlsEx(&controls);
 
     g_theme_mode = load_theme_mode();
+    load_controller_state();
     resolve_theme();
     recreate_theme_brushes();
 
