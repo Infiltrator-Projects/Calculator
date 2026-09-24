@@ -951,6 +951,20 @@ void show_programmer_bases(GtkWidget*, gpointer) {
     gtk_widget_set_halign(programmer_bits_value, GTK_ALIGN_FILL);
     gtk_box_append(GTK_BOX(root), programmer_bits_value);
 
+    GtkWidget* swap_endian = gtk_button_new_with_label("Swap Endian");
+    gtk_widget_add_css_class(swap_endian, "toolbar-button");
+    gtk_widget_set_tooltip_text(
+        swap_endian, "Reverse byte order within the selected word width");
+    g_signal_connect(
+        swap_endian, "clicked",
+        G_CALLBACK(+[](GtkButton*, gpointer) {
+            if (!controller.swap_programmer_endianness()) return;
+            render_state();
+            refresh_programmer_bits_window();
+        }),
+        nullptr);
+    gtk_box_append(GTK_BOX(root), swap_endian);
+
     GtkWidget* hint = gtk_label_new(
         "Click a bit to toggle it. Bit 63 is upper-left; bit 0 is lower-right.");
     gtk_widget_add_css_class(hint, "status");
