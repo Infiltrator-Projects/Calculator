@@ -40,6 +40,11 @@ int main(){
     check(contains(evaluate(AdvancedTool::UnitConversion,"491.67 R K"),"273.15 K"),"rankine conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 GHz MHz"),"1000 MHz"),"frequency conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1 week day"),"7 day"),"duration conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 metre cm"),"100 cm"),"unit human alias");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 foot in"),"12 in"),"unit plural/name alias");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 µL mL"),"0.001 mL"),"unit Unicode micro alias");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"1 knot mps"),"0.514444"),"exact knot definition");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"760 Torr atm"),"1 atm"),"exact Torr definition");
     check(contains(evaluate(AdvancedTool::Network,"subnet 192.168.10.42/24"),"Network  192.168.10.0"),"subnet network");
     check(contains(evaluate(AdvancedTool::Network,"cidr 254"),"/24"),"cidr sizing");
     check(!evaluate(AdvancedTool::Network,"subnet 192.168.1.1/33").ok,
