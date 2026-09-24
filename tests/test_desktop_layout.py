@@ -460,6 +460,31 @@ for needle in (
     assert needle in windows, f"Windows Additional Results surface missing: {needle}"
 
 for needle in (
+    "kIdPrecision",
+    'L"50d"',
+    "const int toolbar_width = sx(window, 50);",
+    "(responsive.dock_history ? 1 : 2) + 3",
+):
+    assert needle in windows, f"Windows precision/compact-toolbar contract missing: {needle}"
+
+# At the 360-unit default width, a non-docked history layout has five toolbar
+# actions. The compact width must still reserve useful title space.
+default_width = 360
+shell_padding = 10
+section_gap = 6
+toolbar_count = 5
+toolbar_width = 50
+title_width = (
+    default_width - shell_padding
+    - toolbar_count * toolbar_width
+    - toolbar_count * section_gap
+    - shell_padding
+)
+assert title_width >= 50, (
+    f"Windows default toolbar leaves only {title_width} units for the title"
+)
+
+for needle in (
     "kIdBases",
     'L"Bases"',
     "kBasesClass",
