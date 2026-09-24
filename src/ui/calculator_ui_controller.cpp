@@ -127,6 +127,10 @@ bool Controller::recall_history(std::size_t index_from_newest) {
     return true;
 }
 
+bool Controller::delete_history(std::size_t index_from_newest) {
+    return session_.erase_history_from_newest(index_from_newest);
+}
+
 void Controller::clear_history() noexcept {
     session_.clear_history();
 }
