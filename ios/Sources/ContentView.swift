@@ -841,6 +841,7 @@ private struct HistoryView: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @AppStorage("themePreference") private var themePreferenceRaw = ThemePreference.system.rawValue
     @State private var entries: [CalculatorHistoryRow] = []
+    @State private var memories: [CalculatorMemoryRow] = []
 
     private var themePreference: ThemePreference {
         ThemePreference(rawValue: themePreferenceRaw) ?? .system
@@ -859,14 +860,78 @@ private struct HistoryView: View {
             ZStack {
                 palette.background.ignoresSafeArea()
 
-                if entries.isEmpty {
-                    Text("No calculations yet.")
+                if entries.isEmpty && memories.isEmpty {
+                    Text("No history or memory yet.")
                         .font(CalculatorTypography.regular(15, relativeTo: .body))
                         .foregroundStyle(palette.summary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: sharedDesign.controlSpacing) {
+                            if !memories.isEmpty {
+                                Text("Memory")
+                                    .font(CalculatorTypography.bold(
+                                        13, relativeTo: .headline))
+                                    .foregroundStyle(palette.kicker)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                ForEach(memories) { memory in
+                                    HStack(spacing: sharedDesign.controlSpacing) {
+                                        Button {
+                                            if model.recallMemory(memory.id) {
+                                                dismiss()
+                                            }
+                                        } label: {
+                                            Text(memory.value)
+                                                .font(CalculatorTypography.bold(
+                                                    15, relativeTo: .body))
+                                                .foregroundStyle(palette.title)
+                                                .frame(
+                                                    maxWidth: .infinity,
+                                                    alignment: .leading)
+                                                .padding(sharedDesign.contentPadding)
+                                                .background(
+                                                    RoundedRectangle(
+                                                        cornerRadius:
+                                                            sharedDesign.cardRadius)
+                                                        .fill(palette.card)
+                                                        .overlay(
+                                                            RoundedRectangle(
+                                                                cornerRadius:
+                                                                    sharedDesign.cardRadius)
+                                                                .stroke(
+                                                                    palette.border,
+                                                                    lineWidth: 1)
+                                                        )
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel(
+                                            "Recall memory (memory.value)")
+
+                                        Button {
+                                            if model.deleteMemory(memory.id) {
+                                                memories = model.memoryEntries()
+                                            }
+                                        } label: {
+                                            Text("Delete")
+                                                .font(CalculatorTypography.bold(
+                                                    13, relativeTo: .body))
+                                                .foregroundStyle(palette.warning)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel(
+                                            "Delete memory (memory.value)")
+                                    }
+                                }
+
+                                Text("History")
+                                    .font(CalculatorTypography.bold(
+                                        13, relativeTo: .headline))
+                                    .foregroundStyle(palette.kicker)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
                             ForEach(entries) { entry in
                                 HStack(spacing: sharedDesign.controlSpacing) {
                                     Button {
@@ -918,15 +983,17 @@ private struct HistoryView: View {
                     }
                 }
             }
-            .navigationTitle("Calculation History")
+            .navigationTitle("History & Memory")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Clear") {
+                    Button("Clear All") {
                         model.clearHistory()
+                        model.clearMemory()
                         entries = model.historyEntries()
+                        memories = model.memoryEntries()
                     }
                     .foregroundStyle(palette.warning)
-                    .disabled(entries.isEmpty)
+                    .disabled(entries.isEmpty && memories.isEmpty)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -935,6 +1002,9 @@ private struct HistoryView: View {
             }
         }
         .preferredColorScheme(themePreference.preferredScheme)
-        .onAppear { entries = model.historyEntries() }
+        .onAppear {
+            entries = model.historyEntries()
+            memories = model.memoryEntries()
+        }
     }
 }
