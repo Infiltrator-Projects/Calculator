@@ -11,6 +11,7 @@ No unreleased changes.
 - Move Unicode scalar-to-UTF-8 byte encoding onto the new Common 1.19.27 public contract instead of carrying a Calculator-local encoder.
 - Preserve Calculator's Unicode scalar parsing and Number Utilities semantics while adding maximum-scalar and surrogate rejection regressions.
 - Pin the source, build contract and integration tests to exact Common 1.19.27 commit 3ef3710df6563df305b6d8e2dc9d1a41c61843ba.
+- Compile Common's new portable `temporal_clock.c` unit into the iPhone target so the 1.19.27 pin remains source-complete across Linux, Windows and iOS.
 
 ## 0.2.34 — 2026-09-25
 
