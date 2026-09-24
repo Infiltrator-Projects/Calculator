@@ -517,23 +517,14 @@ std::vector<AdditionalResult> Controller::additional_results() const {
             result.value, state_.programmer_width,
             state_.programmer_signed);
 
-        auto grouped_binary = [](const std::string& binary) {
-            std::string grouped;
-            grouped.reserve(binary.size() + binary.size() / 4U);
-            for (std::size_t i = 0; i < binary.size(); ++i) {
-                if (i != 0 && (binary.size() - i) % 4U == 0U) {
-                    grouped.push_back(' ');
-                }
-                grouped.push_back(binary[i]);
-            }
-            return grouped;
-        };
-
         return {
-            {"HEX", representations.hexadecimal},
+            {"HEX", group_programmer_digits(
+                representations.hexadecimal, ProgrammerBase::Hexadecimal)},
             {"DEC", representations.decimal},
-            {"OCT", representations.octal},
-            {"BIN", grouped_binary(representations.binary)}
+            {"OCT", group_programmer_digits(
+                representations.octal, ProgrammerBase::Octal)},
+            {"BIN", group_programmer_digits(
+                representations.binary, ProgrammerBase::Binary)}
         };
     }
 
@@ -624,9 +615,11 @@ bool Controller::toggle_programmer_bit(unsigned bit) {
     value ^= (1ULL << bit);
     state_.expression = format_programmer(
         value, state_.programmer_base, state_.programmer_width, false);
-    state_.result = format_programmer(
-        value, state_.programmer_base, state_.programmer_width,
-        state_.programmer_signed);
+    state_.result = group_programmer_digits(
+        format_programmer(
+            value, state_.programmer_base, state_.programmer_width,
+            state_.programmer_signed),
+        state_.programmer_base);
     refresh_evaluation_cache();
     set_status(programmer_status_text());
     return true;
@@ -991,9 +984,11 @@ void Controller::calculate_programmer(bool record_history) {
         return;
     }
 
-    state_.result = format_programmer(
-        result.value, state_.programmer_base,
-        state_.programmer_width, state_.programmer_signed);
+    state_.result = group_programmer_digits(
+        format_programmer(
+            result.value, state_.programmer_base,
+            state_.programmer_width, state_.programmer_signed),
+        state_.programmer_base);
     if (record_history) {
         session_.record_history_text(
             state_.expression, state_.result, true,
