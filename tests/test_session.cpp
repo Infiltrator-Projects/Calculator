@@ -191,6 +191,28 @@ int main(){
     session.memory_clear();
     if(!session.memory_empty()) fail("second memory clear should be empty");
 
+    // MS pushes newest-first memory slots while MR/M+/M- continue to operate
+    // on the newest slot for traditional calculator-key compatibility.
+    if(!session.memory_store(1.25) || !session.memory_store(2.5))
+        fail("multi-memory store should succeed");
+    if(session.memory_count()!=2U) fail("multi-memory count wrong");
+    const auto newest_memory=session.memory_entry(0U);
+    const auto older_memory=session.memory_entry(1U);
+    if(!newest_memory || !newest_memory->binary64_valid ||
+       std::abs(newest_memory->binary64-2.5)>1e-12)
+        fail("newest memory slot wrong");
+    if(!older_memory || !older_memory->binary64_valid ||
+       std::abs(older_memory->binary64-1.25)>1e-12)
+        fail("older memory slot wrong");
+    if(!session.memory_add(0.5) ||
+       std::abs(session.memory_recall()-3.0)>1e-12)
+        fail("memory add must update newest slot");
+    if(!session.erase_memory(0U) ||
+       std::abs(session.memory_recall()-1.25)>1e-12)
+        fail("deleting newest memory must reveal next slot");
+    if(session.erase_memory(8U)) fail("out-of-range memory delete should fail");
+    session.memory_clear();
+
     expect_value(session.evaluate("x + 5"),15.0,"history result");
     if(session.history().size()!=3) fail("history length wrong");
     if(session.history().back().input!="x + 5") fail("history input wrong");
