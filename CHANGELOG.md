@@ -13,6 +13,9 @@ This changelog records user-visible, compatibility, architecture and validation 
 - Add human unit aliases and exact ratio definitions for selected definition-based conversions such as knots, points and Torr.
 - Add fixed-width Programmer byte-order reversal plus grouped binary/octal/hexadecimal presentation and expose Swap Endian through the native Linux, Windows and iPhone Programmer views.
 - Add individual history-entry deletion through Session/Controller and native Linux, Windows and iPhone history surfaces, alongside existing whole-history clearing.
+- Replace the single memory register with a newest-first shared memory stack: MS pushes slots, MR/M+/M− operate on the newest slot, MC clears all slots, and Linux/Windows/iPhone History & Memory surfaces can recall or delete individual memory entries.
+- Preserve each memory slot's Scientific value plus optional binary64 view so out-of-range Scientific values remain valid without inventing a Standard approximation.
+- Keep definition-based unit factors exact through Scientific evaluation for mechanical horsepower, PSI and BTU/minute in addition to the existing exact knot/point/Torr definitions.
 - Add a persisted cross-platform history-retention preference: unlimited by default, with shared bounded-session semantics and native Linux, Windows and iPhone controls.
 - Extend core/controller/cross-platform regression protection and maintained documentation for the new contracts.
 
