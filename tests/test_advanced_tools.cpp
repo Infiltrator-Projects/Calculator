@@ -49,6 +49,8 @@ int main(){
     check(contains(evaluate(AdvancedTool::Storage,"raid 5 6 4 TiB"),"20"),"raid capacity");
     check(contains(evaluate(AdvancedTool::Storage,"clusters 4097 4096"),"Slack bytes  4095"),"cluster slack");
     check(contains(evaluate(AdvancedTool::Storage,"convert 1 YiB ZiB"),"1024 ZiB"),"yobibyte storage conversion");
+    check(contains(evaluate(AdvancedTool::Storage,"convert 8 kbit kB"),"1 kB"),"storage alias uses canonical unit engine");
+    check(contains(evaluate(AdvancedTool::Storage,"convert 1 YB ZB"),"1000 ZB"),"storage large decimal conversion");
     check(contains(evaluate(AdvancedTool::DateTime,"diff 2026-09-20 2026-09-21"),"Days  1"),"date diff");
     check(contains(evaluate(AdvancedTool::DateTime,"add 2024-02-28 1"),"2024-02-29"),"date leap add");
     check(contains(evaluate(AdvancedTool::DateTime,"add 2024-01-31 1 month"),"2024-02-29"),"calendar month clamp");
@@ -63,7 +65,11 @@ int main(){
               AdvancedTool::DateTime,
               "unix 2026-09-20T24:00:00Z").ok,
           "UTC hour range");
-    check(contains(evaluate(AdvancedTool::Constants,"c0"),"2.99792458"),"constant c");
+    check(contains(evaluate(AdvancedTool::Constants,"c0"),"299792458"),"constant c");
+    check(contains(
+              evaluate(AdvancedTool::Constants,"pi"),
+              "3.141592653589793238462643383279"),
+          "constant pi retains Scientific precision");
     check(contains(evaluate(AdvancedTool::Statistics,"1,2,3,4,5"),"Mean  3"),"statistics mean");
 
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
