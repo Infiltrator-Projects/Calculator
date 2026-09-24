@@ -175,6 +175,7 @@ NSInteger angle_value(calculator::AngleUnit unit) {
         @"scientificSecond": @(state.scientific_second),
         @"scientificHyperbolic": @(state.scientific_hyperbolic),
         @"scientificNotation": @(state.scientific_notation),
+        @"scientificDigits": @([self controller]->scientific_digits()),
         @"programmerBase": @(base_value(state.programmer_base)),
         @"programmerWidth": @(width_value(state.programmer_width)),
         @"programmerSigned": @(state.programmer_signed)
@@ -221,6 +222,21 @@ NSInteger angle_value(calculator::AngleUnit unit) {
 
 - (NSString *)programmerRepresentationsText {
     return to_ns([self controller]->programmer_representations_text());
+}
+
+- (NSString *)persistentStateText {
+    return to_ns([self controller]->persistent_state_text());
+}
+
+- (BOOL)loadPersistentStateText:(NSString *)text {
+    return [self controller]->load_persistent_state_text(
+        text.UTF8String ?: "") ? YES : NO;
+}
+
+- (void)setScientificDigits:(NSInteger)digits {
+    const NSInteger bounded = std::max<NSInteger>(0, digits);
+    [self controller]->set_scientific_digits(
+        static_cast<unsigned>(bounded));
 }
 
 - (NSArray<NSDictionary *> *)advancedToolCatalog {
