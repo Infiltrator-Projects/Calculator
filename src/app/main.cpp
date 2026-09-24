@@ -180,21 +180,6 @@ void load_user_variables() {
     g_free(path);
 }
 
-void save_user_variables() {
-    gchar* directory = g_build_filename(
-        g_get_user_data_dir(), "infiltrator-calc", nullptr);
-    if (ensure_private_directory(directory)) {
-        gchar* path = g_build_filename(directory, "variables", nullptr);
-        const std::string text = controller.variables_text();
-        if (!write_private_file(path, text)) {
-            g_printerr(
-                "Calculator could not persist variables to %s\n", path);
-        }
-        g_free(path);
-    }
-    g_free(directory);
-}
-
 void load_user_functions() {
     if (user_functions_loaded) return;
     user_functions_loaded = true;
@@ -210,22 +195,6 @@ void load_user_functions() {
         }
     }
     g_free(path);
-}
-
-void save_user_functions() {
-    gchar* directory = g_build_filename(
-        g_get_user_data_dir(), "infiltrator-calc", nullptr);
-    if (ensure_private_directory(directory)) {
-        gchar* path = g_build_filename(directory, "custom-functions", nullptr);
-        const std::string text = controller.function_definitions_text();
-        if (!write_private_file(path, text)) {
-            g_printerr(
-                "Calculator could not persist custom functions to %s\n",
-                path);
-        }
-        g_free(path);
-    }
-    g_free(directory);
 }
 
 const char* result_format_name(ResultFormat format) {
@@ -282,42 +251,6 @@ void load_display_preferences() {
     g_free(path);
 }
 
-void save_display_preferences() {
-    gchar* directory = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (!ensure_private_directory(directory)) {
-        g_free(directory);
-        return;
-    }
-    gchar* path = g_build_filename(
-        directory, "presentation.ini", nullptr);
-    GKeyFile* key = g_key_file_new();
-    const DisplayPreferences& prefs = controller.display_preferences();
-    g_key_file_set_string(
-        key, "Presentation", "format", result_format_name(prefs.format));
-    g_key_file_set_integer(
-        key, "Presentation", "decimal-places",
-        static_cast<gint>(prefs.decimal_places));
-    g_key_file_set_boolean(
-        key, "Presentation", "group-thousands", prefs.group_thousands);
-    g_key_file_set_boolean(
-        key, "Presentation", "trailing-zeroes", prefs.trailing_zeroes);
-
-    gsize length = 0;
-    gchar* data = g_key_file_to_data(key, &length, nullptr);
-    if (data) {
-        if (!write_private_file(
-                path, std::string_view(data, static_cast<std::size_t>(length)))) {
-            g_printerr(
-                "Calculator could not persist presentation preferences to %s\n",
-                path);
-        }
-        g_free(data);
-    }
-    g_key_file_unref(key);
-    g_free(path);
-    g_free(directory);
-}
 
 bool controller_state_loaded = false;
 
