@@ -765,6 +765,9 @@ void show_history(GtkWidget*, gpointer) {
             label += "\n= ";
             label += entry->output;
 
+            GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+            gtk_widget_set_hexpand(row, TRUE);
+
             GtkWidget* recall = gtk_button_new_with_label(label.c_str());
             // GTK CSS has no text-align property. Align the native label
             // directly so history recall rows remain left-aligned without
@@ -806,7 +809,30 @@ void show_history(GtkWidget*, gpointer) {
                     gtk_widget_grab_focus(expression_entry);
                 }),
                 GUINT_TO_POINTER(static_cast<guint>(index + 1U)));
-            gtk_box_append(GTK_BOX(list), recall);
+            gtk_box_append(GTK_BOX(row), recall);
+
+            GtkWidget* remove = gtk_button_new_with_label("Delete");
+            gtk_widget_add_css_class(remove, "toolbar-button");
+            gtk_widget_set_tooltip_text(
+                remove, "Delete this history item");
+            g_signal_connect(
+                remove, "clicked",
+                G_CALLBACK(+[](GtkButton* button, gpointer data) {
+                    const auto encoded = GPOINTER_TO_UINT(data);
+                    if (encoded == 0U) return;
+                    const std::size_t history_index =
+                        static_cast<std::size_t>(encoded - 1U);
+                    if (!controller.delete_history(history_index)) return;
+                    refresh_history_dock();
+                    GtkRoot* root =
+                        gtk_widget_get_root(GTK_WIDGET(button));
+                    if (root && GTK_IS_WINDOW(root)) {
+                        gtk_window_destroy(GTK_WINDOW(root));
+                    }
+                }),
+                GUINT_TO_POINTER(static_cast<guint>(index + 1U)));
+            gtk_box_append(GTK_BOX(row), remove);
+            gtk_box_append(GTK_BOX(list), row);
         }
     }
 
