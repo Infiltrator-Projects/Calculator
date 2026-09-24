@@ -562,6 +562,7 @@ struct PreferencesWindowState {
     GtkWidget* format = nullptr;
     GtkWidget* decimals = nullptr;
     GtkWidget* precision = nullptr;
+    GtkWidget* history_limit = nullptr;
     GtkWidget* grouping = nullptr;
     GtkWidget* zeroes = nullptr;
 };
@@ -584,6 +585,9 @@ void apply_preferences_window(PreferencesWindowState* state) {
     controller.set_display_preferences(prefs);
     controller.set_scientific_digits(static_cast<unsigned>(
         gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(state->precision))));
+    controller.set_history_limit(static_cast<std::size_t>(
+        gtk_spin_button_get_value_as_int(
+            GTK_SPIN_BUTTON(state->history_limit))));
     save_controller_state();
     render_state();
 }
@@ -610,7 +614,7 @@ void show_preferences(GtkWidget*, gpointer) {
         G_OBJECT(window),
         reinterpret_cast<gpointer*>(&preferences_window));
     gtk_window_set_title(GTK_WINDOW(window), "Calculator Preferences");
-    gtk_window_set_default_size(GTK_WINDOW(window), 430, 390);
+    gtk_window_set_default_size(GTK_WINDOW(window), 430, 440);
     gtk_window_set_hide_on_close(GTK_WINDOW(window), TRUE);
     if (main_window) {
         gtk_window_set_transient_for(
@@ -666,6 +670,20 @@ void show_preferences(GtkWidget*, gpointer) {
     gtk_box_append(GTK_BOX(precision_row), state->precision);
     gtk_box_append(GTK_BOX(root), precision_row);
 
+    GtkWidget* history_row =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* history_label =
+        gtk_label_new("History limit (0 = unlimited)");
+    gtk_widget_set_hexpand(history_label, TRUE);
+    gtk_widget_set_halign(history_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(history_row), history_label);
+    state->history_limit = gtk_spin_button_new_with_range(
+        0.0,
+        static_cast<double>(Controller::kMaxHistoryEntries),
+        100.0);
+    gtk_box_append(GTK_BOX(history_row), state->history_limit);
+    gtk_box_append(GTK_BOX(root), history_row);
+
     GtkWidget* grouping_row =
         gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget* grouping_label =
@@ -697,6 +715,9 @@ void show_preferences(GtkWidget*, gpointer) {
         GTK_SPIN_BUTTON(state->decimals), prefs.decimal_places);
     gtk_spin_button_set_value(
         GTK_SPIN_BUTTON(state->precision), controller.scientific_digits());
+    gtk_spin_button_set_value(
+        GTK_SPIN_BUTTON(state->history_limit),
+        static_cast<double>(controller.history_limit()));
     gtk_switch_set_active(
         GTK_SWITCH(state->grouping), prefs.group_thousands);
     gtk_switch_set_active(
@@ -710,6 +731,9 @@ void show_preferences(GtkWidget*, gpointer) {
         G_CALLBACK(on_preferences_changed), state);
     g_signal_connect(
         state->precision, "notify::value",
+        G_CALLBACK(on_preferences_changed), state);
+    g_signal_connect(
+        state->history_limit, "notify::value",
         G_CALLBACK(on_preferences_changed), state);
     g_signal_connect(
         state->grouping, "notify::active",
@@ -2161,7 +2185,7 @@ void activate(GtkApplication* app, gpointer) {
 
     preferences_button = toolbar_button("Prefs");
     gtk_widget_set_tooltip_text(
-        preferences_button, "Result format, precision and grouping");
+        preferences_button, "Result format, precision, history and grouping");
     g_signal_connect(
         preferences_button, "clicked",
         G_CALLBACK(show_preferences), nullptr);
