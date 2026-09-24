@@ -367,22 +367,40 @@ std::vector<std::string> Controller::completion_candidates(
     if (state_.mode != Mode::Scientific || prefix.empty()) return {};
 
     std::vector<std::string> candidates;
-    const auto add = [&](std::string_view candidate) {
-        if (candidate.size() < prefix.size() ||
-            candidate.substr(0, prefix.size()) != prefix) {
-            return;
-        }
+    const auto prefix_matches =
+        [](std::string_view candidate, std::string_view wanted,
+           bool case_insensitive) {
+            if (candidate.size() < wanted.size()) return false;
+            for (std::size_t i = 0; i < wanted.size(); ++i) {
+                const unsigned char actual =
+                    static_cast<unsigned char>(candidate[i]);
+                const unsigned char expected =
+                    static_cast<unsigned char>(wanted[i]);
+                if (case_insensitive) {
+                    if (infiltratr_ascii_to_lower(actual) !=
+                        infiltratr_ascii_to_lower(expected)) {
+                        return false;
+                    }
+                } else if (actual != expected) {
+                    return false;
+                }
+            }
+            return true;
+        };
+    const auto add = [&](std::string_view candidate,
+                         bool case_insensitive = false) {
+        if (!prefix_matches(candidate, prefix, case_insensitive)) return;
         candidates.emplace_back(candidate);
     };
 
     for (const auto function : calculator::scientific_function_catalog()) {
-        add(function);
+        add(function, true);
     }
-    add("rand");
-    add("i");
+    add("rand", true);
+    add("i", true);
 
     for (const auto& constant : calculator::constant_catalog()) {
-        add(constant.name);
+        add(constant.name, true);
         bool alias_identifier = !constant.alias.empty() &&
             (infiltratr_ascii_is_alpha(
                  static_cast<unsigned char>(constant.alias.front())) ||
@@ -392,7 +410,7 @@ std::vector<std::string> Controller::completion_candidates(
                 (infiltratr_ascii_is_alnum(
                      static_cast<unsigned char>(ch)) || ch == '_');
         }
-        if (alias_identifier) add(constant.alias);
+        if (alias_identifier) add(constant.alias, true);
     }
 
     for (const auto& [name, value] : session_.scientific_variables()) {
