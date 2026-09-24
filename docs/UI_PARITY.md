@@ -19,7 +19,7 @@ Calculator has one interaction state machine rendered by three native shells. Li
 - expression, result and status state;
 - Scientific DEG/RAD/GRAD, 2nd, HYP and F-E state;
 - Programmer radix, width and signedness;
-- memory, variables and history through `Session`, including per-entry history deletion and a shared unlimited-or-bounded retention preference;
+- memory, variables and history through `Session`, including a newest-first multi-memory stack with indexed recall/delete, per-entry history deletion and a shared unlimited-or-bounded retention preference;
 - command enablement;
 - Scientific live result preview and case-tolerant built-in identifier/function completion; and
 - command dispatch and calculator interaction behaviour, including Standard CE semantics that discard only the current operand while preserving the pending expression.
