@@ -20,7 +20,7 @@ A familiar result, another calculator's output or a plausible display string is 
 
 ## Real-number representation
 
-Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex. The interactive controller currently evaluates at 50 decimal digits. The core evaluation API accepts requested precisions from 16 through the maintained 1000-digit ceiling, and release-CI oracle coverage exercises that full range.
+Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex. Interactive calculation precision defaults to 50 decimal digits and is user-selectable from 16 through 1000 digits. The core evaluation API accepts the same supported range, and release-CI oracle coverage exercises it.
 
 Scientific decimal literals are parsed directly into that multiprecision domain, and intermediate arithmetic/transcendental/complex results are not silently routed through binary64. The Session/Controller boundary stores real and imaginary components as decimal text so the shared public C++ state preserves the precise value without exposing a third-party multiprecision ABI. Interactive Scientific precision defaults to 50 decimal digits but is user-selectable from 16 through 1000 digits; this calculation precision is deliberately separate from display decimal-place preferences.
 
