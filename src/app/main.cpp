@@ -824,6 +824,7 @@ void show_history(GtkWidget*, gpointer) {
                             static_cast<std::size_t>(encoded - 1U))) {
                         return;
                     }
+                    render_state();
                     GtkRoot* root =
                         gtk_widget_get_root(GTK_WIDGET(button));
                     if (root && GTK_IS_WINDOW(root)) {
@@ -934,6 +935,7 @@ void show_history(GtkWidget*, gpointer) {
         G_CALLBACK(+[](GtkWindow* history_window) {
             controller.clear_history();
             controller.clear_memory();
+            render_state();
             refresh_history_dock();
             gtk_window_destroy(history_window);
         }),
