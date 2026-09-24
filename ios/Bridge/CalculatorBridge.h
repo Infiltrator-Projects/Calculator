@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isKeyEnabled:(NSString *)key;
 - (NSString *)additionalResultsText;
 - (NSString *)programmerRepresentationsText;
+- (BOOL)swapProgrammerEndianness;
 
 // Shared Controller persistence/precision contract. iOS owns only the native
 // UserDefaults storage location; the serialized format remains C++-owned.
