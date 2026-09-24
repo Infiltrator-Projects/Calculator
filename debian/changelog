@@ -1,3 +1,14 @@
+infiltrator-calculator (0.2.28) unstable; urgency=medium
+
+  * Complete Scientific-domain graph sampling and stronger regression coverage.
+  * Preserve full Scientific precision in the Constants workbench.
+  * Reuse canonical multiprecision units for Storage conversion and RAID capacity.
+  * Add user-selectable 16-1000 digit Scientific calculation precision.
+  * Add the shared expression resource bound and versioned cross-platform state.
+  * Revalidate Linux, Windows, iPhone and sanitizer release gates.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 11:25:00 +1000
+
 infiltrator-calculator (0.2.27) unstable; urgency=medium
 
   * Preserve Scientific precision in graph/root and unit-conversion tools.

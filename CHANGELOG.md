@@ -6,6 +6,16 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.28 — 2026-09-24
+
+- Complete the post-0.2.27 graph correction by routing graph samples, not only root probes, through the Scientific multiprecision evaluator and strengthen regression coverage with a Scientific-only expression.
+- Make the Constants tool render canonical constants through the Scientific precision domain instead of the binary64 convenience catalogue value.
+- Remove the duplicate Storage conversion table: Storage conversion and RAID capacity now reuse the canonical multiprecision digital-storage unit definitions while retaining legacy storage-unit spellings as aliases.
+- Expose Scientific calculation precision as an explicit shared 16–1000 digit setting, distinct from display decimal places, with native controls on Linux, Windows and iPhone.
+- Add a shared 8192-byte interactive expression bound so typed and pasted input cannot bypass Calculator's parser-resource contract.
+- Add one versioned Controller-owned persistence document for reusable variables, custom functions, Scientific precision and presentation preferences; Linux, Windows and iPhone store that same document through native XDG, Registry and UserDefaults adapters.
+- Strengthen cross-platform validation and maintained numerical/architecture documentation for the new precision, storage, persistence and input-limit contracts.
+
 ## 0.2.27 — 2026-09-24
 
 - Route Advanced Tools graph and real-root probes through the Scientific multiprecision evaluator before the explicit binary64 geometry boundary.
