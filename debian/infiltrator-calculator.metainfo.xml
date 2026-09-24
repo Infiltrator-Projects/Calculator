@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.29" date="2026-09-24">
+      <description>
+        <p>Add shared semantic-state v2, bounded Advanced Tools input, Programmer endian/grouping improvements, richer units/history and cross-platform multi-memory slots.</p>
+      </description>
+    </release>
     <release version="0.2.28" date="2026-09-24">
       <description>
         <p>Add selectable Scientific precision, canonical multiprecision Storage/Constants paths, shared input bounds and cross-platform persistent Calculator state.</p>

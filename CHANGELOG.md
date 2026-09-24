@@ -4,6 +4,10 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.2.29 — 2026-09-24
+
 - Repair the Linux desktop-layout source contract after shared-state migration removed obsolete persistence writers; CI now validates the current one-writer architecture instead of requiring deleted code.
 - Enforce an 8192-byte shared Advanced Tools input limit so GTK, Win32 and iPhone workbenches cannot bypass parser/resource bounds.
 - Extend the portable Controller persistence document to version 2 with selected mode, Scientific angle unit and Programmer radix/width/signed state while retaining v1 load compatibility.
