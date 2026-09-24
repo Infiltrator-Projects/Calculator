@@ -319,6 +319,45 @@ void save_display_preferences() {
     g_free(directory);
 }
 
+bool controller_state_loaded = false;
+
+void save_controller_state() {
+    gchar* directory = g_build_filename(
+        g_get_user_data_dir(), "infiltrator-calc", nullptr);
+    if (ensure_private_directory(directory)) {
+        gchar* path = g_build_filename(directory, "state-v1", nullptr);
+        const std::string text = controller.persistent_state_text();
+        if (!write_private_file(path, text)) {
+            g_printerr(
+                "Calculator could not persist shared state to %s\n", path);
+        }
+        g_free(path);
+    }
+    g_free(directory);
+}
+
+void load_controller_state() {
+    if (controller_state_loaded) return;
+    controller_state_loaded = true;
+
+    gchar* path = g_build_filename(
+        g_get_user_data_dir(), "infiltrator-calc", "state-v1", nullptr);
+    std::string contents;
+    const bool found = read_text_file(path, contents);
+    g_free(path);
+
+    if (found && controller.load_persistent_state_text(contents)) return;
+    if (found) {
+        g_printerr("Calculator ignored malformed shared state document.\n");
+    }
+
+    // One-release migration path from the older Linux-specific files.
+    load_user_functions();
+    load_user_variables();
+    load_display_preferences();
+    save_controller_state();
+}
+
 struct DesktopState {
     int width = calculator::ui::kDesktopMetrics.default_width;
     int height = calculator::ui::desktop_preferred_height(Mode::Standard);
@@ -438,9 +477,7 @@ void save_desktop_state(GtkWidget* window) {
 
 gboolean on_main_close_request(GtkWindow* window, gpointer) {
     save_desktop_state(GTK_WIDGET(window));
-    save_user_variables();
-    save_user_functions();
-    save_display_preferences();
+    save_controller_state();
     return FALSE;
 }
 
@@ -604,6 +641,7 @@ void render_state(std::size_t cursor = Controller::kEnd) {
 struct PreferencesWindowState {
     GtkWidget* format = nullptr;
     GtkWidget* decimals = nullptr;
+    GtkWidget* precision = nullptr;
     GtkWidget* grouping = nullptr;
     GtkWidget* zeroes = nullptr;
 };
@@ -624,7 +662,9 @@ void apply_preferences_window(PreferencesWindowState* state) {
     prefs.trailing_zeroes =
         gtk_switch_get_active(GTK_SWITCH(state->zeroes));
     controller.set_display_preferences(prefs);
-    save_display_preferences();
+    controller.set_scientific_digits(static_cast<unsigned>(
+        gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(state->precision))));
+    save_controller_state();
     render_state();
 }
 
@@ -650,7 +690,7 @@ void show_preferences(GtkWidget*, gpointer) {
         G_OBJECT(window),
         reinterpret_cast<gpointer*>(&preferences_window));
     gtk_window_set_title(GTK_WINDOW(window), "Calculator Preferences");
-    gtk_window_set_default_size(GTK_WINDOW(window), 430, 330);
+    gtk_window_set_default_size(GTK_WINDOW(window), 430, 390);
     gtk_window_set_hide_on_close(GTK_WINDOW(window), TRUE);
     if (main_window) {
         gtk_window_set_transient_for(
@@ -693,6 +733,19 @@ void show_preferences(GtkWidget*, gpointer) {
     gtk_box_append(GTK_BOX(decimal_row), state->decimals);
     gtk_box_append(GTK_BOX(root), decimal_row);
 
+    GtkWidget* precision_row =
+        gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget* precision_label =
+        gtk_label_new("Scientific calculation digits");
+    gtk_widget_set_hexpand(precision_label, TRUE);
+    gtk_widget_set_halign(precision_label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(precision_row), precision_label);
+    state->precision = gtk_spin_button_new_with_range(
+        static_cast<double>(calculator::kScientificMinDigits),
+        static_cast<double>(calculator::kScientificMaxDigits), 1.0);
+    gtk_box_append(GTK_BOX(precision_row), state->precision);
+    gtk_box_append(GTK_BOX(root), precision_row);
+
     GtkWidget* grouping_row =
         gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget* grouping_label =
@@ -722,6 +775,8 @@ void show_preferences(GtkWidget*, gpointer) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(state->format), selected);
     gtk_spin_button_set_value(
         GTK_SPIN_BUTTON(state->decimals), prefs.decimal_places);
+    gtk_spin_button_set_value(
+        GTK_SPIN_BUTTON(state->precision), controller.scientific_digits());
     gtk_switch_set_active(
         GTK_SWITCH(state->grouping), prefs.group_thousands);
     gtk_switch_set_active(
@@ -732,6 +787,9 @@ void show_preferences(GtkWidget*, gpointer) {
         G_CALLBACK(on_preferences_changed), state);
     g_signal_connect(
         state->decimals, "notify::value",
+        G_CALLBACK(on_preferences_changed), state);
+    g_signal_connect(
+        state->precision, "notify::value",
         G_CALLBACK(on_preferences_changed), state);
     g_signal_connect(
         state->grouping, "notify::active",
@@ -1481,8 +1539,7 @@ void on_activate(GtkEntry*) {
         Command::Equals,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
-    save_user_variables();
-    save_user_functions();
+    save_controller_state();
 }
 
 void on_button_clicked(GtkButton*, gpointer data) {
@@ -1497,8 +1554,7 @@ void on_button_clicked(GtkButton*, gpointer data) {
         spec->command,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
-    if (spec->command == Command::Equals) save_user_variables();
-    save_user_functions();
+    if (spec->command == Command::Equals) save_controller_state();
     gtk_widget_grab_focus(expression_entry);
 }
 
@@ -2077,9 +2133,7 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
-    load_user_variables();
-    load_user_functions();
-    load_display_preferences();
+    load_controller_state();
     const DesktopState desktop_state = load_desktop_state();
     controller.set_angle_unit(
         static_cast<calculator::AngleUnit>(desktop_state.angle_code));
@@ -2188,6 +2242,9 @@ void activate(GtkApplication* app, gpointer) {
     gtk_box_append(GTK_BOX(calculator_column), display);
 
     expression_entry = gtk_entry_new();
+    gtk_entry_set_max_length(
+        GTK_ENTRY(expression_entry),
+        static_cast<int>(Controller::kMaxExpressionBytes));
     gtk_editable_set_enable_undo(GTK_EDITABLE(expression_entry), TRUE);
     gtk_entry_set_placeholder_text(GTK_ENTRY(expression_entry), "Expression");
     gtk_widget_add_css_class(expression_entry, "expression");
@@ -2334,8 +2391,7 @@ int main(int argc, char** argv) {
     const int status_code =
         g_application_run(G_APPLICATION(app), argc, argv);
 
-    save_user_variables();
-    save_user_functions();
+    save_controller_state();
     if (css_provider) g_object_unref(css_provider);
     g_object_unref(app);
     return status_code;
