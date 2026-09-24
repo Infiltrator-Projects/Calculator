@@ -269,8 +269,8 @@ void save_controller_state() {
     g_free(directory);
 }
 
-void load_controller_state() {
-    if (controller_state_loaded) return;
+bool load_controller_state() {
+    if (controller_state_loaded) return true;
     controller_state_loaded = true;
 
     gchar* path = g_build_filename(
@@ -279,16 +279,19 @@ void load_controller_state() {
     const bool found = read_text_file(path, contents);
     g_free(path);
 
-    if (found && controller.load_persistent_state_text(contents)) return;
+    if (found && controller.load_persistent_state_text(contents)) {
+        return contents.rfind("INFILTRATOR_CALCULATOR_STATE 2\n", 0U) == 0U;
+    }
     if (found) {
         g_printerr("Calculator ignored malformed shared state document.\n");
     }
 
-    // One-release migration path from the older Linux-specific files.
+    // One-release migration path from the older Linux-specific files. The
+    // caller applies legacy desktop semantic state before publishing v2.
     load_user_functions();
     load_user_variables();
     load_display_preferences();
-    save_controller_state();
+    return false;
 }
 
 struct DesktopState {
@@ -380,22 +383,6 @@ void save_desktop_state(GtkWidget* window) {
         key, "Window", "width", gtk_widget_get_width(window));
     g_key_file_set_integer(
         key, "Window", "height", gtk_widget_get_height(window));
-    g_key_file_set_integer(
-        key, "Window", "mode",
-        static_cast<gint>(controller.state().mode));
-    g_key_file_set_integer(
-        key, "Calculator", "angle-unit",
-        static_cast<gint>(controller.state().angle_unit));
-    g_key_file_set_integer(
-        key, "Calculator", "programmer-base",
-        static_cast<gint>(controller.state().programmer_base));
-    g_key_file_set_integer(
-        key, "Calculator", "programmer-width",
-        static_cast<gint>(controller.state().programmer_width));
-    g_key_file_set_boolean(
-        key, "Calculator", "programmer-signed",
-        controller.state().programmer_signed);
-
     gsize length = 0;
     gchar* data = g_key_file_to_data(key, &length, nullptr);
     if (data) {
@@ -2066,17 +2053,22 @@ void activate(GtkApplication* app, gpointer) {
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
-    load_controller_state();
-    const DesktopState desktop_state = load_desktop_state();
-    controller.set_angle_unit(
-        static_cast<calculator::AngleUnit>(desktop_state.angle_code));
-    controller.set_programmer_context(
-        static_cast<calculator::ProgrammerBase>(
-            desktop_state.programmer_base_code),
-        static_cast<calculator::IntegerWidth>(
-            desktop_state.programmer_width_code),
-        desktop_state.programmer_signed_flag);
-    controller.set_mode(desktop_state.selected_mode);
+    const bool shared_semantic_state = load_controller_state();
+    DesktopState desktop_state = load_desktop_state();
+    if (!shared_semantic_state) {
+        controller.set_angle_unit(
+            static_cast<calculator::AngleUnit>(desktop_state.angle_code));
+        controller.set_programmer_context(
+            static_cast<calculator::ProgrammerBase>(
+                desktop_state.programmer_base_code),
+            static_cast<calculator::IntegerWidth>(
+                desktop_state.programmer_width_code),
+            desktop_state.programmer_signed_flag);
+        controller.set_mode(desktop_state.selected_mode);
+        save_controller_state();
+    } else {
+        desktop_state.selected_mode = controller.state().mode;
+    }
 
     if (!font_family_available(ui_font()) ||
         !font_family_available(brand_font())) {
