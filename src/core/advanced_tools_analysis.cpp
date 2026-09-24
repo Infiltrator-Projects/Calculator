@@ -25,18 +25,38 @@ namespace calculator::tools::detail {
 ToolResult constants_tool(std::string_view input) {
     const std::string name=trim(input);
     const auto& constants=calculator::constant_catalog();
+
+    const auto precise_value = [](const calculator::ConstantInfo& constant,
+                                  std::string& text) {
+        const auto evaluated = calculator::evaluate_scientific(
+            std::string(constant.name), {}, {}, calculator::AngleUnit::Radians,
+            kToolScientificDigits);
+        if (!evaluated.ok || !evaluated.display.empty()) return false;
+        text = calculator::format_scientific_value(
+            evaluated.value, kToolScientificDigits);
+        return true;
+    };
+
     if(name.empty()||name=="list") {
         std::ostringstream out;
         for(std::size_t i=0;i<constants.size();++i){
+            std::string value;
+            if (!precise_value(constants[i], value)) {
+                return failure("Constant catalogue evaluation failed.");
+            }
             if(i) out<<'\n';
-            out<<constants[i].name<<"  "<<calculator::format_scientific_value(constants[i].value);
+            out<<constants[i].name<<"  "<<value;
             if(!constants[i].unit.empty()) out<<' '<<constants[i].unit;
         }
         return success(out.str());
     }
     for(const auto& c:constants) {
         if(c.name==name || c.alias==name) {
-            std::string out=std::string(c.name)+"  "+calculator::format_scientific_value(c.value);
+            std::string value;
+            if (!precise_value(c, value)) {
+                return failure("Constant evaluation failed.");
+            }
+            std::string out=std::string(c.name)+"  "+value;
             if(!c.unit.empty()) out+=" "+std::string(c.unit);
             return success(out);
         }
