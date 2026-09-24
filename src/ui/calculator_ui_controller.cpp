@@ -135,6 +135,33 @@ void Controller::clear_history() noexcept {
     session_.clear_history();
 }
 
+bool Controller::recall_memory(std::size_t index_from_newest) {
+    const auto entry = session_.memory_entry(index_from_newest);
+    if (!entry || state_.mode == Mode::Programmer) return false;
+
+    if (state_.mode == Mode::Scientific) {
+        state_.expression =
+            calculator::scientific_value_expression(entry->scientific);
+    } else {
+        if (!entry->binary64_valid) {
+            set_status("MEMORY RANGE ERROR", true);
+            return false;
+        }
+        state_.expression = calculator::serialize_value(entry->binary64);
+    }
+
+    state_.fault = false;
+    refresh_evaluation_cache();
+    if (state_.mode == Mode::Scientific) {
+        update_scientific_preview();
+        set_status(scientific_status_text());
+    } else {
+        update_standard_preview();
+        set_status("MEMORY RECALL");
+    }
+    return true;
+}
+
 std::string Controller::function_definitions_text() const {
     return session_.function_definitions_text();
 }
