@@ -67,15 +67,18 @@ int main(){
     check(contains(evaluate(AdvancedTool::Statistics,"1,2,3,4,5"),"Mean  3"),"statistics mean");
 
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
-    const auto precise_graph=evaluate(AdvancedTool::Graph,"sin(pi*x);-1;1;3");
+    const auto precise_graph=evaluate(AdvancedTool::Graph,"real(i*x);-1;1;3");
     check(graph.ok&&graph.points.size()==9U,"graph points");
     check(!evaluate(AdvancedTool::Graph,"x;0;1;1").ok,
           "graph sample lower bound");
     check(!evaluate(AdvancedTool::Graph,"x;0;1;4097").ok,
           "graph sample upper bound");
     check(graph.ok&&std::fabs(graph.points[4].y)<1e-12,"graph center");
-    check(precise_graph.ok&&std::fabs(precise_graph.points[1].y)<1e-18,
-          "graph Scientific evaluator");
+    check(precise_graph.ok&&precise_graph.points.size()==3U&&
+          std::fabs(precise_graph.points[0].y)<1e-18&&
+          std::fabs(precise_graph.points[1].y)<1e-18&&
+          std::fabs(precise_graph.points[2].y)<1e-18,
+          "graph Scientific-only evaluator");
 
     const auto roots=evaluate(AdvancedTool::EquationSolver,"x^2-2;0;2");
     check(roots.ok&&roots.output.find("1.414213")!=std::string::npos,"equation root");
