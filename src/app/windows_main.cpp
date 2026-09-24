@@ -47,6 +47,8 @@ constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 constexpr int kIdHistoryList = 3002;
 constexpr int kIdHistoryDelete = 3003;
+constexpr int kIdMemoryList = 3004;
+constexpr int kIdMemoryDelete = 3005;
 constexpr int kIdToolSelector = 4001;
 constexpr int kIdToolInput = 4002;
 constexpr int kIdToolRun = 4003;
@@ -127,6 +129,7 @@ HWND g_footer = nullptr;
 HWND g_mode_buttons[3] = {nullptr, nullptr, nullptr};
 HWND g_history_window = nullptr;
 HWND g_history_edit = nullptr;
+HWND g_memory_edit = nullptr;
 HWND g_history_dock = nullptr;
 HWND g_tools_window = nullptr;
 HWND g_bases_window = nullptr;
@@ -643,6 +646,28 @@ void refresh_history() {
     static HWND rendered_dock = nullptr;
 
     const std::uint64_t revision = g_controller.history_revision();
+    if (g_memory_edit != nullptr) {
+        SendMessageW(g_memory_edit, LB_RESETCONTENT, 0, 0);
+        const std::size_t memory_count = g_controller.memory_count();
+        if (memory_count == 0U) {
+            SendMessageW(
+                g_memory_edit, LB_ADDSTRING, 0,
+                reinterpret_cast<LPARAM>(L"No memory slots."));
+        } else {
+            for (std::size_t index = 0; index < memory_count; ++index) {
+                const auto entry = g_controller.memory_entry(index);
+                if (!entry) continue;
+                const std::wstring row = utf8_to_wide(
+                    calculator::format_scientific_value(
+                        entry->scientific,
+                        g_controller.scientific_digits()));
+                SendMessageW(
+                    g_memory_edit, LB_ADDSTRING, 0,
+                    reinterpret_cast<LPARAM>(row.c_str()));
+            }
+        }
+    }
+
     if (g_history_edit != nullptr &&
         (rendered_list != g_history_edit || list_revision != revision)) {
         SendMessageW(g_history_edit, LB_RESETCONTENT, 0, 0);
@@ -711,7 +736,7 @@ void show_history() {
     }
 
     g_history_window = CreateWindowExW(
-        WS_EX_TOOLWINDOW, kHistoryClass, L"Calculation History",
+        WS_EX_TOOLWINDOW, kHistoryClass, L"History & Memory",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT, sx(g_main, 620), sx(g_main, 540),
         g_main, nullptr, g_instance, nullptr);
@@ -1555,6 +1580,8 @@ void apply_fonts_to_controls() {
     if (g_history_window != nullptr) {
         apply_font(GetDlgItem(g_history_window, kIdHistoryClear), g_ui_bold_font);
         apply_font(GetDlgItem(g_history_window, kIdHistoryDelete), g_ui_bold_font);
+        apply_font(GetDlgItem(g_history_window, kIdMemoryDelete), g_ui_bold_font);
+        apply_font(g_memory_edit, g_ui_font);
     }
 }
 
@@ -1563,6 +1590,17 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
     switch (message) {
     case WM_CREATE: {
         apply_nonclient_theme(window);
+        g_memory_edit = CreateWindowExW(
+            0, L"LISTBOX", L"",
+            WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP |
+                LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
+            0, 0, 0, 0, window,
+            reinterpret_cast<HMENU>(
+                static_cast<INT_PTR>(kIdMemoryList)),
+            g_instance, nullptr);
+        apply_control_theme(g_memory_edit);
+        apply_font(g_memory_edit, g_ui_font);
+
         g_history_edit = CreateWindowExW(
             0, L"LISTBOX", L"",
             WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP |
@@ -1574,12 +1612,15 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
         apply_control_theme(g_history_edit);
         apply_font(g_history_edit, g_ui_font);
 
-        HWND clear = create_button(window, kIdHistoryClear, L"Clear History",
+        HWND clear = create_button(window, kIdHistoryClear, L"Clear All",
                                    g_ui_bold_font);
-        HWND remove = create_button(window, kIdHistoryDelete, L"Delete Selected",
+        HWND remove = create_button(window, kIdHistoryDelete, L"Delete History",
                                     g_ui_bold_font);
+        HWND remove_memory = create_button(
+            window, kIdMemoryDelete, L"Delete Memory", g_ui_bold_font);
         (void)clear;
         (void)remove;
+        (void)remove_memory;
         refresh_history();
         return 0;
     }
@@ -1590,26 +1631,52 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
             window,
             static_cast<int>(calculator::ui::design_metrics().content_padding));
         const int button_height = sx(window, 38);
-        MoveWindow(g_history_edit, margin, margin,
+        const int available_height =
+            std::max(0, static_cast<int>(client.bottom) -
+                            margin * 4 - button_height);
+        const int memory_height = std::max(
+            sx(window, 90), available_height / 3);
+        MoveWindow(g_memory_edit, margin, margin,
                    std::max(0, static_cast<int>(client.right) - margin * 2),
-                   std::max(0, static_cast<int>(client.bottom) - margin * 3 - button_height),
-                   TRUE);
+                   memory_height, TRUE);
+        MoveWindow(g_history_edit, margin, margin * 2 + memory_height,
+                   std::max(0, static_cast<int>(client.right) - margin * 2),
+                   std::max(0, available_height - memory_height), TRUE);
         HWND clear = GetDlgItem(window, kIdHistoryClear);
         HWND remove = GetDlgItem(window, kIdHistoryDelete);
-        const int action_width = sx(window, 140);
+        HWND remove_memory = GetDlgItem(window, kIdMemoryDelete);
+        const int action_width = sx(window, 120);
         const int action_gap = sx(window, 8);
         MoveWindow(clear, margin,
                    client.bottom - margin - button_height,
                    action_width, button_height, TRUE);
         MoveWindow(remove, margin + action_width + action_gap,
                    client.bottom - margin - button_height,
-                   sx(window, 160), button_height, TRUE);
+                   sx(window, 135), button_height, TRUE);
+        MoveWindow(remove_memory,
+                   margin + action_width + action_gap + sx(window, 135) + action_gap,
+                   client.bottom - margin - button_height,
+                   sx(window, 135), button_height, TRUE);
         return 0;
     }
     case WM_COMMAND:
         if (LOWORD(wparam) == kIdHistoryClear) {
             g_controller.clear_history();
+            g_controller.clear_memory();
             refresh_history();
+            render_state();
+            return 0;
+        }
+        if (LOWORD(wparam) == kIdMemoryDelete &&
+            g_memory_edit != nullptr) {
+            const LRESULT selected = SendMessageW(
+                g_memory_edit, LB_GETCURSEL, 0, 0);
+            if (selected != LB_ERR &&
+                g_controller.delete_memory(
+                    static_cast<std::size_t>(selected))) {
+                refresh_history();
+                render_state();
+            }
             return 0;
         }
         if (LOWORD(wparam) == kIdHistoryDelete &&
@@ -1631,6 +1698,19 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
                 } else {
                     SetFocus(GetDlgItem(window, kIdHistoryClear));
                 }
+            }
+            return 0;
+        }
+        if (LOWORD(wparam) == kIdMemoryList &&
+            HIWORD(wparam) == LBN_DBLCLK &&
+            g_memory_edit != nullptr) {
+            const LRESULT selected = SendMessageW(
+                g_memory_edit, LB_GETCURSEL, 0, 0);
+            if (selected != LB_ERR &&
+                g_controller.recall_memory(
+                    static_cast<std::size_t>(selected))) {
+                render_state();
+                SetFocus(g_expression);
             }
             return 0;
         }
@@ -1685,6 +1765,7 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
     case WM_DESTROY:
         g_history_window = nullptr;
         g_history_edit = nullptr;
+        g_memory_edit = nullptr;
         return 0;
     default:
         break;
