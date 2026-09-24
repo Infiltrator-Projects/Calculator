@@ -306,11 +306,14 @@ final class CalculatorModel: ObservableObject {
 
     @discardableResult
     func deleteMemory(_ index: Int) -> Bool {
-        bridge.deleteMemory(at: index)
+        let deleted = bridge.deleteMemory(at: index)
+        if deleted { sync() }
+        return deleted
     }
 
     func clearMemory() {
         bridge.clearMemory()
+        sync()
     }
 
     func visibleTitle(_ key: String) -> String {
