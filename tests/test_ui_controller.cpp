@@ -555,6 +555,14 @@ int main() {
     CHECK(controller.state().result == "12");
     CHECK(!controller.recall_history(99));
 
+    const std::uint64_t before_history_delete =
+        controller.history_revision();
+    CHECK(controller.delete_history(0));
+    CHECK(controller.history_count() == 1U);
+    CHECK(controller.history_revision() == before_history_delete + 1U);
+    CHECK(controller.history_entry(0)->input == "7+5");
+    CHECK(!controller.delete_history(99));
+
     controller.set_mode(Mode::Programmer);
     controller.dispatch(Command::BaseHex);
     controller.dispatch(Command::Width8);
