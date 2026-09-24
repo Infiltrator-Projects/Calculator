@@ -711,8 +711,9 @@ void show_history() {
 }
 
 ButtonKind button_kind(int id, const ButtonSpec* spec) {
-    if (id == kIdHistory || id == kIdTheme || id == kIdTools ||
-        id == kIdBases || id == kIdResults || id == kIdToolRun)
+    if (id == kIdHistory || id == kIdTheme || id == kIdPrecision ||
+        id == kIdTools || id == kIdBases || id == kIdResults ||
+        id == kIdToolRun)
         return ButtonKind::Toolbar;
     if (id >= kIdBaseBitFirst && id <= kIdBaseBitLast)
         return ButtonKind::Utility;
