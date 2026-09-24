@@ -260,10 +260,17 @@ private:
         if (!enter_recursion()) return 0;
 
         std::uint64_t value = 0;
-        if (consume('~')) value = (~parse_unary()) & mask_for(width_);
-        else if (consume('+')) value = parse_unary() & mask_for(width_);
-        else if (consume('-')) value = (0ULL - parse_unary()) & mask_for(width_);
-        else value = parse_primary();
+        if (consume_word("bswap")) {
+            value = swap_programmer_endianness(parse_unary(), width_);
+        } else if (consume('~')) {
+            value = (~parse_unary()) & mask_for(width_);
+        } else if (consume('+')) {
+            value = parse_unary() & mask_for(width_);
+        } else if (consume('-')) {
+            value = (0ULL - parse_unary()) & mask_for(width_);
+        } else {
+            value = parse_primary();
+        }
 
         leave_recursion();
         return value & mask_for(width_);
@@ -353,6 +360,37 @@ ProgrammerRepresentations programmer_representations(
         format_programmer(
             value, ProgrammerBase::Hexadecimal, width, false)
     };
+}
+
+std::uint64_t swap_programmer_endianness(
+    std::uint64_t value, IntegerWidth width) noexcept {
+    const unsigned bytes = static_cast<unsigned>(width) / 8U;
+    value &= mask_for(width);
+    std::uint64_t swapped = 0U;
+    for (unsigned index = 0U; index < bytes; ++index) {
+        swapped <<= 8U;
+        swapped |= (value >> (index * 8U)) & 0xffU;
+    }
+    return swapped & mask_for(width);
+}
+
+std::string group_programmer_digits(
+    std::string_view digits, ProgrammerBase base) {
+    if (base == ProgrammerBase::Decimal || digits.size() <= 1U) {
+        return std::string(digits);
+    }
+
+    const std::size_t group =
+        base == ProgrammerBase::Octal ? 3U : 4U;
+    std::string grouped;
+    grouped.reserve(digits.size() + digits.size() / group);
+    for (std::size_t i = 0U; i < digits.size(); ++i) {
+        if (i != 0U && (digits.size() - i) % group == 0U) {
+            grouped.push_back(' ');
+        }
+        grouped.push_back(digits[i]);
+    }
+    return grouped;
 }
 
 } // namespace calculator
