@@ -175,6 +175,7 @@ std::string Controller::persistent_state_text() const {
         << "programmer-width="
         << static_cast<unsigned>(state_.programmer_width) << '\n'
         << "programmer-signed=" << (state_.programmer_signed ? 1 : 0) << '\n'
+        << "history-limit=" << session_.history_limit() << '\n'
         << "scientific-digits=" << scientific_digits_ << '\n'
         << "result-format="
         << static_cast<unsigned>(display_preferences_.format) << '\n'
@@ -254,6 +255,7 @@ bool Controller::load_persistent_state_text(std::string_view text) {
     unsigned programmer_width =
         static_cast<unsigned>(state_.programmer_width);
     unsigned programmer_signed = state_.programmer_signed ? 1U : 0U;
+    std::size_t history_limit = session_.history_limit();
 
     if (state_v2) {
         if (!read_line(line) || !parse_unsigned(line, "mode=", mode) ||
@@ -272,7 +274,10 @@ bool Controller::load_persistent_state_text(std::string_view text) {
             !read_line(line) ||
             !parse_unsigned(
                 line, "programmer-signed=", programmer_signed) ||
-            programmer_signed > 1U) {
+            programmer_signed > 1U ||
+            !read_line(line) ||
+            !parse_size(line, "history-limit=", history_limit) ||
+            history_limit > kMaxHistoryEntries) {
             return false;
         }
     }
@@ -337,6 +342,7 @@ bool Controller::load_persistent_state_text(std::string_view text) {
     preferences.group_thousands = group_thousands != 0U;
     preferences.trailing_zeroes = trailing_zeroes != 0U;
     display_preferences_ = preferences;
+    if (state_v2) session_.set_history_limit(history_limit);
 
     if (state_v2) {
         state_.mode = static_cast<Mode>(mode);
