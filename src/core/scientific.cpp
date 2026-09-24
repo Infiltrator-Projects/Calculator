@@ -332,17 +332,18 @@ std::string inverse_function_name(std::string_view name) {
     return {};
 }
 
+constexpr std::array<std::string_view, 31> kScientificFunctions{{
+    "frac", "int", "round", "sgn",
+    "sin", "cos", "tan", "asin", "acos", "atan",
+    "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+    "sqrt", "cbrt", "square", "cube",
+    "ln", "log", "exp", "abs",
+    "exp2", "exp10", "floor", "ceil",
+    "conj", "real", "imag"
+}};
+
 bool is_builtin(std::string_view name) {
-    static constexpr std::array<std::string_view, 31> names{{
-        "frac", "int", "round", "sgn",
-        "sin", "cos", "tan", "asin", "acos", "atan",
-        "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
-        "sqrt", "cbrt", "square", "cube",
-        "ln", "log", "exp", "abs",
-        "exp2", "exp10", "floor", "ceil",
-        "conj", "real", "imag"
-    }};
-    for (const auto candidate : names) {
+    for (const auto candidate : kScientificFunctions) {
         if (candidate == name) return true;
     }
 
@@ -363,46 +364,42 @@ bool is_builtin(std::string_view name) {
 }
 
 Complex constant_value(std::string_view name, bool& found) {
+    if (name == "i") {
+        found = true;
+        return Complex(0, 1);
+    }
+
+    const ConstantInfo* info = nullptr;
+    for (const auto& constant : constant_catalog()) {
+        if (constant.name == name || constant.alias == name) {
+            info = &constant;
+            break;
+        }
+    }
+    if (!info) {
+        found = false;
+        return {};
+    }
+
     found = true;
-    if (name == "pi") return Complex(pi_value());
-    if (name == "e" || name == "euler") return Complex(e_value());
-    if (name == "tau") return Complex(2 * pi_value());
-    if (name == "phi" || name == "golden") {
+    switch (info->kind) {
+    case ConstantKind::Pi:
+        return Complex(pi_value());
+    case ConstantKind::Euler:
+        return Complex(e_value());
+    case ConstantKind::Tau:
+        return Complex(2 * pi_value());
+    case ConstantKind::Phi:
         return Complex((Real(1) + sqrt(Real(5))) / 2);
-    }
-    if (name == "i") return Complex(0, 1);
-    if (name == "c0" || name == "c") {
-        return Complex(Real("299792458"));
-    }
-    if (name == "G" || name == "grav") {
-        return Complex(Real("6.67430e-11"));
-    }
-    if (name == "h" || name == "planck") {
-        return Complex(Real("6.62607015e-34"));
-    }
-    if (name == "hbar") {
+    case ConstantKind::ReducedPlanck:
         return Complex(Real("6.62607015e-34") / (2 * pi_value()));
-    }
-    if (name == "kB" || name == "boltzmann") {
-        return Complex(Real("1.380649e-23"));
-    }
-    if (name == "NA" || name == "avogadro") {
-        return Complex(Real("6.02214076e23"));
-    }
-    if (name == "qe") return Complex(Real("1.602176634e-19"));
-    if (name == "me") return Complex(Real("9.1093837139e-31"));
-    if (name == "mp") return Complex(Real("1.67262192595e-27"));
-    if (name == "g0" || name == "gravity") {
-        return Complex(Real("9.80665"));
-    }
-    if (name == "eps0" || name == "epsilon0") {
-        return Complex(Real("8.8541878188e-12"));
-    }
-    if (name == "mu0" || name == "permeability") {
-        return Complex(Real("1.25663706127e-6"));
-    }
-    if (name == "Rgas" || name == "gas") {
-        return Complex(Real("8.31446261815324"));
+    case ConstantKind::Decimal:
+        try {
+            return Complex(Real(std::string(info->exact_decimal)));
+        } catch (...) {
+            found = false;
+            return {};
+        }
     }
     found = false;
     return {};
@@ -1363,6 +1360,11 @@ private:
 };
 
 } // namespace
+
+const std::array<std::string_view, 31>&
+scientific_function_catalog() noexcept {
+    return kScientificFunctions;
+}
 
 // This is the only public construction path from expression text into the
 // multiprecision engine: normalize spelling, clamp the requested precision and

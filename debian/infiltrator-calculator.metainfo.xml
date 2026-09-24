@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.27" date="2026-09-24">
+      <description>
+        <p>Preserve Scientific precision through advanced tools, add calendar-aware date arithmetic and shared Scientific live completion.</p>
+      </description>
+    </release>
     <release version="0.2.26" date="2026-09-22">
       <description>
         <p>Pin Common 1.19.24 and inherit its hardened shared graphics range and alias handling.</p>

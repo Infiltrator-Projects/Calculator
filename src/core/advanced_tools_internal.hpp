@@ -3,6 +3,7 @@
 
 #include "advanced_tools.hpp"
 #include "calculator.hpp"
+#include "scientific.hpp"
 
 #include <infiltratr/core.h>
 
@@ -19,6 +20,7 @@ namespace calculator::tools::detail {
 // Advanced Tools' std::string_view boundary and deterministic ASCII whitespace
 // contract without exposing tool-domain semantics through Common.
 inline constexpr double kPi = 3.141592653589793238462643383279502884;
+inline constexpr unsigned kToolScientificDigits = 100U;
 
 inline ToolResult success(std::string text) {
     return {true, std::move(text), {}, {}};

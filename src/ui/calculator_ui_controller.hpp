@@ -97,6 +97,11 @@ public:
     std::string variables_text() const;
     bool load_variables_text(std::string_view text);
 
+    // Scientific completion is shared behaviour, not a platform-shell parser.
+    std::vector<std::string> completion_candidates(
+        std::string_view prefix) const;
+    DispatchResult complete_expression(std::size_t cursor = kEnd);
+
     // Display preferences affect presentation only; they do not change the
     // underlying Standard or Scientific numeric representation.
     const DisplayPreferences& display_preferences() const noexcept {
@@ -128,6 +133,7 @@ private:
     std::size_t clear_entry(std::size_t cursor);
     void refresh_evaluation_cache();
     void update_standard_preview();
+    void update_scientific_preview();
     void unary_transform(Command command);
     void scientific_transform(Command command);
     void programmer_mode_change(Command command);

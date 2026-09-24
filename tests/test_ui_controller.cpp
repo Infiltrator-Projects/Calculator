@@ -125,10 +125,19 @@ int main() {
     controller.set_mode(Mode::Scientific);
     controller.set_expression("sqrt(9)");
     CHECK(controller.command_enabled(Command::Equals));
+    CHECK(controller.state().result == "3");
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result == "3");
 
+    controller.set_expression("sqr");
+    CHECK(controller.completion_candidates("sqr").size() == 1U);
+    const auto completed = controller.complete_expression();
+    CHECK(completed.expression_changed);
+    CHECK(controller.state().expression == "sqrt(");
+    CHECK(completed.cursor == controller.state().expression.size());
+
     controller.set_expression("1/7");
+    CHECK(controller.state().result.size() > 40U);
     controller.dispatch(Command::Equals);
     CHECK(controller.state().result.size() > 40U);
     CHECK(controller.state().result.rfind(

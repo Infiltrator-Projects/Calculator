@@ -28,6 +28,10 @@ Formatting does not create precision. Standard binary64 presentation remains dis
 
 Standard therefore has two deliberately separate decimal-output paths. `format_value()` and display preferences are presentation and may round, group or otherwise format a value for a person. `serialize_value()` is computational state: it emits the shortest locale-independent decimal that round-trips to the exact same finite binary64 value. Interactive unary operations, memory recall and any other binary64 state boundary must use the latter and must never reconstruct computation from rounded display text.
 
+## Shared constant authority
+
+Constant names, aliases, binary64 presentation values, physical units and definition kind have one canonical catalogue in `calculator.*`. Scientific resolves that same catalogue at its active precision: mathematical constants are constructed mathematically, decimal physical constants are constructed from their canonical decimal spelling, and reduced Planck's constant is derived from exact SI Planck h divided by 2π. This avoids a second drifting list of Scientific constant values.
+
 ## Binary64 decimal token conversion
 
 In the binary64 expression path, Calculator owns grammar and decides when a numeric operand is expected. Common 1.19.24 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
@@ -145,6 +149,12 @@ Boundary regressions cover zero, signed finite values, the smallest positive sub
 
 Additional Results never invents precision: Standard rows describe the same binary64 value, while Scientific rows are alternative presentations of the same retained arbitrary-precision real/complex value.
 
+
+## Advanced-tool precision boundaries
+
+Unit conversion evaluates source values, exact decimal/ratio factors and affine offsets in the Scientific multiprecision domain. Graph and real-root probes also use the Scientific evaluator. Native graph coordinates and the deterministic interval search remain finite binary64 geometry, so high-precision expression semantics are retained up to the explicit geometry boundary rather than being reduced at parse/evaluation entry.
+
+Calendar date arithmetic is integer civil-date arithmetic, not floating-point duration arithmetic. Month/year shifts clamp to the valid last day of the target month and stay within years 1..9999.
 
 ## Advanced tool numeric domains
 

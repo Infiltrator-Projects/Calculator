@@ -1841,7 +1841,8 @@ void show_keyboard_shortcuts() {
         "  Ctrl+N                New independent Calculator window\n"
         "  Ctrl+W                Close Calculator\n"
         "  Ctrl+Q                Quit Calculator\n"
-        "  F1 / Ctrl+?           Keyboard shortcuts\n\n"
+        "  F1 / Ctrl+?           Keyboard shortcuts\n"
+        "  Tab                   Complete Scientific name/function\n\n"
         "Modes\n"
         "  Ctrl+Alt+B            Standard\n"
         "  Ctrl+Alt+A            Scientific\n"
@@ -1975,6 +1976,22 @@ gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
         render_state(result.cursor);
         gtk_widget_grab_focus(expression_entry);
         return TRUE;
+    }
+
+    if (keyval == GDK_KEY_Tab &&
+        controller.state().mode == Mode::Scientific) {
+        sync_expression_from_widget();
+        const int position =
+            gtk_editable_get_position(GTK_EDITABLE(expression_entry));
+        const auto result = controller.complete_expression(
+            position < 0
+                ? Controller::kEnd
+                : static_cast<std::size_t>(position));
+        if (result.expression_changed) {
+            render_state(result.cursor);
+            gtk_widget_grab_focus(expression_entry);
+            return TRUE;
+        }
     }
 
     if (alt && (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right)) {

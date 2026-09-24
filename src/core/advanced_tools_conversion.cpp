@@ -106,86 +106,88 @@ ToolResult engineering_tool(std::string_view input) {
 struct Unit {
     std::string_view name;
     std::string_view dimension;
-    double factor;
-    double offset;
+    // Scientific expressions preserve exact decimal definitions and ratios
+    // until the conversion is actually evaluated.
+    std::string_view factor;
+    std::string_view offset;
 };
 
 constexpr std::array<Unit, 135> kUnits{{
-    {"m","length",1.0,0.0},{"km","length",1000.0,0.0},{"cm","length",0.01,0.0},{"mm","length",0.001,0.0},
-    {"um","length",1e-6,0.0},{"nm","length",1e-9,0.0},{"in","length",0.0254,0.0},{"ft","length",0.3048,0.0},
-    {"yd","length",0.9144,0.0},{"mi","length",1609.344,0.0},{"nmi","length",1852.0,0.0},
-    {"pc","length",3.0856775814913673e16,0.0},{"ly","length",9.4607304725808e15,0.0},
-    {"au","length",149597870700.0,0.0},{"U","length",0.04445,0.0},{"cable","length",219.456,0.0},
-    {"fathom","length",1.8288,0.0},{"pt","length",0.0003527777777777778,0.0},
+    {"m","length","1.0","0.0"},{"km","length","1000.0","0.0"},{"cm","length","0.01","0.0"},{"mm","length","0.001","0.0"},
+    {"um","length","1e-6","0.0"},{"nm","length","1e-9","0.0"},{"in","length","0.0254","0.0"},{"ft","length","0.3048","0.0"},
+    {"yd","length","0.9144","0.0"},{"mi","length","1609.344","0.0"},{"nmi","length","1852.0","0.0"},
+    {"pc","length","3.0856775814913673e16","0.0"},{"ly","length","9.4607304725808e15","0.0"},
+    {"au","length","149597870700.0","0.0"},{"U","length","0.04445","0.0"},{"cable","length","219.456","0.0"},
+    {"fathom","length","1.8288","0.0"},{"pt","length","0.0003527777777777778","0.0"},
 
-    {"kg","mass",1.0,0.0},{"g","mass",0.001,0.0},{"mg","mass",1e-6,0.0},{"lb","mass",0.45359237,0.0},
-    {"oz","mass",0.028349523125,0.0},{"t","mass",1000.0,0.0},{"ozt","mass",0.0311034768,0.0},
-    {"st","mass",6.35029318,0.0},
+    {"kg","mass","1.0","0.0"},{"g","mass","0.001","0.0"},{"mg","mass","1e-6","0.0"},{"lb","mass","0.45359237","0.0"},
+    {"oz","mass","0.028349523125","0.0"},{"t","mass","1000.0","0.0"},{"ozt","mass","0.0311034768","0.0"},
+    {"st","mass","6.35029318","0.0"},
 
-    {"C","temperature",1.0,273.15},{"F","temperature",5.0/9.0,255.3722222222222},{"K","temperature",1.0,0.0},
-    {"R","temperature",5.0/9.0,0.0},
+    {"C","temperature","1.0","273.15"},{"F","temperature","5.0/9.0","459.67*5.0/9.0"},{"K","temperature","1.0","0.0"},
+    {"R","temperature","5.0/9.0","0.0"},
 
-    {"m2","area",1.0,0.0},{"km2","area",1e6,0.0},{"cm2","area",1e-4,0.0},{"ft2","area",0.09290304,0.0},
-    {"in2","area",0.00064516,0.0},{"yd2","area",0.83612736,0.0},{"mi2","area",2589988.110336,0.0},
-    {"acre","area",4046.8564224,0.0},{"ha","area",10000.0,0.0},
+    {"m2","area","1.0","0.0"},{"km2","area","1e6","0.0"},{"cm2","area","1e-4","0.0"},{"ft2","area","0.09290304","0.0"},
+    {"in2","area","0.00064516","0.0"},{"yd2","area","0.83612736","0.0"},{"mi2","area","2589988.110336","0.0"},
+    {"acre","area","4046.8564224","0.0"},{"ha","area","10000.0","0.0"},
 
-    {"m3","volume",1.0,0.0},{"L","volume",0.001,0.0},{"mL","volume",1e-6,0.0},{"uL","volume",1e-9,0.0},
-    {"cupMetric","volume",0.00025,0.0},{"galUS","volume",0.003785411784,0.0},
-    {"galUK","volume",0.00454609,0.0},{"ft3","volume",0.028316846592,0.0},{"in3","volume",0.000016387064,0.0},
-    {"cupUS","volume",0.0002365882365,0.0},{"pintUS","volume",0.000473176473,0.0},
-    {"quartUS","volume",0.000946352946,0.0},{"flozUS","volume",0.0000295735295625,0.0},
-    {"tbspUS","volume",0.00001478676478125,0.0},{"tspUS","volume",0.00000492892159375,0.0},
-    {"pintUK","volume",0.00056826125,0.0},{"quartUK","volume",0.0011365225,0.0},
+    {"m3","volume","1.0","0.0"},{"L","volume","0.001","0.0"},{"mL","volume","1e-6","0.0"},{"uL","volume","1e-9","0.0"},
+    {"cupMetric","volume","0.00025","0.0"},{"galUS","volume","0.003785411784","0.0"},
+    {"galUK","volume","0.00454609","0.0"},{"ft3","volume","0.028316846592","0.0"},{"in3","volume","0.000016387064","0.0"},
+    {"cupUS","volume","0.0002365882365","0.0"},{"pintUS","volume","0.000473176473","0.0"},
+    {"quartUS","volume","0.000946352946","0.0"},{"flozUS","volume","0.0000295735295625","0.0"},
+    {"tbspUS","volume","0.00001478676478125","0.0"},{"tspUS","volume","0.00000492892159375","0.0"},
+    {"pintUK","volume","0.00056826125","0.0"},{"quartUK","volume","0.0011365225","0.0"},
 
-    {"mps","speed",1.0,0.0},{"kph","speed",1.0/3.6,0.0},{"mph","speed",0.44704,0.0},
-    {"knot","speed",0.5144444444444445,0.0},{"fps","speed",0.3048,0.0},
+    {"mps","speed","1.0","0.0"},{"kph","speed","1.0/3.6","0.0"},{"mph","speed","0.44704","0.0"},
+    {"knot","speed","0.5144444444444445","0.0"},{"fps","speed","0.3048","0.0"},
 
-    {"Pa","pressure",1.0,0.0},{"kPa","pressure",1000.0,0.0},{"MPa","pressure",1e6,0.0},{"bar","pressure",100000.0,0.0},
-    {"psi","pressure",6894.757293168,0.0},{"atm","pressure",101325.0,0.0},
-    {"mmHg","pressure",133.322387415,0.0},{"Torr","pressure",133.32236842105263,0.0},
+    {"Pa","pressure","1.0","0.0"},{"kPa","pressure","1000.0","0.0"},{"MPa","pressure","1e6","0.0"},{"bar","pressure","100000.0","0.0"},
+    {"psi","pressure","6894.757293168","0.0"},{"atm","pressure","101325.0","0.0"},
+    {"mmHg","pressure","133.322387415","0.0"},{"Torr","pressure","133.32236842105263","0.0"},
 
-    {"J","energy",1.0,0.0},{"kJ","energy",1000.0,0.0},{"Wh","energy",3600.0,0.0},{"kWh","energy",3.6e6,0.0},
-    {"cal","energy",4.184,0.0},{"kcal","energy",4184.0,0.0},{"BTU","energy",1055.05585262,0.0},
-    {"eV","energy",1.602176634e-19,0.0},{"erg","energy",1e-7,0.0},{"ftlb","energy",1.3558179483314004,0.0},
+    {"J","energy","1.0","0.0"},{"kJ","energy","1000.0","0.0"},{"Wh","energy","3600.0","0.0"},{"kWh","energy","3.6e6","0.0"},
+    {"cal","energy","4.184","0.0"},{"kcal","energy","4184.0","0.0"},{"BTU","energy","1055.05585262","0.0"},
+    {"eV","energy","1.602176634e-19","0.0"},{"erg","energy","1e-7","0.0"},{"ftlb","energy","1.3558179483314004","0.0"},
 
-    {"W","power",1.0,0.0},{"kW","power",1000.0,0.0},{"hp","power",745.6998715822702,0.0},
-    {"BTUmin","power",17.584264210333333,0.0},
+    {"W","power","1.0","0.0"},{"kW","power","1000.0","0.0"},{"hp","power","745.6998715822702","0.0"},
+    {"BTUmin","power","17.584264210333333","0.0"},
 
-    {"century","duration",3155760000.0,0.0},{"decade","duration",315576000.0,0.0},
-    {"yr","duration",31557600.0,0.0},{"month","duration",2629800.0,0.0},{"week","duration",604800.0,0.0},
-    {"day","duration",86400.0,0.0},{"h","duration",3600.0,0.0},{"min","duration",60.0,0.0},
-    {"s","duration",1.0,0.0},{"ms","duration",1e-3,0.0},{"us","duration",1e-6,0.0},{"ns","duration",1e-9,0.0},
+    {"century","duration","3155760000.0","0.0"},{"decade","duration","315576000.0","0.0"},
+    {"yr","duration","31557600.0","0.0"},{"month","duration","2629800.0","0.0"},{"week","duration","604800.0","0.0"},
+    {"day","duration","86400.0","0.0"},{"h","duration","3600.0","0.0"},{"min","duration","60.0","0.0"},
+    {"s","duration","1.0","0.0"},{"ms","duration","1e-3","0.0"},{"us","duration","1e-6","0.0"},{"ns","duration","1e-9","0.0"},
 
-    {"Hz","frequency",1.0,0.0},{"kHz","frequency",1e3,0.0},{"MHz","frequency",1e6,0.0},
-    {"GHz","frequency",1e9,0.0},{"THz","frequency",1e12,0.0},
+    {"Hz","frequency","1.0","0.0"},{"kHz","frequency","1e3","0.0"},{"MHz","frequency","1e6","0.0"},
+    {"GHz","frequency","1e9","0.0"},{"THz","frequency","1e12","0.0"},
 
     // GNOME Calculator 41.1 / Linux Mint digital-storage conversion family.
     // Byte is the canonical internal unit; decimal and IEC prefixes remain
     // distinct so the GUI never silently conflates kB with KiB.
-    {"bit","digital-storage",0.125,0.0},{"byte","digital-storage",1.0,0.0},
-    {"nibble","digital-storage",0.5,0.0},
-    {"kb","digital-storage",125.0,0.0},{"kB","digital-storage",1000.0,0.0},
-    {"Kib","digital-storage",128.0,0.0},{"KiB","digital-storage",1024.0,0.0},
-    {"Mb","digital-storage",125000.0,0.0},{"MB","digital-storage",1000000.0,0.0},
-    {"Mib","digital-storage",131072.0,0.0},{"MiB","digital-storage",1048576.0,0.0},
-    {"Gb","digital-storage",125000000.0,0.0},{"GB","digital-storage",1000000000.0,0.0},
-    {"Gib","digital-storage",134217728.0,0.0},{"GiB","digital-storage",1073741824.0,0.0},
-    {"Tb","digital-storage",125000000000.0,0.0},{"TB","digital-storage",1000000000000.0,0.0},
-    {"Tib","digital-storage",137438953472.0,0.0},{"TiB","digital-storage",1099511627776.0,0.0},
-    {"Pb","digital-storage",125000000000000.0,0.0},{"PB","digital-storage",1000000000000000.0,0.0},
-    {"Pib","digital-storage",140737488355328.0,0.0},{"PiB","digital-storage",1125899906842624.0,0.0},
-    {"Eb","digital-storage",1.25e17,0.0},{"EB","digital-storage",1.0e18,0.0},
-    {"Eib","digital-storage",1.44115188075855872e17,0.0},{"EiB","digital-storage",1.152921504606846976e18,0.0},
-    {"Zb","digital-storage",1.25e20,0.0},{"ZB","digital-storage",1.0e21,0.0},
-    {"Zib","digital-storage",1.47573952589676412928e20,0.0},{"ZiB","digital-storage",1.180591620717411303424e21,0.0},
-    {"Yb","digital-storage",1.25e23,0.0},{"YB","digital-storage",1.0e24,0.0},
-    {"Yib","digital-storage",1.51115727451828646838272e23,0.0},{"YiB","digital-storage",1.208925819614629174706176e24,0.0}
+    {"bit","digital-storage","0.125","0.0"},{"byte","digital-storage","1.0","0.0"},
+    {"nibble","digital-storage","0.5","0.0"},
+    {"kb","digital-storage","125.0","0.0"},{"kB","digital-storage","1000.0","0.0"},
+    {"Kib","digital-storage","128.0","0.0"},{"KiB","digital-storage","1024.0","0.0"},
+    {"Mb","digital-storage","125000.0","0.0"},{"MB","digital-storage","1000000.0","0.0"},
+    {"Mib","digital-storage","131072.0","0.0"},{"MiB","digital-storage","1048576.0","0.0"},
+    {"Gb","digital-storage","125000000.0","0.0"},{"GB","digital-storage","1000000000.0","0.0"},
+    {"Gib","digital-storage","134217728.0","0.0"},{"GiB","digital-storage","1073741824.0","0.0"},
+    {"Tb","digital-storage","125000000000.0","0.0"},{"TB","digital-storage","1000000000000.0","0.0"},
+    {"Tib","digital-storage","137438953472.0","0.0"},{"TiB","digital-storage","1099511627776.0","0.0"},
+    {"Pb","digital-storage","125000000000000.0","0.0"},{"PB","digital-storage","1000000000000000.0","0.0"},
+    {"Pib","digital-storage","140737488355328.0","0.0"},{"PiB","digital-storage","1125899906842624.0","0.0"},
+    {"Eb","digital-storage","1.25e17","0.0"},{"EB","digital-storage","1.0e18","0.0"},
+    {"Eib","digital-storage","1.44115188075855872e17","0.0"},{"EiB","digital-storage","1.152921504606846976e18","0.0"},
+    {"Zb","digital-storage","1.25e20","0.0"},{"ZB","digital-storage","1.0e21","0.0"},
+    {"Zib","digital-storage","1.47573952589676412928e20","0.0"},{"ZiB","digital-storage","1.180591620717411303424e21","0.0"},
+    {"Yb","digital-storage","1.25e23","0.0"},{"YB","digital-storage","1.0e24","0.0"},
+    {"Yib","digital-storage","1.51115727451828646838272e23","0.0"},{"YiB","digital-storage","1.208925819614629174706176e24","0.0"}
 }};
 
 constexpr std::array<Unit, 3> kAngleUnits{{
-    {"deg","angle",kPi/180.0,0.0},
-    {"rad","angle",1.0,0.0},
-    {"grad","angle",kPi/200.0,0.0}
+    {"deg","angle","pi/180.0","0.0"},
+    {"rad","angle","1.0","0.0"},
+    {"grad","angle","pi/200.0","0.0"}
 }};
 
 const Unit* find_unit(std::string_view name) {
@@ -197,18 +199,41 @@ const Unit* find_unit(std::string_view name) {
 ToolResult unit_tool(std::string_view input) {
     const auto fields = split_ws(input);
     if (fields.size() != 3U) return failure("Usage: value FROM TO");
-    double value = 0.0;
-    if (!parse_double(fields[0], value)) return failure("Invalid numeric value.");
+
     const Unit* from = find_unit(fields[1]);
     const Unit* to = find_unit(fields[2]);
     if (!from || !to) return failure("Unknown unit. See the Unit conversion prompt.");
     if (from->dimension != to->dimension) return failure("Units belong to different dimensions.");
-    const double si = value * from->factor + from->offset;
-    const double converted = (si - to->offset) / to->factor;
-    return success(number(value) + " " + std::string(from->name) +
-                   " = " + number(converted) + " " + std::string(to->name));
-}
 
+    const ScientificResult source = calculator::evaluate_scientific(
+        fields[0], {}, {}, AngleUnit::Radians, kToolScientificDigits);
+    if (!source.ok || !source.display.empty() || source.value.imag != "0") {
+        return failure("Invalid real numeric value.");
+    }
+
+    const std::string value_expression =
+        calculator::scientific_value_expression(source.value);
+    const std::string expression =
+        "((" + value_expression + ")*(" + std::string(from->factor) +
+        ")+(" + std::string(from->offset) + ")-(" +
+        std::string(to->offset) + "))/(" + std::string(to->factor) + ")";
+
+    const ScientificResult converted = calculator::evaluate_scientific(
+        expression, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+    if (!converted.ok || !converted.display.empty() ||
+        converted.value.imag != "0") {
+        return failure(
+            converted.error.empty()
+                ? "Unit conversion produced an invalid result."
+                : converted.error);
+    }
+
+    return success(
+        calculator::format_scientific_value(source.value, 25U) + " " +
+        std::string(from->name) + " = " +
+        calculator::format_scientific_value(converted.value, 25U) + " " +
+        std::string(to->name));
+}
 bool parse_ipv4(std::string_view text, std::uint32_t& address) {
     std::uint32_t out = 0;
     std::size_t begin = 0;
@@ -419,40 +444,236 @@ std::string date_string(int y,unsigned m,unsigned d) {
     return out.str();
 }
 
+bool shift_years_clamped(int& y, int& m, int& d, std::int64_t years) {
+    std::int64_t shifted = 0;
+    if (!infiltratr_i64_add_checked(
+            static_cast<std::int64_t>(y), years, &shifted) ||
+        shifted < 1 || shifted > 9999) {
+        return false;
+    }
+    y = static_cast<int>(shifted);
+    d = std::min(d, month_days(y, m));
+    return true;
+}
+
+bool shift_months_clamped(int& y, int& m, int& d, std::int64_t months) {
+    const std::int64_t current =
+        (static_cast<std::int64_t>(y) - 1) * 12 + (m - 1);
+    std::int64_t shifted = 0;
+    if (!infiltratr_i64_add_checked(current, months, &shifted) ||
+        shifted < 0 || shifted >= 9999LL * 12LL) {
+        return false;
+    }
+    y = static_cast<int>(shifted / 12) + 1;
+    m = static_cast<int>(shifted % 12) + 1;
+    d = std::min(d, month_days(y, m));
+    return true;
+}
+
+bool shift_days_checked(int& y, int& m, int& d, std::int64_t days) {
+    const std::int64_t current = days_from_civil(
+        y, static_cast<unsigned>(m), static_cast<unsigned>(d));
+    std::int64_t shifted = 0;
+    if (!infiltratr_i64_add_checked(current, days, &shifted)) return false;
+    int oy = 0;
+    unsigned om = 0;
+    unsigned od = 0;
+    civil_from_days(shifted, oy, om, od);
+    if (oy < 1 || oy > 9999) return false;
+    y = oy;
+    m = static_cast<int>(om);
+    d = static_cast<int>(od);
+    return true;
+}
+
+bool checked_negate(std::int64_t value, std::int64_t& output) {
+    if (value == std::numeric_limits<std::int64_t>::min()) return false;
+    output = -value;
+    return true;
+}
+
+bool checked_week_days(std::int64_t weeks, std::int64_t& days) {
+    if (weeks > std::numeric_limits<std::int64_t>::max() / 7 ||
+        weeks < std::numeric_limits<std::int64_t>::min() / 7) {
+        return false;
+    }
+    days = weeks * 7;
+    return true;
+}
+
+bool parse_calendar_offsets(
+    const std::vector<std::string>& fields,
+    std::int64_t& years, std::int64_t& months, std::int64_t& days) {
+    if (fields.size() < 4U || ((fields.size() - 2U) % 2U) != 0U) {
+        return false;
+    }
+    for (std::size_t i = 2U; i < fields.size(); i += 2U) {
+        std::int64_t value = 0;
+        if (!parse_i64(fields[i], value)) return false;
+        const std::string& unit = fields[i + 1U];
+
+        std::int64_t* target = nullptr;
+        std::int64_t scaled = value;
+        if (unit == "year" || unit == "years" || unit == "yr") {
+            target = &years;
+        } else if (unit == "month" || unit == "months") {
+            target = &months;
+        } else if (unit == "week" || unit == "weeks") {
+            if (!checked_week_days(value, scaled)) return false;
+            target = &days;
+        } else if (unit == "day" || unit == "days") {
+            target = &days;
+        } else {
+            return false;
+        }
+
+        std::int64_t combined = 0;
+        if (!infiltratr_i64_add_checked(*target, scaled, &combined)) {
+            return false;
+        }
+        *target = combined;
+    }
+    return true;
+}
+
+bool apply_calendar_offsets(
+    int& y, int& m, int& d,
+    std::int64_t years, std::int64_t months, std::int64_t days,
+    bool subtract) {
+    if (!subtract) {
+        return shift_years_clamped(y, m, d, years) &&
+               shift_months_clamped(y, m, d, months) &&
+               shift_days_checked(y, m, d, days);
+    }
+
+    std::int64_t ny = 0;
+    std::int64_t nm = 0;
+    std::int64_t nd = 0;
+    if (!checked_negate(years, ny) ||
+        !checked_negate(months, nm) ||
+        !checked_negate(days, nd)) {
+        return false;
+    }
+    return shift_days_checked(y, m, d, nd) &&
+           shift_months_clamped(y, m, d, nm) &&
+           shift_years_clamped(y, m, d, ny);
+}
+
+struct CalendarDifference {
+    std::int64_t years = 0;
+    std::int64_t months = 0;
+    std::int64_t weeks = 0;
+    std::int64_t days = 0;
+};
+
+CalendarDifference calendar_difference(
+    int y1, int m1, int d1, int y2, int m2, int d2) {
+    const std::int64_t first_serial = days_from_civil(
+        y1, static_cast<unsigned>(m1), static_cast<unsigned>(d1));
+    const std::int64_t second_serial = days_from_civil(
+        y2, static_cast<unsigned>(m2), static_cast<unsigned>(d2));
+    if (first_serial > second_serial) {
+        std::swap(y1, y2);
+        std::swap(m1, m2);
+        std::swap(d1, d2);
+    }
+
+    const std::int64_t end_serial = days_from_civil(
+        y2, static_cast<unsigned>(m2), static_cast<unsigned>(d2));
+
+    CalendarDifference result;
+    result.years = static_cast<std::int64_t>(y2) - y1;
+
+    int cy = y1;
+    int cm = m1;
+    int cd = d1;
+    if (!shift_years_clamped(cy, cm, cd, result.years) ||
+        days_from_civil(cy, static_cast<unsigned>(cm), static_cast<unsigned>(cd)) >
+            end_serial) {
+        --result.years;
+        cy = y1;
+        cm = m1;
+        cd = d1;
+        (void)shift_years_clamped(cy, cm, cd, result.years);
+    }
+
+    result.months =
+        (static_cast<std::int64_t>(y2) - cy) * 12 + (m2 - cm);
+    int my = cy;
+    int mm = cm;
+    int md = cd;
+    if (!shift_months_clamped(my, mm, md, result.months) ||
+        days_from_civil(my, static_cast<unsigned>(mm), static_cast<unsigned>(md)) >
+            end_serial) {
+        --result.months;
+        my = cy;
+        mm = cm;
+        md = cd;
+        (void)shift_months_clamped(my, mm, md, result.months);
+    }
+
+    const std::int64_t remainder =
+        end_serial -
+        days_from_civil(my, static_cast<unsigned>(mm), static_cast<unsigned>(md));
+    result.weeks = remainder / 7;
+    result.days = remainder % 7;
+    return result;
+}
+
 ToolResult datetime_tool(std::string_view input) {
-    const auto f=split_ws(input);
-    if(f.empty()) return failure("Enter diff, add or unix.");
-    if(f[0]=="diff") {
+    const auto f = split_ws(input);
+    if (f.empty()) return failure("Enter diff, add, sub or unix.");
+
+    if (f[0] == "diff") {
         int y1,m1,d1,y2,m2,d2;
-        if(f.size()!=3U||!parse_date(f[1],y1,m1,d1)||!parse_date(f[2],y2,m2,d2))
+        if (f.size()!=3U||!parse_date(f[1],y1,m1,d1)||!parse_date(f[2],y2,m2,d2))
             return failure("Usage: diff YYYY-MM-DD YYYY-MM-DD");
         const auto delta =
             days_from_civil(
                 y2, static_cast<unsigned>(m2), static_cast<unsigned>(d2)) -
             days_from_civil(
                 y1, static_cast<unsigned>(m1), static_cast<unsigned>(d1));
-        const auto absdays=delta<0?-delta:delta;
-        return success("Days  "+std::to_string(delta)+
-                       "\nAbsolute  "+std::to_string(absdays)+
-                       "\nWeeks + days  "+std::to_string(absdays/7)+" + "+std::to_string(absdays%7));
+        const auto absdays = delta < 0 ? -delta : delta;
+        const CalendarDifference calendar =
+            calendar_difference(y1,m1,d1,y2,m2,d2);
+        std::ostringstream out;
+        out << "Days  " << delta
+            << "\nAbsolute  " << absdays
+            << "\nWeeks + days  " << absdays/7 << " + " << absdays%7
+            << "\nCalendar absolute  "
+            << calendar.years << " years, "
+            << calendar.months << " months, "
+            << calendar.weeks << " weeks, "
+            << calendar.days << " days";
+        return success(out.str());
     }
-    if(f[0]=="add") {
-        int y,m,d; std::int64_t delta=0;
-        if(f.size()!=3U||!parse_date(f[1],y,m,d)) return failure("Usage: add YYYY-MM-DD days");
-        if(!parse_i64(f[2], delta)) return failure("Invalid day offset.");
-        const std::int64_t base_day =
-            days_from_civil(
-                y, static_cast<unsigned>(m), static_cast<unsigned>(d));
-        std::int64_t result_day = 0;
-        if (!infiltratr_i64_add_checked(base_day, delta, &result_day)) {
+
+    if (f[0] == "add" || f[0] == "sub") {
+        int y=0,m=0,d=0;
+        if (f.size() < 3U || !parse_date(f[1],y,m,d)) {
+            return failure(
+                "Usage: add|sub YYYY-MM-DD days OR add|sub YYYY-MM-DD N years N months N weeks N days");
+        }
+
+        std::int64_t years = 0;
+        std::int64_t months = 0;
+        std::int64_t days = 0;
+        if (f.size() == 3U) {
+            if (!parse_i64(f[2], days)) return failure("Invalid day offset.");
+        } else if (!parse_calendar_offsets(f, years, months, days)) {
+            return failure(
+                "Use offset pairs such as 1 year 2 months 3 weeks 4 days.");
+        }
+
+        if (!apply_calendar_offsets(
+                y, m, d, years, months, days, f[0] == "sub")) {
             return failure("Result is outside the supported civil date domain.");
         }
-        int oy; unsigned om,od;
-        civil_from_days(result_day, oy, om, od);
-        if(oy<1||oy>9999) return failure("Result is outside supported civil year range 1..9999.");
-        return success("Date  "+date_string(oy,om,od));
+        return success("Date  " + date_string(
+            y, static_cast<unsigned>(m), static_cast<unsigned>(d)));
     }
-    if(f[0]=="unix") {
+
+    if (f[0]=="unix") {
         if(f.size()!=2U) return failure("Usage: unix YYYY-MM-DDTHH:MM:SSZ");
         const std::string& t=f[1];
         if(t.size()!=20||t[10]!='T'||t[13]!=':'||t[16]!=':'||t[19]!='Z')
@@ -481,6 +702,7 @@ ToolResult datetime_tool(std::string_view input) {
     }
     return failure("Unknown date/time operation.");
 }
+
  
 } // namespace calculator::tools::detail
 

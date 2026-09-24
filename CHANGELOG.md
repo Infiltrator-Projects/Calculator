@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.27 — 2026-09-24
+
+- Route Advanced Tools graph and real-root probes through the Scientific multiprecision evaluator before the explicit binary64 geometry boundary.
+- Move unit-conversion factors/offsets to Scientific expression definitions so exact decimals and ratios such as 5/9 and pi/180 are not rounded through binary64 first.
+- Unify Scientific constant lookup with Calculator's canonical constant catalogue while retaining precision-native construction of pi/e/tau/phi and reduced Planck's constant.
+- Add calendar-aware add/subtract years, months, weeks and days with end-of-month clamping plus structured calendar date differences.
+- Add side-effect-free Scientific live preview and shared Tab completion sourced from built-ins, constants, variables and user-defined functions.
+- Extend regression and maintained documentation for the new precision, calendar and interaction contracts.
+
 ## 0.2.26 — 2026-09-22
 
 - Move Calculator from Common 1.19.23 to released Common 1.19.24 at immutable commit `748e089ae175329471d4cf375522c44081371bd5`.

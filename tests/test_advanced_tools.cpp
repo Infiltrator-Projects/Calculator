@@ -19,6 +19,8 @@ int main(){
     check(contains(evaluate(AdvancedTool::Engineering,"ohm 12 2"),"6e+00 ohm"),"engineering ohm");
     check(contains(evaluate(AdvancedTool::UnitConversion,"100 km mi"),"62.137"),"unit conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"32 F C"),"0 C"),"temperature conversion");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"212 F C"),"100 C"),"exact Fahrenheit ratio");
+    check(contains(evaluate(AdvancedTool::UnitConversion,"180 deg rad"),"3.141592653589"),"multiprecision angle conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"8 bit byte"),"1 byte"),"Mint digital storage bits to bytes");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1024 KiB MiB"),"1 MiB"),"Mint IEC storage conversion");
     check(contains(evaluate(AdvancedTool::UnitConversion,"1000 kB MB"),"1 MB"),"Mint decimal storage conversion");
@@ -49,6 +51,10 @@ int main(){
     check(contains(evaluate(AdvancedTool::Storage,"convert 1 YiB ZiB"),"1024 ZiB"),"yobibyte storage conversion");
     check(contains(evaluate(AdvancedTool::DateTime,"diff 2026-09-20 2026-09-21"),"Days  1"),"date diff");
     check(contains(evaluate(AdvancedTool::DateTime,"add 2024-02-28 1"),"2024-02-29"),"date leap add");
+    check(contains(evaluate(AdvancedTool::DateTime,"add 2024-01-31 1 month"),"2024-02-29"),"calendar month clamp");
+    check(contains(evaluate(AdvancedTool::DateTime,"add 2024-02-29 1 year"),"2025-02-28"),"calendar year clamp");
+    check(contains(evaluate(AdvancedTool::DateTime,"sub 2025-03-01 1 day"),"2025-02-28"),"calendar subtract");
+    check(contains(evaluate(AdvancedTool::DateTime,"diff 2024-01-31 2025-03-02"),"Calendar absolute  1 years, 1 months"),"calendar structured difference");
     check(!evaluate(
               AdvancedTool::DateTime,
               "add 9999-12-31 9223372036854775807").ok,
@@ -61,12 +67,15 @@ int main(){
     check(contains(evaluate(AdvancedTool::Statistics,"1,2,3,4,5"),"Mean  3"),"statistics mean");
 
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
+    const auto precise_graph=evaluate(AdvancedTool::Graph,"sin(pi*x);-1;1;3");
     check(graph.ok&&graph.points.size()==9U,"graph points");
     check(!evaluate(AdvancedTool::Graph,"x;0;1;1").ok,
           "graph sample lower bound");
     check(!evaluate(AdvancedTool::Graph,"x;0;1;4097").ok,
           "graph sample upper bound");
     check(graph.ok&&std::fabs(graph.points[4].y)<1e-12,"graph center");
+    check(precise_graph.ok&&std::fabs(precise_graph.points[1].y)<1e-18,
+          "graph Scientific evaluator");
 
     const auto roots=evaluate(AdvancedTool::EquationSolver,"x^2-2;0;2");
     check(roots.ok&&roots.output.find("1.414213")!=std::string::npos,"equation root");

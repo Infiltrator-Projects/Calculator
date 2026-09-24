@@ -118,23 +118,23 @@ std::string normalize_expression_spelling(std::string_view input) {
 }
 
 constexpr std::array<ConstantInfo, 17> kConstants{{
-    {"pi", "π", kPi, ""},
-    {"e", "euler", kE, ""},
-    {"tau", "τ", 2.0 * kPi, ""},
-    {"phi", "golden", 1.6180339887498948482, ""},
-    {"c0", "c", 299792458.0, "m/s"},
-    {"G", "grav", 6.67430e-11, "m^3 kg^-1 s^-2"},
-    {"h", "planck", 6.62607015e-34, "J s"},
-    {"hbar", "ħ", 1.0545718176461565e-34, "J s"},
-    {"kB", "boltzmann", 1.380649e-23, "J/K"},
-    {"NA", "avogadro", 6.02214076e23, "mol^-1"},
-    {"qe", "electron-charge", 1.602176634e-19, "C"},
-    {"me", "electron-mass", 9.1093837139e-31, "kg"},
-    {"mp", "proton-mass", 1.67262192595e-27, "kg"},
-    {"g0", "gravity", 9.80665, "m/s^2"},
-    {"eps0", "epsilon0", 8.8541878188e-12, "F/m"},
-    {"mu0", "permeability", 1.25663706127e-6, "N/A^2"},
-    {"Rgas", "gas", 8.31446261815324, "J mol^-1 K^-1"}
+    {"pi", "π", kPi, "", ConstantKind::Pi, ""},
+    {"e", "euler", kE, "", ConstantKind::Euler, ""},
+    {"tau", "τ", 2.0 * kPi, "", ConstantKind::Tau, ""},
+    {"phi", "golden", 1.6180339887498948482, "", ConstantKind::Phi, ""},
+    {"c0", "c", 299792458.0, "m/s", ConstantKind::Decimal, "299792458"},
+    {"G", "grav", 6.67430e-11, "m^3 kg^-1 s^-2", ConstantKind::Decimal, "6.67430e-11"},
+    {"h", "planck", 6.62607015e-34, "J s", ConstantKind::Decimal, "6.62607015e-34"},
+    {"hbar", "ħ", 1.0545718176461565e-34, "J s", ConstantKind::ReducedPlanck, ""},
+    {"kB", "boltzmann", 1.380649e-23, "J/K", ConstantKind::Decimal, "1.380649e-23"},
+    {"NA", "avogadro", 6.02214076e23, "mol^-1", ConstantKind::Decimal, "6.02214076e23"},
+    {"qe", "electron-charge", 1.602176634e-19, "C", ConstantKind::Decimal, "1.602176634e-19"},
+    {"me", "electron-mass", 9.1093837139e-31, "kg", ConstantKind::Decimal, "9.1093837139e-31"},
+    {"mp", "proton-mass", 1.67262192595e-27, "kg", ConstantKind::Decimal, "1.67262192595e-27"},
+    {"g0", "gravity", 9.80665, "m/s^2", ConstantKind::Decimal, "9.80665"},
+    {"eps0", "epsilon0", 8.8541878188e-12, "F/m", ConstantKind::Decimal, "8.8541878188e-12"},
+    {"mu0", "permeability", 1.25663706127e-6, "N/A^2", ConstantKind::Decimal, "1.25663706127e-6"},
+    {"Rgas", "gas", 8.31446261815324, "J mol^-1 K^-1", ConstantKind::Decimal, "8.31446261815324"}
 }};
 
 const ConstantInfo* lookup_constant(std::string_view name) noexcept {

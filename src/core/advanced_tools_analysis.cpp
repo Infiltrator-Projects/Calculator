@@ -141,9 +141,16 @@ ToolResult graph_tool(std::string_view input) {
 }
 
 double eval_x(std::string_view expr,double x,bool& ok) {
-    calculator::Variables vars; vars["x"]=x;
-    const auto r=calculator::evaluate(std::string(expr),vars);
-    ok=r.ok&&std::isfinite(r.value); return ok?r.value:0.0;
+    calculator::ScientificVariables vars;
+    vars["x"] = calculator::scientific_value_from_double(x);
+    const auto result = calculator::evaluate_scientific(
+        std::string(expr), vars, {}, calculator::AngleUnit::Radians,
+        kToolScientificDigits);
+    double value = 0.0;
+    ok = result.ok && result.display.empty() &&
+         calculator::scientific_value_to_double(result.value, value) &&
+         std::isfinite(value);
+    return ok ? value : 0.0;
 }
 void add_root(std::vector<double>& roots,double x) {
     for(double r:roots) if(std::fabs(r-x)<=1e-9*std::max({1.0,std::fabs(r),std::fabs(x)})) return;

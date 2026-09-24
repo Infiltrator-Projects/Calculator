@@ -3,7 +3,9 @@
 
 #include "calculator.hpp"
 
+#include <array>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace calculator {
@@ -36,6 +38,10 @@ enum class ScientificDisplayFormat {
     Scientific,
     Engineering
 };
+
+// Process-lifetime catalogue of identifiers accepted as Scientific functions.
+const std::array<std::string_view, 31>&
+scientific_function_catalog() noexcept;
 
 // Evaluate the Scientific grammar entirely in the maintained multiprecision
 // real/complex domain. decimal_digits is clamped to the supported precision

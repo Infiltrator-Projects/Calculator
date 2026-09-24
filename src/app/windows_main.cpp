@@ -1332,6 +1332,18 @@ void create_controls(HWND window) {
                                       calculate_from_entry();
                                       return 0;
                                   }
+                                  if (message == WM_KEYDOWN && wparam == VK_TAB &&
+                                      g_controller.state().mode == Mode::Scientific) {
+                                      sync_controller_expression();
+                                      const auto result =
+                                          g_controller.complete_expression(
+                                              expression_cursor());
+                                      if (result.expression_changed) {
+                                          render_state(result.cursor);
+                                          SetFocus(g_expression);
+                                          return 0;
+                                      }
+                                  }
                                   return CallWindowProcW(g_old_edit_proc, edit, message, wparam, lparam);
                               })));
 

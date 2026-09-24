@@ -18,11 +18,25 @@ struct FunctionDefinition {
 };
 using Functions = std::unordered_map<std::string, FunctionDefinition>;
 
+enum class ConstantKind {
+    Decimal,
+    Pi,
+    Euler,
+    Tau,
+    Phi,
+    ReducedPlanck
+};
+
 struct ConstantInfo {
     std::string_view name;
     std::string_view alias;
     double value = 0.0;
     std::string_view unit;
+    ConstantKind kind = ConstantKind::Decimal;
+    // Canonical decimal spelling for decimal-defined constants. Mathematical
+    // constants deliberately leave this empty so Scientific can construct
+    // them at the requested precision.
+    std::string_view exact_decimal;
 };
 
 // Process-lifetime catalogue of Calculator-owned constants. Returned views

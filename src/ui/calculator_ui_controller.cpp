@@ -17,6 +17,7 @@ void Controller::set_expression(std::string expression) {
     state_.fault = false;
     refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
+    else if (state_.mode == Mode::Scientific) update_scientific_preview();
 }
 
 void Controller::set_mode(Mode mode) {
@@ -24,17 +25,22 @@ void Controller::set_mode(Mode mode) {
     refresh_evaluation_cache();
     if (mode == Mode::Scientific) {
         set_status(scientific_status_text());
+        update_scientific_preview();
     } else if (mode == Mode::Programmer) {
         set_status(programmer_status_text());
     } else {
         set_status("READY");
+        update_standard_preview();
     }
 }
 
 void Controller::set_angle_unit(AngleUnit unit) {
     state_.angle_unit = unit;
     refresh_evaluation_cache();
-    if (state_.mode == Mode::Scientific) set_status(scientific_status_text());
+    if (state_.mode == Mode::Scientific) {
+        set_status(scientific_status_text());
+        update_scientific_preview();
+    }
 }
 
 void Controller::set_programmer_context(
@@ -130,6 +136,115 @@ bool Controller::load_variables_text(std::string_view text) {
     const bool loaded = session_.load_variables_text(text);
     if (loaded) refresh_evaluation_cache();
     return loaded;
+}
+
+std::vector<std::string> Controller::completion_candidates(
+    std::string_view prefix) const {
+    if (state_.mode != Mode::Scientific || prefix.empty()) return {};
+
+    std::vector<std::string> candidates;
+    const auto add = [&](std::string_view candidate) {
+        if (candidate.size() < prefix.size() ||
+            candidate.substr(0, prefix.size()) != prefix) {
+            return;
+        }
+        candidates.emplace_back(candidate);
+    };
+
+    for (const auto function : calculator::scientific_function_catalog()) {
+        add(function);
+    }
+    add("rand");
+    add("i");
+
+    for (const auto& constant : calculator::constant_catalog()) {
+        add(constant.name);
+        bool alias_identifier = !constant.alias.empty() &&
+            (infiltratr_ascii_is_alpha(
+                 static_cast<unsigned char>(constant.alias.front())) ||
+             constant.alias.front() == '_');
+        for (char ch : constant.alias) {
+            alias_identifier = alias_identifier &&
+                (infiltratr_ascii_is_alnum(
+                     static_cast<unsigned char>(ch)) || ch == '_');
+        }
+        if (alias_identifier) add(constant.alias);
+    }
+
+    for (const auto& [name, value] : session_.scientific_variables()) {
+        (void)value;
+        if (name != "_") add(name);
+    }
+    for (const auto& [name, definition] : session_.functions()) {
+        (void)definition;
+        add(name);
+    }
+
+    std::sort(candidates.begin(), candidates.end());
+    candidates.erase(
+        std::unique(candidates.begin(), candidates.end()),
+        candidates.end());
+    return candidates;
+}
+
+DispatchResult Controller::complete_expression(std::size_t cursor) {
+    if (state_.mode != Mode::Scientific) {
+        return {normalized_cursor(cursor), false};
+    }
+
+    const std::size_t point = normalized_cursor(cursor);
+    std::size_t begin = point;
+    while (begin > 0U) {
+        const unsigned char ch =
+            static_cast<unsigned char>(state_.expression[begin - 1U]);
+        if (!infiltratr_ascii_is_alnum(ch) &&
+            state_.expression[begin - 1U] != '_') {
+            break;
+        }
+        --begin;
+    }
+    if (begin == point) return {point, false};
+
+    const std::string prefix =
+        state_.expression.substr(begin, point - begin);
+    const auto candidates = completion_candidates(prefix);
+    if (candidates.empty()) return {point, false};
+
+    std::string replacement = candidates.front();
+    if (candidates.size() > 1U) {
+        std::size_t common = replacement.size();
+        for (std::size_t i = 1U; i < candidates.size(); ++i) {
+            common = std::min(common, candidates[i].size());
+            std::size_t matched = 0U;
+            while (matched < common &&
+                   replacement[matched] == candidates[i][matched]) {
+                ++matched;
+            }
+            common = matched;
+        }
+        replacement.resize(common);
+        if (replacement.size() <= prefix.size()) return {point, false};
+    } else {
+        bool function = false;
+        for (const auto name : calculator::scientific_function_catalog()) {
+            if (replacement == name) {
+                function = true;
+                break;
+            }
+        }
+        if (!function) {
+            function =
+                session_.functions().find(replacement) !=
+                session_.functions().end();
+        }
+        if (function) replacement.push_back('(');
+    }
+
+    state_.expression.replace(begin, point - begin, replacement);
+    state_.fault = false;
+    refresh_evaluation_cache();
+    update_scientific_preview();
+    return {begin + replacement.size(), true};
 }
 
 std::vector<AdditionalResult> Controller::additional_results() const {
@@ -510,6 +625,7 @@ DispatchResult Controller::insert(std::string_view text, std::size_t cursor) {
     state_.fault = false;
     refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
+    else if (state_.mode == Mode::Scientific) update_scientific_preview();
     return {position + text.size(), true};
 }
 
@@ -521,6 +637,7 @@ DispatchResult Controller::backspace(std::size_t cursor) {
     state_.fault = false;
     refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
+    else if (state_.mode == Mode::Scientific) update_scientific_preview();
     return {position - 1, true};
 }
 
@@ -941,6 +1058,20 @@ void Controller::update_standard_preview() {
         state_.result = format_display(result.value);
         set_status("READY");
     }
+}
+
+// Scientific live preview uses Session's side-effect-free path. Assignments
+// and function definitions are therefore never committed before Equals.
+void Controller::update_scientific_preview() {
+    if (state_.mode != Mode::Scientific || state_.expression.empty()) return;
+    if (!scientific_cache_.ok) return;
+
+    if (!scientific_cache_.display.empty()) {
+        state_.result = scientific_cache_.display;
+    } else {
+        state_.result = format_scientific_result(scientific_cache_.value);
+    }
+    set_status(scientific_status_text());
 }
 
 bool Controller::current_number_has_decimal() const {

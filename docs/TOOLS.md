@@ -25,7 +25,7 @@ Example: `ohm 12 2`.
 
 Form: `value FROM TO`.
 
-Dimensions are checked; conversion between unrelated dimensions is rejected. Supported groups include length, mass, temperature, area, volume, speed, pressure, energy, power, duration, frequency and angle. In addition to the ordinary SI/US units, the catalogue covers GNOME Calculator 46-era replacements such as parsecs, light-years, astronomical/rack/cable/fathom units, Troy ounces, stone, Rankine, UK/US volume measures, mmHg/Torr, electron-volts, ergs, foot-pounds, centuries through nanoseconds and Hz through THz.
+Dimensions are checked; conversion between unrelated dimensions is rejected. Unit factors and affine offsets are evaluated through the Scientific multiprecision domain rather than binary64 constants. Exact decimal definitions and ratios such as 5/9 remain expressions until evaluation; native workbenches format the resulting precise value without reimplementing conversion mathematics. Supported groups include length, mass, temperature, area, volume, speed, pressure, energy, power, duration, frequency and angle. In addition to the ordinary SI/US units, the catalogue covers GNOME Calculator 46-era replacements such as parsecs, light-years, astronomical/rack/cable/fathom units, Troy ounces, stone, Rankine, UK/US volume measures, mmHg/Torr, electron-volts, ergs, foot-pounds, centuries through nanoseconds and Hz through THz.
 
 Example: `100 km mi`.
 
@@ -47,11 +47,13 @@ Example: `raid 5 6 4 TiB`.
 
 ## Date / time
 
-- `diff YYYY-MM-DD YYYY-MM-DD`
-- `add YYYY-MM-DD days`
+- `diff YYYY-MM-DD YYYY-MM-DD` — signed total days, absolute weeks/days and calendar-aware years/months/weeks/days
+- `add YYYY-MM-DD days` — compatibility form for adding a raw day count
+- `add YYYY-MM-DD N years N months N weeks N days` — calendar-aware addition with end-of-month clamping
+- `sub YYYY-MM-DD N years N months N weeks N days` — calendar-aware subtraction
 - `unix YYYY-MM-DDTHH:MM:SSZ`
 
-Gregorian dates are validated for years 1..9999. Unix conversion is explicitly UTC.
+Gregorian dates are validated for years 1..9999. Calendar shifts clamp an invalid target day to the last day of the target month (for example, 2024-01-31 plus one month is 2024-02-29). Unix conversion is explicitly UTC.
 
 ## Constants
 
