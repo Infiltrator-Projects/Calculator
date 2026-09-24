@@ -852,34 +852,50 @@ private struct HistoryView: View {
                     ScrollView {
                         LazyVStack(spacing: sharedDesign.controlSpacing) {
                             ForEach(entries) { entry in
-                                Button {
-                                    model.recallHistory(entry.id)
-                                    dismiss()
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(entry.input)
-                                            .font(CalculatorTypography.regular(14, relativeTo: .body))
-                                            .foregroundStyle(palette.text)
-                                            .lineLimit(2)
-                                        Text("= \(entry.output)")
-                                            .font(CalculatorTypography.bold(15, relativeTo: .body))
-                                            .foregroundStyle(entry.ok ? palette.title : palette.fault)
-                                            .lineLimit(2)
+                                HStack(spacing: sharedDesign.controlSpacing) {
+                                    Button {
+                                        model.recallHistory(entry.id)
+                                        dismiss()
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(entry.input)
+                                                .font(CalculatorTypography.regular(14, relativeTo: .body))
+                                                .foregroundStyle(palette.text)
+                                                .lineLimit(2)
+                                            Text("= \(entry.output)")
+                                                .font(CalculatorTypography.bold(15, relativeTo: .body))
+                                                .foregroundStyle(entry.ok ? palette.title : palette.fault)
+                                                .lineLimit(2)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(sharedDesign.contentPadding)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                                .fill(palette.card)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
+                                                        .stroke(palette.border, lineWidth: 1)
+                                                )
+                                        )
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(sharedDesign.contentPadding)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
-                                            .fill(palette.card)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
-                                                    .stroke(palette.border, lineWidth: 1)
-                                            )
-                                    )
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(
+                                        "Recall \(entry.input), result \(entry.output)")
+
+                                    Button {
+                                        if model.deleteHistory(entry.id) {
+                                            entries = model.historyEntries()
+                                        }
+                                    } label: {
+                                        Text("Delete")
+                                            .font(CalculatorTypography.bold(
+                                                13, relativeTo: .body))
+                                            .foregroundStyle(palette.warning)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(
+                                        "Delete \(entry.input) from history")
                                 }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(
-                                    "Recall \(entry.input), result \(entry.output)")
                             }
                         }
                         .padding(sharedDesign.sectionSpacing)
