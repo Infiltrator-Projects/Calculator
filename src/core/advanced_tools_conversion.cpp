@@ -190,23 +190,49 @@ constexpr std::array<Unit, 3> kAngleUnits{{
     {"grad","angle","pi/200.0","0.0"}
 }};
 
+std::string_view canonical_unit_name(std::string_view name) {
+    // Storage historically exposed IEC/SI bit spellings such as Kibit while
+    // Unit Conversion uses compact Kib/kb identifiers. Keep those spellings as
+    // aliases, but resolve them to one canonical unit definition.
+    static constexpr std::array<std::pair<std::string_view, std::string_view>, 17>
+        aliases{{
+            {"B","byte"},
+            {"kbit","kb"},{"Kibit","Kib"},
+            {"Mbit","Mb"},{"Mibit","Mib"},
+            {"Gbit","Gb"},{"Gibit","Gib"},
+            {"Tbit","Tb"},{"Tibit","Tib"},
+            {"Pbit","Pb"},{"Pibit","Pib"},
+            {"Ebit","Eb"},{"Eibit","Eib"},
+            {"Zbit","Zb"},{"Zibit","Zib"},
+            {"Ybit","Yb"},{"Yibit","Yib"}
+        }};
+    for (const auto& [alias, canonical] : aliases) {
+        if (name == alias) return canonical;
+    }
+    return name;
+}
+
 const Unit* find_unit(std::string_view name) {
+    name = canonical_unit_name(name);
     for (const auto& unit : kUnits) if (unit.name == name) return &unit;
     for (const auto& unit : kAngleUnits) if (unit.name == name) return &unit;
     return nullptr;
 }
 
-ToolResult unit_tool(std::string_view input) {
-    const auto fields = split_ws(input);
-    if (fields.size() != 3U) return failure("Usage: value FROM TO");
-
-    const Unit* from = find_unit(fields[1]);
-    const Unit* to = find_unit(fields[2]);
+ToolResult convert_units_precise(
+    std::string_view value_text,
+    std::string_view from_name,
+    std::string_view to_name,
+    std::string_view display_from = {},
+    std::string_view display_to = {}) {
+    const Unit* from = find_unit(from_name);
+    const Unit* to = find_unit(to_name);
     if (!from || !to) return failure("Unknown unit. See the Unit conversion prompt.");
     if (from->dimension != to->dimension) return failure("Units belong to different dimensions.");
 
     const ScientificResult source = calculator::evaluate_scientific(
-        fields[0], {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        std::string(value_text), {}, {}, AngleUnit::Radians,
+        kToolScientificDigits);
     if (!source.ok || !source.display.empty() || source.value.imag != "0") {
         return failure("Invalid real numeric value.");
     }
@@ -228,11 +254,19 @@ ToolResult unit_tool(std::string_view input) {
                 : converted.error);
     }
 
+    if (display_from.empty()) display_from = from->name;
+    if (display_to.empty()) display_to = to->name;
     return success(
         calculator::format_scientific_value(source.value, 25U) + " " +
-        std::string(from->name) + " = " +
+        std::string(display_from) + " = " +
         calculator::format_scientific_value(converted.value, 25U) + " " +
-        std::string(to->name));
+        std::string(display_to));
+}
+
+ToolResult unit_tool(std::string_view input) {
+    const auto fields = split_ws(input);
+    if (fields.size() != 3U) return failure("Usage: value FROM TO");
+    return convert_units_precise(fields[0], fields[1], fields[2]);
 }
 bool parse_ipv4(std::string_view text, std::uint32_t& address) {
     std::uint32_t out = 0;
@@ -326,55 +360,69 @@ ToolResult network_tool(std::string_view input) {
     return failure("Unknown network operation.");
 }
 
-struct StorageUnit { std::string_view name; long double bytes; };
-constexpr std::array<StorageUnit, 35> kStorageUnits{{
-    {"bit",0.125L},{"nibble",0.5L},{"B",1.0L},
-    {"kbit",125.0L},{"kB",1000.0L},{"Kibit",128.0L},{"KiB",1024.0L},
-    {"Mbit",125000.0L},{"MB",1000000.0L},{"Mibit",131072.0L},{"MiB",1048576.0L},
-    {"Gbit",125000000.0L},{"GB",1000000000.0L},{"Gibit",134217728.0L},{"GiB",1073741824.0L},
-    {"Tbit",125000000000.0L},{"TB",1000000000000.0L},{"Tibit",137438953472.0L},{"TiB",1099511627776.0L},
-    {"Pbit",125000000000000.0L},{"PB",1000000000000000.0L},{"Pibit",140737488355328.0L},{"PiB",1125899906842624.0L},
-    {"Ebit",125000000000000000.0L},{"EB",1000000000000000000.0L},{"Eibit",144115188075855872.0L},{"EiB",1152921504606846976.0L},
-    {"Zbit",125000000000000000000.0L},{"ZB",1000000000000000000000.0L},{"Zibit",147573952589676412928.0L},{"ZiB",1180591620717411303424.0L},
-    {"Ybit",125000000000000000000000.0L},{"YB",1000000000000000000000000.0L},
-    {"Yibit",151115727451828646838272.0L},{"YiB",1208925819614629174706176.0L}
-}};
-const StorageUnit* storage_unit(std::string_view name) {
-    for (const auto& unit : kStorageUnits) if (unit.name == name) return &unit;
-    return nullptr;
-}
-
 ToolResult storage_tool(std::string_view input) {
     const auto fields = split_ws(input);
     if (fields.empty()) return failure("Enter convert, raid or clusters.");
     if (fields[0] == "convert") {
         if (fields.size()!=4U) return failure("Usage: convert value FROM TO");
-        double value = 0.0;
-        if (!parse_double(fields[1], value) || value < 0.0) return failure("Invalid storage value.");
-        const auto* from=storage_unit(fields[2]); const auto* to=storage_unit(fields[3]);
-        if (!from||!to) return failure("Unknown storage unit.");
-        const long double converted = static_cast<long double>(value)*from->bytes/to->bytes;
-        std::ostringstream out; out << std::setprecision(15) << static_cast<double>(converted);
-        return success(number(value)+" "+fields[2]+" = "+out.str()+" "+fields[3]);
+        const ScientificResult source = calculator::evaluate_scientific(
+            fields[1], {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        if (!source.ok || !source.display.empty() || source.value.imag != "0" ||
+            (!source.value.real.empty() && source.value.real.front() == '-')) {
+            return failure("Invalid storage value.");
+        }
+        const Unit* from = find_unit(fields[2]);
+        const Unit* to = find_unit(fields[3]);
+        if (!from || !to ||
+            from->dimension != "digital-storage" ||
+            to->dimension != "digital-storage") {
+            return failure("Unknown storage unit.");
+        }
+        return convert_units_precise(
+            fields[1], fields[2], fields[3], fields[2], fields[3]);
     }
     if (fields[0] == "raid") {
         if (fields.size()!=5U) return failure("Usage: raid LEVEL disks size-per-disk unit");
-        std::uint64_t disks=0; double size=0.0;
-        if (!parse_u64(fields[2],disks) || !parse_double(fields[3],size) || size<0.0)
+        std::uint64_t disks=0;
+        if (!parse_u64(fields[2],disks)) {
             return failure("Invalid disk count or size.");
-        const auto* unit=storage_unit(fields[4]); if(!unit) return failure("Unknown storage unit.");
-        long double usable_disks=0.0L;
+        }
+        const ScientificResult size = calculator::evaluate_scientific(
+            fields[3], {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        if (!size.ok || !size.display.empty() || size.value.imag != "0" ||
+            (!size.value.real.empty() && size.value.real.front() == '-')) {
+            return failure("Invalid disk count or size.");
+        }
+        const Unit* unit=find_unit(fields[4]);
+        const Unit* tib=find_unit("TiB");
+        if (!unit || unit->dimension != "digital-storage" || !tib) {
+            return failure("Unknown storage unit.");
+        }
+
+        std::uint64_t usable_disks=0U;
         const std::string level=fields[1];
-        if(level=="0" && disks>=2) usable_disks=static_cast<long double>(disks);
-        else if(level=="1" && disks>=2) usable_disks=1.0L;
-        else if(level=="5" && disks>=3) usable_disks=static_cast<long double>(disks-1U);
-        else if(level=="6" && disks>=4) usable_disks=static_cast<long double>(disks-2U);
-        else if(level=="10" && disks>=4 && disks%2U==0U) usable_disks=static_cast<long double>(disks/2U);
+        if(level=="0" && disks>=2) usable_disks=disks;
+        else if(level=="1" && disks>=2) usable_disks=1U;
+        else if(level=="5" && disks>=3) usable_disks=disks-1U;
+        else if(level=="6" && disks>=4) usable_disks=disks-2U;
+        else if(level=="10" && disks>=4 && disks%2U==0U) usable_disks=disks/2U;
         else return failure("Unsupported/invalid RAID geometry. Levels: 0,1,5,6,10.");
-        const long double bytes=usable_disks*static_cast<long double>(size)*unit->bytes;
-        const long double tib=bytes/1099511627776.0L;
-        std::ostringstream out; out<<std::setprecision(15)<<static_cast<double>(tib);
-        return success("Usable capacity  "+out.str()+" TiB\nRaw disks  "+std::to_string(disks));
+
+        const std::string expression =
+            "((" + calculator::scientific_value_expression(size.value) +
+            ")*(" + std::to_string(usable_disks) + ")*(" +
+            std::string(unit->factor) + "))/(" +
+            std::string(tib->factor) + ")";
+        const ScientificResult capacity = calculator::evaluate_scientific(
+            expression, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        if (!capacity.ok || !capacity.display.empty() ||
+            capacity.value.imag != "0") {
+            return failure("RAID capacity calculation failed.");
+        }
+        return success(
+            "Usable capacity  " +
+            calculator::format_scientific_value(capacity.value, 25U) +
+            " TiB\nRaw disks  " + std::to_string(disks));
     }
     if (fields[0] == "clusters") {
         std::uint64_t file=0, cluster=0;
