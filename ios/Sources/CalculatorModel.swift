@@ -69,6 +69,7 @@ final class CalculatorModel: ObservableObject {
     @Published var scientificSecond = false
     @Published var scientificHyperbolic = false
     @Published var scientificNotation = false
+    @Published var scientificDigits = 50
     @Published var programmerBase = 10
     @Published var programmerWidth = 64
     @Published var programmerSigned = false
@@ -78,6 +79,22 @@ final class CalculatorModel: ObservableObject {
     @Published var showingBases = false
 
     private let bridge = CalculatorBridge()
+    private static let persistentStateKey =
+        "net.ssmith.infiltrator.calc.controller-state-v1"
+
+    init() {
+        if let saved = UserDefaults.standard.string(
+            forKey: Self.persistentStateKey) {
+            _ = bridge.loadPersistentStateText(saved)
+        }
+        sync()
+    }
+
+    private func persistControllerState() {
+        UserDefaults.standard.set(
+            bridge.persistentStateText(),
+            forKey: Self.persistentStateKey)
+    }
 
     let standardKeys = [
         ["MC", "MR", "MS", "M+", "M−"],
@@ -137,11 +154,21 @@ final class CalculatorModel: ObservableObject {
     func press(_ key: String) {
         bridge.pressKey(key)
         sync()
+        if key == "=" {
+            persistControllerState()
+        }
     }
 
     func calculate() {
         bridge.pressKey("=")
         sync()
+        persistControllerState()
+    }
+
+    func setScientificDigits(_ digits: Int) {
+        bridge.setScientificDigits(digits)
+        sync()
+        persistControllerState()
     }
 
     func clear() {
@@ -290,6 +317,8 @@ final class CalculatorModel: ObservableObject {
             (state["scientificHyperbolic"] as? NSNumber)?.boolValue ?? false
         scientificNotation =
             (state["scientificNotation"] as? NSNumber)?.boolValue ?? false
+        scientificDigits =
+            (state["scientificDigits"] as? NSNumber)?.intValue ?? 50
         programmerBase = (state["programmerBase"] as? NSNumber)?.intValue ?? 10
         programmerWidth = (state["programmerWidth"] as? NSNumber)?.intValue ?? 64
         programmerSigned =
