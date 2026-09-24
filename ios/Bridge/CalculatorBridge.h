@@ -26,6 +26,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)additionalResultsText;
 - (NSString *)programmerRepresentationsText;
 
+// Shared Controller persistence/precision contract. iOS owns only the native
+// UserDefaults storage location; the serialized format remains C++-owned.
+- (NSString *)persistentStateText;
+- (BOOL)loadPersistentStateText:(NSString *)text;
+- (void)setScientificDigits:(NSInteger)digits;
+
 // Tool catalogue rows contain index/name/prompt/example. Evaluation results
  // contain ok/output/error/points, where each point carries x/y/valid. These are
  // serialized views of the shared C++ engine; the bridge does not evaluate or
