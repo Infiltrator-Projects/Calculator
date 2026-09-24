@@ -1819,7 +1819,7 @@ void apply_css(GtkWidget* window) {
         ".header{margin-bottom:0;}"
         ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + heading + ";}"
         ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
-            "border-radius:" + std::to_string(design.control_radius) + "px;min-height:28px;padding:0 " +
+            "border-radius:" + std::to_string(design.small_radius) + "px;min-height:28px;padding:0 " +
             std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700;}"
         ".toolbar-button:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + ";}"
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
