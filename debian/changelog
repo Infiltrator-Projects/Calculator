@@ -1,3 +1,10 @@
+infiltrator-calculator (0.2.33) unstable; urgency=medium
+
+  * Align Linux toolbar controls with the 30 px publisher desktop control height.
+  * Preserve keypad geometry, calculation engines, other platform shells and dependencies.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 00:16:00 +1000
+
 infiltrator-calculator (0.2.32) unstable; urgency=medium
 
   * Align Linux toolbar-button corners with the shared compact suite radius.
