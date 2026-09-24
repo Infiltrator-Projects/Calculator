@@ -12,12 +12,25 @@
 
 namespace calculator::ui {
 
-void Controller::set_expression(std::string expression) {
+bool Controller::set_expression(std::string expression) {
+    if (expression.size() > kMaxExpressionBytes) {
+        state_.expression.clear();
+        real_cache_ = {};
+        scientific_cache_ = {};
+        programmer_cache_ = {};
+        state_.result =
+            "Error: expression exceeds " +
+            std::to_string(kMaxExpressionBytes) + "-byte input limit";
+        set_status("INPUT LIMIT", true);
+        return false;
+    }
+
     state_.expression = std::move(expression);
     state_.fault = false;
     refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
     else if (state_.mode == Mode::Scientific) update_scientific_preview();
+    return true;
 }
 
 void Controller::set_mode(Mode mode) {
@@ -138,6 +151,144 @@ bool Controller::load_variables_text(std::string_view text) {
     return loaded;
 }
 
+std::string Controller::persistent_state_text() const {
+    const std::string variables = session_.variables_text();
+    const std::string functions = session_.function_definitions_text();
+
+    std::ostringstream out;
+    out << "INFILTRATOR_CALCULATOR_STATE 1\n"
+        << "scientific-digits=" << scientific_digits_ << '\n'
+        << "result-format="
+        << static_cast<unsigned>(display_preferences_.format) << '\n'
+        << "decimal-places=" << display_preferences_.decimal_places << '\n'
+        << "group-thousands="
+        << (display_preferences_.group_thousands ? 1 : 0) << '\n'
+        << "trailing-zeroes="
+        << (display_preferences_.trailing_zeroes ? 1 : 0) << '\n'
+        << "variables-bytes=" << variables.size() << '\n'
+        << variables << '\n'
+        << "functions-bytes=" << functions.size() << '\n'
+        << functions;
+    return out.str();
+}
+
+bool Controller::load_persistent_state_text(std::string_view text) {
+    if (text.size() > kMaxPersistentStateBytes) return false;
+
+    std::size_t cursor = 0U;
+    const auto read_line = [&](std::string_view& line) mutable -> bool {
+        if (cursor > text.size()) return false;
+        const std::size_t end = text.find('\n', cursor);
+        if (end == std::string_view::npos) return false;
+        line = text.substr(cursor, end - cursor);
+        cursor = end + 1U;
+        return true;
+    };
+    const auto parse_unsigned =
+        [](std::string_view line, std::string_view key,
+           unsigned& value) -> bool {
+            if (line.substr(0, key.size()) != key) return false;
+            const std::string_view number = line.substr(key.size());
+            if (number.empty()) return false;
+            unsigned parsed = 0U;
+            const auto result = std::from_chars(
+                number.data(), number.data() + number.size(), parsed);
+            if (result.ec != std::errc{} ||
+                result.ptr != number.data() + number.size()) {
+                return false;
+            }
+            value = parsed;
+            return true;
+        };
+    const auto parse_size =
+        [](std::string_view line, std::string_view key,
+           std::size_t& value) -> bool {
+            if (line.substr(0, key.size()) != key) return false;
+            const std::string_view number = line.substr(key.size());
+            if (number.empty()) return false;
+            std::size_t parsed = 0U;
+            const auto result = std::from_chars(
+                number.data(), number.data() + number.size(), parsed);
+            if (result.ec != std::errc{} ||
+                result.ptr != number.data() + number.size()) {
+                return false;
+            }
+            value = parsed;
+            return true;
+        };
+
+    std::string_view line;
+    if (!read_line(line) || line != "INFILTRATOR_CALCULATOR_STATE 1") {
+        return false;
+    }
+
+    unsigned digits = 0U;
+    unsigned format = 0U;
+    unsigned decimal_places = 0U;
+    unsigned group_thousands = 0U;
+    unsigned trailing_zeroes = 0U;
+    if (!read_line(line) ||
+        !parse_unsigned(line, "scientific-digits=", digits) ||
+        digits < kScientificMinDigits || digits > kScientificMaxDigits ||
+        !read_line(line) ||
+        !parse_unsigned(line, "result-format=", format) || format > 3U ||
+        !read_line(line) ||
+        !parse_unsigned(line, "decimal-places=", decimal_places) ||
+        decimal_places > 15U ||
+        !read_line(line) ||
+        !parse_unsigned(line, "group-thousands=", group_thousands) ||
+        group_thousands > 1U ||
+        !read_line(line) ||
+        !parse_unsigned(line, "trailing-zeroes=", trailing_zeroes) ||
+        trailing_zeroes > 1U) {
+        return false;
+    }
+
+    std::size_t variables_bytes = 0U;
+    if (!read_line(line) ||
+        !parse_size(line, "variables-bytes=", variables_bytes) ||
+        variables_bytes > text.size() - cursor) {
+        return false;
+    }
+    const std::string variables(text.substr(cursor, variables_bytes));
+    cursor += variables_bytes;
+    if (cursor >= text.size() || text[cursor] != '\n') return false;
+    ++cursor;
+
+    std::size_t functions_bytes = 0U;
+    if (!read_line(line) ||
+        !parse_size(line, "functions-bytes=", functions_bytes) ||
+        functions_bytes != text.size() - cursor) {
+        return false;
+    }
+    const std::string functions(text.substr(cursor, functions_bytes));
+
+    // Validate the whole document before mutating live Controller state.
+    Session staged;
+    if (!staged.load_function_definitions_text(functions) ||
+        !staged.load_variables_text(variables)) {
+        return false;
+    }
+
+    if (!session_.load_function_definitions_text(functions) ||
+        !session_.load_variables_text(variables)) {
+        return false;
+    }
+
+    scientific_digits_ = digits;
+    DisplayPreferences preferences;
+    preferences.format = static_cast<ResultFormat>(format);
+    preferences.decimal_places = decimal_places;
+    preferences.group_thousands = group_thousands != 0U;
+    preferences.trailing_zeroes = trailing_zeroes != 0U;
+    display_preferences_ = preferences;
+
+    refresh_evaluation_cache();
+    if (state_.mode == Mode::Scientific) update_scientific_preview();
+    else if (state_.mode == Mode::Standard) update_standard_preview();
+    return true;
+}
+
 std::vector<std::string> Controller::completion_candidates(
     std::string_view prefix) const {
     if (state_.mode != Mode::Scientific || prefix.empty()) return {};
@@ -240,7 +391,17 @@ DispatchResult Controller::complete_expression(std::size_t cursor) {
         if (function) replacement.push_back('(');
     }
 
-    state_.expression.replace(begin, point - begin, replacement);
+    const std::size_t replaced = point - begin;
+    if (replacement.size() >
+        kMaxExpressionBytes - (state_.expression.size() - replaced)) {
+        state_.result =
+            "Error: expression exceeds " +
+            std::to_string(kMaxExpressionBytes) + "-byte input limit";
+        set_status("INPUT LIMIT", true);
+        return {point, false};
+    }
+
+    state_.expression.replace(begin, replaced, replacement);
     state_.fault = false;
     refresh_evaluation_cache();
     update_scientific_preview();
@@ -394,6 +555,15 @@ void Controller::set_display_preferences(DisplayPreferences preferences) {
                real_cache_.ok && real_cache_.display.empty()) {
         state_.result = format_display(real_cache_.value);
     }
+}
+
+void Controller::set_scientific_digits(unsigned digits) {
+    const unsigned bounded = std::clamp(
+        digits, kScientificMinDigits, kScientificMaxDigits);
+    if (bounded == scientific_digits_) return;
+    scientific_digits_ = bounded;
+    refresh_evaluation_cache();
+    if (state_.mode == Mode::Scientific) update_scientific_preview();
 }
 
 std::string Controller::scientific_status_text() const {
@@ -621,6 +791,13 @@ void Controller::refresh_evaluation_cache() {
 
 DispatchResult Controller::insert(std::string_view text, std::size_t cursor) {
     const std::size_t position = normalized_cursor(cursor);
+    if (text.size() > kMaxExpressionBytes - state_.expression.size()) {
+        state_.result =
+            "Error: expression exceeds " +
+            std::to_string(kMaxExpressionBytes) + "-byte input limit";
+        set_status("INPUT LIMIT", true);
+        return {position, false};
+    }
     state_.expression.insert(position, text.data(), text.size());
     state_.fault = false;
     refresh_evaluation_cache();
