@@ -45,6 +45,7 @@ constexpr int kIdResult = 1020;
 constexpr int kIdKeyBase = 2000;
 constexpr int kIdHistoryClear = 3001;
 constexpr int kIdHistoryList = 3002;
+constexpr int kIdHistoryDelete = 3003;
 constexpr int kIdToolSelector = 4001;
 constexpr int kIdToolInput = 4002;
 constexpr int kIdToolRun = 4003;
@@ -1518,6 +1519,7 @@ void apply_fonts_to_controls() {
 
     if (g_history_window != nullptr) {
         apply_font(GetDlgItem(g_history_window, kIdHistoryClear), g_ui_bold_font);
+        apply_font(GetDlgItem(g_history_window, kIdHistoryDelete), g_ui_bold_font);
     }
 }
 
@@ -1539,7 +1541,10 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
 
         HWND clear = create_button(window, kIdHistoryClear, L"Clear History",
                                    g_ui_bold_font);
+        HWND remove = create_button(window, kIdHistoryDelete, L"Delete Selected",
+                                    g_ui_bold_font);
         (void)clear;
+        (void)remove;
         refresh_history();
         return 0;
     }
@@ -1555,15 +1560,43 @@ LRESULT CALLBACK history_proc(HWND window, UINT message,
                    std::max(0, static_cast<int>(client.bottom) - margin * 3 - button_height),
                    TRUE);
         HWND clear = GetDlgItem(window, kIdHistoryClear);
+        HWND remove = GetDlgItem(window, kIdHistoryDelete);
+        const int action_width = sx(window, 140);
+        const int action_gap = sx(window, 8);
         MoveWindow(clear, margin,
                    client.bottom - margin - button_height,
-                   sx(window, 140), button_height, TRUE);
+                   action_width, button_height, TRUE);
+        MoveWindow(remove, margin + action_width + action_gap,
+                   client.bottom - margin - button_height,
+                   sx(window, 160), button_height, TRUE);
         return 0;
     }
     case WM_COMMAND:
         if (LOWORD(wparam) == kIdHistoryClear) {
             g_controller.clear_history();
             refresh_history();
+            return 0;
+        }
+        if (LOWORD(wparam) == kIdHistoryDelete &&
+            g_history_edit != nullptr) {
+            const LRESULT selected = SendMessageW(
+                g_history_edit, LB_GETCURSEL, 0, 0);
+            if (selected != LB_ERR &&
+                g_controller.delete_history(
+                    static_cast<std::size_t>(selected))) {
+                refresh_history();
+                const std::size_t count = g_controller.history_count();
+                if (count != 0U) {
+                    const std::size_t next = std::min<std::size_t>(
+                        static_cast<std::size_t>(selected), count - 1U);
+                    SendMessageW(
+                        g_history_edit, LB_SETCURSEL,
+                        static_cast<WPARAM>(next), 0);
+                    SetFocus(g_history_edit);
+                } else {
+                    SetFocus(GetDlgItem(window, kIdHistoryClear));
+                }
+            }
             return 0;
         }
         if (LOWORD(wparam) == kIdHistoryList &&
