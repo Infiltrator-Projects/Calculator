@@ -526,22 +526,27 @@ int main() {
     CHECK(standard_details[2].label == "Engineering");
     CHECK(standard_details[2].value == "12.345e+03");
 
-    controller.set_mode(Mode::Scientific);
-    controller.set_angle_unit(calculator::AngleUnit::Degrees);
-    controller.set_scientific_digits(80U);
-    controller.set_expression("sin(30)");
-    controller.dispatch(Command::Equals);
-    CHECK(controller.state().result == "0.5");
-    const std::size_t scientific_history_index = 0U;
-    controller.set_angle_unit(calculator::AngleUnit::Radians);
-    controller.set_scientific_digits(25U);
-    CHECK(controller.recall_history(scientific_history_index));
-    CHECK(controller.state().mode == Mode::Scientific);
-    CHECK(controller.state().angle_unit == calculator::AngleUnit::Degrees);
-    CHECK(controller.scientific_digits() == 80U);
-    controller.dispatch(Command::Equals);
-    CHECK(controller.state().result == "0.5");
+    // Keep Scientific history-context regression coverage isolated from the
+    // main history-order fixture below. This proves recall semantics without
+    // changing the entries that the Programmer/Standard history tests expect.
+    Controller scientific_history_controller;
+    scientific_history_controller.set_mode(Mode::Scientific);
+    scientific_history_controller.set_angle_unit(calculator::AngleUnit::Degrees);
+    scientific_history_controller.set_scientific_digits(80U);
+    scientific_history_controller.set_expression("sin(30)");
+    scientific_history_controller.dispatch(Command::Equals);
+    CHECK(scientific_history_controller.state().result == "0.5");
+    scientific_history_controller.set_angle_unit(calculator::AngleUnit::Radians);
+    scientific_history_controller.set_scientific_digits(25U);
+    CHECK(scientific_history_controller.recall_history(0U));
+    CHECK(scientific_history_controller.state().mode == Mode::Scientific);
+    CHECK(scientific_history_controller.state().angle_unit ==
+          calculator::AngleUnit::Degrees);
+    CHECK(scientific_history_controller.scientific_digits() == 80U);
+    scientific_history_controller.dispatch(Command::Equals);
+    CHECK(scientific_history_controller.state().result == "0.5");
 
+    controller.set_mode(Mode::Scientific);
     controller.set_expression("sqrt(81)");
     const std::string scientific_details =
         controller.additional_results_text();
