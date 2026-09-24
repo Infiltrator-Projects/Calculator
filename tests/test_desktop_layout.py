@@ -609,8 +609,13 @@ for needle in (
     "controller.history_entry(index)",
     "controller.recall_history(history_index)",
     "controller.delete_history(history_index)",
+    "controller.memory_count()",
+    "controller.memory_entry(index)",
+    "controller.recall_memory(",
+    "controller.delete_memory(",
+    'gtk_button_new_with_label("Clear All")',
 ):
-    assert needle in linux, f"Linux structured history replay missing: {needle}"
+    assert needle in linux, f"Linux history/memory surface missing: {needle}"
 
 for needle in (
     "LB_RESETCONTENT",
@@ -620,22 +625,34 @@ for needle in (
     "g_controller.history_entry(index)",
     "g_controller.recall_history(",
     "g_controller.delete_history(",
+    "kIdMemoryList",
+    "kIdMemoryDelete",
+    "g_controller.memory_entry(index)",
+    "g_controller.recall_memory(",
+    "g_controller.delete_memory(",
 ):
-    assert needle in windows, f"Windows structured history replay missing: {needle}"
+    assert needle in windows, f"Windows history/memory surface missing: {needle}"
 
 for needle in (
     "historyEntries",
     "recallHistoryAtIndex",
     "deleteHistoryAtIndex",
+    "memoryEntries",
+    "recallMemoryAtIndex",
+    "deleteMemoryAtIndex",
 ):
-    assert needle in ios_bridge, f"iPhone structured history bridge missing: {needle}"
+    assert needle in ios_bridge, f"iPhone history/memory bridge missing: {needle}"
 
 for needle in (
     "model.historyEntries()",
     "model.recallHistory(entry.id)",
     "model.deleteHistory(entry.id)",
+    "model.memoryEntries()",
+    "model.recallMemory(memory.id)",
+    "model.deleteMemory(memory.id)",
+    '"History & Memory"',
 ):
-    assert needle in ios, f"iPhone structured history UI missing: {needle}"
+    assert needle in ios, f"iPhone history/memory UI missing: {needle}"
 
 # Shared history retention is configurable through native settings while the
 # Session/Controller retain sole ownership of the limit semantics.
