@@ -8,6 +8,7 @@ This changelog records user-visible, compatibility, architecture and validation 
 - Enforce an 8192-byte shared Advanced Tools input limit so GTK, Win32 and iPhone workbenches cannot bypass parser/resource bounds.
 - Extend the portable Controller persistence document to version 2 with selected mode, Scientific angle unit and Programmer radix/width/signed state while retaining v1 load compatibility.
 - Make Linux treat shared v2 semantic state as authoritative and retain older desktop semantic fields only as a migration source.
+- Persist shared mode/angle/Programmer semantic changes immediately on Linux, Windows and iPhone so the portable state document is durable without requiring a calculation or orderly shutdown.
 - Add case-tolerant completion for built-in Scientific functions/constants while preserving exact user-defined identifier spelling.
 - Add human unit aliases and exact ratio definitions for selected definition-based conversions such as knots, points and Torr.
 - Add fixed-width Programmer byte-order reversal plus grouped binary/octal/hexadecimal presentation and expose Swap Endian through the native Linux, Windows and iPhone Programmer views.
