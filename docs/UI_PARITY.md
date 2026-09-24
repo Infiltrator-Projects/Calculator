@@ -19,9 +19,9 @@ Calculator has one interaction state machine rendered by three native shells. Li
 - expression, result and status state;
 - Scientific DEG/RAD/GRAD, 2nd, HYP and F-E state;
 - Programmer radix, width and signedness;
-- memory, variables and history through `Session`;
+- memory, variables and history through `Session`, including per-entry history deletion;
 - command enablement;
-- Scientific live result preview and identifier/function completion; and
+- Scientific live result preview and case-tolerant built-in identifier/function completion; and
 - command dispatch and calculator interaction behaviour, including Standard CE semantics that discard only the current operand while preserving the pending expression.
 
 The logical metrics are platform-neutral contract values. Standard mode has a compact 480-unit preferred/minimum desktop height; Scientific and Programmer use the extended 610-unit preferred height with a 520-unit minimum. Both GTK and Win32 consume those mode-aware values rather than inventing platform-local heights. Win32 performs DPI conversion when mapping them to physical coordinates; GTK renders them through its native layout system.
@@ -54,9 +54,9 @@ This is semantic parity rather than pixel/layout parity: calculator state and co
 
 `calculator-ui-controller` exercises shared desktop behaviour independently of GTK and Win32, including arithmetic, explicit memory store/update, Scientific angle/2nd/HYP/F-E state, Programmer extended bitwise operations and cursor-aware editing.
 
-Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. Linux responsive layout is resize-event-driven through GtkWindow size-property notifications; it must not use a permanent frame-clock callback while the calculator is idle. Programmer Bases/Bits is a native interactive surface on both desktop shells rather than a platform-specific informational dialog; the initial empty Programmer state represents the zero bit-pattern consistently. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
+Windows CI adds native runtime smoke tests for control creation and interaction. Linux builds/tests verify the GTK adapter. Linux responsive layout is resize-event-driven through GtkWindow size-property notifications; it must not use a permanent frame-clock callback while the calculator is idle. Programmer Bases/Bits is a native interactive surface on both desktop shells rather than a platform-specific informational dialog; the initial empty Programmer state represents the zero bit-pattern consistently, and byte-order reversal is dispatched through the shared Controller on Linux, Windows and iPhone. iOS CI builds both the Simulator and unsigned ARM64 device applications against the shared C++ core and Common sources.
 
-Scientific Tab completion is a shared controller operation. GTK and Win32 only forward the key and restore the returned cursor; candidate discovery comes from the Scientific function catalogue, canonical constants and Session-owned variables/functions. Scientific live preview follows the same side-effect-free Session path on every shell, so typing an assignment or function definition cannot commit it before Equals.
+Scientific Tab completion is a shared controller operation. GTK and Win32 only forward the key and restore the returned cursor; candidate discovery comes from the Scientific function catalogue, canonical constants and Session-owned variables/functions. Built-in functions/constants match completion prefixes case-insensitively, while user-owned identifiers retain exact spelling. Scientific live preview follows the same side-effect-free Session path on every shell, so typing an assignment or function definition cannot commit it before Equals.
 
 Scientific calculation precision is one Controller setting with a 16..1000 digit range. GTK exposes the full range through Preferences; Win32 and iPhone expose native precision presets while still calling the same setter. Reusable variables, custom functions, precision and presentation preferences serialize through one versioned Controller document; Linux/XDG, Windows/Registry and iPhone/UserDefaults are storage adapters only.
 
