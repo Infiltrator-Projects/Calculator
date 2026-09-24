@@ -58,6 +58,8 @@ Windows CI adds native runtime smoke tests for control creation and interaction.
 
 Scientific Tab completion is a shared controller operation. GTK and Win32 only forward the key and restore the returned cursor; candidate discovery comes from the Scientific function catalogue, canonical constants and Session-owned variables/functions. Scientific live preview follows the same side-effect-free Session path on every shell, so typing an assignment or function definition cannot commit it before Equals.
 
+Scientific calculation precision is one Controller setting with a 16..1000 digit range. GTK exposes the full range through Preferences; Win32 and iPhone expose native precision presets while still calling the same setter. Reusable variables, custom functions, precision and presentation preferences serialize through one versioned Controller document; Linux/XDG, Windows/Registry and iPhone/UserDefaults are storage adapters only.
+
 ## Parity definition
 
 Parity means that shared behaviour has one authoritative owner and each platform renders or adapts that behaviour without redefining it. It does not require identical platform widgets, typography rasterisation, window metrics or touch/desktop interaction mechanics.
