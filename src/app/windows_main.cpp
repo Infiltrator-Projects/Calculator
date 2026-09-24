@@ -642,11 +642,18 @@ void refresh_history() {
         std::numeric_limits<std::uint64_t>::max();
     static std::uint64_t dock_revision =
         std::numeric_limits<std::uint64_t>::max();
+    static std::uint64_t memory_revision =
+        std::numeric_limits<std::uint64_t>::max();
     static HWND rendered_list = nullptr;
     static HWND rendered_dock = nullptr;
+    static HWND rendered_memory = nullptr;
 
     const std::uint64_t revision = g_controller.history_revision();
-    if (g_memory_edit != nullptr) {
+    const std::uint64_t current_memory_revision =
+        g_controller.memory_revision();
+    if (g_memory_edit != nullptr &&
+        (rendered_memory != g_memory_edit ||
+         memory_revision != current_memory_revision)) {
         SendMessageW(g_memory_edit, LB_RESETCONTENT, 0, 0);
         const std::size_t memory_count = g_controller.memory_count();
         if (memory_count == 0U) {
@@ -666,6 +673,8 @@ void refresh_history() {
                     reinterpret_cast<LPARAM>(row.c_str()));
             }
         }
+        rendered_memory = g_memory_edit;
+        memory_revision = current_memory_revision;
     }
 
     if (g_history_edit != nullptr &&
