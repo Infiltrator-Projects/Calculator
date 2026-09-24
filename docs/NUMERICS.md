@@ -74,7 +74,7 @@ The same principle applies after an operation. Display rounding is not state rou
 
 ## Programmer domain
 
-Programmer mode operates on bit patterns constrained to the selected 8, 16, 32 or 64-bit width.
+Programmer mode operates on bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Byte-order reversal (`bswap`) reverses bytes only inside that selected width; 8-bit values are therefore unchanged and wider values remain masked to their fixed-width domain.
 
 Arithmetic intentionally wraps by masking to the selected width. This is the domain semantics, not an unchecked-overflow accident. Signed display interprets the final masked pattern using two's-complement presentation; it does not change the stored bit pattern or evaluation domain.
 
@@ -98,7 +98,7 @@ Platform shells must not introduce independent numeric formatting rules that cha
 
 ## Errors and unavailable results
 
-Malformed syntax, excessive parser nesting, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, attempts to assign reserved constants, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures. Interactive expression input is additionally bounded to 8192 UTF-8 bytes at the shared Controller boundary so typed/pasted text cannot bypass platform UI limits and become an unbounded parser/allocation workload.
+Malformed syntax, excessive parser nesting, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, attempts to assign reserved constants, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures. Interactive expression input is bounded to 8192 UTF-8 bytes at the shared Controller boundary, and Advanced Tools independently enforce the same bound at their shared core entry point, so typed/pasted text cannot bypass platform UI limits and become an unbounded parser/allocation workload.
 
 A plausible substitute result is not an acceptable fallback. If a requested future numeric domain cannot establish a justified value under its contract, unsupported/error is preferable to invented precision.
 
@@ -134,7 +134,7 @@ If those cannot be stated precisely, the capability is not ready to be advertise
 
 ## Programmer multi-radix representation
 
-A Programmer result is one fixed-width masked bit pattern. The representation view does not re-evaluate the expression four times: it renders that one value as binary, octal, decimal and hexadecimal. Binary, octal and hexadecimal remain unsigned bit-pattern views. The decimal row follows the current signed/unsigned presentation toggle. This keeps representation switching observational rather than computational.
+A Programmer result is one fixed-width masked bit pattern. The representation view does not re-evaluate the expression four times: it renders that one value as binary, octal, decimal and hexadecimal. Binary, octal and hexadecimal remain unsigned bit-pattern views and are grouped for readability without altering the underlying expression/state text. The decimal row follows the current signed/unsigned presentation toggle. This keeps representation switching observational rather than computational.
 
 
 ## Engineering notation
