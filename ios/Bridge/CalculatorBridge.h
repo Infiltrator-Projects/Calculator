@@ -46,6 +46,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<NSDictionary *> *)historyEntries;
 - (BOOL)recallHistoryAtIndex:(NSInteger)index
     NS_SWIFT_NAME(recallHistory(at:));
+- (BOOL)deleteHistoryAtIndex:(NSInteger)index
+    NS_SWIFT_NAME(deleteHistory(at:));
 - (void)clearHistory;
 
 @end
