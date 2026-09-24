@@ -393,7 +393,7 @@ jobs:
             }
 
             if ($initialVisible -ne 37 -or $scientificVisible -ne 48 -or
-                $programmerVisible -ne 52 -or $standardVisible -ne 37) {
+                $programmerVisible -ne 56 -or $standardVisible -ne 37) {
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 
