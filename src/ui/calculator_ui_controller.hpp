@@ -5,6 +5,7 @@
 #include "../core/session.hpp"
 #include "calculator_ui_contract.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -65,6 +66,7 @@ public:
     // may enforce the same limit earlier, but Controller remains authoritative.
     static constexpr std::size_t kMaxExpressionBytes = 8192U;
     static constexpr std::size_t kMaxPersistentStateBytes = 1024U * 1024U;
+    static constexpr std::size_t kMaxHistoryEntries = 100000U;
 
     // Borrowed view of controller-owned state; callers must not retain it
     // across a mutating Controller operation.
@@ -89,6 +91,13 @@ public:
         std::size_t index_from_newest) const;
     bool recall_history(std::size_t index_from_newest);
     bool delete_history(std::size_t index_from_newest);
+    std::size_t history_limit() const noexcept {
+        return session_.history_limit();
+    }
+    void set_history_limit(std::size_t limit) {
+        session_.set_history_limit(
+            std::min(limit, kMaxHistoryEntries));
+    }
     void clear_history() noexcept;
     // Derived representation surfaces are generated from the current cached
     // result; they never cause platform-specific re-evaluation.
