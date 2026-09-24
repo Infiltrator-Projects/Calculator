@@ -330,17 +330,18 @@ jobs:
             }
 
             $theme = Get-ButtonByText 'System'
+            $precision = Get-ButtonByText '50d'
             $standard = Get-ButtonByText 'Standard'
             $scientific = Get-ButtonByText 'Scientific'
             $programmer = Get-ButtonByText 'Programmer'
             $tools = Get-ButtonByText 'Tools'
             $results = Get-ButtonByText 'Results'
             $bases = Get-ButtonByText 'Bases'
-            if ($theme -eq [IntPtr]::Zero -or $standard -eq [IntPtr]::Zero -or
-                $scientific -eq [IntPtr]::Zero -or $programmer -eq [IntPtr]::Zero -or
-                $tools -eq [IntPtr]::Zero -or $results -eq [IntPtr]::Zero -or
-                $bases -eq [IntPtr]::Zero) {
-              throw 'Windows theme/mode/Tools/Results/Bases buttons were not found'
+            if ($theme -eq [IntPtr]::Zero -or $precision -eq [IntPtr]::Zero -or
+                $standard -eq [IntPtr]::Zero -or $scientific -eq [IntPtr]::Zero -or
+                $programmer -eq [IntPtr]::Zero -or $tools -eq [IntPtr]::Zero -or
+                $results -eq [IntPtr]::Zero -or $bases -eq [IntPtr]::Zero) {
+              throw 'Windows theme/precision/mode/Tools/Results/Bases buttons were not found'
             }
 
             [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -391,8 +392,8 @@ jobs:
               throw 'Windows Standard mode did not restore Results/Bases visibility'
             }
 
-            if ($initialVisible -ne 36 -or $scientificVisible -ne 47 -or
-                $programmerVisible -ne 51 -or $standardVisible -ne 36) {
+            if ($initialVisible -ne 37 -or $scientificVisible -ne 48 -or
+                $programmerVisible -ne 52 -or $standardVisible -ne 37) {
               throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
             }
 
