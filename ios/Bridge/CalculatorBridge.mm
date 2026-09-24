@@ -234,7 +234,7 @@ NSInteger angle_value(calculator::AngleUnit unit) {
 }
 
 - (void)setScientificDigits:(NSInteger)digits {
-    const NSInteger bounded = std::max<NSInteger>(0, digits);
+    const NSInteger bounded = digits < 0 ? 0 : digits;
     [self controller]->set_scientific_digits(
         static_cast<unsigned>(bounded));
 }
