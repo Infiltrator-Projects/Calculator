@@ -629,6 +629,32 @@ bool Controller::toggle_programmer_bit(unsigned bit) {
     return true;
 }
 
+bool Controller::swap_programmer_endianness() {
+    if (state_.mode != Mode::Programmer) return false;
+
+    std::uint64_t value = 0U;
+    if (!state_.expression.empty()) {
+        const ProgrammerResult result = evaluate_programmer(
+            state_.expression, state_.programmer_base,
+            state_.programmer_width);
+        if (!result.ok) return false;
+        value = result.value;
+    }
+
+    value = calculator::swap_programmer_endianness(
+        value, state_.programmer_width);
+    state_.expression = format_programmer(
+        value, state_.programmer_base, state_.programmer_width, false);
+    state_.result = group_programmer_digits(
+        format_programmer(
+            value, state_.programmer_base, state_.programmer_width,
+            state_.programmer_signed),
+        state_.programmer_base);
+    refresh_evaluation_cache();
+    set_status(programmer_status_text());
+    return true;
+}
+
 void Controller::set_display_preferences(DisplayPreferences preferences) {
     preferences.decimal_places =
         std::min<unsigned>(preferences.decimal_places, 15U);
