@@ -123,13 +123,20 @@ ToolResult graph_tool(std::string_view input) {
     std::size_t valid=0;
     double ymin=std::numeric_limits<double>::infinity();
     double ymax=-std::numeric_limits<double>::infinity();
-    calculator::Variables vars;
+    calculator::ScientificVariables vars;
     for(std::uint64_t i=0;i<samples;++i) {
         const double x=xmin+(xmax-xmin)*static_cast<double>(i)/static_cast<double>(samples-1U);
-        vars["x"]=x;
-        const auto y=calculator::evaluate(p[0],vars);
-        GraphPoint pt; pt.x=x; pt.valid=y.ok&&std::isfinite(y.value);
-        if(pt.valid){pt.y=y.value;++valid;ymin=std::min(ymin,pt.y);ymax=std::max(ymax,pt.y);}
+        vars["x"]=calculator::scientific_value_from_double(x);
+        const auto y=calculator::evaluate_scientific(
+            p[0], vars, {}, calculator::AngleUnit::Radians,
+            kToolScientificDigits);
+        double plotted=0.0;
+        GraphPoint pt;
+        pt.x=x;
+        pt.valid=y.ok && y.display.empty() &&
+                 calculator::scientific_value_to_double(y.value, plotted) &&
+                 std::isfinite(plotted);
+        if(pt.valid){pt.y=plotted;++valid;ymin=std::min(ymin,pt.y);ymax=std::max(ymax,pt.y);}
         result.points.push_back(pt);
     }
     if(valid==0U) return failure("Expression produced no finite graph points in the requested range.");
