@@ -48,7 +48,7 @@ Strings crossing Objective-C++/Swift and native desktop boundaries must use the 
 
 `CalculatorBridge` is the language boundary between Swift and the C++ controller. It converts Swift expression/mode/key operations into controller operations, snapshots controller state for presentation, and exposes Common semantic palette values to Swift.
 
-SwiftUI owns touch layout and System appearance resolution. The bridge is deliberately thin: it must not implement arithmetic, memory, history, Programmer or mode semantics independently. The same versioned Controller persistence document carries cross-platform semantic state (mode, angle unit, Programmer context, precision, presentation preferences, variables and functions); native platforms own only the storage mechanism and truly platform-local window/theme state.
+SwiftUI owns touch layout and System appearance resolution. The bridge is deliberately thin: it must not implement arithmetic, memory, history, Programmer or mode semantics independently. The same versioned Controller persistence document carries cross-platform semantic state (mode, angle unit, Programmer context, precision, presentation preferences, history retention, variables and functions); native platforms own only the storage mechanism and truly platform-local window/theme state.
 
 An iOS Simulator build proves Simulator-target compatibility. An unsigned iPhoneOS build proves device-architecture compilation. Neither substitutes for signed physical-device installation evidence.
 
