@@ -1128,7 +1128,7 @@ void layout_main(HWND window) {
     const int content_width = std::max(0, calc_right - calc_left);
     int y = margin;
 
-    // Four always-reachable toolbar actions must still leave the product
+    // Five always-reachable toolbar actions must still leave the product
     // title visible at Calculator's compact/default desktop widths.
     const int toolbar_width = sx(window, 64);
     const int toolbar_height = sx(window, 30);
