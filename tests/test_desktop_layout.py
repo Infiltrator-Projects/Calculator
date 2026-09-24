@@ -632,9 +632,31 @@ assert 'conversion_from' in linux
 assert 'conversion_to' in linux
 assert 'Swap source and target units' in linux
 
-# Mint/GNOME-class state persistence includes calculator semantics, not only geometry.
-for needle in ('angle-unit', 'programmer-base', 'programmer-width', 'programmer-signed', 'load_user_variables', 'save_user_variables'):
+# Mint/GNOME-class state persistence includes calculator semantics, not only
+# geometry. Legacy variable/function/presentation files remain read-only
+# migration inputs; all current semantic writes go through the versioned
+# Controller-owned state document.
+for needle in (
+    'angle-unit',
+    'programmer-base',
+    'programmer-width',
+    'programmer-signed',
+    'load_user_variables',
+    'load_user_functions',
+    'load_display_preferences',
+    'save_controller_state',
+    'persistent_state_text()',
+):
     assert needle in linux, f'Linux persistent calculator state missing: {needle}'
+
+for forbidden in (
+    'save_user_variables',
+    'save_user_functions',
+    'save_display_preferences',
+):
+    assert forbidden not in linux, (
+        f'Linux reintroduced an obsolete persistence writer: {forbidden}'
+    )
 
 # Linux Mint / GNOME 41.1 replacement keyboard contract.
 for needle in (
