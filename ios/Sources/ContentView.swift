@@ -252,7 +252,7 @@ struct ContentView: View {
                     .frame(width: 42, height: 38)
             }
             .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
-            .accessibilityLabel("Theme")
+            .accessibilityLabel("Settings")
 
             if model.mode == .programmer {
                 Button {
