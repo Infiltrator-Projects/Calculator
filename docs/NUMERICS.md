@@ -22,7 +22,7 @@ A familiar result, another calculator's output or a plausible display string is 
 
 Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex. The interactive controller currently evaluates at 50 decimal digits. The core evaluation API accepts requested precisions from 16 through the maintained 1000-digit ceiling, and release-CI oracle coverage exercises that full range.
 
-Scientific decimal literals are parsed directly into that multiprecision domain, and intermediate arithmetic/transcendental/complex results are not silently routed through binary64. The Session/Controller boundary stores real and imaginary components as decimal text so the shared public C++ state preserves the precise value without exposing a third-party multiprecision ABI.
+Scientific decimal literals are parsed directly into that multiprecision domain, and intermediate arithmetic/transcendental/complex results are not silently routed through binary64. The Session/Controller boundary stores real and imaginary components as decimal text so the shared public C++ state preserves the precise value without exposing a third-party multiprecision ABI. Interactive Scientific precision defaults to 50 decimal digits but is user-selectable from 16 through 1000 digits; this calculation precision is deliberately separate from display decimal-place preferences.
 
 Formatting does not create precision. Standard binary64 presentation remains distinct from Scientific multiprecision presentation, Programmer fixed-width integers and the specialist exact/arbitrary tool domains.
 
@@ -98,7 +98,7 @@ Platform shells must not introduce independent numeric formatting rules that cha
 
 ## Errors and unavailable results
 
-Malformed syntax, excessive parser nesting, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, attempts to assign reserved constants, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures.
+Malformed syntax, excessive parser nesting, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, attempts to assign reserved constants, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures. Interactive expression input is additionally bounded to 8192 UTF-8 bytes at the shared Controller boundary so typed/pasted text cannot bypass platform UI limits and become an unbounded parser/allocation workload.
 
 A plausible substitute result is not an acceptable fallback. If a requested future numeric domain cannot establish a justified value under its contract, unsupported/error is preferable to invented precision.
 
@@ -160,9 +160,11 @@ Calendar date arithmetic is integer civil-date arithmetic, not floating-point du
 
 The Tools workbench deliberately uses more than one numeric representation.
 
-Engineering, dimensional conversion, statistics, graphing, real equation solving and complex arithmetic use finite binary64 values and reject malformed or non-finite inputs. Unit conversion is dimension-checked before applying scale/offset transformations; temperature conversions use affine transformations rather than multiplicative factors alone.
+Engineering, descriptive statistics and the dedicated Complex workbench use finite binary64 values and reject malformed or non-finite inputs. General Unit Conversion uses the Scientific multiprecision domain and is dimension-checked before applying exact decimal/ratio scale and affine-offset expressions; temperature conversions therefore retain affine semantics without first rounding definitions into binary64.
 
-Network IPv4/CIDR operations use exact 32-bit address arithmetic and 64-bit address counts. Storage allocation calculations use checked 64-bit integer arithmetic for byte/cluster counts and long-double intermediates only for human capacity conversion.
+Graph and real-root expressions are evaluated by the Scientific engine. Their renderer coordinates and deterministic real interval search remain finite binary64 geometry after that evaluation boundary.
+
+Network IPv4/CIDR operations use exact 32-bit address arithmetic and 64-bit address counts. Storage conversion and RAID human-capacity calculations reuse the same canonical multiprecision digital-storage unit definitions as Unit Conversion; cluster/allocation counts remain checked 64-bit integer arithmetic.
 
 Civil-date operations validate Gregorian dates in years 1 through 9999 and use integer day-number transforms. Unix conversion is explicitly UTC and requires the documented `YYYY-MM-DDTHH:MM:SSZ` form.
 
