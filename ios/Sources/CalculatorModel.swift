@@ -55,6 +55,12 @@ struct CalculatorHistoryRow: Identifiable {
     let ok: Bool
 }
 
+struct CalculatorMemoryRow: Identifiable {
+    let id: Int
+    let value: String
+    let binary64Available: Bool
+}
+
 // Swift owns presentation state only. CalculatorBridge/Controller remain the
 // authority for calculation, command enablement, history and mode semantics;
  // sync() replaces this observable snapshot after every bridge mutation.
@@ -272,6 +278,39 @@ final class CalculatorModel: ObservableObject {
 
     func clearHistory() {
         bridge.clearHistory()
+    }
+
+    func memoryEntries() -> [CalculatorMemoryRow] {
+        guard let raw = bridge.memoryEntries() as? [[String: Any]] else {
+            return []
+        }
+        return raw.compactMap { item in
+            guard let index = (item["index"] as? NSNumber)?.intValue,
+                  let value = item["value"] as? String,
+                  let available =
+                    (item["binary64Available"] as? NSNumber)?.boolValue
+            else {
+                return nil
+            }
+            return CalculatorMemoryRow(
+                id: index, value: value, binary64Available: available)
+        }
+    }
+
+    @discardableResult
+    func recallMemory(_ index: Int) -> Bool {
+        let recalled = bridge.recallMemory(at: index)
+        if recalled { sync() }
+        return recalled
+    }
+
+    @discardableResult
+    func deleteMemory(_ index: Int) -> Bool {
+        bridge.deleteMemory(at: index)
+    }
+
+    func clearMemory() {
+        bridge.clearMemory()
     }
 
     func visibleTitle(_ key: String) -> String {
