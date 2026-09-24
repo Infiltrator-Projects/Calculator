@@ -634,6 +634,8 @@ int main() {
         calculator::ProgrammerBase::Hexadecimal,
         calculator::IntegerWidth::Bits32, true);
     controller.set_mode(Mode::Programmer);
+    controller.set_history_limit(500U);
+    CHECK(controller.history_limit() == 500U);
     const std::string persistent_state = controller.persistent_state_text();
     CHECK(persistent_state.find("INFILTRATOR_CALCULATOR_STATE 2") == 0U);
 
@@ -651,6 +653,7 @@ int main() {
     CHECK(restored.state().programmer_width ==
           calculator::IntegerWidth::Bits32);
     CHECK(restored.state().programmer_signed);
+    CHECK(restored.history_limit() == 500U);
     CHECK(restored.variables_text().find("persisted=123.5") !=
           std::string::npos);
     CHECK(restored.function_definitions_text().find("twice(x)=x*2") !=
