@@ -521,6 +521,7 @@ int main() {
     CHECK(controller.state().result == "4");
 
     controller.dispatch(Command::AllClear);
+    controller.dispatch(Command::BaseHex);
     controller.dispatch(Command::HexC);
     CHECK(controller.state().expression == "C");
 
