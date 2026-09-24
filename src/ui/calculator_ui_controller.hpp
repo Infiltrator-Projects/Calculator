@@ -102,6 +102,9 @@ public:
     std::size_t memory_count() const noexcept {
         return session_.memory_count();
     }
+    std::uint64_t memory_revision() const noexcept {
+        return session_.memory_revision();
+    }
     std::optional<MemoryEntry> memory_entry(
         std::size_t index_from_newest) const {
         return session_.memory_entry(index_from_newest);
