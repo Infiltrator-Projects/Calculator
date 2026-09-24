@@ -91,6 +91,7 @@ public:
         unsigned decimal_digits = kScientificDefaultDigits);
     ScientificValue memory_recall_scientific() const;
     std::size_t memory_count() const noexcept { return memory_.size(); }
+    std::uint64_t memory_revision() const noexcept { return memory_revision_; }
     std::optional<MemoryEntry> memory_entry(std::size_t index_from_newest) const;
     bool erase_memory(std::size_t index_from_newest);
 
@@ -140,6 +141,7 @@ public:
 private:
     std::size_t history_limit_;
     std::uint64_t history_revision_ = 0;
+    std::uint64_t memory_revision_ = 0;
     std::deque<MemoryEntry> memory_;
     Variables variables_;
     ScientificVariables scientific_variables_;
