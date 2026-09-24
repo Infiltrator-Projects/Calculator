@@ -6,6 +6,15 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.31 — 2026-09-24
+
+- Close the post-0.2.30 reciprocal-function validation gap with independent 8192-bit MPFR/MPC oracle coverage and make the acot/acoth principal-branch conventions explicit.
+- Remove weaker duplicate binary64 paths from Advanced Tools by routing complex arithmetic and arbitrary roots through the shared Scientific multiprecision engine.
+- Extend Programmer mode with fixed-width XNOR, explicit arithmetic-right shift and modulo, and expose XNOR/ASR/BSWAP/MOD consistently through the shared keypad contract and iPhone shell.
+- Add shared Standard repeated-Equals semantics with precedence-aware capture of the previous top-level operation and permanent controller regressions.
+- Update Linux source-contract and Windows native-smoke expectations for the expanded Programmer keypad.
+- Add a maintained forensic parity ledger so already-implemented, intentional and deferred differences are not repeatedly reported as new defects.
+
 ## 0.2.30 — 2026-09-24
 
 - Preserve Scientific history semantics by recording and restoring the exact angle unit and effective calculation precision alongside each Scientific history entry.

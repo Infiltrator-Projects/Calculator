@@ -27,6 +27,7 @@ Code and tests remain authoritative for executable behaviour. Immutable tags/rel
 - [UI parity](UI_PARITY.md) — shared controller ownership, desktop-layout responsibilities and native-shell parity boundaries.
 - [Linux Mint / GNOME Calculator parity](MINT_PARITY.md) — exact Mint 22.x replacement baseline, adopted behaviours and remaining architectural differences.
 - [Advanced Tools](TOOLS.md) — user-facing tool catalogue, command forms, examples, numeric domains and limits.
+- [Forensic parity ledger](FORENSIC_PARITY.md) — comparison baseline for Microsoft, GNOME/Debian and other calculators, including implemented, intentional and deferred differences.
 
 ## Maintenance rule
 

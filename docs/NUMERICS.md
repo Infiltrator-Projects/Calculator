@@ -190,3 +190,16 @@ Complex values are explicit `real,imaginary` pairs. The current workbench suppor
 Graphing evaluates the existing Scientific grammar with a supplied `x` variable over 2..4096 evenly spaced samples. Invalid/non-finite samples are retained as discontinuity markers rather than connected through by the renderer.
 
 Equation solving searches a caller-specified real interval with deterministic segmentation and safeguarded bisection on validated sign changes. Returned candidates are re-evaluated before admission and deduplicated. The solver is a real numerical root finder, not a symbolic algebra system; absence of a validated root in the interval is reported explicitly.
+
+
+## Reciprocal trigonometric principal branches
+
+Scientific secant, cosecant and cotangent families execute in the same multiprecision complex domain as sine, cosine and tangent. Inverse secant/cosecant use the reciprocal followed by the existing principal inverse function. Inverse cotangent uses the established `atan(1/z)` principal branch, with `acot(0) = pi/2`; this makes the branch explicit instead of inheriting an accidental `pi/2-atan(z)` convention. Inverse hyperbolic cotangent uses `atanh(1/z)`, with `acoth(0) = i*pi/2`. The MPFR/MPC forensic oracle independently constructs these reference values.
+
+## Programmer logical extensions
+
+Programmer `>>` remains a logical right shift over the selected fixed-width bit pattern. `ashr` is the explicit arithmetic-right-shift operator and sign-extends from the selected width; it therefore does not overload signed display state with computational meaning. XNOR is a fixed-width complement of XOR, and `%` is integer remainder with the same width masking and zero-divisor failure contract as Programmer division. Byte swap remains a unary fixed-width operation.
+
+## Advanced Tools numerical reuse
+
+The Complex tool and Number Utilities arbitrary-root operation are adapters over the Scientific multiprecision engine. They no longer maintain independent `std::complex<double>` or `std::pow(double)` calculation paths. Tool syntax remains intentionally compact, but entering or computing values outside binary64 range no longer forces those two tools through a weaker numeric domain.

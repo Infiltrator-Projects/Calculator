@@ -4,7 +4,7 @@ This is a direction document, not a dated promise. The released source and tests
 
 ## Current foundation
 
-- maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture, including stateful Scientific 2nd/HYP/angle/notation controls, fixed-width Programmer rotate/NAND/NOR operations and shared Additional Results representations
+- maintain Standard, Scientific and Programmer modes over one shared calculation/session architecture, including stateful Scientific 2nd/HYP/angle/notation controls, repeated-Equals state, fixed-width Programmer rotate/NAND/NOR/XNOR, logical/arithmetic-shift and modulo operations, and shared Additional Results representations
 - preserve native GTK4, Win32 and SwiftUI interfaces without duplicating calculation semantics
 - keep numerical edge behaviour, cross-platform parity and exact Common integration protected by regression tests
 - maintain the shared Advanced Tools engine and the native Linux, Windows and iPhone workbenches over the same domain contracts and graph samples
@@ -57,3 +57,10 @@ A proposed capability enters the roadmap only when its numeric/domain representa
 ## Completion rule
 
 An item is complete when implementation, relevant edge-case tests, user-visible behaviour and maintained documentation agree. A checkbox or release number cannot substitute for missing evidence.
+
+
+## Forensic comparison discipline
+
+External calculator reviews are inputs to design, not a recurring feature checklist. Before a comparison finding is admitted as work, it must be checked against the current source and the maintained forensic parity ledger. Already-implemented capabilities are evidence, not new work; intentionally different behaviour must be justified against Calculator's documented contracts; known deferred items stay deferred until their ownership, numeric domain, interaction and validation strategy are ready.
+
+The current comparison baseline is maintained in [FORENSIC_PARITY.md](FORENSIC_PARITY.md).
