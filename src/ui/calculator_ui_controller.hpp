@@ -88,6 +88,7 @@ public:
     std::optional<HistoryEntry> history_entry(
         std::size_t index_from_newest) const;
     bool recall_history(std::size_t index_from_newest);
+    bool delete_history(std::size_t index_from_newest);
     void clear_history() noexcept;
     // Derived representation surfaces are generated from the current cached
     // result; they never cause platform-specific re-evaluation.
