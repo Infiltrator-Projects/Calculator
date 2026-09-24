@@ -70,6 +70,7 @@ final class CalculatorModel: ObservableObject {
     @Published var scientificHyperbolic = false
     @Published var scientificNotation = false
     @Published var scientificDigits = 50
+    @Published var historyLimit = 0
     @Published var programmerBase = 10
     @Published var programmerWidth = 64
     @Published var programmerSigned = false
@@ -167,6 +168,12 @@ final class CalculatorModel: ObservableObject {
 
     func setScientificDigits(_ digits: Int) {
         bridge.setScientificDigits(digits)
+        sync()
+        persistControllerState()
+    }
+
+    func setHistoryLimit(_ limit: Int) {
+        bridge.setHistoryLimit(limit)
         sync()
         persistControllerState()
     }
@@ -333,6 +340,8 @@ final class CalculatorModel: ObservableObject {
             (state["scientificNotation"] as? NSNumber)?.boolValue ?? false
         scientificDigits =
             (state["scientificDigits"] as? NSNumber)?.intValue ?? 50
+        historyLimit =
+            (state["historyLimit"] as? NSNumber)?.intValue ?? 0
         programmerBase = (state["programmerBase"] as? NSNumber)?.intValue ?? 10
         programmerWidth = (state["programmerWidth"] as? NSNumber)?.intValue ?? 64
         programmerSigned =
