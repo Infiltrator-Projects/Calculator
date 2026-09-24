@@ -227,6 +227,15 @@ struct ContentView: View {
                         Text(preference.label).tag(preference)
                     }
                 }
+
+                Picker("Scientific digits", selection: Binding(
+                    get: { model.scientificDigits },
+                    set: { model.setScientificDigits($0) }
+                )) {
+                    ForEach([16, 25, 50, 100, 250, 500, 1000], id: \.self) {
+                        Text("\($0) digits").tag($0)
+                    }
+                }
             } label: {
                 Image(systemName: "circle.lefthalf.filled")
                     .imageScale(.medium)
