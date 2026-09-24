@@ -637,6 +637,37 @@ for needle in (
 ):
     assert needle in ios, f"iPhone structured history UI missing: {needle}"
 
+# Shared history retention is configurable through native settings while the
+# Session/Controller retain sole ownership of the limit semantics.
+for needle in (
+    "state->history_limit",
+    '"History limit (0 = unlimited)"',
+    "controller.set_history_limit",
+    "controller.history_limit()",
+):
+    assert needle in linux, f"Linux history-retention setting missing: {needle}"
+
+for needle in (
+    "kIdHistoryLimitBase",
+    "History: Unlimited",
+    "g_controller.set_history_limit",
+    "g_controller.history_limit()",
+):
+    assert needle in windows, f"Windows history-retention setting missing: {needle}"
+
+for needle in (
+    "setHistoryLimit",
+    "historyLimit",
+):
+    assert needle in ios_bridge, f"iPhone history-retention bridge missing: {needle}"
+
+for needle in (
+    "model.historyLimit",
+    "model.setHistoryLimit",
+    "History: Unlimited",
+):
+    assert needle in ios, f"iPhone history-retention setting missing: {needle}"
+
 # Mint-class converter remains first-class and persistent on Linux.
 assert '"conversion.ini"' in linux
 assert 'conversion_dimension' in linux
