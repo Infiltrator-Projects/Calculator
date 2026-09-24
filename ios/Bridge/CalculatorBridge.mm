@@ -339,4 +339,38 @@ NSInteger angle_value(calculator::AngleUnit unit) {
     [self controller]->clear_history();
 }
 
+- (NSArray<NSDictionary *> *)memoryEntries {
+    Controller *controller = [self controller];
+    NSMutableArray<NSDictionary *> *items = [NSMutableArray array];
+    const std::size_t count = controller->memory_count();
+    for (std::size_t index = 0; index < count; ++index) {
+        const auto entry = controller->memory_entry(index);
+        if (!entry) continue;
+        const std::string value = calculator::format_scientific_value(
+            entry->scientific, controller->scientific_digits());
+        [items addObject:@{
+            @"index": @(static_cast<NSInteger>(index)),
+            @"value": to_ns(value),
+            @"binary64Available": @(entry->binary64_valid)
+        }];
+    }
+    return items;
+}
+
+- (BOOL)recallMemoryAtIndex:(NSInteger)index {
+    if (index < 0) return NO;
+    return [self controller]->recall_memory(
+        static_cast<std::size_t>(index)) ? YES : NO;
+}
+
+- (BOOL)deleteMemoryAtIndex:(NSInteger)index {
+    if (index < 0) return NO;
+    return [self controller]->delete_memory(
+        static_cast<std::size_t>(index)) ? YES : NO;
+}
+
+- (void)clearMemory {
+    [self controller]->clear_memory();
+}
+
 @end
