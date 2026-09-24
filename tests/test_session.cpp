@@ -239,6 +239,28 @@ int main(){
     session.clear_history();
     if(!session.history().empty()) fail("history clear wrong");
 
+    calculator::Session retained_history;
+    retained_history.evaluate("1+1");
+    retained_history.evaluate("2+2");
+    retained_history.evaluate("3+3");
+    const std::uint64_t before_retention_change =
+        retained_history.history_revision();
+    retained_history.set_history_limit(2U);
+    if(retained_history.history_limit()!=2U ||
+       retained_history.history_count()!=2U)
+        fail("history retention limit did not trim oldest entries");
+    if(retained_history.history_from_newest(0)->input!="3+3" ||
+       retained_history.history_from_newest(1)->input!="2+2")
+        fail("history retention kept the wrong entries");
+    if(retained_history.history_revision()!=before_retention_change+1U)
+        fail("history retention trim revision wrong");
+    retained_history.set_history_limit(0U);
+    retained_history.evaluate("4+4");
+    retained_history.evaluate("5+5");
+    if(retained_history.history_limit()!=0U ||
+       retained_history.history_count()!=4U)
+        fail("unlimited history retention wrong");
+
     if(failures){std::cerr<<failures<<" session test(s) failed\n";return 1;}
     std::cout<<"calculator session tests passed\n";
     return 0;
