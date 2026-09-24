@@ -32,6 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *)persistentStateText;
 - (BOOL)loadPersistentStateText:(NSString *)text;
 - (void)setScientificDigits:(NSInteger)digits;
+- (void)setHistoryLimit:(NSInteger)limit;
 
 // Tool catalogue rows contain index/name/prompt/example. Evaluation results
  // contain ok/output/error/points, where each point carries x/y/valid. These are
