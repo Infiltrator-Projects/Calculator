@@ -584,6 +584,56 @@ int main() {
     controller.set_mode(Mode::Standard);
     CHECK(!controller.toggle_programmer_bit(0U));
 
+    // Scientific computation precision is an explicit shared setting, distinct
+    // from display decimal places.
+    controller.set_mode(Mode::Scientific);
+    controller.set_scientific_digits(80U);
+    CHECK(controller.scientific_digits() == 80U);
+    controller.set_expression("1/7");
+    CHECK(controller.state().result.size() > 70U);
+    controller.set_scientific_digits(1U);
+    CHECK(controller.scientific_digits() == calculator::kScientificMinDigits);
+    controller.set_scientific_digits(5000U);
+    CHECK(controller.scientific_digits() == calculator::kScientificMaxDigits);
+    controller.set_scientific_digits(80U);
+
+    // Persistence is one versioned Controller-owned document. Loading validates
+    // the full document before replacing variables/functions/preferences.
+    DisplayPreferences persisted_preferences{};
+    persisted_preferences.format = ResultFormat::Fixed;
+    persisted_preferences.decimal_places = 6U;
+    persisted_preferences.group_thousands = true;
+    persisted_preferences.trailing_zeroes = true;
+    controller.set_display_preferences(persisted_preferences);
+    CHECK(controller.load_function_definitions_text("twice(x)=x*2\n"));
+    CHECK(controller.load_variables_text("persisted=123.5\n"));
+    const std::string persistent_state = controller.persistent_state_text();
+    CHECK(persistent_state.find("INFILTRATOR_CALCULATOR_STATE 1") == 0U);
+
+    Controller restored;
+    CHECK(restored.load_persistent_state_text(persistent_state));
+    CHECK(restored.scientific_digits() == 80U);
+    CHECK(restored.display_preferences().format == ResultFormat::Fixed);
+    CHECK(restored.display_preferences().decimal_places == 6U);
+    CHECK(restored.display_preferences().group_thousands);
+    CHECK(restored.display_preferences().trailing_zeroes);
+    CHECK(restored.variables_text().find("persisted=123.5") !=
+          std::string::npos);
+    CHECK(restored.function_definitions_text().find("twice(x)=x*2") !=
+          std::string::npos);
+    const std::string before_bad_state = restored.persistent_state_text();
+    CHECK(!restored.load_persistent_state_text(
+        "INFILTRATOR_CALCULATOR_STATE 1\nscientific-digits=9999\n"));
+    CHECK(restored.persistent_state_text() == before_bad_state);
+
+    // Oversize typed/pasted expressions fail at the shared Controller boundary
+    // instead of reaching a parser or creating platform-specific limits.
+    CHECK(!restored.set_expression(
+        std::string(Controller::kMaxExpressionBytes + 1U, '1')));
+    CHECK(restored.state().fault);
+    CHECK(restored.state().status == "INPUT LIMIT");
+    CHECK(restored.state().expression.empty());
+
     // Keep the hot input path comfortably inside an interactive frame budget.
     // The threshold is deliberately much looser than normal native C++ cost:
     // it detects an order-of-magnitude regression without timing micro-noise.
