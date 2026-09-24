@@ -1130,7 +1130,10 @@ void layout_main(HWND window) {
 
     // Five always-reachable toolbar actions must still leave the product
     // title visible at Calculator's compact/default desktop widths.
-    const int toolbar_width = sx(window, 64);
+    // Five toolbar actions share the 360-unit default width. Keep each action
+    // compact enough to reserve the same roughly 60-unit title area that four
+    // 64-unit actions previously left, instead of collapsing the title to zero.
+    const int toolbar_width = sx(window, 50);
     const int toolbar_height = sx(window, 30);
     const bool show_bases =
         g_controller.state().mode == Mode::Programmer;
