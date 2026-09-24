@@ -639,6 +639,14 @@ std::string Session::history_text(std::size_t limit,
     return text;
 }
 
+bool Session::erase_history_from_newest(std::size_t index) {
+    if (index >= history_.size()) return false;
+    const std::size_t from_oldest = history_.size() - 1U - index;
+    history_.erase(history_.begin() + static_cast<std::ptrdiff_t>(from_oldest));
+    ++history_revision_;
+    return true;
+}
+
 void Session::clear_history() noexcept {
     if (history_.empty()) return;
     history_.clear();
