@@ -607,8 +607,14 @@ int main() {
     controller.set_display_preferences(persisted_preferences);
     CHECK(controller.load_function_definitions_text("twice(x)=x*2\n"));
     CHECK(controller.load_variables_text("persisted=123.5\n"));
+    controller.set_expression("");
+    controller.set_angle_unit(calculator::AngleUnit::Gradians);
+    controller.set_programmer_context(
+        calculator::ProgrammerBase::Hexadecimal,
+        calculator::IntegerWidth::Bits32, true);
+    controller.set_mode(Mode::Programmer);
     const std::string persistent_state = controller.persistent_state_text();
-    CHECK(persistent_state.find("INFILTRATOR_CALCULATOR_STATE 1") == 0U);
+    CHECK(persistent_state.find("INFILTRATOR_CALCULATOR_STATE 2") == 0U);
 
     Controller restored;
     CHECK(restored.load_persistent_state_text(persistent_state));
@@ -617,13 +623,37 @@ int main() {
     CHECK(restored.display_preferences().decimal_places == 6U);
     CHECK(restored.display_preferences().group_thousands);
     CHECK(restored.display_preferences().trailing_zeroes);
+    CHECK(restored.state().mode == Mode::Programmer);
+    CHECK(restored.state().angle_unit == calculator::AngleUnit::Gradians);
+    CHECK(restored.state().programmer_base ==
+          calculator::ProgrammerBase::Hexadecimal);
+    CHECK(restored.state().programmer_width ==
+          calculator::IntegerWidth::Bits32);
+    CHECK(restored.state().programmer_signed);
     CHECK(restored.variables_text().find("persisted=123.5") !=
           std::string::npos);
     CHECK(restored.function_definitions_text().find("twice(x)=x*2") !=
           std::string::npos);
+
+    // Existing v1 documents remain readable during the migration.
+    const std::string legacy_state =
+        "INFILTRATOR_CALCULATOR_STATE 1\n"
+        "scientific-digits=50\n"
+        "result-format=0\n"
+        "decimal-places=9\n"
+        "group-thousands=0\n"
+        "trailing-zeroes=0\n"
+        "variables-bytes=0\n"
+        "\n"
+        "functions-bytes=0\n";
+    Controller legacy_restored;
+    CHECK(legacy_restored.load_persistent_state_text(legacy_state));
+    CHECK(legacy_restored.scientific_digits() == 50U);
+    CHECK(legacy_restored.state().mode == Mode::Standard);
+
     const std::string before_bad_state = restored.persistent_state_text();
     CHECK(!restored.load_persistent_state_text(
-        "INFILTRATOR_CALCULATOR_STATE 1\nscientific-digits=9999\n"));
+        "INFILTRATOR_CALCULATOR_STATE 2\nmode=9\n"));
     CHECK(restored.persistent_state_text() == before_bad_state);
 
     // Oversize typed/pasted expressions fail at the shared Controller boundary
