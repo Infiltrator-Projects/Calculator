@@ -35,6 +35,12 @@ struct HistoryEntry {
     bool ok = false;
 };
 
+struct MemoryEntry {
+    ScientificValue scientific{};
+    double binary64 = 0.0;
+    bool binary64_valid = false;
+};
+
 // Process-local calculator state shared across evaluations. Session owns
 // variables, user functions, memory-set state and history; it delegates all
 // mathematical semantics to the calculation engines. History is unbounded by
@@ -66,9 +72,10 @@ public:
         AngleUnit angle_unit = AngleUnit::Radians,
         unsigned decimal_digits = kScientificDefaultDigits);
 
-    // Memory is one logical register with binary64 and Scientific views.
-    // Storing through either domain marks it present; memory_empty() is about
-    // presence, not whether the numerical value happens to be zero.
+    // Memory is a newest-first stack. Existing MC/MR/MS/M+/M- semantics act
+    // on the newest slot: MS pushes a new slot, M+/M- update the newest slot,
+    // MR recalls it and MC clears the stack. Indexed APIs let native memory
+    // surfaces recall or delete individual slots without owning arithmetic.
     void memory_clear();
     bool memory_store(double value);
     bool memory_add(double value);
@@ -83,8 +90,11 @@ public:
         const ScientificValue& value,
         unsigned decimal_digits = kScientificDefaultDigits);
     ScientificValue memory_recall_scientific() const;
+    std::size_t memory_count() const noexcept { return memory_.size(); }
+    std::optional<MemoryEntry> memory_entry(std::size_t index_from_newest) const;
+    bool erase_memory(std::size_t index_from_newest);
 
-    // Distinguishes "never set/cleared" from a legitimate stored numeric zero.
+    // Distinguishes an empty stack from a legitimate stored numeric zero.
     bool memory_empty() const noexcept;
 
     void record_history(
@@ -130,10 +140,7 @@ public:
 private:
     std::size_t history_limit_;
     std::uint64_t history_revision_ = 0;
-    double memory_ = 0.0;
-    ScientificValue scientific_memory_{};
-    bool memory_set_ = false;
-    bool memory_binary64_valid_ = false;
+    std::deque<MemoryEntry> memory_;
     Variables variables_;
     ScientificVariables scientific_variables_;
     Functions functions_;
