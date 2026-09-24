@@ -12,6 +12,7 @@ This changelog records user-visible, compatibility, architecture and validation 
 - Add human unit aliases and exact ratio definitions for selected definition-based conversions such as knots, points and Torr.
 - Add fixed-width Programmer byte-order reversal plus grouped binary/octal/hexadecimal presentation and expose Swap Endian through the native Linux, Windows and iPhone Programmer views.
 - Add individual history-entry deletion through Session/Controller and native Linux, Windows and iPhone history surfaces, alongside existing whole-history clearing.
+- Add a persisted cross-platform history-retention preference: unlimited by default, with shared bounded-session semantics and native Linux, Windows and iPhone controls.
 - Extend core/controller/cross-platform regression protection and maintained documentation for the new contracts.
 
 ## 0.2.28 — 2026-09-24
