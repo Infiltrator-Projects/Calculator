@@ -176,7 +176,7 @@ bool Controller::load_persistent_state_text(std::string_view text) {
     if (text.size() > kMaxPersistentStateBytes) return false;
 
     std::size_t cursor = 0U;
-    const auto read_line = [&](std::string_view& line) mutable -> bool {
+    const auto read_line = [&](std::string_view& line) -> bool {
         if (cursor > text.size()) return false;
         const std::size_t end = text.find('\n', cursor);
         if (end == std::string_view::npos) return false;
