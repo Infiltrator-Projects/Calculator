@@ -2067,6 +2067,8 @@ gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
     return FALSE;
 }
 
+void configure_linux_renderer_for_display();
+
 void activate(GtkApplication* app, gpointer) {
     const auto& metrics = calculator::ui::kDesktopMetrics;
 
