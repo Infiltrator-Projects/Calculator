@@ -71,12 +71,12 @@ The Tools workbench is intentionally on-demand. It keeps the main Standard/Scien
 `src/core/session.*` owns process-local state that spans individual calculations:
 
 - reusable variables;
-- calculator memory, including explicit store (MS), recall, clear and arithmetic update state; and
+- a newest-first calculator memory stack: MS pushes a slot, MR/M+/M− operate on the newest slot, MC clears all slots, and indexed recall/delete remain Session/Controller-owned; and
 - calculation history, unbounded by default with an optional explicit limit for embedders/tests.
 
 The session delegates mathematical evaluation to the core. It does not implement an alternate expression grammar.
 
-History is unbounded by default to match the maintained desktop behaviour, while embedders/tests may request an explicit Session limit. Session owns a monotonically advancing history revision and the canonical bounded history-text projection used by compact docks; platform shells update history views only when that revision changes instead of rebuilding history on every keystroke. Variables and user-defined functions are Session-owned semantic state that Linux may persist through Calculator-owned text formats; memory and calculation history remain process/session-local.
+History is unbounded by default to match the maintained desktop behaviour, while embedders/tests may request an explicit Session limit. Session owns a monotonically advancing history revision and the canonical bounded history-text projection used by compact docks; platform shells update history views only when that revision changes instead of rebuilding history on every keystroke. Memory slots retain Scientific values plus an optional exact binary64 view so Standard recall never fabricates a lossy substitute for a Scientific-only value. Variables and user-defined functions may be persisted through the Controller-owned state document; memory and calculation history remain process/session-local.
 
 ## Shared interaction layer
 
