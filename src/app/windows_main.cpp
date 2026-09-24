@@ -613,7 +613,11 @@ void dispatch_command(const ButtonSpec& spec) {
     const auto result =
         g_controller.dispatch(spec.command, expression_cursor());
     render_state(result.cursor);
-    if (spec.command == Command::Equals) save_controller_state();
+    if (spec.command == Command::Equals ||
+        spec.command == Command::CycleAngleUnit ||
+        calculator::ui::is_programmer_selector(spec.command)) {
+        save_controller_state();
+    }
     SetFocus(g_expression);
 }
 
@@ -2328,6 +2332,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         if (id == kIdModeStandard) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Standard);
+            save_controller_state();
             update_mode_ui();
             resize_main_for_mode(window, Mode::Standard);
             layout_main(window);
@@ -2336,6 +2341,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         if (id == kIdModeScientific) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Scientific);
+            save_controller_state();
             update_mode_ui();
             resize_main_for_mode(window, Mode::Scientific);
             layout_main(window);
@@ -2344,6 +2350,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         if (id == kIdModeProgrammer) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Programmer);
+            save_controller_state();
             update_mode_ui();
             resize_main_for_mode(window, Mode::Programmer);
             layout_main(window);
