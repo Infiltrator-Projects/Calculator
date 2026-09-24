@@ -53,6 +53,15 @@ NS_ASSUME_NONNULL_BEGIN
     NS_SWIFT_NAME(deleteHistory(at:));
 - (void)clearHistory;
 
+// Memory indexes are newest-first and share the Controller memory-stack
+// semantics used by MC/MR/MS/M+/M-.
+- (NSArray<NSDictionary *> *)memoryEntries;
+- (BOOL)recallMemoryAtIndex:(NSInteger)index
+    NS_SWIFT_NAME(recallMemory(at:));
+- (BOOL)deleteMemoryAtIndex:(NSInteger)index
+    NS_SWIFT_NAME(deleteMemory(at:));
+- (void)clearMemory;
+
 @end
 
 NS_ASSUME_NONNULL_END
