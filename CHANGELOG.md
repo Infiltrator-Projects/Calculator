@@ -6,6 +6,11 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.33 — 2026-09-25
+
+- Align Linux toolbar controls with the 30 px publisher desktop control height while retaining the existing Common compact radius.
+- Preserve calculator keypad geometry, display, engine, Windows/iPhone shells, dependencies and Common APIs unchanged.
+
 ## 0.2.32 — 2026-09-24
 
 - Align Linux toolbar-button corners with the suite-wide 6 px compact chrome radius.
