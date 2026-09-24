@@ -810,6 +810,12 @@ private struct ProgrammerRepresentationsView: View {
             }
             .navigationTitle("Programmer Representations")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Swap Endian") {
+                        _ = model.swapProgrammerEndianness()
+                    }
+                    .disabled(model.mode != .programmer)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                 }
