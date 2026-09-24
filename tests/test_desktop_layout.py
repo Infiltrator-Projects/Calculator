@@ -447,6 +447,8 @@ for needle in (
     'bases_button = toolbar_button("Bases")',
     "show_programmer_bases",
     "programmer_representations_text()",
+    "swap_programmer_endianness()",
+    'gtk_button_new_with_label("Swap Endian")',
     "gtk_label_set_selectable(GTK_LABEL(result_label), TRUE)",
 ):
     assert needle in linux, f"Linux Programmer/copy completeness missing: {needle}"
@@ -488,13 +490,16 @@ for needle in (
     "kIdBases",
     'L"Bases"',
     "kBasesClass",
+    "kIdBaseSwapEndian",
     "show_bases()",
     "bases_proc",
     "refresh_bases_window()",
     "programmer_representations_text()",
     "programmer_bits()",
     "toggle_programmer_bit(",
+    "swap_programmer_endianness()",
     'L"Programmer Representations & Bits"',
+    'L"Swap Endian"',
 ):
     assert needle in windows, f"Windows Programmer representations/bits parity missing: {needle}"
 
@@ -525,6 +530,8 @@ for needle in (
     "ProgrammerRepresentationsView",
     "model.showingBases",
     "model.programmerRepresentationsText()",
+    "model.swapProgrammerEndianness()",
+    '"Swap Endian"',
     ".textSelection(.enabled)",
 ):
     assert needle in ios, f"iPhone Programmer/copy completeness missing: {needle}"
@@ -601,6 +608,7 @@ for needle in (
     "controller.history_count()",
     "controller.history_entry(index)",
     "controller.recall_history(history_index)",
+    "controller.delete_history(history_index)",
 ):
     assert needle in linux, f"Linux structured history replay missing: {needle}"
 
@@ -608,20 +616,24 @@ for needle in (
     "LB_RESETCONTENT",
     "LBS_NOTIFY",
     "LBN_DBLCLK",
+    "kIdHistoryDelete",
     "g_controller.history_entry(index)",
     "g_controller.recall_history(",
+    "g_controller.delete_history(",
 ):
     assert needle in windows, f"Windows structured history replay missing: {needle}"
 
 for needle in (
     "historyEntries",
     "recallHistoryAtIndex",
+    "deleteHistoryAtIndex",
 ):
     assert needle in ios_bridge, f"iPhone structured history bridge missing: {needle}"
 
 for needle in (
     "model.historyEntries()",
     "model.recallHistory(entry.id)",
+    "model.deleteHistory(entry.id)",
 ):
     assert needle in ios, f"iPhone structured history UI missing: {needle}"
 
