@@ -127,7 +127,7 @@ for needle in (
     "inline constexpr std::array<ButtonSpec, 5> kStandardMemory",
     "inline constexpr std::array<ButtonSpec, 24> kStandardKeypad",
     "inline constexpr std::array<ButtonSpec, 40> kScientificKeypad",
-    "inline constexpr std::array<ButtonSpec, 44> kProgrammerKeypad",
+    "inline constexpr std::array<ButtonSpec, 48> kProgrammerKeypad",
     '{"MC", ButtonRole::Utility, Command::MemoryClear}',
     '{"MS", ButtonRole::Utility, Command::MemoryStore}',
     '{"CE", ButtonRole::Clear, Command::ClearEntry}',

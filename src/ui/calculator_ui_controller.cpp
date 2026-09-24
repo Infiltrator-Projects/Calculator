@@ -1132,11 +1132,9 @@ void Controller::capture_standard_repeat() {
 
     if (best == std::string::npos) return;
     std::string rhs = state_.expression.substr(best + 1U);
-    const auto first = rhs.find_first_not_of(" 	
-");
+    const auto first = rhs.find_first_not_of(" \\t\\r\\n"));
     if (first == std::string::npos) return;
-    const auto last = rhs.find_last_not_of(" 	
-");
+    const auto last = rhs.find_last_not_of(" \\t\\r\\n"));
     rhs = rhs.substr(first, last - first + 1U);
 
     standard_repeat_valid_ = true;
