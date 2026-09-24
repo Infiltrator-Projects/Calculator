@@ -29,6 +29,7 @@ struct ScientificResult {
     std::string display;
 };
 
+constexpr unsigned kScientificMinDigits = 16;
 constexpr unsigned kScientificDefaultDigits = 50;
 constexpr unsigned kScientificMaxDigits = 1000;
 
