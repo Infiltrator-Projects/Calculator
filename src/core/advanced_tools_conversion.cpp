@@ -118,7 +118,7 @@ constexpr std::array<Unit, 135> kUnits{{
     {"yd","length","0.9144","0.0"},{"mi","length","1609.344","0.0"},{"nmi","length","1852.0","0.0"},
     {"pc","length","3.0856775814913673e16","0.0"},{"ly","length","9.4607304725808e15","0.0"},
     {"au","length","149597870700.0","0.0"},{"U","length","0.04445","0.0"},{"cable","length","219.456","0.0"},
-    {"fathom","length","1.8288","0.0"},{"pt","length","0.0003527777777777778","0.0"},
+    {"fathom","length","1.8288","0.0"},{"pt","length","0.0254/72.0","0.0"},
 
     {"kg","mass","1.0","0.0"},{"g","mass","0.001","0.0"},{"mg","mass","1e-6","0.0"},{"lb","mass","0.45359237","0.0"},
     {"oz","mass","0.028349523125","0.0"},{"t","mass","1000.0","0.0"},{"ozt","mass","0.0311034768","0.0"},
@@ -140,11 +140,11 @@ constexpr std::array<Unit, 135> kUnits{{
     {"pintUK","volume","0.00056826125","0.0"},{"quartUK","volume","0.0011365225","0.0"},
 
     {"mps","speed","1.0","0.0"},{"kph","speed","1.0/3.6","0.0"},{"mph","speed","0.44704","0.0"},
-    {"knot","speed","0.5144444444444445","0.0"},{"fps","speed","0.3048","0.0"},
+    {"knot","speed","1852.0/3600.0","0.0"},{"fps","speed","0.3048","0.0"},
 
     {"Pa","pressure","1.0","0.0"},{"kPa","pressure","1000.0","0.0"},{"MPa","pressure","1e6","0.0"},{"bar","pressure","100000.0","0.0"},
     {"psi","pressure","6894.757293168","0.0"},{"atm","pressure","101325.0","0.0"},
-    {"mmHg","pressure","133.322387415","0.0"},{"Torr","pressure","133.32236842105263","0.0"},
+    {"mmHg","pressure","133.322387415","0.0"},{"Torr","pressure","101325.0/760.0","0.0"},
 
     {"J","energy","1.0","0.0"},{"kJ","energy","1000.0","0.0"},{"Wh","energy","3600.0","0.0"},{"kWh","energy","3.6e6","0.0"},
     {"cal","energy","4.184","0.0"},{"kcal","energy","4184.0","0.0"},{"BTU","energy","1055.05585262","0.0"},
@@ -191,21 +191,50 @@ constexpr std::array<Unit, 3> kAngleUnits{{
 }};
 
 std::string_view canonical_unit_name(std::string_view name) {
-    // Storage historically exposed IEC/SI bit spellings such as Kibit while
-    // Unit Conversion uses compact Kib/kb identifiers. Keep those spellings as
-    // aliases, but resolve them to one canonical unit definition.
-    static constexpr std::array<std::pair<std::string_view, std::string_view>, 17>
-        aliases{{
-            {"B","byte"},
-            {"kbit","kb"},{"Kibit","Kib"},
-            {"Mbit","Mb"},{"Mibit","Mib"},
-            {"Gbit","Gb"},{"Gibit","Gib"},
-            {"Tbit","Tb"},{"Tibit","Tib"},
-            {"Pbit","Pb"},{"Pibit","Pib"},
-            {"Ebit","Eb"},{"Eibit","Eib"},
-            {"Zbit","Zb"},{"Zibit","Zib"},
-            {"Ybit","Yb"},{"Yibit","Yib"}
-        }};
+    // Aliases are intentionally explicit rather than globally case-folded:
+    // SI/storage symbols such as MB/Mb and m/M are case-sensitive quantities.
+    // Human spellings and Unicode symbols still resolve to one canonical unit.
+    static constexpr std::pair<std::string_view, std::string_view> aliases[]{
+        {"meter","m"},{"meters","m"},{"metre","m"},{"metres","m"},
+        {"kilometer","km"},{"kilometers","km"},
+        {"kilometre","km"},{"kilometres","km"},
+        {"centimeter","cm"},{"centimeters","cm"},
+        {"centimetre","cm"},{"centimetres","cm"},
+        {"millimeter","mm"},{"millimeters","mm"},
+        {"millimetre","mm"},{"millimetres","mm"},
+        {"micrometer","um"},{"micrometers","um"},
+        {"micrometre","um"},{"micrometres","um"},
+        {"nanometer","nm"},{"nanometers","nm"},
+        {"nanometre","nm"},{"nanometres","nm"},
+        {"inch","in"},{"inches","in"},{"foot","ft"},{"feet","ft"},
+        {"yard","yd"},{"yards","yd"},{"mile","mi"},{"miles","mi"},
+        {"nautical-mile","nmi"},{"nautical-miles","nmi"},
+        {"kilogram","kg"},{"kilograms","kg"},{"gram","g"},{"grams","g"},
+        {"milligram","mg"},{"milligrams","mg"},
+        {"pound","lb"},{"pounds","lb"},{"lbs","lb"},
+        {"ounce","oz"},{"ounces","oz"},{"tonne","t"},{"tonnes","t"},
+        {"celsius","C"},{"°C","C"},{"fahrenheit","F"},{"°F","F"},
+        {"kelvin","K"},{"rankine","R"},
+        {"liter","L"},{"liters","L"},{"litre","L"},{"litres","L"},
+        {"milliliter","mL"},{"milliliters","mL"},
+        {"millilitre","mL"},{"millilitres","mL"},
+        {"microliter","uL"},{"microliters","uL"},
+        {"microlitre","uL"},{"microlitres","uL"},{"µL","uL"},{"μL","uL"},
+        {"second","s"},{"seconds","s"},{"sec","s"},
+        {"minute","min"},{"minutes","min"},{"hour","h"},{"hours","h"},
+        {"degree","deg"},{"degrees","deg"},
+        {"radian","rad"},{"radians","rad"},
+        {"gradian","grad"},{"gradians","grad"},
+        {"B","byte"},{"bytes","byte"},{"bits","bit"},
+        {"kbit","kb"},{"Kibit","Kib"},
+        {"Mbit","Mb"},{"Mibit","Mib"},
+        {"Gbit","Gb"},{"Gibit","Gib"},
+        {"Tbit","Tb"},{"Tibit","Tib"},
+        {"Pbit","Pb"},{"Pibit","Pib"},
+        {"Ebit","Eb"},{"Eibit","Eib"},
+        {"Zbit","Zb"},{"Zibit","Zib"},
+        {"Ybit","Yb"},{"Yibit","Yib"}
+    };
     for (const auto& [alias, canonical] : aliases) {
         if (name == alias) return canonical;
     }
