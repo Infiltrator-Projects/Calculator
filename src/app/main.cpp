@@ -2070,6 +2070,8 @@ gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
 void activate(GtkApplication* app, gpointer) {
     const auto& metrics = calculator::ui::kDesktopMetrics;
 
+    configure_linux_renderer_for_display();
+
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
     theme_mode = load_theme_mode();
@@ -2289,23 +2291,31 @@ void activate(GtkApplication* app, gpointer) {
     gtk_widget_grab_focus(expression_entry);
 }
 
-void configure_linux_renderer() {
-    // GTK 4.14 made the newer NGL path the default on Noble/Mint-class
-    // systems. Calculator is a static 2D desktop surface and does not depend
-    // on NGL-specific features, while some driver/compositor combinations can
-    // keep that renderer disproportionately busy even when the application is
-    // otherwise idle. Prefer the mature accelerated GL renderer, but preserve
-    // any explicit administrator/user choice for diagnostics or compatibility.
+void configure_linux_renderer_for_display() {
+    // Preserve an explicit administrator/user renderer selection. Otherwise,
+    // choose only after GtkApplication has opened the display: GL is preferred
+    // on a composited desktop when GDK can initialize it, while non-composited
+    // or GL-incapable displays use Cairo. This avoids forcing a software EGL
+    // path on headless/remote X servers while retaining the low-idle-CPU GL
+    // policy on ordinary Mint/Cinnamon desktops.
     const char* renderer = g_getenv("GSK_RENDERER");
-    if (!renderer || renderer[0] == '\0') {
-        g_setenv("GSK_RENDERER", "gl", FALSE);
+    if (renderer && renderer[0] != '\0') return;
+
+    GdkDisplay* display = gdk_display_get_default();
+    if (!display || !gdk_display_is_composited(display)) {
+        g_setenv("GSK_RENDERER", "cairo", FALSE);
+        return;
     }
+
+    GError* error = nullptr;
+    const gboolean gl_ready = gdk_display_prepare_gl(display, &error);
+    if (error) g_error_free(error);
+    g_setenv("GSK_RENDERER", gl_ready ? "gl" : "cairo", FALSE);
 }
 
 } // namespace
 
 int main(int argc, char** argv) {
-    configure_linux_renderer();
     GApplicationFlags flags = G_APPLICATION_DEFAULT_FLAGS;
     const char* independent = g_getenv("INFILTRATOR_CALC_NEW_INSTANCE");
     if (independent && independent[0] != '\0') {

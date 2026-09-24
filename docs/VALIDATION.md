@@ -19,7 +19,7 @@ Every `main` push and manual workflow dispatch runs the cross-platform verificat
 - builds and tests the shared core on supported build hosts;
 - runs the portable Calculator core/controller tests under Clang AddressSanitizer and UndefinedBehaviorSanitizer;
 - builds the native Windows application and runs a Win32 runtime/keypad smoke path;
-- builds the GTK/Linux target and Debian package;
+- builds the GTK/Linux target and Debian package, then enforces packaged idle-CPU limits for the capability-aware default renderer and explicit Cairo path; explicit GL is also exercised, but a hosted X server that reports no usable DRI3 device is treated as an environment limitation rather than a product-performance measurement;
 - enables Linux-only MPFR and MPC oracle tests that independently compare representative high-precision real and complex Scientific results without adding MPFR/MPC to Calculator's runtime;
 - compiles the iPhone application for iOS Simulator through the shared C++ controller and verifies AppIcon metadata;
 - compiles the unsigned ARM64 iPhoneOS target;

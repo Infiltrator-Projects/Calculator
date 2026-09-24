@@ -119,7 +119,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-On Linux, Calculator respects an explicit `GSK_RENDERER` selection. When none is supplied it prefers GTK's mature accelerated `gl` renderer; this avoids the GTK 4.14 default-renderer idle-CPU regression observed on affected Mint/Noble graphics stacks without forcing software rendering. Release CI measures packaged idle CPU under the application default, explicit GL and Cairo paths.
+On Linux, Calculator respects an explicit `GSK_RENDERER` selection. When none is supplied it chooses after the display opens: a composited desktop with usable OpenGL gets GTK's mature accelerated `gl` renderer, while non-composited or GL-incapable displays fall back to Cairo instead of forcing software EGL. This retains the low-idle-CPU policy on ordinary Mint/Cinnamon desktops while remaining sane on headless and remote X servers. Release CI measures packaged idle CPU under the application default and Cairo paths, and also exercises explicit GL; a hosted runner that exposes no DRI3 device is reported as an environment limitation rather than misclassified as an application CPU regression.
 
 On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. MPFR is optional for ordinary builds; release CI enables the dedicated high-precision numerical oracle with `-DCALCULATOR_ENABLE_MPFR_ORACLE_TESTS=ON` and `libmpfr-dev`. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
 

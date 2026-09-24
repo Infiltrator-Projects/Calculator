@@ -14,6 +14,7 @@ No unreleased changes.
 - Add calendar-aware add/subtract years, months, weeks and days with end-of-month clamping plus structured calendar date differences.
 - Add side-effect-free Scientific live preview and shared Tab completion sourced from built-ins, constants, variables and user-defined functions.
 - Extend regression and maintained documentation for the new precision, calendar and interaction contracts.
+- Make Linux renderer selection display-capability-aware: preserve explicit choices, prefer GL on composited/GL-capable desktops, and fall back to Cairo on non-composited or GL-incapable displays; CI keeps the 10% idle-CPU gate without penalising hosted X servers that expose no DRI3 device.
 
 ## 0.2.26 — 2026-09-22
 

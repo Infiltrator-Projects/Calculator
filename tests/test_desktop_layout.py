@@ -67,13 +67,17 @@ assert "gtk_widget_add_tick_callback" not in linux, (
 )
 assert "responsive_tick(" not in linux
 
-# GTK 4.14's default renderer can exhibit driver/compositor-specific idle CPU
-# regressions on Mint/Noble systems. Calculator prefers the mature accelerated
-# GL path unless the caller explicitly selected another GSK renderer.
+# GTK 4.14's renderer choice can exhibit driver/compositor-specific idle CPU
+# regressions. Calculator preserves explicit GSK choices, prefers GL only on a
+# composited display where GDK can initialize it, and otherwise falls back to
+# Cairo rather than forcing software EGL on headless/remote displays.
 for needle in (
     'const char* renderer = g_getenv("GSK_RENDERER");',
-    'g_setenv("GSK_RENDERER", "gl", FALSE);',
-    "configure_linux_renderer();",
+    "gdk_display_is_composited(display)",
+    "gdk_display_prepare_gl(display, &error)",
+    'g_setenv("GSK_RENDERER", "cairo", FALSE);',
+    'g_setenv("GSK_RENDERER", gl_ready ? "gl" : "cairo", FALSE);',
+    "configure_linux_renderer_for_display();",
 ):
     assert needle in linux, f"Linux renderer idle-CPU policy missing: {needle}"
 
