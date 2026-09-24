@@ -1538,7 +1538,11 @@ void on_button_clicked(GtkButton*, gpointer data) {
         spec->command,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
-    if (spec->command == Command::Equals) save_controller_state();
+    if (spec->command == Command::Equals ||
+        spec->command == Command::CycleAngleUnit ||
+        calculator::ui::is_programmer_selector(spec->command)) {
+        save_controller_state();
+    }
     gtk_widget_grab_focus(expression_entry);
 }
 
@@ -1548,6 +1552,7 @@ void on_mode_clicked(GtkButton*, gpointer data) {
     const Mode mode = static_cast<Mode>(encoded - 1);
     controller.set_mode(mode);
     render_state();
+    save_controller_state();
     if (main_window) save_desktop_state(main_window);
 
     // Standard mode has four fewer keypad rows than the extended modes.
