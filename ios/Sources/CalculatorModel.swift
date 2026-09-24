@@ -244,6 +244,11 @@ final class CalculatorModel: ObservableObject {
         }
     }
 
+    @discardableResult
+    func deleteHistory(_ index: Int) -> Bool {
+        bridge.deleteHistory(at: index)
+    }
+
     func clearHistory() {
         bridge.clearHistory()
     }
