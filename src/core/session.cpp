@@ -342,13 +342,16 @@ void Session::record_history_text(std::string input, std::string output,
 }
 
 void Session::memory_clear() {
+    if (memory_.empty()) return;
     memory_.clear();
+    ++memory_revision_;
 }
 
 bool Session::memory_store(double value) {
     if (!std::isfinite(value)) return false;
     memory_.push_front(
         {scientific_value_from_double(value), value, true});
+    ++memory_revision_;
     return true;
 }
 
@@ -365,6 +368,7 @@ bool Session::memory_add(double value) {
     MemoryEntry entry{scientific_value_from_double(result), result, true};
     if (memory_.empty()) memory_.push_front(std::move(entry));
     else memory_.front() = std::move(entry);
+    ++memory_revision_;
     return true;
 }
 
@@ -381,6 +385,7 @@ bool Session::memory_subtract(double value) {
     MemoryEntry entry{scientific_value_from_double(result), result, true};
     if (memory_.empty()) memory_.push_front(std::move(entry));
     else memory_.front() = std::move(entry);
+    ++memory_revision_;
     return true;
 }
 
@@ -397,6 +402,7 @@ void Session::memory_store_scientific(ScientificValue value) {
     const bool valid = scientific_value_to_double(value, approximate);
     memory_.push_front(
         {std::move(value), valid ? approximate : 0.0, valid});
+    ++memory_revision_;
 }
 
 void Session::memory_add_scientific(
@@ -415,6 +421,7 @@ void Session::memory_add_scientific(
         result.value, valid ? approximate : 0.0, valid};
     if (memory_.empty()) memory_.push_front(std::move(entry));
     else memory_.front() = std::move(entry);
+    ++memory_revision_;
 }
 
 void Session::memory_subtract_scientific(
@@ -433,6 +440,7 @@ void Session::memory_subtract_scientific(
         result.value, valid ? approximate : 0.0, valid};
     if (memory_.empty()) memory_.push_front(std::move(entry));
     else memory_.front() = std::move(entry);
+    ++memory_revision_;
 }
 
 ScientificValue Session::memory_recall_scientific() const {
@@ -448,6 +456,7 @@ std::optional<MemoryEntry> Session::memory_entry(
 bool Session::erase_memory(std::size_t index_from_newest) {
     if (index_from_newest >= memory_.size()) return false;
     memory_.erase(memory_.begin() + static_cast<std::ptrdiff_t>(index_from_newest));
+    ++memory_revision_;
     return true;
 }
 
