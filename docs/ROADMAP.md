@@ -28,7 +28,7 @@ Across the 0.2.x release line, Calculator completed the previously listed featur
 - mature desktop-calculator financial functions and number utilities
 - GNOME/Mint-class expression conveniences and a substantially expanded unit catalogue
 - Mint-compatible Linux keyboard accelerators for clear, scientific entry, Programmer bases and history navigation
-- unbounded default calculation history, while retaining an optional bounded session contract for embedded/test use
+- unbounded default calculation history with a persisted user-selectable retention cap, while retaining the same bounded Session contract for embedders/tests
 - a first-class Linux conversion surface with persistent dimension/source/target selection and live conversion
 - persistent Linux user variables and calculator semantic state (angle unit plus Programmer radix/width/signed mode)
 
