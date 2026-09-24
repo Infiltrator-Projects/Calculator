@@ -155,8 +155,22 @@ std::string Controller::persistent_state_text() const {
     const std::string variables = session_.variables_text();
     const std::string functions = session_.function_definitions_text();
 
+    unsigned programmer_base = 10U;
+    switch (state_.programmer_base) {
+    case ProgrammerBase::Binary: programmer_base = 2U; break;
+    case ProgrammerBase::Octal: programmer_base = 8U; break;
+    case ProgrammerBase::Decimal: programmer_base = 10U; break;
+    case ProgrammerBase::Hexadecimal: programmer_base = 16U; break;
+    }
+
     std::ostringstream out;
-    out << "INFILTRATOR_CALCULATOR_STATE 1\n"
+    out << "INFILTRATOR_CALCULATOR_STATE 2\n"
+        << "mode=" << static_cast<unsigned>(state_.mode) << '\n'
+        << "angle-unit=" << static_cast<unsigned>(state_.angle_unit) << '\n'
+        << "programmer-base=" << programmer_base << '\n'
+        << "programmer-width="
+        << static_cast<unsigned>(state_.programmer_width) << '\n'
+        << "programmer-signed=" << (state_.programmer_signed ? 1 : 0) << '\n'
         << "scientific-digits=" << scientific_digits_ << '\n'
         << "result-format="
         << static_cast<unsigned>(display_preferences_.format) << '\n'
@@ -218,8 +232,45 @@ bool Controller::load_persistent_state_text(std::string_view text) {
         };
 
     std::string_view line;
-    if (!read_line(line) || line != "INFILTRATOR_CALCULATOR_STATE 1") {
+    if (!read_line(line)) return false;
+    const bool state_v2 = line == "INFILTRATOR_CALCULATOR_STATE 2";
+    if (!state_v2 && line != "INFILTRATOR_CALCULATOR_STATE 1") {
         return false;
+    }
+
+    unsigned mode = static_cast<unsigned>(state_.mode);
+    unsigned angle_unit = static_cast<unsigned>(state_.angle_unit);
+    unsigned programmer_base = 10U;
+    switch (state_.programmer_base) {
+    case ProgrammerBase::Binary: programmer_base = 2U; break;
+    case ProgrammerBase::Octal: programmer_base = 8U; break;
+    case ProgrammerBase::Decimal: programmer_base = 10U; break;
+    case ProgrammerBase::Hexadecimal: programmer_base = 16U; break;
+    }
+    unsigned programmer_width =
+        static_cast<unsigned>(state_.programmer_width);
+    unsigned programmer_signed = state_.programmer_signed ? 1U : 0U;
+
+    if (state_v2) {
+        if (!read_line(line) || !parse_unsigned(line, "mode=", mode) ||
+            mode > static_cast<unsigned>(Mode::Programmer) ||
+            !read_line(line) ||
+            !parse_unsigned(line, "angle-unit=", angle_unit) ||
+            angle_unit > static_cast<unsigned>(AngleUnit::Gradians) ||
+            !read_line(line) ||
+            !parse_unsigned(line, "programmer-base=", programmer_base) ||
+            (programmer_base != 2U && programmer_base != 8U &&
+             programmer_base != 10U && programmer_base != 16U) ||
+            !read_line(line) ||
+            !parse_unsigned(line, "programmer-width=", programmer_width) ||
+            (programmer_width != 8U && programmer_width != 16U &&
+             programmer_width != 32U && programmer_width != 64U) ||
+            !read_line(line) ||
+            !parse_unsigned(
+                line, "programmer-signed=", programmer_signed) ||
+            programmer_signed > 1U) {
+            return false;
+        }
     }
 
     unsigned digits = 0U;
@@ -283,9 +334,31 @@ bool Controller::load_persistent_state_text(std::string_view text) {
     preferences.trailing_zeroes = trailing_zeroes != 0U;
     display_preferences_ = preferences;
 
+    if (state_v2) {
+        state_.mode = static_cast<Mode>(mode);
+        state_.angle_unit = static_cast<AngleUnit>(angle_unit);
+        switch (programmer_base) {
+        case 2U: state_.programmer_base = ProgrammerBase::Binary; break;
+        case 8U: state_.programmer_base = ProgrammerBase::Octal; break;
+        case 16U: state_.programmer_base = ProgrammerBase::Hexadecimal; break;
+        default: state_.programmer_base = ProgrammerBase::Decimal; break;
+        }
+        state_.programmer_width =
+            static_cast<IntegerWidth>(programmer_width);
+        state_.programmer_signed = programmer_signed != 0U;
+    }
+
     refresh_evaluation_cache();
-    if (state_.mode == Mode::Scientific) update_scientific_preview();
-    else if (state_.mode == Mode::Standard) update_standard_preview();
+    if (state_.mode == Mode::Scientific) {
+        set_status(scientific_status_text());
+        update_scientific_preview();
+    } else if (state_.mode == Mode::Programmer) {
+        set_status(programmer_status_text());
+        if (!state_.expression.empty()) calculate_programmer(false);
+    } else {
+        set_status("READY");
+        update_standard_preview();
+    }
     return true;
 }
 
