@@ -639,6 +639,18 @@ std::string Session::history_text(std::size_t limit,
     return text;
 }
 
+void Session::set_history_limit(std::size_t limit) {
+    history_limit_ = limit;
+    bool trimmed = false;
+    if (history_limit_ != 0U) {
+        while (history_.size() > history_limit_) {
+            history_.pop_front();
+            trimmed = true;
+        }
+    }
+    if (trimmed) ++history_revision_;
+}
+
 bool Session::erase_history_from_newest(std::size_t index) {
     if (index >= history_.size()) return false;
     const std::size_t from_oldest = history_.size() - 1U - index;
