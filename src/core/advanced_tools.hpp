@@ -8,6 +8,10 @@
 
 namespace calculator::tools {
 
+// Shared resource bound for every Advanced Tools command. Native workbenches
+// may reject oversized input earlier, but the core entry point is authoritative.
+inline constexpr std::size_t kMaxToolInputBytes = 8192U;
+
 enum class AdvancedTool {
     Engineering,
     UnitConversion,
