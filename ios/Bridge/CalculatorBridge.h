@@ -15,7 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 // snapshot returns value copies under these stable keys: mode, expression,
  // display, status, fault, angleUnit, scientificSecond, scientificHyperbolic,
- // scientificNotation, programmerBase, programmerWidth and programmerSigned.
+ // scientificNotation, scientificDigits, historyLimit, programmerBase,
+ // programmerWidth and programmerSigned.
  // Callers should treat unknown future keys as additive and must not infer
  // calculation rules from the transport representation.
 - (NSDictionary *)snapshot;
