@@ -236,6 +236,16 @@ struct ContentView: View {
                         Text("\($0) digits").tag($0)
                     }
                 }
+
+                Picker("History", selection: Binding(
+                    get: { model.historyLimit },
+                    set: { model.setHistoryLimit($0) }
+                )) {
+                    Text("History: Unlimited").tag(0)
+                    ForEach([100, 500, 1000], id: \.self) {
+                        Text("History: \($0)").tag($0)
+                    }
+                }
             } label: {
                 Image(systemName: "circle.lefthalf.filled")
                     .imageScale(.medium)
