@@ -6,6 +6,11 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.32 — 2026-09-24
+
+- Align Linux toolbar-button corners with the suite-wide 6 px compact chrome radius.
+- Preserve calculator keypad, display, engine, Windows shell, iPhone shell, dependencies and Common APIs unchanged.
+
 ## 0.2.31 — 2026-09-24
 
 - Close the post-0.2.30 reciprocal-function validation gap with independent 8192-bit MPFR/MPC oracle coverage and make the acot/acoth principal-branch conventions explicit.
