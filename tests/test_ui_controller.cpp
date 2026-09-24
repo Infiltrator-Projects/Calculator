@@ -194,6 +194,21 @@ int main() {
     controller.dispatch(Command::MemoryClear);
     CHECK(!controller.command_enabled(Command::MemoryRecall));
 
+    // Repeated MS operations create independently recallable memory slots.
+    controller.set_expression("10");
+    controller.dispatch(Command::MemoryStore);
+    controller.set_expression("20");
+    controller.dispatch(Command::MemoryStore);
+    CHECK(controller.memory_count() == 2U);
+    CHECK(controller.memory_entry(0U).has_value());
+    CHECK(controller.memory_entry(1U).has_value());
+    controller.set_expression("0");
+    CHECK(controller.recall_memory(1U));
+    CHECK(controller.state().result == "10");
+    CHECK(controller.delete_memory(0U));
+    CHECK(controller.memory_count() == 1U);
+    controller.dispatch(Command::MemoryClear);
+
     // Computational state must never be rebuilt from rounded presentation.
     // Unary transforms preserve the exact binary64 value even when the visible
     // result is deliberately rounded by display preferences.
