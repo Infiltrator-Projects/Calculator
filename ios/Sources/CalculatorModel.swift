@@ -184,6 +184,15 @@ final class CalculatorModel: ObservableObject {
         bridge.programmerRepresentationsText()
     }
 
+    @discardableResult
+    func swapProgrammerEndianness() -> Bool {
+        let changed = bridge.swapProgrammerEndianness()
+        if changed {
+            sync()
+        }
+        return changed
+    }
+
     func advancedToolDescriptors() -> [CalculatorToolDescriptor] {
         guard let raw = bridge.advancedToolCatalog() as? [[String: Any]] else {
             return []
