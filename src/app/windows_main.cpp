@@ -38,6 +38,7 @@ constexpr int kIdResults = 1004;
 constexpr int kIdTools = 1005;
 constexpr int kIdPrecision = 1006;
 constexpr int kIdPrecisionBase = 6000;
+constexpr int kIdHistoryLimitBase = 6100;
 constexpr int kIdModeStandard = 1010;
 constexpr int kIdModeScientific = 1011;
 constexpr int kIdModeProgrammer = 1012;
@@ -1317,21 +1318,39 @@ void apply_theme_to_window(HWND window) {
 }
 
 void show_precision_menu(HWND owner) {
-    static constexpr std::array<unsigned, 7> presets{{
+    static constexpr std::array<unsigned, 7> precision_presets{{
         16U, 25U, 50U, 100U, 250U, 500U, 1000U
+    }};
+    static constexpr std::array<std::size_t, 4> history_presets{{
+        0U, 100U, 500U, 1000U
     }};
     HMENU menu = CreatePopupMenu();
     if (menu == nullptr) return;
 
     const unsigned current = g_controller.scientific_digits();
-    for (std::size_t index = 0; index < presets.size(); ++index) {
+    for (std::size_t index = 0; index < precision_presets.size(); ++index) {
         const std::wstring label =
-            std::to_wstring(presets[index]) + L" digits";
+            std::to_wstring(precision_presets[index]) + L" digits";
         UINT flags = MF_STRING;
-        if (presets[index] == current) flags |= MF_CHECKED;
+        if (precision_presets[index] == current) flags |= MF_CHECKED;
         AppendMenuW(
             menu, flags,
             static_cast<UINT_PTR>(kIdPrecisionBase +
+                                  static_cast<int>(index)),
+            label.c_str());
+    }
+
+    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    const std::size_t current_history = g_controller.history_limit();
+    for (std::size_t index = 0; index < history_presets.size(); ++index) {
+        const std::wstring label = history_presets[index] == 0U
+            ? L"History: Unlimited"
+            : L"History: " + std::to_wstring(history_presets[index]);
+        UINT flags = MF_STRING;
+        if (history_presets[index] == current_history) flags |= MF_CHECKED;
+        AppendMenuW(
+            menu, flags,
+            static_cast<UINT_PTR>(kIdHistoryLimitBase +
                                   static_cast<int>(index)),
             label.c_str());
     }
@@ -1344,10 +1363,21 @@ void show_precision_menu(HWND owner) {
     DestroyMenu(menu);
 
     if (selected >= kIdPrecisionBase &&
-        selected < kIdPrecisionBase + static_cast<int>(presets.size())) {
+        selected < kIdPrecisionBase +
+            static_cast<int>(precision_presets.size())) {
         g_controller.set_scientific_digits(
-            presets[static_cast<std::size_t>(selected - kIdPrecisionBase)]);
+            precision_presets[
+                static_cast<std::size_t>(selected - kIdPrecisionBase)]);
         save_controller_state();
+        render_state();
+    } else if (selected >= kIdHistoryLimitBase &&
+               selected < kIdHistoryLimitBase +
+                   static_cast<int>(history_presets.size())) {
+        g_controller.set_history_limit(
+            history_presets[
+                static_cast<std::size_t>(selected - kIdHistoryLimitBase)]);
+        save_controller_state();
+        refresh_history();
         render_state();
     }
 }
