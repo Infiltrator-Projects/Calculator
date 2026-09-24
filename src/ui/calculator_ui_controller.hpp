@@ -99,6 +99,17 @@ public:
             std::min(limit, kMaxHistoryEntries));
     }
     void clear_history() noexcept;
+    std::size_t memory_count() const noexcept {
+        return session_.memory_count();
+    }
+    std::optional<MemoryEntry> memory_entry(
+        std::size_t index_from_newest) const {
+        return session_.memory_entry(index_from_newest);
+    }
+    bool recall_memory(std::size_t index_from_newest);
+    bool delete_memory(std::size_t index_from_newest) {
+        return session_.erase_memory(index_from_newest);
+    }
     // Derived representation surfaces are generated from the current cached
     // result; they never cause platform-specific re-evaluation.
     std::vector<AdditionalResult> additional_results() const;
