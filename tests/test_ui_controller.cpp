@@ -136,6 +136,12 @@ int main() {
     CHECK(controller.state().expression == "sqrt(");
     CHECK(completed.cursor == controller.state().expression.size());
 
+    controller.set_expression("SQR");
+    CHECK(controller.completion_candidates("SQR").size() == 1U);
+    const auto case_completed = controller.complete_expression();
+    CHECK(case_completed.expression_changed);
+    CHECK(controller.state().expression == "sqrt(");
+
     controller.set_expression("1/7");
     CHECK(controller.state().result.size() > 40U);
     controller.dispatch(Command::Equals);
