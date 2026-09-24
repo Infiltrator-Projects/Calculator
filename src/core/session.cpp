@@ -342,97 +342,116 @@ void Session::record_history_text(std::string input, std::string output,
 }
 
 void Session::memory_clear() {
-    memory_ = 0.0;
-    scientific_memory_ = {};
-    memory_set_ = false;
-    memory_binary64_valid_ = false;
+    memory_.clear();
 }
 
 bool Session::memory_store(double value) {
     if (!std::isfinite(value)) return false;
-
-    memory_ = value;
-    scientific_memory_ = scientific_value_from_double(value);
-    memory_set_ = true;
-    memory_binary64_valid_ = true;
+    memory_.push_front(
+        {scientific_value_from_double(value), value, true});
     return true;
 }
 
 bool Session::memory_add(double value) {
     if (!std::isfinite(value) ||
-        (memory_set_ && !memory_binary64_valid_)) {
+        (!memory_.empty() && !memory_.front().binary64_valid)) {
         return false;
     }
 
-    const double left = memory_set_ ? memory_ : 0.0;
+    const double left = memory_.empty() ? 0.0 : memory_.front().binary64;
     const double result = left + value;
     if (!std::isfinite(result)) return false;
 
-    memory_ = result;
-    scientific_memory_ = scientific_value_from_double(result);
-    memory_set_ = true;
-    memory_binary64_valid_ = true;
+    MemoryEntry entry{scientific_value_from_double(result), result, true};
+    if (memory_.empty()) memory_.push_front(std::move(entry));
+    else memory_.front() = std::move(entry);
     return true;
 }
 
 bool Session::memory_subtract(double value) {
     if (!std::isfinite(value) ||
-        (memory_set_ && !memory_binary64_valid_)) {
+        (!memory_.empty() && !memory_.front().binary64_valid)) {
         return false;
     }
 
-    const double left = memory_set_ ? memory_ : 0.0;
+    const double left = memory_.empty() ? 0.0 : memory_.front().binary64;
     const double result = left - value;
     if (!std::isfinite(result)) return false;
 
-    memory_ = result;
-    scientific_memory_ = scientific_value_from_double(result);
-    memory_set_ = true;
-    memory_binary64_valid_ = true;
+    MemoryEntry entry{scientific_value_from_double(result), result, true};
+    if (memory_.empty()) memory_.push_front(std::move(entry));
+    else memory_.front() = std::move(entry);
     return true;
 }
 
-double Session::memory_recall() const noexcept { return memory_; }
+double Session::memory_recall() const noexcept {
+    return memory_.empty() ? 0.0 : memory_.front().binary64;
+}
 
 bool Session::memory_binary64_available() const noexcept {
-    return memory_set_ && memory_binary64_valid_;
+    return !memory_.empty() && memory_.front().binary64_valid;
 }
 
 void Session::memory_store_scientific(ScientificValue value) {
-    scientific_memory_ = std::move(value);
     double approximate = 0.0;
-    memory_binary64_valid_ = scientific_value_to_double(
-        scientific_memory_, approximate);
-    memory_ = memory_binary64_valid_ ? approximate : 0.0;
-    memory_set_ = true;
+    const bool valid = scientific_value_to_double(value, approximate);
+    memory_.push_front(
+        {std::move(value), valid ? approximate : 0.0, valid});
 }
 
 void Session::memory_add_scientific(
     const ScientificValue& value, unsigned decimal_digits) {
     const ScientificValue left =
-        memory_set_ ? scientific_memory_ : ScientificValue{};
+        memory_.empty() ? ScientificValue{} : memory_.front().scientific;
     const auto result = calculator::evaluate_scientific(
         "(" + scientific_value_expression(left) + ")+(" +
             scientific_value_expression(value) + ")",
         {}, {}, AngleUnit::Radians, decimal_digits);
-    if (result.ok) memory_store_scientific(result.value);
+    if (!result.ok) return;
+
+    double approximate = 0.0;
+    const bool valid = scientific_value_to_double(result.value, approximate);
+    MemoryEntry entry{
+        result.value, valid ? approximate : 0.0, valid};
+    if (memory_.empty()) memory_.push_front(std::move(entry));
+    else memory_.front() = std::move(entry);
 }
 
 void Session::memory_subtract_scientific(
     const ScientificValue& value, unsigned decimal_digits) {
     const ScientificValue left =
-        memory_set_ ? scientific_memory_ : ScientificValue{};
+        memory_.empty() ? ScientificValue{} : memory_.front().scientific;
     const auto result = calculator::evaluate_scientific(
         "(" + scientific_value_expression(left) + ")-(" +
             scientific_value_expression(value) + ")",
         {}, {}, AngleUnit::Radians, decimal_digits);
-    if (result.ok) memory_store_scientific(result.value);
+    if (!result.ok) return;
+
+    double approximate = 0.0;
+    const bool valid = scientific_value_to_double(result.value, approximate);
+    MemoryEntry entry{
+        result.value, valid ? approximate : 0.0, valid};
+    if (memory_.empty()) memory_.push_front(std::move(entry));
+    else memory_.front() = std::move(entry);
 }
 
 ScientificValue Session::memory_recall_scientific() const {
-    return scientific_memory_;
+    return memory_.empty() ? ScientificValue{} : memory_.front().scientific;
 }
-bool Session::memory_empty() const noexcept { return !memory_set_; }
+
+std::optional<MemoryEntry> Session::memory_entry(
+    std::size_t index_from_newest) const {
+    if (index_from_newest >= memory_.size()) return std::nullopt;
+    return memory_[index_from_newest];
+}
+
+bool Session::erase_memory(std::size_t index_from_newest) {
+    if (index_from_newest >= memory_.size()) return false;
+    memory_.erase(memory_.begin() + static_cast<std::ptrdiff_t>(index_from_newest));
+    return true;
+}
+
+bool Session::memory_empty() const noexcept { return memory_.empty(); }
 
 void Session::set_variable(std::string name, double value) {
     if (valid_identifier(name) && !reserved_identifier(name)) {
