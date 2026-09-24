@@ -176,6 +176,7 @@ NSInteger angle_value(calculator::AngleUnit unit) {
         @"scientificHyperbolic": @(state.scientific_hyperbolic),
         @"scientificNotation": @(state.scientific_notation),
         @"scientificDigits": @([self controller]->scientific_digits()),
+        @"historyLimit": @([self controller]->history_limit()),
         @"programmerBase": @(base_value(state.programmer_base)),
         @"programmerWidth": @(width_value(state.programmer_width)),
         @"programmerSigned": @(state.programmer_signed)
@@ -241,6 +242,12 @@ NSInteger angle_value(calculator::AngleUnit unit) {
     const NSInteger bounded = digits < 0 ? 0 : digits;
     [self controller]->set_scientific_digits(
         static_cast<unsigned>(bounded));
+}
+
+- (void)setHistoryLimit:(NSInteger)limit {
+    const NSInteger bounded = limit < 0 ? 0 : limit;
+    [self controller]->set_history_limit(
+        static_cast<std::size_t>(bounded));
 }
 
 - (NSArray<NSDictionary *> *)advancedToolCatalog {
