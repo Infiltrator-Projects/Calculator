@@ -140,6 +140,31 @@ int main() {
     expect_text("imag(3+4*i)", "4");
     expect_text("abs(3+4*i)", "5");
 
+    // Reciprocal trigonometric/hyperbolic families share the same
+    // multiprecision angle and principal-branch semantics as sin/cos/tan.
+    expect_text("sec(0)", "1");
+    expect_text("csc(pi/2)", "1");
+    expect_near_zero("cot(pi/4)-1");
+    expect_text("sech(0)", "1");
+    expect_near_zero("sech(asech(0.5))-0.5");
+    expect_near_zero("csch(acsch(2))-2");
+    expect_near_zero("coth(acoth(2))-2");
+    auto reciprocal_angle = eval(
+        "asec(2)", calculator::AngleUnit::Degrees, 100);
+    if (!reciprocal_angle.ok || text(reciprocal_angle) != "60")
+        fail("asec(2) degrees must be 60");
+    reciprocal_angle = eval(
+        "acsc(2)", calculator::AngleUnit::Degrees, 100);
+    if (!reciprocal_angle.ok || text(reciprocal_angle) != "30")
+        fail("acsc(2) degrees must be 30");
+    reciprocal_angle = eval(
+        "acot(1)", calculator::AngleUnit::Degrees, 100);
+    if (!reciprocal_angle.ok || text(reciprocal_angle) != "45")
+        fail("acot(1) degrees must be 45");
+    expect_error("sec(pi/2)");
+    expect_error("csc(0)");
+    expect_error("coth(0)");
+
     // Real-only rounding semantics are explicit and deterministic.
     expect_text("floor(2.9)", "2");
     expect_text("floor(-2.1)", "-3");

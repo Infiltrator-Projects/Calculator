@@ -6,6 +6,12 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.30 — 2026-09-24
+
+- Preserve Scientific history semantics by recording and restoring the exact angle unit and effective calculation precision alongside each Scientific history entry.
+- Add secant, cosecant and cotangent plus inverse and hyperbolic reciprocal families to the shared arbitrary-precision Scientific engine, including superscript-inverse discovery through the existing function-name mapping.
+- Add regression tests for Scientific context recall, reciprocal-function identities, degree-mode inverse results and singularity handling so these fixes are release-gated rather than repeatedly rediscovered.
+
 ## 0.2.29 — 2026-09-24
 
 - Repair the Linux desktop-layout source contract after shared-state migration removed obsolete persistence writers; CI now validates the current one-writer architecture instead of requiring deleted code.

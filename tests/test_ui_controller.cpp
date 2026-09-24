@@ -527,6 +527,21 @@ int main() {
     CHECK(standard_details[2].value == "12.345e+03");
 
     controller.set_mode(Mode::Scientific);
+    controller.set_angle_unit(calculator::AngleUnit::Degrees);
+    controller.set_scientific_digits(80U);
+    controller.set_expression("sin(30)");
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "0.5");
+    const std::size_t scientific_history_index = 0U;
+    controller.set_angle_unit(calculator::AngleUnit::Radians);
+    controller.set_scientific_digits(25U);
+    CHECK(controller.recall_history(scientific_history_index));
+    CHECK(controller.state().mode == Mode::Scientific);
+    CHECK(controller.state().angle_unit == calculator::AngleUnit::Degrees);
+    CHECK(controller.scientific_digits() == 80U);
+    controller.dispatch(Command::Equals);
+    CHECK(controller.state().result == "0.5");
+
     controller.set_expression("sqrt(81)");
     const std::string scientific_details =
         controller.additional_results_text();

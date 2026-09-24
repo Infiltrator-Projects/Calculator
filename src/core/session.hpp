@@ -25,6 +25,10 @@ struct HistoryContext {
     unsigned programmer_base = 10;
     unsigned programmer_width = 64;
     bool programmer_signed = false;
+    // Scientific history must restore the semantic context that gave the
+    // expression its meaning, just as Programmer history restores radix/width.
+    AngleUnit scientific_angle_unit = AngleUnit::Radians;
+    unsigned scientific_digits = kScientificDefaultDigits;
 };
 
 struct HistoryEntry {

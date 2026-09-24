@@ -121,6 +121,13 @@ int main(){
        calculator::format_scientific_value(
            precise_seventh.value, 80).size() < 60U)
         fail("scientific Session should retain high precision");
+    const auto precise_history = session.history_from_newest(0U);
+    if(!precise_history ||
+       precise_history->kind!=calculator::HistoryKind::Scientific ||
+       precise_history->context.scientific_angle_unit!=
+           calculator::AngleUnit::Radians ||
+       precise_history->context.scientific_digits!=80U)
+        fail("scientific history context was not retained");
 
     const auto complex_assignment = session.evaluate_scientific(
         "z=sqrt(-1)", calculator::AngleUnit::Radians, 80);

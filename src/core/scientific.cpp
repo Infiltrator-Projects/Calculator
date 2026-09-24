@@ -326,16 +326,24 @@ std::string inverse_function_name(std::string_view name) {
     if (name == "sin") return "asin";
     if (name == "cos") return "acos";
     if (name == "tan") return "atan";
+    if (name == "sec") return "asec";
+    if (name == "csc") return "acsc";
+    if (name == "cot") return "acot";
     if (name == "sinh") return "asinh";
     if (name == "cosh") return "acosh";
     if (name == "tanh") return "atanh";
+    if (name == "sech") return "asech";
+    if (name == "csch") return "acsch";
+    if (name == "coth") return "acoth";
     return {};
 }
 
-constexpr std::array<std::string_view, 31> kScientificFunctions{{
+constexpr std::array<std::string_view, 43> kScientificFunctions{{
     "frac", "int", "round", "sgn",
     "sin", "cos", "tan", "asin", "acos", "atan",
+    "sec", "csc", "cot", "asec", "acsc", "acot",
     "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
+    "sech", "csch", "coth", "asech", "acsch", "acoth",
     "sqrt", "cbrt", "square", "cube",
     "ln", "log", "exp", "abs",
     "exp2", "exp10", "floor", "ceil",
@@ -971,6 +979,19 @@ private:
 
     Complex apply_function(
         const std::string& name, const Complex& input) {
+        const auto reciprocal = [this](const Complex& value) {
+            if (is_zero(value)) {
+                error_ = "function domain error";
+                return Complex{};
+            }
+            const Complex result = Complex(1) / value;
+            if (!is_finite(result)) {
+                error_ = "function domain error";
+                return Complex{};
+            }
+            return result;
+        };
+
         unsigned parameter = 0U;
         if (positive_integer_suffix(name, "log", parameter)) {
             if (parameter <= 1U) {
@@ -1084,6 +1105,45 @@ private:
                 return from_radians(
                     boost::multiprecision::atan(input));
             }
+            if (name == "sec") {
+                const Complex denominator = apply_function("cos", input);
+                if (!error_.empty()) return {};
+                return reciprocal(denominator);
+            }
+            if (name == "csc") {
+                const Complex denominator = apply_function("sin", input);
+                if (!error_.empty()) return {};
+                return reciprocal(denominator);
+            }
+            if (name == "cot") {
+                const Complex denominator = apply_function("sin", input);
+                if (!error_.empty()) return {};
+                const Complex numerator = apply_function("cos", input);
+                if (!error_.empty()) return {};
+                if (is_zero(denominator)) {
+                    error_ = "function domain error";
+                    return {};
+                }
+                return numerator / denominator;
+            }
+            if (name == "asec") {
+                const Complex reciprocal_input = reciprocal(input);
+                if (!error_.empty()) return {};
+                return apply_function("acos", reciprocal_input);
+            }
+            if (name == "acsc") {
+                const Complex reciprocal_input = reciprocal(input);
+                if (!error_.empty()) return {};
+                return apply_function("asin", reciprocal_input);
+            }
+            if (name == "acot") {
+                // atan(1/z) has an avoidable singularity at zero. The
+                // equivalent principal form pi/2-atan(z) is finite there and
+                // follows Calculator's existing inverse-angle conversion.
+                return from_radians(
+                    Complex(pi_value() / 2) -
+                    boost::multiprecision::atan(input));
+            }
             if (name == "sinh") {
                 return boost::multiprecision::sinh(input);
             }
@@ -1111,6 +1171,40 @@ private:
                         real_part(result), -imag_part(result));
                 }
                 return result;
+            }
+            if (name == "sech") {
+                const Complex denominator =
+                    boost::multiprecision::cosh(input);
+                return reciprocal(denominator);
+            }
+            if (name == "csch") {
+                const Complex denominator =
+                    boost::multiprecision::sinh(input);
+                return reciprocal(denominator);
+            }
+            if (name == "coth") {
+                const Complex denominator =
+                    boost::multiprecision::sinh(input);
+                if (is_zero(denominator)) {
+                    error_ = "function domain error";
+                    return {};
+                }
+                return boost::multiprecision::cosh(input) / denominator;
+            }
+            if (name == "asech") {
+                const Complex reciprocal_input = reciprocal(input);
+                if (!error_.empty()) return {};
+                return apply_function("acosh", reciprocal_input);
+            }
+            if (name == "acsch") {
+                const Complex reciprocal_input = reciprocal(input);
+                if (!error_.empty()) return {};
+                return apply_function("asinh", reciprocal_input);
+            }
+            if (name == "acoth") {
+                const Complex reciprocal_input = reciprocal(input);
+                if (!error_.empty()) return {};
+                return apply_function("atanh", reciprocal_input);
             }
             if (name == "sqrt") {
                 Complex result = boost::multiprecision::sqrt(input);
@@ -1361,7 +1455,7 @@ private:
 
 } // namespace
 
-const std::array<std::string_view, 31>&
+const std::array<std::string_view, 43>&
 scientific_function_catalog() noexcept {
     return kScientificFunctions;
 }

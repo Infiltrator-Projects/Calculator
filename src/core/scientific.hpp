@@ -41,7 +41,7 @@ enum class ScientificDisplayFormat {
 };
 
 // Process-lifetime catalogue of identifiers accepted as Scientific functions.
-const std::array<std::string_view, 31>&
+const std::array<std::string_view, 43>&
 scientific_function_catalog() noexcept;
 
 // Evaluate the Scientific grammar entirely in the maintained multiprecision

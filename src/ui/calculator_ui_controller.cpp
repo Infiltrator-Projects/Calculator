@@ -109,6 +109,10 @@ bool Controller::recall_history(std::size_t index_from_newest) {
         state_.programmer_signed = entry->context.programmer_signed;
     } else {
         state_.mode = Mode::Scientific;
+        state_.angle_unit = entry->context.scientific_angle_unit;
+        scientific_digits_ = std::clamp(
+            entry->context.scientific_digits,
+            kScientificMinDigits, kScientificMaxDigits);
     }
 
     state_.expression = entry->input;

@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.30" date="2026-09-24">
+      <description>
+        <p>Preserve Scientific history angle/precision context and add reciprocal trigonometric and hyperbolic function families with release-gated regressions.</p>
+      </description>
+    </release>
     <release version="0.2.29" date="2026-09-24">
       <description>
         <p>Add shared semantic-state v2, bounded Advanced Tools input, Programmer endian/grouping improvements, richer units/history and cross-platform multi-memory slots.</p>

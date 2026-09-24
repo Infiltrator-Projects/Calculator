@@ -58,7 +58,7 @@ Exponentiation is right-associative and binds more tightly than a leading sign: 
 
 Postfix `%` divides a value by 100 in expression mode. Scientific factorial accepts real non-negative integral inputs through the maintained 100000 safety ceiling and evaluates the product in the multiprecision real domain; invalid, complex or oversized factorial inputs fail explicitly.
 
-Scientific elementary and complex operations execute in the shared multiprecision backend. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. Roots, powers, reciprocal, logarithmic/exponential, real/imaginary/conjugate and rounding-related operations retain high precision where mathematically defined. Complex logarithms and non-integer powers use the documented principal branch with argument in (-pi, pi], so an exact negative real lies on the +pi side of the cut. Exact integer powers use exponentiation by squaring, real half-integer powers of exact negative reals preserve their exact quadrantal phase, and exact trigonometric quadrant arguments are normalised to exact 0/±1 values rather than leaking tiny finite-pi residues. Domain-invalid or non-finite results are explicit calculation failures rather than values silently propagated into the UI.
+Scientific elementary and complex operations execute in the shared multiprecision backend. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians, including secant/cosecant/cotangent and their inverses; the corresponding hyperbolic reciprocal/inverse functions are unit-independent. Roots, powers, reciprocal, logarithmic/exponential, real/imaginary/conjugate and rounding-related operations retain high precision where mathematically defined. Complex logarithms and non-integer powers use the documented principal branch with argument in (-pi, pi], so an exact negative real lies on the +pi side of the cut. Exact integer powers use exponentiation by squaring, real half-integer powers of exact negative reals preserve their exact quadrantal phase, and exact trigonometric quadrant arguments are normalised to exact 0/±1 values rather than leaking tiny finite-pi residues. Domain-invalid or non-finite results are explicit calculation failures rather than values silently propagated into the UI.
 
 Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Scientific parser and user-function recursion limits are deliberately conservative for the smallest supported native stacks, including Windows, and excessive nesting fails deterministically with `expression nesting too deep` or `function recursion too deep` rather than consuming unbounded native stack. User-defined function calls remain internal full-precision expression boundaries; factoring an expression into a function does not introduce an extra requested-precision rounding step.
 
@@ -95,6 +95,11 @@ New constants or functions should document source/definition, accepted domain, r
 Calculator keeps result formatting in the shared core/controller rather than platform shells. Standard retains its locale-independent binary64 formatter. Scientific formats the retained arbitrary-precision real/complex components directly in General, Fixed, Scientific or Engineering form using the selected precision and display preferences; formatting never requires conversion through double.
 
 Platform shells must not introduce independent numeric formatting rules that change the represented Calculator result.
+
+Structured history is also semantic state, not merely display text. Scientific
+entries retain the angle unit and calculation precision that produced them, and
+Programmer entries retain radix/width/signedness; recall restores that context
+before the expression is re-evaluated or edited.
 
 ## Errors and unavailable results
 

@@ -247,6 +247,11 @@ ScientificResult Session::preview_scientific(
 ScientificResult Session::evaluate_scientific(
     const std::string& input, AngleUnit angle_unit,
     unsigned decimal_digits) {
+    HistoryContext history_context{};
+    history_context.scientific_angle_unit = angle_unit;
+    history_context.scientific_digits = std::clamp(
+        decimal_digits, kScientificMinDigits, kScientificMaxDigits);
+
     std::string definition_error;
     const auto definition =
         function_definition(input, definition_error);
@@ -255,7 +260,7 @@ ScientificResult Session::evaluate_scientific(
             false, {}, definition_error, {}};
         record_history_text(
             input, "Error: " + result.error, false,
-            HistoryKind::Scientific);
+            HistoryKind::Scientific, history_context);
         return result;
     }
     if (definition) {
@@ -265,7 +270,7 @@ ScientificResult Session::evaluate_scientific(
             "Function defined: " + definition->name};
         record_history_text(
             input, result.display, true,
-            HistoryKind::Scientific);
+            HistoryKind::Scientific, history_context);
         return result;
     }
 
@@ -276,7 +281,7 @@ ScientificResult Session::evaluate_scientific(
             false, {}, "cannot assign reserved constant", {}};
         record_history_text(
             input, "Error: " + result.error, false,
-            HistoryKind::Scientific);
+            HistoryKind::Scientific, history_context);
         return result;
     }
 
@@ -315,7 +320,7 @@ ScientificResult Session::evaluate_scientific(
         : ("Error: " + result.error);
     record_history_text(
         input, output, result.ok,
-        HistoryKind::Scientific);
+        HistoryKind::Scientific, history_context);
     return result;
 }
 
