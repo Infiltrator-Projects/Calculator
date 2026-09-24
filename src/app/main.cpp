@@ -754,14 +754,14 @@ void show_preferences(GtkWidget*, gpointer) {
 
 void show_history(GtkWidget*, gpointer) {
     GtkWidget* window = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(window), "Calculation History");
+    gtk_window_set_title(GTK_WINDOW(window), "History & Memory");
     gtk_window_set_default_size(GTK_WINDOW(window), 520, 460);
 
     GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_add_css_class(root, "shell");
     gtk_window_set_child(GTK_WINDOW(window), root);
 
-    GtkWidget* title = gtk_label_new("Calculation History");
+    GtkWidget* title = gtk_label_new("History & Memory");
     gtk_widget_add_css_class(title, "brand-title");
     gtk_widget_set_halign(title, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(root), title);
@@ -773,6 +773,73 @@ void show_history(GtkWidget*, gpointer) {
     GtkWidget* list = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_widget_add_css_class(list, "history-list");
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), list);
+
+    const std::size_t memory_count = controller.memory_count();
+    if (memory_count != 0U) {
+        GtkWidget* memory_title = gtk_label_new("Memory");
+        gtk_widget_add_css_class(memory_title, "status");
+        gtk_widget_set_halign(memory_title, GTK_ALIGN_START);
+        gtk_box_append(GTK_BOX(list), memory_title);
+
+        for (std::size_t index = 0; index < memory_count; ++index) {
+            const auto entry = controller.memory_entry(index);
+            if (!entry) continue;
+            const std::string value = calculator::format_scientific_value(
+                entry->scientific, controller.scientific_digits());
+
+            GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+            gtk_widget_set_hexpand(row, TRUE);
+            GtkWidget* recall = gtk_button_new_with_label(value.c_str());
+            if (GtkWidget* child = gtk_button_get_child(GTK_BUTTON(recall));
+                GTK_IS_LABEL(child)) {
+                gtk_label_set_xalign(GTK_LABEL(child), 0.0F);
+            }
+            gtk_widget_add_css_class(recall, "history-row");
+            gtk_widget_set_hexpand(recall, TRUE);
+            gtk_widget_set_tooltip_text(recall, "Recall this memory slot");
+            g_signal_connect(
+                recall, "clicked",
+                G_CALLBACK(+[](GtkButton*, gpointer data) {
+                    const auto encoded = GPOINTER_TO_UINT(data);
+                    if (encoded == 0U) return;
+                    if (!controller.recall_memory(
+                            static_cast<std::size_t>(encoded - 1U))) {
+                        return;
+                    }
+                    render_state();
+                    gtk_widget_grab_focus(expression_entry);
+                }),
+                GUINT_TO_POINTER(static_cast<guint>(index + 1U)));
+            gtk_box_append(GTK_BOX(row), recall);
+
+            GtkWidget* remove = gtk_button_new_with_label("Delete");
+            gtk_widget_add_css_class(remove, "toolbar-button");
+            gtk_widget_set_tooltip_text(remove, "Delete this memory slot");
+            g_signal_connect(
+                remove, "clicked",
+                G_CALLBACK(+[](GtkButton* button, gpointer data) {
+                    const auto encoded = GPOINTER_TO_UINT(data);
+                    if (encoded == 0U ||
+                        !controller.delete_memory(
+                            static_cast<std::size_t>(encoded - 1U))) {
+                        return;
+                    }
+                    GtkRoot* root =
+                        gtk_widget_get_root(GTK_WIDGET(button));
+                    if (root && GTK_IS_WINDOW(root)) {
+                        gtk_window_destroy(GTK_WINDOW(root));
+                    }
+                }),
+                GUINT_TO_POINTER(static_cast<guint>(index + 1U)));
+            gtk_box_append(GTK_BOX(row), remove);
+            gtk_box_append(GTK_BOX(list), row);
+        }
+
+        GtkWidget* history_title = gtk_label_new("History");
+        gtk_widget_add_css_class(history_title, "status");
+        gtk_widget_set_halign(history_title, GTK_ALIGN_START);
+        gtk_box_append(GTK_BOX(list), history_title);
+    }
 
     const std::size_t count = controller.history_count();
     if (count == 0) {
@@ -860,12 +927,13 @@ void show_history(GtkWidget*, gpointer) {
         }
     }
 
-    GtkWidget* clear = gtk_button_new_with_label("Clear History");
+    GtkWidget* clear = gtk_button_new_with_label("Clear All");
     gtk_widget_add_css_class(clear, "toolbar-button");
     g_signal_connect_swapped(
         clear, "clicked",
         G_CALLBACK(+[](GtkWindow* history_window) {
             controller.clear_history();
+            controller.clear_memory();
             refresh_history_dock();
             gtk_window_destroy(history_window);
         }),
