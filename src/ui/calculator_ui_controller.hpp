@@ -61,6 +61,10 @@ class Controller {
 public:
     // Sentinel meaning "operate at the current end of the expression".
     static constexpr std::size_t kEnd = static_cast<std::size_t>(-1);
+    // Shared resource bound for typed/pasted expression text. Native shells
+    // may enforce the same limit earlier, but Controller remains authoritative.
+    static constexpr std::size_t kMaxExpressionBytes = 8192U;
+    static constexpr std::size_t kMaxPersistentStateBytes = 1024U * 1024U;
 
     // Borrowed view of controller-owned state; callers must not retain it
     // across a mutating Controller operation.
@@ -68,7 +72,7 @@ public:
 
     // Direct setters are state mutations: they refresh cached evaluation and
     // derived presentation state so shells never need to evaluate independently.
-    void set_expression(std::string expression);
+    bool set_expression(std::string expression);
     void set_mode(Mode mode);
     void set_angle_unit(AngleUnit unit);
     void set_programmer_context(
@@ -96,6 +100,14 @@ public:
     bool load_function_definitions_text(std::string_view text);
     std::string variables_text() const;
     bool load_variables_text(std::string_view text);
+
+    // One versioned, platform-neutral persistence document. Platform shells
+    // own only where/how the bytes are stored.
+    std::string persistent_state_text() const;
+    bool load_persistent_state_text(std::string_view text);
+
+    unsigned scientific_digits() const noexcept { return scientific_digits_; }
+    void set_scientific_digits(unsigned digits);
 
     // Scientific completion is shared behaviour, not a platform-shell parser.
     std::vector<std::string> completion_candidates(
