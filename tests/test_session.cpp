@@ -225,6 +225,16 @@ int main(){
        !newest->context.programmer_signed)
         fail("structured programmer history context wrong");
     if(session.history_count()!=3) fail("history_count wrong");
+    const std::uint64_t history_revision_before_delete =
+        session.history_revision();
+    if(!session.erase_history_from_newest(1U))
+        fail("history entry deletion failed");
+    if(session.history_count()!=2U)
+        fail("history entry deletion count wrong");
+    if(session.history_revision()!=history_revision_before_delete+1U)
+        fail("history entry deletion revision wrong");
+    if(session.erase_history_from_newest(99U))
+        fail("out-of-range history deletion should fail");
 
     session.clear_history();
     if(!session.history().empty()) fail("history clear wrong");
