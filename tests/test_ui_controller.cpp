@@ -587,6 +587,13 @@ int main() {
     CHECK(controller.state().expression == "81");
     CHECK(controller.programmer_bits()[0]);
     CHECK(!controller.toggle_programmer_bit(8U));
+    controller.set_programmer_context(
+        calculator::ProgrammerBase::Hexadecimal,
+        calculator::IntegerWidth::Bits32, false);
+    controller.set_expression("12345678");
+    CHECK(controller.swap_programmer_endianness());
+    CHECK(controller.state().expression == "78563412");
+    CHECK(controller.state().result == "7856 3412");
     controller.set_mode(Mode::Standard);
     CHECK(!controller.toggle_programmer_bit(0U));
 
