@@ -145,6 +145,7 @@ final class CalculatorModel: ObservableObject {
     func selectMode(_ newMode: CalcMode) {
         bridge.selectMode(newMode.bridgeValue)
         sync()
+        persistControllerState()
     }
 
     func setExpression(_ value: String) {
@@ -155,7 +156,11 @@ final class CalculatorModel: ObservableObject {
     func press(_ key: String) {
         bridge.pressKey(key)
         sync()
-        if key == "=" {
+        let persistentSemanticKeys: Set<String> = [
+            "DEG", "BIN", "OCT", "DEC", "HEX",
+            "W8", "W16", "W32", "W64", "U/S"
+        ]
+        if key == "=" || persistentSemanticKeys.contains(key) {
             persistControllerState()
         }
     }
