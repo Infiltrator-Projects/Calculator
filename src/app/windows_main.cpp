@@ -52,6 +52,7 @@ constexpr int kIdToolRun = 4003;
 constexpr int kIdToolOutput = 4004;
 constexpr int kIdBaseBitFirst = 5000;
 constexpr int kIdBaseBitLast = kIdBaseBitFirst + 63;
+constexpr int kIdBaseSwapEndian = 5070;
 
 using calculator::ui::ThemeMode;
 using calculator::ui::ThemePalette;
@@ -2041,6 +2042,12 @@ void layout_bases_window(HWND window) {
         hint_height, TRUE);
     y += hint_height + gap;
 
+    HWND swap_endian = GetDlgItem(window, kIdBaseSwapEndian);
+    const int swap_height = sx(window, 34);
+    MoveWindow(
+        swap_endian, margin, y, sx(window, 150), swap_height, TRUE);
+    y += swap_height + gap;
+
     const int available_width =
         std::max(0, static_cast<int>(client.right) - margin * 2 - gap * 7);
     const int available_height =
@@ -2092,6 +2099,10 @@ LRESULT CALLBACK bases_proc(HWND window, UINT message,
         apply_font(g_bases_hint, g_small_font);
         apply_control_theme(g_bases_output);
 
+        HWND swap_endian = create_button(
+            window, kIdBaseSwapEndian, L"Swap Endian", g_ui_bold_font);
+        (void)swap_endian;
+
         g_base_bit_buttons.fill(nullptr);
         for (unsigned display = 0; display < 64U; ++display) {
             const int id = kIdBaseBitFirst + static_cast<int>(display);
@@ -2117,6 +2128,13 @@ LRESULT CALLBACK bases_proc(HWND window, UINT message,
 
     case WM_COMMAND: {
         const int id = LOWORD(wparam);
+        if (id == kIdBaseSwapEndian) {
+            if (g_controller.swap_programmer_endianness()) {
+                render_state();
+                refresh_bases_window();
+            }
+            return 0;
+        }
         if (id >= kIdBaseBitFirst && id <= kIdBaseBitLast) {
             const unsigned display =
                 static_cast<unsigned>(id - kIdBaseBitFirst);
