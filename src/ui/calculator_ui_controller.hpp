@@ -110,6 +110,7 @@ public:
     bool delete_memory(std::size_t index_from_newest) {
         return session_.erase_memory(index_from_newest);
     }
+    void clear_memory() noexcept { session_.memory_clear(); }
     // Derived representation surfaces are generated from the current cached
     // result; they never cause platform-specific re-evaluation.
     std::vector<AdditionalResult> additional_results() const;
