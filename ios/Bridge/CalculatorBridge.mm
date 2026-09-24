@@ -318,6 +318,12 @@ NSInteger angle_value(calculator::AngleUnit unit) {
         static_cast<std::size_t>(index)) ? YES : NO;
 }
 
+- (BOOL)deleteHistoryAtIndex:(NSInteger)index {
+    if (index < 0) return NO;
+    return [self controller]->delete_history(
+        static_cast<std::size_t>(index)) ? YES : NO;
+}
+
 - (void)clearHistory {
     [self controller]->clear_history();
 }
