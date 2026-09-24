@@ -648,12 +648,28 @@ for needle in (
     assert needle in linux, f"Linux history-retention setting missing: {needle}"
 
 for needle in (
+    "spec->command == Command::CycleAngleUnit",
+    "calculator::ui::is_programmer_selector(spec->command)",
+    "controller.set_mode(mode);",
+    "save_controller_state();",
+):
+    assert needle in linux, f"Linux semantic-state persistence missing: {needle}"
+
+for needle in (
     "kIdHistoryLimitBase",
     "History: Unlimited",
     "g_controller.set_history_limit",
     "g_controller.history_limit()",
 ):
     assert needle in windows, f"Windows history-retention setting missing: {needle}"
+
+for needle in (
+    "spec.command == Command::CycleAngleUnit",
+    "calculator::ui::is_programmer_selector(spec.command)",
+    "g_controller.set_mode(Mode::Standard);",
+    "save_controller_state();",
+):
+    assert needle in windows, f"Windows semantic-state persistence missing: {needle}"
 
 for needle in (
     "setHistoryLimit",
@@ -667,6 +683,14 @@ for needle in (
     "History: Unlimited",
 ):
     assert needle in ios, f"iPhone history-retention setting missing: {needle}"
+
+ios_model = Path("ios/Sources/CalculatorModel.swift").read_text(encoding="utf-8")
+for needle in (
+    "persistControllerState()",
+    "persistentSemanticKeys",
+    '"DEG", "BIN", "OCT", "DEC", "HEX"',
+):
+    assert needle in ios_model, f"iPhone semantic-state persistence missing: {needle}"
 
 # Mint-class converter remains first-class and persistent on Linux.
 assert '"conversion.ini"' in linux
