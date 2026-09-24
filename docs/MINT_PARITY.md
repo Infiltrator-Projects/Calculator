@@ -18,12 +18,12 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - exact decimal/rational arithmetic, bounded arbitrary-precision integer arithmetic, statistics, graphing and real equation solving, which are not all presented as equivalent first-class families by GNOME Calculator 41.1;
 - expression conveniences including `mod`, `**`, implicit multiplication, `frac`, `int`, `round`, `sgn`, previous result `_`, `rand`, Unicode ×/÷/−, π/τ/√, absolute-value bars, superscript powers and inverse-function ⁻¹ notation;
 - Linux keyboard compatibility for Escape/Ctrl+Delete clear, Ctrl+P π, Ctrl+R square-root entry, Ctrl+E exponent entry, Programmer Ctrl+B/O/D/H base selection, Ctrl+Alt B/A/P mode selection, Ctrl+Alt F/K/T Tools access, Ctrl+W/Ctrl+Q close/quit, F1/Ctrl+? shortcut discovery and Alt+Left/Right history navigation;
-- unbounded history by default, with an optional explicit limit available to embedders/tests, plus recall, per-entry deletion and whole-history clearing;
+- unbounded history by default with a persisted user-selectable retention cap, plus recall, per-entry deletion and whole-history clearing;
 - reusable one- and multi-argument user functions with optional descriptions, deterministic XDG persistence and transactional reload;
 - direct click/touch Programmer bit toggling in the Linux representations view while preserving shared fixed-width semantics;
 - persistent Linux result-presentation preferences for Automatic, Fixed, Scientific and Engineering output, decimal-place control, thousands grouping and trailing-zero presentation;
 - persistent Cinnamon/GTK desktop mode and window size without forcing legacy absolute window positioning under Wayland;
-- one cross-platform persistent-state document for Scientific precision, display preferences, variables/functions, selected mode, Scientific angle unit and Programmer radix/word-width/signed state; Linux retains the older desktop semantic fields only as a one-release migration source;
+- one cross-platform persistent-state document for Scientific precision, display preferences, variables/functions, selected mode, Scientific angle unit, Programmer radix/word-width/signed state and history retention; Linux retains the older desktop semantic fields only as a one-release migration source;
 - persisted user variables under the XDG data directory, alongside the already-persisted reusable function definitions;
 - a dependency-light console calculator, `infiltrator-calc-cli`, covering the Mint/GNOME `gcalccmd` one-shot and interactive workflows while sharing the same expression/session engine and persisted custom functions;
 - native GTK expression undo/redo enabled explicitly through the GTK4 editable contract, retaining familiar Ctrl+Z/Ctrl+Shift+Z editing behaviour;
