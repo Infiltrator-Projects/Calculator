@@ -121,6 +121,7 @@ public:
     std::string history_text(
         std::size_t limit = 50,
         std::string_view newline = "\n") const;
+    bool erase_history_from_newest(std::size_t index);
     void clear_history() noexcept;
     std::uint64_t history_revision() const noexcept;
 
