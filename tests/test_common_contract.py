@@ -6,8 +6,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ROOT / "src" / "infiltratr-common"
-EXPECTED_VERSION = "1.19.27"
-EXPECTED_COMMIT = "3ef3710df6563df305b6d8e2dc9d1a41c61843ba"
+EXPECTED_VERSION = "1.19.35"
+EXPECTED_COMMIT = "7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f"
 
 assert (COMMON / "VERSION").read_text(encoding="utf-8").strip() == EXPECTED_VERSION
 
@@ -81,7 +81,7 @@ for field in (
     "success_border_rgb",
 ):
     assert field in design_header, (
-        f"Common 1.19.27 semantic palette field missing from public ABI: {field}"
+        f"Common 1.19.35 semantic palette field missing from public ABI: {field}"
     )
 
 # Calculator must consume Common through its published surface only. Common
@@ -129,7 +129,7 @@ for required in (
     "infiltratr_design_metrics",
     "infiltratr_typography",
 ):
-    assert required in calls, f"Calculator is not consuming Common 1.19.27 {required}"
+    assert required in calls, f"Calculator is not consuming Common 1.19.35 {required}"
 
 typography_assets = (
     COMMON / "cmake" / "InfiltratrTypographyAssets.cmake"
@@ -182,7 +182,7 @@ for palette_name in ("day", "night"):
         "success_border",
     ):
         assert role in semantic_palette, (
-            f"Common 1.19.27 {palette_name} palette missing semantic role: {role}"
+            f"Common 1.19.35 {palette_name} palette missing semantic role: {role}"
         )
 
 canonical_fonts = design_contract["typography"]["font_files"]
