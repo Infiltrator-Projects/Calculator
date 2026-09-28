@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.37" date="2026-09-28">
+      <description>
+        <p>Publish the physical-device iPhone build as an IPA with the standard Payload application layout instead of a raw app ZIP.</p>
+      </description>
+    </release>
     <release version="0.2.36" date="2026-09-28">
       <description>
         <p>Add a compiled self-contained hardware-native Linux installer with CPU-native LTO and optional measured two-pass PGO.</p>

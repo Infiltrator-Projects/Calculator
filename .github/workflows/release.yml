@@ -607,7 +607,7 @@ jobs:
           plutil -extract CFBundleIcons xml1 -o - "$app/Info.plist" >/dev/null
           echo "iOS Simulator build verified with AppIcon metadata: $app"
 
-      - name: Build unsigned iPhone device app
+      - name: Build unsigned iPhone device IPA
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < VERSION)"
@@ -627,16 +627,28 @@ jobs:
           test -n "$app"
           test -d "$app"
 
-          mkdir -p dist/ios
-          ditto -c -k --sequesterRsrc --keepParent \
-            "$app" \
-            "dist/ios/calculator_${version}_ios-device-unsigned.zip"
+          ipa_root="$RUNNER_TEMP/calculator-ipa"
+          rm -rf "$ipa_root"
+          mkdir -p "$ipa_root/Payload" dist/ios
+          ditto "$app" "$ipa_root/Payload/Calculator.app"
 
-      - name: Upload iOS build artifacts
+          ipa="$GITHUB_WORKSPACE/dist/ios/calculator_${version}_ios-device-unsigned.ipa"
+          (
+            cd "$ipa_root"
+            /usr/bin/zip -qry "$ipa" Payload
+          )
+
+          test -f "$ipa"
+          /usr/bin/unzip -l "$ipa" | grep -q 'Payload/Calculator.app/Info.plist'
+          plutil -extract CFBundleIdentifier raw -o - "$ipa_root/Payload/Calculator.app/Info.plist" \
+            | grep -qx 'net.ssmith.infiltrator.calc'
+          echo "Unsigned iPhone IPA verified: $ipa"
+
+      - name: Upload iOS IPA
         uses: actions/upload-artifact@v4
         with:
           name: calculator-ios
-          path: dist/ios/calculator_*_ios-device-unsigned.zip
+          path: dist/ios/calculator_*_ios-device-unsigned.ipa
           if-no-files-found: error
 
 
@@ -752,7 +764,7 @@ jobs:
           set -euo pipefail
           test -f "dist/linux/calculator_${VERSION}_amd64.deb"
           test -f "dist/windows/calculator_${VERSION}_windows_x64.exe"
-          test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip"
+          test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa"
           test -f "dist/source/calculator_${VERSION}_source.tar.gz"
           test -x "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
           cp LICENSE dist/LICENSE.txt
@@ -760,7 +772,7 @@ jobs:
           sha256sum \
             "dist/linux/calculator_${VERSION}_amd64.deb" \
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
-            "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
+            "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa" \
             "dist/source/calculator_${VERSION}_source.tar.gz" \
             "dist/native/infiltrator-calculator-${VERSION}-native-installer.run" \
             "dist/LICENSE.txt" \
@@ -775,7 +787,7 @@ jobs:
           gh release create "v${VERSION}" \
             "dist/linux/calculator_${VERSION}_amd64.deb" \
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
-            "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
+            "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa" \
             "dist/source/calculator_${VERSION}_source.tar.gz" \
             "dist/native/infiltrator-calculator-${VERSION}-native-installer.run" \
             "dist/LICENSE.txt" \

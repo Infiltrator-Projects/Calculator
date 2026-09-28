@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.37) unstable; urgency=medium
+
+  * Publish the iPhone device build as an IPA instead of a raw app ZIP.
+  * Package the device application under the standard Payload/Calculator.app IPA layout.
+  * Verify the IPA bundle identifier and archive structure in release CI.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 28 Sep 2026 12:45:00 +1000
+
 infiltrator-calculator (0.2.36) unstable; urgency=medium
 
   * Publish a first-class hardware-native Linux installer release asset.

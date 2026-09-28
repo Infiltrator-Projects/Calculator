@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.2.36  
+**Current source version:** 0.2.37  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.35  
 **Design contract:** shared Design v1  
@@ -76,10 +76,10 @@ Releases are multi-platform by default. The same versioned source is built and t
 
 - Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `infiltrator-calculator`) plus `infiltrator-calculator-<version>-native-installer.run`, a self-contained native installer that carries the exact release source and builds locally for the target CPU;
 - Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
-- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes only the unsigned ARM64 device bundle as the release artifact;
+- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes the physical-device build as `calculator_<version>_ios-device-unsigned.ipa`, using the standard `Payload/Calculator.app` IPA layout;
 - Source: `calculator_<version>_source.tar.gz`, a deterministic source bundle containing Calculator and the exact checked-out Common dependency used by the release.
 
-A signed installable `.ipa` requires an Apple signing identity and provisioning profile. Those credentials are deliberately not stored in the repository. Once signing is configured, the same Xcode target is ready to archive and export as an `.ipa`.
+The published `.ipa` is structurally a real iPhone IPA but remains unsigned because the repository does not contain an Apple signing identity or provisioning profile. It can therefore be re-signed by an authorised installation workflow; normal direct device installation still requires valid Apple signing and provisioning.
 
 A release is published only after Linux, Windows and iOS builds and the shared-core tests succeed.
 

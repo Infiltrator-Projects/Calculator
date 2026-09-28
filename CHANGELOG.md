@@ -6,6 +6,13 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.37 — 2026-09-28
+
+- Replace the published raw unsigned iPhone app ZIP with a real IPA archive.
+- Package the physical-device build under the standard `Payload/Calculator.app` layout.
+- Verify the IPA structure and Calculator bundle identifier in release CI.
+- Keep the IPA unsigned until an Apple signing identity and provisioning profile are supplied.
+
 ## 0.2.36 — 2026-09-28
 
 - Add a first-class Linux hardware-native `.run` release asset instead of requiring external projects to reconstruct native installation from the source archive.
