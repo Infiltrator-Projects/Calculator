@@ -175,18 +175,38 @@ struct ContentView: View {
         }
     }
 
+    private var mobileScreenPadding: CGFloat {
+        max(12, min(sharedDesign.screenPadding, 16))
+    }
+
+    private var mobileSectionSpacing: CGFloat {
+        max(8, min(sharedDesign.sectionSpacing, 10))
+    }
+
+    private var mobileControlSpacing: CGFloat {
+        max(6, min(sharedDesign.controlSpacing, 8))
+    }
+
+    private var mobileContentPadding: CGFloat {
+        max(10, min(sharedDesign.contentPadding, 12))
+    }
+
     var body: some View {
         ZStack {
             palette.background.ignoresSafeArea()
 
-            VStack(spacing: 14) {
-                header
-                modeStrip
-                displayCard
-                keypad
-                footer
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: mobileSectionSpacing) {
+                    header
+                    modeStrip
+                    displayCard
+                    keypad
+                    footer
+                }
+                .padding(.horizontal, mobileScreenPadding)
+                .padding(.vertical, 8)
             }
-            .padding(sharedDesign.screenPadding)
+            .scrollDismissesKeyboard(.interactively)
         }
         .preferredColorScheme(themePreference.preferredScheme)
         .sheet(isPresented: $model.showingHistory) {
@@ -204,97 +224,103 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Calculator")
                     .font(CalculatorTypography.display(29, relativeTo: .title))
                     .foregroundStyle(palette.heading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Text("PRECISION CALCULATOR")
                     .font(CalculatorTypography.bold(9, relativeTo: .caption2))
                     .tracking(1.2)
                     .foregroundStyle(palette.kicker)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
-
-            Menu {
-                Picker("Theme", selection: Binding(
-                    get: { themePreference },
-                    set: { themePreference = $0 }
-                )) {
-                    ForEach(ThemePreference.allCases) { preference in
-                        Text(preference.label).tag(preference)
+            HStack(spacing: 10) {
+                Menu {
+                    Picker("Theme", selection: Binding(
+                        get: { themePreference },
+                        set: { themePreference = $0 }
+                    )) {
+                        ForEach(ThemePreference.allCases) { preference in
+                            Text(preference.label).tag(preference)
+                        }
                     }
-                }
 
-                Picker("Scientific digits", selection: Binding(
-                    get: { model.scientificDigits },
-                    set: { model.setScientificDigits($0) }
-                )) {
-                    ForEach([16, 25, 50, 100, 250, 500, 1000], id: \.self) {
-                        Text("\($0) digits").tag($0)
+                    Picker("Scientific digits", selection: Binding(
+                        get: { model.scientificDigits },
+                        set: { model.setScientificDigits($0) }
+                    )) {
+                        ForEach([16, 25, 50, 100, 250, 500, 1000], id: \.self) {
+                            Text("\($0) digits").tag($0)
+                        }
                     }
-                }
 
-                Picker("History", selection: Binding(
-                    get: { model.historyLimit },
-                    set: { model.setHistoryLimit($0) }
-                )) {
-                    Text("History: Unlimited").tag(0)
-                    ForEach([100, 500, 1000], id: \.self) {
-                        Text("History: \($0)").tag($0)
+                    Picker("History", selection: Binding(
+                        get: { model.historyLimit },
+                        set: { model.setHistoryLimit($0) }
+                    )) {
+                        Text("History: Unlimited").tag(0)
+                        ForEach([100, 500, 1000], id: \.self) {
+                            Text("History: \($0)").tag($0)
+                        }
                     }
-                }
-            } label: {
-                Image(systemName: "circle.lefthalf.filled")
-                    .imageScale(.medium)
-                    .frame(width: 42, height: 38)
-            }
-            .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
-            .accessibilityLabel("Settings")
-
-            if model.mode == .programmer {
-                Button {
-                    model.showingBases = true
                 } label: {
-                    Image(systemName: "number.square")
+                    Image(systemName: "circle.lefthalf.filled")
                         .imageScale(.medium)
-                        .frame(width: 42, height: 38)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
-                .accessibilityLabel("Programmer base representations")
-            } else {
+                .accessibilityLabel("Settings")
+
+                if model.mode == .programmer {
+                    Button {
+                        model.showingBases = true
+                    } label: {
+                        Image(systemName: "number.square")
+                            .imageScale(.medium)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
+                    .accessibilityLabel("Programmer base representations")
+                } else {
+                    Button {
+                        model.showingResults = true
+                    } label: {
+                        Image(systemName: "list.bullet.rectangle")
+                            .imageScale(.medium)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
+                    .accessibilityLabel("Additional result representations")
+                }
+
                 Button {
-                    model.showingResults = true
+                    model.showingTools = true
                 } label: {
-                    Image(systemName: "list.bullet.rectangle")
+                    Image(systemName: "wrench.and.screwdriver")
                         .imageScale(.medium)
-                        .frame(width: 42, height: 38)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
-                .accessibilityLabel("Additional result representations")
-            }
+                .accessibilityLabel("Advanced calculator tools")
 
-            Button {
-                model.showingTools = true
-            } label: {
-                Image(systemName: "wrench.and.screwdriver")
-                    .imageScale(.medium)
-                    .frame(width: 42, height: 38)
+                Button {
+                    model.showingHistory = true
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .imageScale(.medium)
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
+                .accessibilityLabel("Calculation history")
             }
-            .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
-            .accessibilityLabel("Advanced calculator tools")
-
-            Button {
-                model.showingHistory = true
-            } label: {
-                Image(systemName: "clock.arrow.circlepath")
-                    .imageScale(.medium)
-                    .frame(width: 42, height: 38)
-            }
-            .buttonStyle(CalculatorToolbarButtonStyle(palette: palette))
-            .accessibilityLabel("Calculation history")
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -312,7 +338,7 @@ struct ContentView: View {
                         ? palette.primaryText
                         : palette.kicker
                 )
-                .frame(maxWidth: .infinity, minHeight: 38)
+                .frame(maxWidth: .infinity, minHeight: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(
@@ -335,9 +361,9 @@ struct ContentView: View {
     }
 
     private var displayCard: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             TextField(
-                "Enter an expression or variable assignment",
+                "Expression or variable",
                 text: Binding(
                     get: { model.expression },
                     set: { model.setExpression($0) }
@@ -346,10 +372,10 @@ struct ContentView: View {
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .multilineTextAlignment(.trailing)
-            .font(CalculatorTypography.regular(15, relativeTo: .body))
+            .font(CalculatorTypography.regular(14, relativeTo: .body))
             .foregroundStyle(palette.summary)
-            .padding(.horizontal, 12)
-            .frame(minHeight: 42)
+            .padding(.horizontal, 10)
+            .frame(minHeight: 40)
             .background(
                 RoundedRectangle(cornerRadius: sharedDesign.controlRadius)
                     .fill(palette.input)
@@ -361,14 +387,13 @@ struct ContentView: View {
             .onSubmit { model.calculate() }
 
             Text(model.display)
-                .font(CalculatorTypography.display(46, relativeTo: .largeTitle))
+                .font(CalculatorTypography.display(38, relativeTo: .largeTitle))
                 .foregroundStyle(palette.heading)
                 .lineLimit(1)
                 .minimumScaleFactor(0.42)
                 .textSelection(.enabled)
                 .accessibilityLabel("Calculation result \(model.display)")
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.top, 4)
 
             Text(model.status)
                 .font(CalculatorTypography.bold(9, relativeTo: .caption2))
@@ -382,7 +407,7 @@ struct ContentView: View {
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .padding(sharedDesign.contentPadding)
+        .padding(mobileContentPadding)
         .background(
             RoundedRectangle(cornerRadius: sharedDesign.cardRadius)
                 .fill(palette.panel)
@@ -394,31 +419,31 @@ struct ContentView: View {
     }
 
     private var keypad: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: sharedDesign.controlSpacing) {
-                ForEach(Array(model.rows.enumerated()), id: \.offset) { _, row in
-                    HStack(spacing: sharedDesign.controlSpacing) {
-                        ForEach(Array(row.enumerated()), id: \.offset) { _, key in
-                            CalculatorKey(
-                                title: model.visibleTitle(key),
-                                selected: model.keyIsSelected(key),
-                                enabled: model.keyIsEnabled(key),
-                                palette: palette
-                            ) {
-                                model.press(key)
-                            }
+        VStack(spacing: mobileControlSpacing) {
+            ForEach(Array(model.rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: mobileControlSpacing) {
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, key in
+                        CalculatorKey(
+                            title: model.visibleTitle(key),
+                            selected: model.keyIsSelected(key),
+                            enabled: model.keyIsEnabled(key),
+                            palette: palette
+                        ) {
+                            model.press(key)
                         }
                     }
                 }
             }
-            .padding(.vertical, 1)
         }
+        .padding(.vertical, 1)
     }
 
     private var footer: some View {
         Text("Keyboard ready · Variables, memory and history retained")
             .font(CalculatorTypography.regular(9, relativeTo: .caption2))
             .foregroundStyle(palette.detailLabel)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -452,8 +477,10 @@ private struct CalculatorKey: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(CalculatorTypography.bold(kind == .equals ? 19 : 16, relativeTo: .body))
-                .frame(maxWidth: .infinity, minHeight: 54)
+                .font(CalculatorTypography.bold(kind == .equals ? 18 : 15, relativeTo: .body))
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .frame(maxWidth: .infinity, minHeight: 46)
                 .contentShape(Rectangle())
         }
         .foregroundStyle(foreground)

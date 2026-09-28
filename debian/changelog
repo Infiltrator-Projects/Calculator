@@ -1,3 +1,12 @@
+infiltrator-calculator (0.2.38) unstable; urgency=medium
+
+  * Rework the iPhone main layout so the title can no longer be crushed by toolbar controls.
+  * Stack the branding above 44-point toolbar actions and keep the title and kicker to one line.
+  * Use one natural page scroll, compact the display and keypad spacing, and retain 46-point keys.
+  * Shorten the expression prompt and bound Common spacing metrics to phone-friendly values.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 28 Sep 2026 13:00:00 +1000
+
 infiltrator-calculator (0.2.37) unstable; urgency=medium
 
   * Publish the iPhone device build as an IPA instead of a raw app ZIP.
