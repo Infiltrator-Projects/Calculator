@@ -6,6 +6,14 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.36 — 2026-09-28
+
+- Add a first-class Linux hardware-native `.run` release asset instead of requiring external projects to reconstruct native installation from the source archive.
+- Make the `.run` a compiled C++ self-extracting installer carrying the exact deterministic release source payload, with no shell bootstrap.
+- Add native, aggressive and portable build profiles; aggressive performs two-pass measured PGO training over Calculator's test suite and GTK startup/rendering paths, then rebuilds with LTO and CPU-native tuning.
+- Support direct-user installation and explicit `--system-package-mode` for Infiltrator OS, installing build prerequisites only when needed and verifying the final Debian package and executable.
+- Record `BUILD-INFO` after native installation and make strict-warning compilation of the installer tooling a release gate.
+
 ## 0.2.35 — 2026-09-25
 
 - Move Unicode scalar-to-UTF-8 byte encoding onto the new Common 1.19.27 public contract instead of carrying a Calculator-local encoder.

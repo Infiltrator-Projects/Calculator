@@ -1,3 +1,12 @@
+infiltrator-calculator (0.2.36) unstable; urgency=medium
+
+  * Publish a first-class hardware-native Linux installer release asset.
+  * Build locally with native CPU tuning and LTO, with an aggressive two-pass PGO profile.
+  * Keep direct-user and Infiltrator OS system-package installation modes explicit.
+  * Verify the locally built Debian package and record native build metadata after installation.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 28 Sep 2026 12:20:00 +1000
+
 infiltrator-calculator (0.2.35) unstable; urgency=medium
 
   * Reuse Common 1.19.27 for strict Unicode scalar-to-UTF-8 encoding.

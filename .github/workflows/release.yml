@@ -65,6 +65,20 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Calculator version: $version"
 
+      - name: Compile native installer tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-installer-tools
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -static \
+            support/tools/native_installer.cpp \
+            -o build-installer-tools/calculator-native-installer
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            support/tools/build_native_installer.cpp \
+            -o build-installer-tools/build-native-installer
+          build-installer-tools/calculator-native-installer --help
+          build-installer-tools/build-native-installer --help
+
       - name: Verify Common integration contract
         run: python3 tests/test_common_contract.py
 
@@ -711,6 +725,26 @@ jobs:
             -cf - "$(basename "$root")" \
             | gzip -n > "dist/source/calculator_${VERSION}_source.tar.gz"
 
+      - name: Build hardware-native installer
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p build-installer-tools dist/native
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -static \
+            support/tools/native_installer.cpp \
+            -o build-installer-tools/calculator-native-installer
+          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            support/tools/build_native_installer.cpp \
+            -o build-installer-tools/build-native-installer
+          installer="dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
+          build-installer-tools/build-native-installer \
+            build-installer-tools/calculator-native-installer \
+            "dist/source/calculator_${VERSION}_source.tar.gz" \
+            "$installer"
+          test -x "$installer"
+          "$installer" --help
+
       - name: Verify cross-platform release assets
         env:
           VERSION: ${{ needs.linux.outputs.version }}
@@ -720,6 +754,7 @@ jobs:
           test -f "dist/windows/calculator_${VERSION}_windows_x64.exe"
           test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip"
           test -f "dist/source/calculator_${VERSION}_source.tar.gz"
+          test -x "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
           cp LICENSE dist/LICENSE.txt
 
           sha256sum \
@@ -727,6 +762,7 @@ jobs:
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
             "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
             "dist/source/calculator_${VERSION}_source.tar.gz" \
+            "dist/native/infiltrator-calculator-${VERSION}-native-installer.run" \
             "dist/LICENSE.txt" \
             > dist/SHA256SUMS.txt
 
@@ -741,6 +777,7 @@ jobs:
             "dist/windows/calculator_${VERSION}_windows_x64.exe" \
             "dist/ios/calculator_${VERSION}_ios-device-unsigned.zip" \
             "dist/source/calculator_${VERSION}_source.tar.gz" \
+            "dist/native/infiltrator-calculator-${VERSION}-native-installer.run" \
             "dist/LICENSE.txt" \
             "dist/SHA256SUMS.txt" \
             --repo "$GITHUB_REPOSITORY" \

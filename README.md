@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.2.35  
+**Current source version:** 0.2.36  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.35  
 **Design contract:** shared Design v1  
@@ -74,7 +74,7 @@ Detailed ownership, numerical, portability and validation contracts are maintain
 
 Releases are multi-platform by default. The same versioned source is built and tested across all three targets:
 
-- Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `infiltrator-calculator`);
+- Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `infiltrator-calculator`) plus `infiltrator-calculator-<version>-native-installer.run`, a self-contained native installer that carries the exact release source and builds locally for the target CPU;
 - Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
 - iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes only the unsigned ARM64 device bundle as the release artifact;
 - Source: `calculator_<version>_source.tar.gz`, a deterministic source bundle containing Calculator and the exact checked-out Common dependency used by the release.
@@ -122,6 +122,8 @@ ctest --test-dir build --output-on-failure
 On Linux, Calculator respects an explicit `GSK_RENDERER` selection. When none is supplied it chooses after the display opens: a composited desktop with usable OpenGL gets GTK's mature accelerated `gl` renderer, while non-composited or GL-incapable displays fall back to Cairo instead of forcing software EGL. This retains the low-idle-CPU policy on ordinary Mint/Cinnamon desktops while remaining sane on headless and remote X servers. Release CI measures packaged idle CPU under the application default and Cairo paths, and also exercises explicit GL; a hosted runner that exposes no DRI3 device is reported as an environment limitation rather than misclassified as an application CPU regression.
 
 On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. MPFR is optional for ordinary builds; release CI enables the dedicated high-precision numerical oracle with `-DCALCULATOR_ENABLE_MPFR_ORACLE_TESTS=ON` and `libmpfr-dev`. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
+
+The Linux release also publishes `infiltrator-calculator-<version>-native-installer.run`. The installer is itself a compiled C++ executable with the deterministic release source archive appended as an embedded payload; it does not depend on a shell bootstrap. Its `native` profile uses `-O3 -march=native -mtune=native` plus LTO. Its `aggressive` profile performs an instrumented first build, trains through Calculator's tests and GTK startup/rendering paths, then rebuilds with measured PGO data, LTO and CPU-native tuning. `--system-package-mode` permits Infiltrator OS to run the same installer as root after its package transaction completes, while ordinary direct use keeps privilege elevation limited to prerequisite and final package installation.
 
 ## Project structure
 
