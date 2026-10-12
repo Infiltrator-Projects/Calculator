@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Validate release metadata and decide whether the current push is a release.
+"""Validate release metadata and decide whether the current run should publish.
 
-VERSION is the only version authority.  The Debian changelog, human changelog
+VERSION is the only version authority. The Debian changelog, human changelog
 and AppStream release list are deliberately redundant consumer metadata, so CI
 checks that their newest entries agree before any expensive platform build.
 Release publication is triggered by an actual VERSION change, never by commit
-message wording.
+message wording. An explicit manual publish may be used to reconcile a partial
+or interrupted release without manufacturing a new source version.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
@@ -23,7 +25,7 @@ DEBIAN_RE = re.compile(r"^infiltrator-calculator \(([^)]+)\)")
 CHANGELOG_RE = re.compile(r"^## ([0-9]+\.[0-9]+\.[0-9]+)\b", re.MULTILINE)
 
 
-def die(message: str) -> "NoReturn":
+def die(message: str) -> NoReturn:
     print(f"release metadata error: {message}", file=sys.stderr)
     raise SystemExit(1)
 
@@ -73,28 +75,6 @@ def validate_metadata(expected: str) -> None:
         die("README.md must refer to VERSION as the authority, not duplicate it")
 
 
-def git_output(*args: str) -> str:
-    completed = subprocess.run(
-        ["git", *args],
-        cwd=ROOT,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    return completed.stdout.strip()
-
-
-def tag_exists(tag: str) -> bool:
-    completed = subprocess.run(
-        ["git", "rev-parse", "--quiet", "--verify", f"refs/tags/{tag}"],
-        cwd=ROOT,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    return completed.returncode == 0
-
-
 def previous_version(before: str) -> str | None:
     if not before or set(before) == {"0"}:
         return None
@@ -111,28 +91,19 @@ def previous_version(before: str) -> str | None:
     return value if VERSION_RE.fullmatch(value) else None
 
 
-def should_release(event: str, before: str, manual_publish: bool, current: str) -> bool:
-    requested = False
+def should_publish(event: str, before: str, manual_publish: bool, current: str) -> bool:
     if event == "push":
         previous = previous_version(before)
-        requested = previous is not None and previous != current
-    elif event == "workflow_dispatch":
-        requested = manual_publish
-
-    if not requested:
-        return False
-
-    tag = f"v{current}"
-    if tag_exists(tag):
-        print(f"{tag} already exists; publication is already complete")
-        return False
-    return True
+        return previous is not None and previous != current
+    if event == "workflow_dispatch":
+        return manual_publish
+    return False
 
 
-def write_outputs(path: Path, current: str, release: bool) -> None:
+def write_outputs(path: Path, current: str, publish: bool) -> None:
     with path.open("a", encoding="utf-8") as stream:
         stream.write(f"version={current}\n")
-        stream.write(f"release={'true' if release else 'false'}\n")
+        stream.write(f"release={'true' if publish else 'false'}\n")
 
 
 def main() -> int:
@@ -145,12 +116,12 @@ def main() -> int:
 
     current = version()
     validate_metadata(current)
-    release = should_release(args.event, args.before, args.manual_publish, current)
+    publish = should_publish(args.event, args.before, args.manual_publish, current)
 
     print(f"Calculator version: {current}")
-    print(f"Publish release: {'yes' if release else 'no'}")
+    print(f"Publish release: {'yes' if publish else 'no'}")
     if args.github_output:
-        write_outputs(args.github_output, current, release)
+        write_outputs(args.github_output, current, publish)
     return 0
 
 
