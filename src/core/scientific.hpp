@@ -10,6 +10,8 @@
 
 namespace calculator {
 
+class EvaluationBudget;
+
 // Scientific mode keeps values as decimal text at the session boundary so the
 // public C++ interface never exposes a third-party multiprecision ABI. The
 // implementation reconstructs these components directly into the high-
@@ -47,12 +49,16 @@ scientific_function_catalog() noexcept;
 // Evaluate the Scientific grammar entirely in the maintained multiprecision
 // real/complex domain. decimal_digits is clamped to the supported precision
 // interval; ordinary syntax/domain failures are reported in ScientificResult.
+// A supplied budget is shared by nested custom functions and by callers that
+// perform repeated probes (for example graphing/root finding). When omitted,
+// one default budget is created for this evaluation.
 ScientificResult evaluate_scientific(
     const std::string& expression,
     const ScientificVariables& variables = ScientificVariables{},
     const Functions& functions = Functions{},
     AngleUnit angle_unit = AngleUnit::Radians,
-    unsigned decimal_digits = kScientificDefaultDigits);
+    unsigned decimal_digits = kScientificDefaultDigits,
+    EvaluationBudget* budget = nullptr);
 
 // Produce a lossless expression spelling suitable for feeding the value back
 // into the Scientific parser without a binary64 round-trip.
