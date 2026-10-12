@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish the current VERSION if it has not already been released
+        description: Publish or reconcile the current VERSION after verification
         required: false
         type: boolean
         default: false
@@ -380,19 +380,32 @@ jobs:
           cp LICENSE dist/LICENSE.txt
           python3 support/release/release_assets.py --version "$VERSION" --dist dist
 
-      - name: Publish immutable cross-platform GitHub release
+      - name: Publish or reconcile cross-platform GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mapfile -t assets < dist/release-assets.txt
-          gh release create "v${VERSION}" \
-            "${assets[@]}" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "Calculator ${VERSION}" \
-            --generate-notes \
-            --latest
+          tag="v${VERSION}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag exists; reconciling the verified asset set."
+            gh release upload "$tag" \
+              "${assets[@]}" \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+            gh release edit "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Calculator ${VERSION}" \
+              --latest
+          else
+            gh release create "$tag" \
+              "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Calculator ${VERSION}" \
+              --generate-notes \
+              --latest
+          fi
 
   apt-publication:
     name: Check central APT publication
