@@ -164,9 +164,9 @@ bool exact_add(const Exact& left, const Exact& right, bool subtract,
             denominator, budget, error)) {
         return false;
     }
-    result.numerator = subtract
-        ? left_scaled - right_scaled
-        : left_scaled + right_scaled;
+    result.numerator = left_scaled;
+    if (subtract) result.numerator -= right_scaled;
+    else result.numerator += right_scaled;
     result.denominator = std::move(denominator);
     if (!check_bigint(result.numerator, budget)) {
         error = budget.error();
