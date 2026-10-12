@@ -3,6 +3,7 @@
 
 #include "advanced_tools.hpp"
 #include "calculator.hpp"
+#include "evaluation_budget.hpp"
 #include "scientific.hpp"
 
 #include <infiltratr/core.h>
@@ -21,6 +22,17 @@ namespace calculator::tools::detail {
 // contract without exposing tool-domain semantics through Common.
 inline constexpr double kPi = 3.141592653589793238462643383279502884;
 inline constexpr unsigned kToolScientificDigits = 100U;
+
+inline EvaluationBudget make_tool_evaluation_budget(
+    std::uint64_t max_steps = 100000U) {
+    EvaluationLimits limits;
+    limits.max_input_bytes = kMaxToolInputBytes;
+    limits.max_steps = max_steps;
+    limits.max_factorial = 1000U;
+    limits.max_power_exponent = 100000U;
+    limits.max_output_digits = 20000U;
+    return EvaluationBudget(limits);
+}
 
 inline ToolResult success(std::string text) {
     return {true, std::move(text), {}, {}};
