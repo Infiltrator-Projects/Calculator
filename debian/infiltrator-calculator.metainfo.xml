@@ -32,6 +32,16 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.39" date="2026-10-12">
+      <description>
+        <p>Simplify and harden release orchestration with VERSION-driven publication, early metadata validation, extracted smoke helpers, one asset manifest and immutable GitHub Action revisions.</p>
+      </description>
+    </release>
+    <release version="0.2.38" date="2026-09-28">
+      <description>
+        <p>Rework the iPhone compact layout so branding, toolbar actions, display and keypad remain usable on phone-sized screens.</p>
+      </description>
+    </release>
     <release version="0.2.37" date="2026-09-28">
       <description>
         <p>Publish the physical-device iPhone build as an IPA with the standard Payload application layout instead of a raw app ZIP.</p>
@@ -97,7 +107,7 @@
         <p>Reduce Linux idle CPU on affected Mint/Noble graphics stacks by preferring GTK's mature accelerated GL renderer while preserving explicit renderer overrides.</p>
       </description>
     </release>
-        <release version="0.2.20" date="2026-09-22">
+    <release version="0.2.20" date="2026-09-22">
       <description>
         <p>Forensically validate Scientific mode across real/complex branches and 16-1000 digit precision, while fixing principal-branch, exact-power, quadrant and state-boundary defects.</p>
       </description>
