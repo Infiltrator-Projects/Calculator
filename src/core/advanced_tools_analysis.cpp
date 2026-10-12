@@ -138,6 +138,7 @@ ToolResult graph_tool(std::string_view input) {
     if(p.size()>4U) return failure("Too many graph fields.");
     if(!(xmin<xmax)) return failure("xmin must be less than xmax.");
 
+    EvaluationBudget budget = make_tool_evaluation_budget();
     ToolResult result; result.ok=true;
     result.points.reserve(static_cast<std::size_t>(samples));
     std::size_t valid=0;
@@ -145,6 +146,7 @@ ToolResult graph_tool(std::string_view input) {
     double ymax=-std::numeric_limits<double>::infinity();
     calculator::ScientificVariables vars;
     for(std::uint64_t i=0;i<samples;++i) {
+        if(!budget.charge()) return failure(budget.error());
         const double x=xmin+(xmax-xmin)*static_cast<double>(i)/static_cast<double>(samples-1U);
         vars["x"]=calculator::scientific_value_from_double(x);
         const auto y=calculator::evaluate_scientific(
@@ -167,7 +169,12 @@ ToolResult graph_tool(std::string_view input) {
     return result;
 }
 
-double eval_x(std::string_view expr,double x,bool& ok) {
+double eval_x(std::string_view expr,double x,bool& ok,
+              EvaluationBudget& budget) {
+    if(!budget.charge()) {
+        ok=false;
+        return 0.0;
+    }
     calculator::ScientificVariables vars;
     vars["x"] = calculator::scientific_value_from_double(x);
     const auto result = calculator::evaluate_scientific(
@@ -185,12 +192,12 @@ void add_root(std::vector<double>& roots,double x) {
 }
 bool refine_stationary_root(std::string_view expression,
                             double left, double seed, double right,
-                            double& root) {
+                            double& root, EvaluationBudget& budget) {
     double x=seed;
     const double span=std::max(right-left,1e-12);
     for(int iteration=0;iteration<40;++iteration){
         bool ok=false;
-        const double fx=eval_x(expression,x,ok);
+        const double fx=eval_x(expression,x,ok,budget);
         if(!ok) return false;
         if(std::fabs(fx)<=1e-24){root=x;return true;}
 
@@ -199,8 +206,8 @@ bool refine_stationary_root(std::string_view expression,
             std::sqrt(std::numeric_limits<double>::epsilon())*
                 std::max(1.0,std::fabs(x)));
         bool okp=false,okm=false;
-        const double fp=eval_x(expression,std::min(right,x+h),okp);
-        const double fm=eval_x(expression,std::max(left,x-h),okm);
+        const double fp=eval_x(expression,std::min(right,x+h),okp,budget);
+        const double fm=eval_x(expression,std::max(left,x-h),okm,budget);
         if(!okp||!okm) return false;
         const double denominator=
             std::min(right,x+h)-std::max(left,x-h);
@@ -220,7 +227,7 @@ bool refine_stationary_root(std::string_view expression,
         x=next;
     }
     bool ok=false;
-    const double value=eval_x(expression,x,ok);
+    const double value=eval_x(expression,x,ok,budget);
     if(ok&&std::fabs(value)<=1e-7){root=x;return true;}
     return false;
 }
@@ -233,11 +240,13 @@ ToolResult equation_tool(std::string_view input) {
     if(p.size()>2U&&!p[2].empty()&&!parse_double(p[2],xmax)) return failure("Invalid xmax.");
     if(!(xmin<xmax)) return failure("xmin must be less than xmax.");
 
+    EvaluationBudget budget = make_tool_evaluation_budget();
     constexpr int segments=2048;
     std::vector<double> roots;
     double x_prev2=xmin;
     bool ok_prev2=false;
-    double y_prev2=eval_x(p[0],x_prev2,ok_prev2);
+    double y_prev2=eval_x(p[0],x_prev2,ok_prev2,budget);
+    if(!budget.ok()) return failure(budget.error());
     if(ok_prev2&&std::fabs(y_prev2)<1e-12) add_root(roots,x_prev2);
 
     double x_prev=x_prev2;
@@ -247,7 +256,8 @@ ToolResult equation_tool(std::string_view input) {
     for(int i=1;i<=segments;++i){
         const double x=xmin+(xmax-xmin)*static_cast<double>(i)/segments;
         bool ok=false;
-        const double y=eval_x(p[0],x,ok);
+        const double y=eval_x(p[0],x,ok,budget);
+        if(!budget.ok()) return failure(budget.error());
         if(ok&&std::fabs(y)<1e-12) add_root(roots,x);
 
         if(ok_prev&&ok&&std::signbit(y_prev)!=std::signbit(y)){
@@ -255,7 +265,8 @@ ToolResult equation_tool(std::string_view input) {
             for(int n=0;n<80;++n){
                 const double mid=(lo+hi)/2.0;
                 bool okm=false;
-                const double fm=eval_x(p[0],mid,okm);
+                const double fm=eval_x(p[0],mid,okm,budget);
+                if(!budget.ok()) return failure(budget.error());
                 if(!okm) break;
                 if(std::fabs(fm)<1e-14){lo=hi=mid;flo=fhi=fm;break;}
                 if(std::signbit(flo)!=std::signbit(fm)){hi=mid;fhi=fm;}
@@ -263,7 +274,8 @@ ToolResult equation_tool(std::string_view input) {
             }
             const double candidate=(lo+hi)/2.0;
             bool okc=false;
-            const double fc=eval_x(p[0],candidate,okc);
+            const double fc=eval_x(p[0],candidate,okc,budget);
+            if(!budget.ok()) return failure(budget.error());
             if(okc&&std::fabs(fc)<=1e-7) add_root(roots,candidate);
         }
 
@@ -275,9 +287,10 @@ ToolResult equation_tool(std::string_view input) {
            std::fabs(y_prev)<std::fabs(y)){
             double candidate=0.0;
             if(refine_stationary_root(
-                   p[0],x_prev2,x_prev,x,candidate)){
+                   p[0],x_prev2,x_prev,x,candidate,budget)){
                 add_root(roots,candidate);
             }
+            if(!budget.ok()) return failure(budget.error());
         }
 
         x_prev2=x_prev;
