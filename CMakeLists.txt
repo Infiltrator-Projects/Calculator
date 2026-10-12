@@ -90,6 +90,7 @@ include(
 
 add_library(calculator-core STATIC
     src/core/calculator.cpp
+    src/core/evaluation_budget.cpp
     src/core/scientific.cpp
     src/core/advanced_tools.cpp
     src/core/advanced_tools_conversion.cpp
@@ -319,6 +320,12 @@ add_executable(calculator-advanced-tools-test
 )
 target_link_libraries(calculator-advanced-tools-test PRIVATE calculator-core)
 add_test(NAME calculator-advanced-tools COMMAND calculator-advanced-tools-test)
+
+add_executable(calculator-evaluation-budget-test
+    tests/test_evaluation_budget.cpp
+)
+target_link_libraries(calculator-evaluation-budget-test PRIVATE calculator-core)
+add_test(NAME calculator-evaluation-budget COMMAND calculator-evaluation-budget-test)
 
 add_executable(calculator-session-test
     tests/test_session.cpp

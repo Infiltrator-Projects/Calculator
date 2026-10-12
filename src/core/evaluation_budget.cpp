@@ -8,15 +8,16 @@
 
 namespace calculator {
 
-// scientific.cpp retains the parser implementation behind this internal
-// five-argument overload. Public callers see only the budget-aware overload in
-// scientific.hpp, so all external Scientific work crosses one resource gate.
-ScientificResult evaluate_scientific(
+// scientific.cpp retains the parser implementation behind this explicit
+// budget-aware internal entry. Public callers cross the wrapper below so
+// input, deadline, cancellation, output and parser work share one policy.
+ScientificResult evaluate_scientific_unchecked(
     const std::string& expression,
     const ScientificVariables& variables,
     const Functions& functions,
     AngleUnit angle_unit,
-    unsigned decimal_digits);
+    unsigned decimal_digits,
+    EvaluationBudget& budget);
 
 EvaluationBudget::EvaluationBudget(EvaluationLimits limits)
     : limits_(std::move(limits)) {
@@ -156,16 +157,9 @@ ScientificResult evaluate_scientific(
         return {false, {}, active_budget.error(), {}};
     }
 
-    using ParserEntry = ScientificResult (*)(
-        const std::string&,
-        const ScientificVariables&,
-        const Functions&,
-        AngleUnit,
-        unsigned);
-    const auto parser_entry =
-        static_cast<ParserEntry>(&evaluate_scientific);
-    ScientificResult result = parser_entry(
-        expression, variables, functions, angle_unit, decimal_digits);
+    ScientificResult result = evaluate_scientific_unchecked(
+        expression, variables, functions, angle_unit,
+        decimal_digits, active_budget);
 
     if (!active_budget.check()) {
         return {false, {}, active_budget.error(), {}};

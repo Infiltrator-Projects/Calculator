@@ -1,20 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #pragma once
 
+#include "evaluation_budget.hpp"
+
 #include <array>
 #include <string>
 #include <string_view>
 #include <vector>
 
-namespace calculator {
-class EvaluationBudget;
-}
-
 namespace calculator::tools {
 
 // Shared resource bound for every Advanced Tools command. Native workbenches
 // may reject oversized input earlier, but the core entry point is authoritative.
-inline constexpr std::size_t kMaxToolInputBytes = 8192U;
+inline constexpr std::size_t kMaxToolInputBytes =
+    EvaluationLimits{}.max_input_bytes;
 
 enum class AdvancedTool {
     Engineering,
