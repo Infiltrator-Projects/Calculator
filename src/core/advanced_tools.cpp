@@ -65,11 +65,18 @@ const ToolDescriptor& descriptor(AdvancedTool tool) noexcept {
     return kCatalog[index < kCatalog.size() ? index : 0U];
 }
 
-ToolResult evaluate(AdvancedTool tool, std::string_view input) {
-    if (input.size() > kMaxToolInputBytes) {
-        return detail::failure(
-            "Tool input exceeds " + std::to_string(kMaxToolInputBytes) +
-            "-byte input limit.");
+ToolResult evaluate(
+    AdvancedTool tool,
+    std::string_view input,
+    EvaluationBudget* budget) {
+    EvaluationBudget local_budget;
+    EvaluationBudget& active_budget = budget ? *budget : local_budget;
+
+    if (!active_budget.check_input(input.size())) {
+        return detail::failure(active_budget.error());
+    }
+    if (!active_budget.charge()) {
+        return detail::failure(active_budget.error());
     }
 
     switch (tool) {
@@ -88,9 +95,9 @@ ToolResult evaluate(AdvancedTool tool, std::string_view input) {
     case AdvancedTool::Statistics:
         return detail::statistics_tool(input);
     case AdvancedTool::Graph:
-        return detail::graph_tool(input);
+        return detail::graph_tool(input, active_budget);
     case AdvancedTool::EquationSolver:
-        return detail::equation_tool(input);
+        return detail::equation_tool(input, active_budget);
     case AdvancedTool::ExactDecimal:
         return detail::exact_decimal_tool(input);
     case AdvancedTool::ArbitraryPrecision:
