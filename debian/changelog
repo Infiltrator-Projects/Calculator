@@ -1,3 +1,14 @@
+infiltrator-calculator (0.2.39) unstable; urgency=medium
+
+  * Replace commit-message release detection with VERSION-change preflight.
+  * Reject Debian, human changelog and AppStream version drift before platform builds.
+  * Extract large Linux, Windows, packaging and APT release checks from workflow YAML.
+  * Generate release asset paths and checksums from one canonical manifest.
+  * Pin GitHub Actions to immutable revisions, reduce default token permissions and add Dependabot updates.
+  * Run the same verification gates on pull requests before merge.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Mon, 12 Oct 2026 21:00:00 +1100
+
 infiltrator-calculator (0.2.38) unstable; urgency=medium
 
   * Rework the iPhone main layout so the title can no longer be crushed by toolbar controls.

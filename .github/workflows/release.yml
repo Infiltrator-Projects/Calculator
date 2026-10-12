@@ -3,27 +3,85 @@ name: Verify and release
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish or reconcile the current VERSION after verification
+        required: false
+        type: boolean
+        default: false
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: calculator-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  linux:
-    runs-on: ${{ startsWith(github.event.head_commit.message, 'Release ') && 'ubuntu-latest' || 'linux-native' }}
-    timeout-minutes: 20
+  prepare:
+    name: Release preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.metadata.outputs.version }}
+      release: ${{ steps.metadata.outputs.release }}
+
+    steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Validate metadata and release intent
+        id: metadata
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          MANUAL_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          args=(
+            --event "$EVENT_NAME"
+            --before "${BEFORE_SHA:-}"
+            --github-output "$GITHUB_OUTPUT"
+          )
+          if [[ "${MANUAL_PUBLISH:-false}" == "true" ]]; then
+            args+=(--manual-publish)
+          fi
+          python3 support/release/release_metadata.py "${args[@]}"
+
+      - name: Validate release support scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n support/ci/verify_debian_package.sh
+          bash -n support/ci/linux_idle_cpu.sh
+          bash -n support/release/build_source_bundle.sh
+          bash -n support/release/build_native_installer.sh
+          bash -n support/release/check_apt_publication.sh
+          python3 -m py_compile \
+            support/release/release_metadata.py \
+            support/release/release_assets.py
+
+  linux:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
       - name: Checkout source and Common dependency
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Install Linux build dependencies
-        if: runner.environment == 'github-hosted'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -39,32 +97,6 @@ jobs:
             pkg-config \
             xvfb
 
-      - name: Verify self-hosted Linux dependencies
-        if: runner.environment == 'self-hosted'
-        shell: bash
-        run: |
-          set -euo pipefail
-          for command_name in appstreamcli cmake ctest dpkg-buildpackage dpkg-deb dpkg-parsechangelog g++ pkg-config python3 xvfb-run; do
-            command -v "$command_name" >/dev/null 2>&1 || {
-              echo "Self-hosted runner is missing $command_name." >&2
-              exit 1
-            }
-          done
-          pkg-config --exists gtk4
-          pkg-config --exists mpfr
-          pkg-config --exists mpc || test -f /usr/include/mpc.h
-
-      - name: Verify release version
-        id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$(tr -d '[:space:]' < VERSION)"
-          test -n "$version"
-          test "$version" = "$(dpkg-parsechangelog -S Version)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Calculator version: $version"
-
       - name: Compile native installer tooling
         shell: bash
         run: |
@@ -76,8 +108,8 @@ jobs:
           g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
             support/tools/build_native_installer.cpp \
             -o build-installer-tools/build-native-installer
-          build-installer-tools/calculator-native-installer --help
-          build-installer-tools/build-native-installer --help
+          build-installer-tools/calculator-native-installer --help >/dev/null
+          build-installer-tools/build-native-installer --help >/dev/null
 
       - name: Verify Common integration contract
         run: python3 tests/test_common_contract.py
@@ -101,103 +133,37 @@ jobs:
           cmake --build build-linux --parallel
           ctest --test-dir build-linux --output-on-failure
 
-      - name: Build Debian package
+      - name: Build and verify Debian package
+        shell: bash
         run: |
           set -euo pipefail
           chmod +x debian/rules
           dpkg-buildpackage -us -uc -b
           mkdir -p dist/linux
-          cp ../infiltrator-calculator_${{ steps.version.outputs.version }}_amd64.deb "dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
-          package="dist/linux/calculator_${{ steps.version.outputs.version }}_amd64.deb"
-          dpkg-deb --info "$package"
-          test "$(dpkg-deb -f "$package" Package)" = "infiltrator-calculator"
-          dpkg-deb --fsys-tarfile "$package" | tar -tf - > package-files.txt
-          grep -qx './usr/bin/infiltrator-calc' package-files.txt
-          grep -qx './usr/bin/infiltrator-calc-cli' package-files.txt
-          grep -qx './usr/share/applications/net.ssmith.infiltrator.calc.desktop' package-files.txt
-          grep -qx './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg' package-files.txt
-          grep -qx './usr/share/app-install/icons/infiltrator-calculator.svg' package-files.txt
-          grep -qx './usr/share/metainfo/infiltrator-calculator.metainfo.xml' package-files.txt
-          grep -qx './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_a_cond_regular.ttf' package-files.txt
-          grep -qx './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_s_bold.ttf' package-files.txt
-          grep -qx './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_s_regular.ttf' package-files.txt
-          if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' package-files.txt; then
-            echo "::error::Calculator package leaked Common development/runtime payloads."
-            cat package-files.txt
-            exit 1
-          fi
+          package="dist/linux/calculator_${VERSION}_amd64.deb"
+          cp "../infiltrator-calculator_${VERSION}_amd64.deb" "$package"
+          bash support/ci/verify_debian_package.sh "$package"
 
-      - name: Smoke-test Linux idle CPU
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$(tr -d '[:space:]' < VERSION)"
-          package="dist/linux/calculator_${version}_amd64.deb"
-          sudo dpkg -i "$package"
-          sudo fc-cache -f
-
-          dbus-run-session -- xvfb-run -a bash -c '
-            set -euo pipefail
-
-            measure_idle_cpu() {
-              label="$1"
-              shift
-              log="/tmp/calculator-idle-${label}.log"
-
-              # GTK parser warnings are product defects, not benign diagnostics.
-              # Make them fatal so malformed application CSS cannot ship green.
-              env GTK_A11Y=none G_DEBUG=fatal-warnings "$@" infiltrator-calc >"$log" 2>&1 &
-              pid=$!
-              sleep 5
-
-              if ! kill -0 "$pid" 2>/dev/null; then
-                cat "$log"
-                echo "::error::Linux Calculator exited during ${label} idle CPU smoke test."
-                exit 1
-              fi
-
-              start_ticks=$(awk "{print \$14 + \$15}" "/proc/$pid/stat")
-              sleep 4
-              end_ticks=$(awk "{print \$14 + \$15}" "/proc/$pid/stat")
-              hz=$(getconf CLK_TCK)
-              delta=$((end_ticks - start_ticks))
-              limit=$((hz * 4 / 10))
-
-              kill "$pid" 2>/dev/null || true
-              wait "$pid" 2>/dev/null || true
-
-              echo "Linux ${label} idle CPU ticks over 4 seconds: $delta (10% one-core limit: $limit)"
-              if (( delta > limit )); then
-                cat "$log"
-                if [[ "$label" == "gl" ]] &&
-                   grep -Eq "DRI3 error: Could not get DRI3 device|Ensure your X server supports DRI3" "$log"; then
-                  echo "::warning::Hosted X display has no usable DRI3 device; explicit GL startup is retained as a diagnostic, but its software-EGL CPU cost is not a Calculator idle regression."
-                else
-                  echo "::error::Linux Calculator consumed excessive CPU while idle with ${label} renderer selection."
-                  exit 1
-                fi
-              fi
-            }
-
-            measure_idle_cpu default
-            measure_idle_cpu cairo GSK_RENDERER=cairo
-            measure_idle_cpu gl GSK_RENDERER=gl
-          '
+      - name: Smoke-test packaged Linux idle CPU
+        run: bash support/ci/linux_idle_cpu.sh "dist/linux/calculator_${VERSION}_amd64.deb"
 
       - name: Upload Linux package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: calculator-linux-amd64
           path: dist/linux/*
           if-no-files-found: error
 
   windows:
+    needs: prepare
     runs-on: windows-latest
     timeout-minutes: 20
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
       - name: Checkout source and Common dependency
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -206,9 +172,6 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = (Get-Content VERSION -Raw).Trim()
-          if ([string]::IsNullOrWhiteSpace($version)) { throw 'VERSION is empty' }
-
           cmake -S . -B build-windows -A x64 `
             -DINFILTRATR_COMMON_BUILD_SHARED=OFF
 
@@ -218,349 +181,40 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build build-windows --config Release --parallel
           ctest --test-dir build-windows -C Release --output-on-failure
+          if (-not (Test-Path 'build-windows/Release/infiltrator-calc.exe')) {
+            throw 'Missing Windows executable'
+          }
 
-          $exe = 'build-windows/Release/infiltrator-calc.exe'
-          if (-not (Test-Path $exe)) { throw "Missing Windows executable: $exe" }
-
-      - name: Smoke-test native Windows keypad creation
+      - name: Verify native Windows runtime and dependency boundary
         shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $exe = (Resolve-Path 'build-windows/Release/infiltrator-calc.exe').Path
-
-          Add-Type @"
-          using System;
-          using System.Runtime.InteropServices;
-          using System.Text;
-
-          [StructLayout(LayoutKind.Sequential)]
-          public struct RECT {
-              public int Left;
-              public int Top;
-              public int Right;
-              public int Bottom;
-          }
-
-          [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-          public struct LOGFONT {
-              public int lfHeight;
-              public int lfWidth;
-              public int lfEscapement;
-              public int lfOrientation;
-              public int lfWeight;
-              public byte lfItalic;
-              public byte lfUnderline;
-              public byte lfStrikeOut;
-              public byte lfCharSet;
-              public byte lfOutPrecision;
-              public byte lfClipPrecision;
-              public byte lfQuality;
-              public byte lfPitchAndFamily;
-              [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-              public string lfFaceName;
-          }
-
-          public static class CalcSmoke {
-              public delegate bool EnumChildProc(IntPtr hwnd, IntPtr lParam);
-
-              [DllImport("user32.dll")]
-              public static extern bool EnumChildWindows(IntPtr parent, EnumChildProc callback, IntPtr lParam);
-
-              [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-              public static extern int GetClassName(IntPtr hwnd, StringBuilder className, int maxCount);
-
-              [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-              public static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int maxCount);
-
-              [DllImport("user32.dll")]
-              public static extern bool IsWindowVisible(IntPtr hwnd);
-
-              [DllImport("user32.dll")]
-              public static extern IntPtr SendMessage(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
-
-              [DllImport("user32.dll")]
-              public static extern IntPtr GetDlgItem(IntPtr hwnd, int id);
-
-              [DllImport("user32.dll")]
-              public static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
-
-              [DllImport("user32.dll")]
-              public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
-
-              [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
-              public static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
-
-              [DllImport("gdi32.dll", CharSet = CharSet.Unicode)]
-              public static extern int GetObject(IntPtr handle, int size, out LOGFONT logfont);
-          }
-          "@
-
-          $process = Start-Process $exe -PassThru
-          try {
-            $null = $process.WaitForInputIdle(5000)
-            for ($attempt = 0; $attempt -lt 20; $attempt++) {
-              Start-Sleep -Milliseconds 100
-              $process.Refresh()
-              if ($process.HasExited) { throw "Windows calculator exited during startup with code $($process.ExitCode)" }
-              if ($process.MainWindowHandle -ne [IntPtr]::Zero) { break }
-            }
-            if ($process.MainWindowHandle -eq [IntPtr]::Zero) { throw 'Windows calculator did not create a main window' }
-
-            $buttons = [System.Collections.Generic.List[System.IntPtr]]::new()
-            $children = [System.Collections.Generic.List[System.IntPtr]]::new()
-            $callback = [CalcSmoke+EnumChildProc]{
-              param([IntPtr]$hwnd, [IntPtr]$lParam)
-              $children.Add($hwnd)
-              $name = [System.Text.StringBuilder]::new(64)
-              [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
-              if ($name.ToString() -ieq 'Button') { $buttons.Add($hwnd) }
-              return $true
-            }
-            [void][CalcSmoke]::EnumChildWindows($process.MainWindowHandle, $callback, [IntPtr]::Zero)
-
-            if ($buttons.Count -lt 100) {
-              throw "Windows keypad smoke test found only $($buttons.Count) child buttons; expected the mode controls and full calculator key grids"
-            }
-
-            $client = New-Object RECT
-            if (-not [CalcSmoke]::GetClientRect($process.MainWindowHandle, [ref]$client)) {
-              throw 'Could not read Windows calculator client geometry'
-            }
-            $clientWidth = $client.Right - $client.Left
-            $clientHeight = $client.Bottom - $client.Top
-            if ($clientWidth -gt 380 -or $clientHeight -gt 630) {
-              throw "Windows calculator default client area regressed to ${clientWidth}x${clientHeight}"
-            }
-
-            function Get-ButtonByText([string]$label) {
-              foreach ($hwnd in $buttons) {
-                $text = [System.Text.StringBuilder]::new(64)
-                [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
-                if ($text.ToString() -ceq $label) { return $hwnd }
-              }
-              return [IntPtr]::Zero
-            }
-
-            function Get-VisibleButtonByText([string]$label) {
-              foreach ($hwnd in $buttons) {
-                if (-not [CalcSmoke]::IsWindowVisible($hwnd)) { continue }
-                $text = [System.Text.StringBuilder]::new(64)
-                [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
-                if ($text.ToString() -ceq $label) { return $hwnd }
-              }
-              return [IntPtr]::Zero
-            }
-
-            function Get-VisibleButtonCount {
-              $count = 0
-              foreach ($hwnd in $buttons) {
-                if ([CalcSmoke]::IsWindowVisible($hwnd)) { $count++ }
-              }
-              return $count
-            }
-
-            $theme = Get-ButtonByText 'System'
-            $precision = Get-ButtonByText '50d'
-            $standard = Get-ButtonByText 'Standard'
-            $scientific = Get-ButtonByText 'Scientific'
-            $programmer = Get-ButtonByText 'Programmer'
-            $tools = Get-ButtonByText 'Tools'
-            $results = Get-ButtonByText 'Results'
-            $bases = Get-ButtonByText 'Bases'
-            if ($theme -eq [IntPtr]::Zero -or $precision -eq [IntPtr]::Zero -or
-                $standard -eq [IntPtr]::Zero -or $scientific -eq [IntPtr]::Zero -or
-                $programmer -eq [IntPtr]::Zero -or $tools -eq [IntPtr]::Zero -or
-                $results -eq [IntPtr]::Zero -or $bases -eq [IntPtr]::Zero) {
-              throw 'Windows theme/precision/mode/Tools/Results/Bases buttons were not found'
-            }
-
-            [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 80
-            $themeText = [System.Text.StringBuilder]::new(64)
-            [void][CalcSmoke]::GetWindowText($theme, $themeText, $themeText.Capacity)
-            if ($themeText.ToString() -ne 'Day') {
-              throw "Windows theme cycle failed: System did not advance to Day (got '$($themeText.ToString())')"
-            }
-            [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 80
-            [void]$themeText.Clear()
-            [void][CalcSmoke]::GetWindowText($theme, $themeText, $themeText.Capacity)
-            if ($themeText.ToString() -ne 'Night') {
-              throw "Windows theme cycle failed: Day did not advance to Night (got '$($themeText.ToString())')"
-            }
-            [void][CalcSmoke]::SendMessage($theme, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 80
-
-            $initialVisible = Get-VisibleButtonCount
-            if (-not [CalcSmoke]::IsWindowVisible($tools) -or
-                -not [CalcSmoke]::IsWindowVisible($results) -or
-                [CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Standard mode must show Tools/Results and hide Bases'
-            }
-
-            [void][CalcSmoke]::SendMessage($scientific, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 100
-            $scientificVisible = Get-VisibleButtonCount
-            if (-not [CalcSmoke]::IsWindowVisible($results) -or
-                [CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Scientific mode must show Results and hide Bases'
-            }
-
-            [void][CalcSmoke]::SendMessage($programmer, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 100
-            $programmerVisible = Get-VisibleButtonCount
-            if ([CalcSmoke]::IsWindowVisible($results) -or
-                -not [CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Programmer mode must hide Results and show Bases'
-            }
-
-            [void][CalcSmoke]::SendMessage($standard, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 100
-            $standardVisible = Get-VisibleButtonCount
-            if (-not [CalcSmoke]::IsWindowVisible($results) -or
-                [CalcSmoke]::IsWindowVisible($bases)) {
-              throw 'Windows Standard mode did not restore Results/Bases visibility'
-            }
-
-            if ($initialVisible -ne 37 -or $scientificVisible -ne 48 -or
-                $programmerVisible -ne 56 -or $standardVisible -ne 37) {
-              throw "Windows mode switching visibility contract failed: initial=$initialVisible scientific=$scientificVisible programmer=$programmerVisible standard=$standardVisible"
-            }
-
-            $memoryButton = Get-VisibleButtonByText 'MC'
-            $percentButton = Get-VisibleButtonByText '%'
-            if ($memoryButton -eq [IntPtr]::Zero -or $percentButton -eq [IntPtr]::Zero) {
-              throw 'Windows standard memory/operator controls were not found'
-            }
-            $memoryRect = New-Object RECT
-            $percentRect = New-Object RECT
-            [void][CalcSmoke]::GetWindowRect($memoryButton, [ref]$memoryRect)
-            [void][CalcSmoke]::GetWindowRect($percentButton, [ref]$percentRect)
-            if ($memoryRect.Top -ge $percentRect.Top -or
-                ($percentRect.Top - $memoryRect.Bottom) -gt 8) {
-              throw "Windows standard memory strip is not compactly separated above the keypad"
-            }
-
-            $three = Get-VisibleButtonByText '3'
-            $plus = Get-VisibleButtonByText '+'
-            $equals = Get-VisibleButtonByText '='
-            if ($three -eq [IntPtr]::Zero -or $plus -eq [IntPtr]::Zero -or $equals -eq [IntPtr]::Zero) {
-              throw 'Windows standard arithmetic buttons were not found'
-            }
-            [void][CalcSmoke]::SendMessage($three, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            [void][CalcSmoke]::SendMessage($plus, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            [void][CalcSmoke]::SendMessage($three, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            [void][CalcSmoke]::SendMessage($equals, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-            Start-Sleep -Milliseconds 100
-
-            $result = [CalcSmoke]::GetDlgItem(
-              $process.MainWindowHandle, 1020)
-            if ($result -eq [IntPtr]::Zero) {
-              throw 'Windows result control was not found'
-            }
-            $resultClassName = [System.Text.StringBuilder]::new(64)
-            $resultText = [System.Text.StringBuilder]::new(128)
-            [void][CalcSmoke]::GetClassName(
-              $result, $resultClassName, $resultClassName.Capacity)
-            [void][CalcSmoke]::GetWindowText(
-              $result, $resultText, $resultText.Capacity)
-            if ($resultText.ToString() -cne '6') {
-              throw "Windows UI arithmetic smoke test failed: 3 + 3 displayed '$($resultText.ToString())'"
-            }
-            if ($resultClassName.ToString() -ine 'Static') {
-              throw "Windows result copy surface regressed: expected clickable Static, got '$($resultClassName.ToString())'"
-            }
-
-            $title = [IntPtr]::Zero
-            foreach ($hwnd in $children) {
-              $name = [System.Text.StringBuilder]::new(64)
-              $text = [System.Text.StringBuilder]::new(128)
-              [void][CalcSmoke]::GetClassName($hwnd, $name, $name.Capacity)
-              [void][CalcSmoke]::GetWindowText($hwnd, $text, $text.Capacity)
-              if ($name.ToString() -ieq 'Static' -and $text.ToString() -ceq 'Calculator') {
-                $title = $hwnd
-                break
-              }
-            }
-            if ($title -eq [IntPtr]::Zero) { throw 'Windows title control was not found' }
-
-            $fontHandle = [CalcSmoke]::SendMessage($title, 0x0031, [IntPtr]::Zero, [IntPtr]::Zero)
-            $font = New-Object LOGFONT
-            $fontSize = [Runtime.InteropServices.Marshal]::SizeOf([type][LOGFONT])
-            if ($fontHandle -eq [IntPtr]::Zero -or
-                [CalcSmoke]::GetObject($fontHandle, $fontSize, [ref]$font) -eq 0) {
-              throw 'Windows title font could not be inspected'
-            }
-            if ($font.lfFaceName -ne 'MB Corpo A Title Cond WEB') {
-              throw "Windows did not use the required MB Corpo title font: $($font.lfFaceName)"
-            }
-
-            Write-Host "Windows UI smoke test passed: ${clientWidth}x${clientHeight}, theme cycling, compact memory strip, mode switching and 3+3 functional path correct, title font $($font.lfFaceName)."
-          }
-          finally {
-            if ($null -ne $process -and -not $process.HasExited) {
-              Stop-Process -Id $process.Id -Force
-            }
-          }
-
-      - name: Verify standalone Windows dependency boundary
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $exe = (Resolve-Path 'build-windows/Release/infiltrator-calc.exe').Path
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          if (-not (Test-Path $vswhere)) { throw 'vswhere.exe not found' }
-
-          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          if ([string]::IsNullOrWhiteSpace($vs)) { throw 'Visual Studio C++ tools not found' }
-
-          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-          if ($null -eq $dumpbin) { throw 'dumpbin.exe not found' }
-
-          $imports = (& $dumpbin.FullName /dependents $exe | Out-String)
-          $imports
-
-          $forbidden = @(
-            'libgcc', 'libstdc++', 'libwinpthread',
-            'libgtk', 'libglib', 'libgobject', 'libgio',
-            'libpango', 'libcairo', 'libharfbuzz',
-            'libfontconfig', 'libfreetype',
-            'VCRUNTIME', 'MSVCP'
-          )
-          foreach ($name in $forbidden) {
-            if ($imports -match [regex]::Escape($name)) {
-              throw "Standalone Windows boundary violated by dependency: $name"
-            }
-          }
+        run: pwsh -NoProfile -File support/ci/windows_smoke.ps1 -Executable build-windows/Release/infiltrator-calc.exe
 
       - name: Package standalone Windows executable
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = (Get-Content VERSION -Raw).Trim()
           New-Item -ItemType Directory -Force -Path 'dist/windows' | Out-Null
-          Copy-Item 'build-windows/Release/infiltrator-calc.exe' "dist/windows/calculator_${version}_windows_x64.exe"
-          if (-not (Test-Path "dist/windows/calculator_${version}_windows_x64.exe")) {
-            throw 'Windows release executable was not packaged'
-          }
+          $target = "dist/windows/calculator_${env:VERSION}_windows_x64.exe"
+          Copy-Item 'build-windows/Release/infiltrator-calc.exe' $target
+          if (-not (Test-Path $target)) { throw 'Windows release executable was not packaged' }
 
       - name: Upload Windows package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: calculator-windows-x64
           path: dist/windows/calculator_*_windows_x64.exe
           if-no-files-found: error
 
-
   ios:
+    needs: prepare
     runs-on: macos-latest
     timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
       - name: Checkout source and Common dependency
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -578,17 +232,10 @@ jobs:
           cmake --build build-macos --parallel
           ctest --test-dir build-macos --output-on-failure
 
-      - name: Generate and build iPhone app
+      - name: Generate and build iPhone Simulator app
         run: |
           set -euo pipefail
-          version="$(tr -d '[:space:]' < VERSION)"
-          test -n "$version"
-
-          (
-            cd ios
-            xcodegen generate --spec project.yml
-          )
-
+          (cd ios && xcodegen generate --spec project.yml)
           xcodebuild \
             -project ios/Calculator.xcodeproj \
             -scheme Calculator \
@@ -597,21 +244,15 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build-ios \
             CODE_SIGNING_ALLOWED=NO \
-            MARKETING_VERSION="$version" \
+            MARKETING_VERSION="$VERSION" \
             build
-
           app="$(find build-ios/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' -print -quit)"
-          test -n "$app"
-          test -d "$app"
-
+          test -n "$app" && test -d "$app"
           plutil -extract CFBundleIcons xml1 -o - "$app/Info.plist" >/dev/null
-          echo "iOS Simulator build verified with AppIcon metadata: $app"
 
       - name: Build unsigned iPhone device IPA
         run: |
           set -euo pipefail
-          version="$(tr -d '[:space:]' < VERSION)"
-
           xcodebuild \
             -project ios/Calculator.xcodeproj \
             -scheme Calculator \
@@ -620,45 +261,37 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath build-ios-device \
             CODE_SIGNING_ALLOWED=NO \
-            MARKETING_VERSION="$version" \
+            MARKETING_VERSION="$VERSION" \
             build
 
           app="$(find build-ios-device/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)"
-          test -n "$app"
-          test -d "$app"
-
+          test -n "$app" && test -d "$app"
           ipa_root="$RUNNER_TEMP/calculator-ipa"
           rm -rf "$ipa_root"
           mkdir -p "$ipa_root/Payload" dist/ios
           ditto "$app" "$ipa_root/Payload/Calculator.app"
-
-          ipa="$GITHUB_WORKSPACE/dist/ios/calculator_${version}_ios-device-unsigned.ipa"
-          (
-            cd "$ipa_root"
-            /usr/bin/zip -qry "$ipa" Payload
-          )
-
+          ipa="$GITHUB_WORKSPACE/dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa"
+          (cd "$ipa_root" && /usr/bin/zip -qry "$ipa" Payload)
           test -f "$ipa"
           /usr/bin/unzip -l "$ipa" | grep -q 'Payload/Calculator.app/Info.plist'
           plutil -extract CFBundleIdentifier raw -o - "$ipa_root/Payload/Calculator.app/Info.plist" \
             | grep -qx 'net.ssmith.infiltrator.calc'
-          echo "Unsigned iPhone IPA verified: $ipa"
 
       - name: Upload iOS IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: calculator-ios
           path: dist/ios/calculator_*_ios-device-unsigned.ipa
           if-no-files-found: error
 
-
   sanitizers:
-    runs-on: ${{ startsWith(github.event.head_commit.message, 'Release ') && 'ubuntu-latest' || 'linux-native' }}
+    needs: prepare
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Checkout source and Common dependency
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -685,171 +318,96 @@ jobs:
           ctest --test-dir build-sanitizers --output-on-failure
 
   publish:
-    needs: [linux, windows, ios, sanitizers]
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
+    needs: [prepare, linux, windows, ios, sanitizers]
+    if: needs.prepare.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
-      - name: Checkout release source and Common dependency
-        uses: actions/checkout@v4
+      - name: Checkout exact release source and Common dependency
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Download Linux package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: calculator-linux-amd64
           path: dist/linux
 
       - name: Download Windows package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: calculator-windows-x64
           path: dist/windows
 
       - name: Download iOS package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: calculator-ios
           path: dist/ios
 
       - name: Build deterministic source bundle
-        env:
-          VERSION: ${{ needs.linux.outputs.version }}
-        run: |
-          set -euo pipefail
-          root="$RUNNER_TEMP/calculator-source/Calculator-${VERSION}"
-          rm -rf "$RUNNER_TEMP/calculator-source"
-          mkdir -p "$root" dist/source
-          rsync -a \
-            --exclude='.git' \
-            --exclude='build-*' \
-            --exclude='dist' \
-            ./ "$root/"
-          epoch="$(git show -s --format=%ct "$GITHUB_SHA")"
-          find "$root" -exec touch -h -d "@$epoch" {} +
-          tar --sort=name \
-            --mtime="@$epoch" \
-            --owner=0 --group=0 --numeric-owner \
-            -C "$(dirname "$root")" \
-            -cf - "$(basename "$root")" \
-            | gzip -n > "dist/source/calculator_${VERSION}_source.tar.gz"
+        run: bash support/release/build_source_bundle.sh "$VERSION" "$GITHUB_SHA" "dist/source/calculator_${VERSION}_source.tar.gz"
 
       - name: Build hardware-native installer
-        env:
-          VERSION: ${{ needs.linux.outputs.version }}
-        run: |
-          set -euo pipefail
-          mkdir -p build-installer-tools dist/native
-          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -static \
-            support/tools/native_installer.cpp \
-            -o build-installer-tools/calculator-native-installer
-          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
-            support/tools/build_native_installer.cpp \
-            -o build-installer-tools/build-native-installer
-          installer="dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
-          build-installer-tools/build-native-installer \
-            build-installer-tools/calculator-native-installer \
-            "dist/source/calculator_${VERSION}_source.tar.gz" \
-            "$installer"
-          test -x "$installer"
-          "$installer" --help
+        run: bash support/release/build_native_installer.sh "$VERSION" "dist/source/calculator_${VERSION}_source.tar.gz" "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
 
-      - name: Verify cross-platform release assets
-        env:
-          VERSION: ${{ needs.linux.outputs.version }}
+      - name: Validate release asset set
         run: |
           set -euo pipefail
-          test -f "dist/linux/calculator_${VERSION}_amd64.deb"
-          test -f "dist/windows/calculator_${VERSION}_windows_x64.exe"
-          test -f "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa"
-          test -f "dist/source/calculator_${VERSION}_source.tar.gz"
-          test -x "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
           cp LICENSE dist/LICENSE.txt
+          python3 support/release/release_assets.py --version "$VERSION" --dist dist
 
-          sha256sum \
-            "dist/linux/calculator_${VERSION}_amd64.deb" \
-            "dist/windows/calculator_${VERSION}_windows_x64.exe" \
-            "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa" \
-            "dist/source/calculator_${VERSION}_source.tar.gz" \
-            "dist/native/infiltrator-calculator-${VERSION}-native-installer.run" \
-            "dist/LICENSE.txt" \
-            > dist/SHA256SUMS.txt
-
-      - name: Publish immutable cross-platform GitHub release
+      - name: Publish or reconcile cross-platform GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.linux.outputs.version }}
         run: |
           set -euo pipefail
-          gh release create "v${VERSION}" \
-            "dist/linux/calculator_${VERSION}_amd64.deb" \
-            "dist/windows/calculator_${VERSION}_windows_x64.exe" \
-            "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa" \
-            "dist/source/calculator_${VERSION}_source.tar.gz" \
-            "dist/native/infiltrator-calculator-${VERSION}-native-installer.run" \
-            "dist/LICENSE.txt" \
-            "dist/SHA256SUMS.txt" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "Calculator ${VERSION}" \
-            --generate-notes \
-            --latest
+          mapfile -t assets < dist/release-assets.txt
+          tag="v${VERSION}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag exists; reconciling the verified asset set."
+            gh release upload "$tag" \
+              "${assets[@]}" \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+            gh release edit "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Calculator ${VERSION}" \
+              --latest
+          else
+            gh release create "$tag" \
+              "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Calculator ${VERSION}" \
+              --generate-notes \
+              --latest
+          fi
 
   apt-publication:
     name: Check central APT publication
-    needs: [linux, windows, publish]
-    if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Release ')
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
+      - name: Checkout publication helper
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+
       - name: Check Package Repository publication
         env:
           DISPATCH_TOKEN: ${{ secrets.APT_REPOSITORY_DISPATCH_TOKEN }}
           RELEASE_SHA: ${{ github.sha }}
           APP_ID: infiltrator-calc
-          VERSION: ${{ needs.linux.outputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$VERSION"
-
-          catalogue='https://infiltrator-projects.github.io/Infiltrator-Repository/catalogue/apps.json'
-          dispatched=false
-
-          if [[ -n "${DISPATCH_TOKEN:-}" ]]; then
-            payload="$(jq -nc --arg repository "$GITHUB_REPOSITORY" --arg sha "$RELEASE_SHA"               '{event_type:"application-release",client_payload:{repository:$repository,sha:$sha}}')"
-            if curl --fail-with-body --silent --show-error               --request POST               --header "Authorization: Bearer $DISPATCH_TOKEN"               --header "Accept: application/vnd.github+json"               --header "X-GitHub-Api-Version: 2022-11-28"               --data "$payload"               https://api.github.com/repos/Infiltrator-Projects/Infiltrator-Repository/dispatches; then
-              dispatched=true
-              echo "Requested immediate central APT refresh."
-            else
-              echo "::warning::Immediate central APT dispatch failed; falling back to tokenless discovery."
-            fi
-          else
-            echo "No cross-repository token configured. Package Repository owns tokenless scheduled discovery."
-          fi
-
-          # A release repository cannot synchronously force another repository's
-          # workflow with GITHUB_TOKEN: that token is intentionally scoped to
-          # this repository. Poll briefly for fast-path publication, but do not
-          # turn a valid Calculator release red when the independent tokenless
-          # pull schedule is delayed by GitHub Actions.
-          for attempt in $(seq 1 60); do
-            if curl -fsS --retry 2 --retry-delay 1               -H 'Cache-Control: no-cache'               "$catalogue?release=$RELEASE_SHA&attempt=$attempt"               | jq -e --arg id "$APP_ID" --arg version "$VERSION"                 '.[] | select(.id == $id and .version == $version)' >/dev/null; then
-              echo "APT repository advertises $APP_ID $VERSION."
-              exit 0
-            fi
-            echo "Waiting for central APT discovery of $APP_ID $VERSION ($attempt/60)..."
-            sleep 10
-          done
-
-          if [[ "$dispatched" == true ]]; then
-            echo "::error::An immediate APT refresh was accepted, but $APP_ID $VERSION was not published within 10 minutes."
-            exit 1
-          fi
-
-          echo "::warning::Calculator release is valid and published, but tokenless central APT discovery has not propagated yet. Infiltrator-Repository owns the asynchronous refresh and its workflow is the publication authority."
-          exit 0
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: bash support/release/check_apt_publication.sh
