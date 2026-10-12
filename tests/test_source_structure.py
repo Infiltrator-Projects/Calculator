@@ -40,7 +40,12 @@ assert "src/core/advanced_tools_internal.hpp" in ios, (
 dispatcher = (ROOT / "src" / "core" / "advanced_tools.cpp").read_text(
     encoding="utf-8"
 )
-BUDGETED_HANDLERS = {"graph_tool", "equation_tool"}
+BUDGETED_HANDLERS = {
+    "graph_tool",
+    "equation_tool",
+    "exact_decimal_tool",
+    "arbitrary_precision_tool",
+}
 for handler in (
     "engineering_tool",
     "unit_tool",
