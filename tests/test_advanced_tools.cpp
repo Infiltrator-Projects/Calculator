@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../src/core/advanced_tools.hpp"
 #include "../src/core/calculator.hpp"
+#include "../src/core/evaluation_budget.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -15,6 +16,17 @@ bool contains(const calculator::tools::ToolResult& r,const char* text){return r.
 int main(){
     using calculator::tools::AdvancedTool;
     using calculator::tools::evaluate;
+
+    calculator::EvaluationLimits tiny_limits;
+    tiny_limits.max_steps=2U;
+    calculator::EvaluationBudget tiny_budget(tiny_limits);
+    check(tiny_budget.charge()&&tiny_budget.charge()&&!tiny_budget.charge()&&
+          tiny_budget.error()=="evaluation requires too many steps",
+          "shared evaluation step budget");
+    calculator::EvaluationBudget cancelled_budget;
+    cancelled_budget.cancel();
+    check(!cancelled_budget.check()&&cancelled_budget.error()=="evaluation cancelled",
+          "shared evaluation cancellation");
 
     check(contains(evaluate(AdvancedTool::Engineering,"ohm 12 2"),"6e+00 ohm"),"engineering ohm");
     check(contains(evaluate(AdvancedTool::UnitConversion,"100 km mi"),"62.137"),"unit conversion");
@@ -111,12 +123,19 @@ int main(){
     check(contains(evaluate(AdvancedTool::ExactDecimal,"2/4"),"Exact fraction  1/2"),"exact rational common divisor");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"1/2"),"Exact decimal  0.5"),"terminating rational decimal");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"10/4"),"Exact decimal  2.5"),"reduced terminating decimal");
+    check(contains(
+              evaluate(AdvancedTool::ExactDecimal,
+                       "123456789012345678901234567890/10"),
+              "Exact fraction  12345678901234567890123456789/1"),
+          "cpp_int exact rational reduction");
 
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"2^128"),"340282366920938463463374607431768211456"),"big integer power");
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"100!"),"933262154439"),"big factorial");
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"-2^2"),"-4"),"big integer unary precedence");
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"(-2)^2"),"4"),"big integer parenthesized power");
     check(contains(evaluate(AdvancedTool::ArbitraryPrecision,"2^3^2"),"512"),"big integer right associative power");
+    check(!evaluate(AdvancedTool::ArbitraryPrecision,"2^100001").ok,
+          "big integer exponent budget");
 
     check(contains(evaluate(AdvancedTool::Complex,"mul 1,2 3,-4"),"11 + 2i"),"complex multiply");
     check(!evaluate(AdvancedTool::Complex,"div 1,2 0,0").ok,"complex divide zero");
