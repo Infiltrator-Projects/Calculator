@@ -1,10 +1,22 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "evaluation_budget.hpp"
+#include "scientific.hpp"
 
+#include <algorithm>
 #include <limits>
 #include <utility>
 
 namespace calculator {
+
+// scientific.cpp retains the parser implementation behind this internal
+// five-argument overload. Public callers see only the budget-aware overload in
+// scientific.hpp, so all external Scientific work crosses one resource gate.
+ScientificResult evaluate_scientific(
+    const std::string& expression,
+    const ScientificVariables& variables,
+    const Functions& functions,
+    AngleUnit angle_unit,
+    unsigned decimal_digits);
 
 EvaluationBudget::EvaluationBudget(EvaluationLimits limits)
     : limits_(std::move(limits)) {
@@ -111,6 +123,54 @@ bool EvaluationBudget::check_output_digits(std::size_t digits) noexcept {
 
 void EvaluationBudget::cancel() noexcept {
     cancelled_.store(true, std::memory_order_relaxed);
+}
+
+ScientificResult evaluate_scientific(
+    const std::string& expression,
+    const ScientificVariables& variables,
+    const Functions& functions,
+    AngleUnit angle_unit,
+    unsigned decimal_digits,
+    EvaluationBudget* budget) {
+    EvaluationBudget local_budget;
+    EvaluationBudget& active_budget = budget ? *budget : local_budget;
+
+    if (!active_budget.check_input(expression.size())) {
+        return {false, {}, active_budget.error(), {}};
+    }
+
+    // Charge deterministic textual work here; the parser retains its existing
+    // depth/factorial/domain guards. Repeated callers such as graph/root search
+    // share this budget, so thousands of individually small evaluations are
+    // bounded as one user operation rather than resetting on every probe.
+    const std::uint64_t textual_steps =
+        static_cast<std::uint64_t>(expression.size()) + 1U;
+    if (!active_budget.charge(textual_steps)) {
+        return {false, {}, active_budget.error(), {}};
+    }
+
+    const unsigned effective_digits = std::max(
+        kScientificMinDigits,
+        std::min(decimal_digits, kScientificMaxDigits));
+    if (!active_budget.check_output_digits(effective_digits)) {
+        return {false, {}, active_budget.error(), {}};
+    }
+
+    using ParserEntry = ScientificResult (*)(
+        const std::string&,
+        const ScientificVariables&,
+        const Functions&,
+        AngleUnit,
+        unsigned);
+    const auto parser_entry =
+        static_cast<ParserEntry>(&evaluate_scientific);
+    ScientificResult result = parser_entry(
+        expression, variables, functions, angle_unit, decimal_digits);
+
+    if (!active_budget.check()) {
+        return {false, {}, active_budget.error(), {}};
+    }
+    return result;
 }
 
 } // namespace calculator
