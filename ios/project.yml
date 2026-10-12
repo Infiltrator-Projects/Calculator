@@ -23,6 +23,8 @@ targets:
       - path: Bridge
       - path: ../src/core/calculator.cpp
       - path: ../src/core/calculator.hpp
+      - path: ../src/core/evaluation_budget.cpp
+      - path: ../src/core/evaluation_budget.hpp
       - path: ../src/core/scientific.cpp
       - path: ../src/core/scientific.hpp
       - path: ../src/core/advanced_tools.cpp

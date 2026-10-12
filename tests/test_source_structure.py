@@ -22,6 +22,17 @@ for relative in ADVANCED_MODULES:
     assert relative in cmake, f"CMake omits Advanced Tools module: {relative}"
     assert f"../{relative}" in ios, f"iPhone omits Advanced Tools module: {relative}"
 
+for relative in (
+    "src/core/evaluation_budget.cpp",
+    "src/core/evaluation_budget.hpp",
+):
+    assert relative in cmake or relative.endswith(".hpp"), (
+        f"CMake omits evaluation-budget implementation: {relative}"
+    )
+    assert f"../{relative}" in ios, (
+        f"iPhone omits evaluation-budget source: {relative}"
+    )
+
 assert "src/core/advanced_tools_internal.hpp" in ios, (
     "iPhone source manifest omits the private Advanced Tools boundary"
 )
@@ -29,6 +40,7 @@ assert "src/core/advanced_tools_internal.hpp" in ios, (
 dispatcher = (ROOT / "src" / "core" / "advanced_tools.cpp").read_text(
     encoding="utf-8"
 )
+BUDGETED_HANDLERS = {"graph_tool", "equation_tool"}
 for handler in (
     "engineering_tool",
     "unit_tool",
@@ -48,7 +60,8 @@ for handler in (
     assert f"ToolResult {handler}(" not in dispatcher, (
         f"Advanced Tools domain implementation leaked back into dispatcher: {handler}"
     )
-    assert f"detail::{handler}(input)" in dispatcher, (
+    arguments = "input, active_budget" if handler in BUDGETED_HANDLERS else "input"
+    assert f"detail::{handler}({arguments})" in dispatcher, (
         f"Advanced Tools dispatcher no longer routes through private module: {handler}"
     )
 

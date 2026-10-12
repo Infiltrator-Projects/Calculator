@@ -867,6 +867,10 @@ private:
             error_ = "factorial requires a non-negative integer";
             return {};
         }
+        if (input > Real(std::numeric_limits<unsigned long>::max())) {
+            error_ = "factorial input too large";
+            return {};
+        }
         const unsigned long count =
             input.convert_to<unsigned long>();
         if (!budget_.check_factorial(static_cast<std::uint64_t>(count))) {
