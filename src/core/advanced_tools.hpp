@@ -6,6 +6,10 @@
 #include <string_view>
 #include <vector>
 
+namespace calculator {
+class EvaluationBudget;
+}
+
 namespace calculator::tools {
 
 // Shared resource bound for every Advanced Tools command. Native workbenches
@@ -67,7 +71,12 @@ const ToolDescriptor& descriptor(AdvancedTool tool) noexcept;
 
 // Evaluate one tool-domain command. User/input/domain failures are represented
 // by ToolResult::ok/error; graph tools additionally return shared sample points.
-// Platform shells must not reimplement the mathematical operation.
-ToolResult evaluate(AdvancedTool tool, std::string_view input);
+// Platform shells must not reimplement the mathematical operation. A supplied
+// budget is shared by iterative graph/root probes; other tools still receive
+// the same authoritative input/cancellation/deadline check at this boundary.
+ToolResult evaluate(
+    AdvancedTool tool,
+    std::string_view input,
+    EvaluationBudget* budget = nullptr);
 
 } // namespace calculator::tools
