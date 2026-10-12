@@ -8,7 +8,7 @@ Calculator is a native cross-platform calculator for the software family, with f
 
 The project is deliberately larger in ambition than a four-function calculator, but the implementation grows in layers. The calculation engine is independent of the graphical interface, while a shared platform-neutral controller defines calculator commands and interaction state once for every native shell. Desktop layout is additionally defined by a shared logical UI contract.
 
-**Current source version:** 0.2.37  
+**Version authority:** [`VERSION`](VERSION); CI rejects release-metadata drift before any platform build  
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge  
 **Shared foundation:** Common 1.19.35  
 **Design contract:** shared Design v1  
@@ -145,7 +145,7 @@ docs/                    Architecture, design, numerics, portability and validat
 
 ## Release direction
 
-The project uses `main` as its working branch and follows the project release discipline: test the exact source commit, build from that commit, and publish immutable release identities.
+The project uses `main` as its working branch and follows the project release discipline: test the exact source commit, build from that commit, and publish immutable release identities. `VERSION` is the single version authority. The release preflight requires the newest Debian changelog, human changelog and AppStream entry to agree with it; publication is triggered by an actual `VERSION` change (or an explicit manual publish), not by fragile commit-message wording. Pull requests run the same build/test gates without publishing. Release asset names, checksum generation and publication are driven from one generated manifest so those paths cannot silently diverge.
 
 The packaged form is a generic Debian package suitable for the Package Repository and future distribution integration.
 
