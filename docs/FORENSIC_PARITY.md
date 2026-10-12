@@ -28,8 +28,17 @@ and byte-order reversal; cross-platform native Linux/Windows/iPhone shells;
 keystroke-latency tests; Linux packaged idle-CPU tests; sanitizer builds; and
 independent MPFR/MPC numerical oracles.
 
+Scientific parsing, nested custom functions, factorial/power work, graph
+sampling, root solving, exact rational arithmetic and arbitrary-integer work
+share one bounded EvaluationBudget contract. It covers input bytes, cumulative
+work, parser/function depth, factorial and exponent limits, output size,
+cancellation and optional monotonic deadlines rather than scattering unrelated
+resource guards through those engines.
+
 Advanced Tools Complex arithmetic and arbitrary roots reuse the Scientific
-multiprecision engine. They are not separate binary64 implementations.
+multiprecision engine. Exact rational and arbitrary-integer tools use the pinned
+Boost.Multiprecision `cpp_int` backend rather than maintaining a second bespoke
+big-integer container.
 
 ## Intentional differences — do not report as defects without new evidence
 
