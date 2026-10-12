@@ -25,6 +25,7 @@ targets:
       - path: ../src/core/calculator.hpp
       - path: ../src/core/scientific.cpp
       - path: ../src/core/scientific.hpp
+      - path: ../src/core/evaluation_budget.hpp
       - path: ../src/core/advanced_tools.cpp
       - path: ../src/core/advanced_tools_conversion.cpp
       - path: ../src/core/advanced_tools_analysis.cpp
