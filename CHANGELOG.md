@@ -6,6 +6,23 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.39 — 2026-10-12
+
+- Replace release publication based on a `Release ` commit-message prefix with explicit `VERSION`-change detection plus an intentional manual-publish input.
+- Add an early release-metadata preflight that requires `VERSION`, the Debian changelog, this changelog and the newest AppStream release to agree before expensive platform jobs start.
+- Remove the literal source-version copy from README so `VERSION` is the single authority rather than one of several values humans must remember to bump.
+- Move the large Debian package check, Linux idle-CPU smoke test, Windows native runtime/dependency smoke test, deterministic source bundling, native-installer assembly and central APT polling out of workflow YAML into focused support scripts.
+- Generate the release asset list and SHA-256 manifest once from a canonical asset definition instead of repeating the same filenames across verification, hashing and publication steps.
+- Run the full verification workflow for pull requests, pin GitHub Actions to immutable commit SHAs, default the workflow token to read-only and grant write access only to the publication job.
+- Add controlled weekly Dependabot updates for GitHub Actions revisions.
+
+## 0.2.38 — 2026-09-28
+
+- Rework the iPhone main layout so the title can no longer be crushed by toolbar controls.
+- Stack the branding above 44-point toolbar actions and keep the title and kicker to one line.
+- Use one natural page scroll, compact the display and keypad spacing, and retain 46-point keys.
+- Shorten the expression prompt and bound Common spacing metrics to phone-friendly values.
+
 ## 0.2.37 — 2026-09-28
 
 - Replace the published raw unsigned iPhone app ZIP with a real IPA archive.
@@ -99,7 +116,7 @@ No unreleased changes.
 
 - Move Calculator from Common 1.19.23 to released Common 1.19.24 at immutable commit `748e089ae175329471d4cf375522c44081371bd5`.
 - Inherit Common's hardened graphics clipping, alias-safe in-place surface operations and overflow-safe nearest-neighbour mapping without changing Calculator's public or domain semantics.
-- Refresh maintained Common-boundary documentation and regression expectations to the exact 1.19.24 release.
+- Refresh maintained Common-boundary documentation and regression expectations to the exact Common 1.19.24 release.
 - Revalidate Linux, Windows, iPhone and ASan/UBSan builds, including the warning-fatal packaged Linux GUI smoke test introduced by 0.2.25.
 
 ## 0.2.25 — 2026-09-22
