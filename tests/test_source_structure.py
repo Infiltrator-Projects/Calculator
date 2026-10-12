@@ -16,6 +16,9 @@ ADVANCED_MODULES = (
 for relative in ADVANCED_MODULES:
     assert (ROOT / relative).is_file(), f"missing Advanced Tools module: {relative}"
 
+budget_header = "src/core/evaluation_budget.hpp"
+assert (ROOT / budget_header).is_file(), "missing shared evaluation budget boundary"
+
 cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 ios = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
 for relative in ADVANCED_MODULES:
@@ -24,6 +27,16 @@ for relative in ADVANCED_MODULES:
 
 assert "src/core/advanced_tools_internal.hpp" in ios, (
     "iPhone source manifest omits the private Advanced Tools boundary"
+)
+assert f"../{budget_header}" in ios, (
+    "iPhone source manifest omits the shared evaluation budget boundary"
+)
+
+internal = (ROOT / "src" / "core" / "advanced_tools_internal.hpp").read_text(
+    encoding="utf-8"
+)
+assert '#include "evaluation_budget.hpp"' in internal, (
+    "Advanced Tools no longer consume the shared evaluation budget"
 )
 
 dispatcher = (ROOT / "src" / "core" / "advanced_tools.cpp").read_text(
