@@ -69,7 +69,7 @@ jobs:
 
   linux:
     needs: prepare
-    runs-on: ${{ needs.prepare.outputs.release == 'true' && 'ubuntu-latest' || 'linux-native' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
@@ -82,7 +82,6 @@ jobs:
           fetch-depth: 0
 
       - name: Install Linux build dependencies
-        if: runner.environment == 'github-hosted'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -97,21 +96,6 @@ jobs:
             libmpfr-dev \
             pkg-config \
             xvfb
-
-      - name: Verify self-hosted Linux dependencies
-        if: runner.environment == 'self-hosted'
-        shell: bash
-        run: |
-          set -euo pipefail
-          for command_name in appstreamcli cmake ctest dpkg-buildpackage dpkg-deb g++ pkg-config python3 xvfb-run; do
-            command -v "$command_name" >/dev/null 2>&1 || {
-              echo "Self-hosted runner is missing $command_name." >&2
-              exit 1
-            }
-          done
-          pkg-config --exists gtk4
-          pkg-config --exists mpfr
-          pkg-config --exists mpc || test -f /usr/include/mpc.h
 
       - name: Compile native installer tooling
         shell: bash
@@ -302,7 +286,7 @@ jobs:
 
   sanitizers:
     needs: prepare
-    runs-on: ${{ needs.prepare.outputs.release == 'true' && 'ubuntu-latest' || 'linux-native' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
