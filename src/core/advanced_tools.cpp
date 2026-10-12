@@ -99,9 +99,9 @@ ToolResult evaluate(
     case AdvancedTool::EquationSolver:
         return detail::equation_tool(input, active_budget);
     case AdvancedTool::ExactDecimal:
-        return detail::exact_decimal_tool(input);
+        return detail::exact_decimal_tool(input, active_budget);
     case AdvancedTool::ArbitraryPrecision:
-        return detail::arbitrary_precision_tool(input);
+        return detail::arbitrary_precision_tool(input, active_budget);
     case AdvancedTool::Complex:
         return detail::complex_tool(input);
     case AdvancedTool::Financial:
