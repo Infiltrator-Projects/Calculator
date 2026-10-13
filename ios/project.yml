@@ -19,28 +19,17 @@ targets:
     type: application
     platform: iOS
     sources:
+      # Calculator owns these cohesive source trees. XcodeGen discovers their
+      # implementation/header members recursively, so adding a portable core
+      # translation unit cannot silently become a second iOS build manifest.
       - path: Sources
       - path: Bridge
-      - path: ../src/core/calculator.cpp
-      - path: ../src/core/calculator.hpp
-      - path: ../src/core/evaluation_budget.cpp
-      - path: ../src/core/evaluation_budget.hpp
-      - path: ../src/core/scientific.cpp
-      - path: ../src/core/scientific.hpp
-      - path: ../src/core/advanced_tools.cpp
-      - path: ../src/core/advanced_tools_conversion.cpp
-      - path: ../src/core/advanced_tools_analysis.cpp
-      - path: ../src/core/advanced_tools_exact.cpp
-      - path: ../src/core/advanced_tools_number.cpp
-      - path: ../src/core/advanced_tools.hpp
-      - path: ../src/core/advanced_tools_internal.hpp
-      - path: ../src/core/session.cpp
-      - path: ../src/core/session.hpp
-      - path: ../src/core/programmer.cpp
-      - path: ../src/core/programmer.hpp
-      - path: ../src/ui/calculator_ui_controller.cpp
-      - path: ../src/ui/calculator_ui_controller.hpp
-      - path: ../src/ui/calculator_ui_contract.hpp
+      - path: ../src/core
+      - path: ../src/ui
+
+      # Common is different: only its portable source set belongs in the iOS
+      # target. The contract test derives this list from Common's own CMake and
+      # fails if this explicit platform subset drifts.
       - path: ../src/infiltratr-common/src/core.c
       - path: ../src/infiltratr-common/src/arithmetic.c
       - path: ../src/infiltratr-common/src/config.c
