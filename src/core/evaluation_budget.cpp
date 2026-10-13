@@ -21,6 +21,13 @@ ScientificResult evaluate_scientific_unchecked(
 
 EvaluationBudget::EvaluationBudget(EvaluationLimits limits)
     : limits_(std::move(limits)) {
+    // max_output_digits is a caller-tightenable ceiling, never an override of
+    // Calculator's hard product safety bound. Treat zero (normally meaning
+    // "unbounded" for optional limits) as the hard ceiling for this field.
+    if (limits_.max_output_digits == 0U ||
+        limits_.max_output_digits > kEvaluationMaxOutputDigits) {
+        limits_.max_output_digits = kEvaluationMaxOutputDigits;
+    }
     if (limits_.timeout.count() > 0) {
         has_deadline_ = true;
         deadline_ = Clock::now() + limits_.timeout;
@@ -28,19 +35,21 @@ EvaluationBudget::EvaluationBudget(EvaluationLimits limits)
 }
 
 bool EvaluationBudget::fail(const char* message) noexcept {
+    failed_ = true;
     if (error_.empty()) {
         try {
             error_ = message ? message : "evaluation resource limit reached";
         } catch (...) {
-            // Resource checking must itself remain non-throwing. An empty
-            // message still leaves the operation failed through the return.
+            // Failure state is independent of diagnostic allocation. If the
+            // process cannot allocate the message, callers still observe a
+            // failed budget and abort the operation rather than continuing.
         }
     }
     return false;
 }
 
 bool EvaluationBudget::check() noexcept {
-    if (!error_.empty()) return false;
+    if (failed_) return false;
     if (cancelled_.load(std::memory_order_relaxed)) {
         return fail("evaluation cancelled");
     }
@@ -115,8 +124,7 @@ bool EvaluationBudget::check_power_exponent(
 
 bool EvaluationBudget::check_output_digits(std::size_t digits) noexcept {
     if (!check()) return false;
-    if (limits_.max_output_digits != 0U &&
-        digits > limits_.max_output_digits) {
+    if (digits > limits_.max_output_digits) {
         return fail("result exceeds evaluation output limit");
     }
     return true;
@@ -140,10 +148,10 @@ ScientificResult evaluate_scientific(
         return {false, {}, active_budget.error(), {}};
     }
 
-    // Charge deterministic textual work here; the parser retains its existing
-    // depth/factorial/domain guards. Repeated callers such as graph/root search
-    // share this budget, so thousands of individually small evaluations are
-    // bounded as one user operation rather than resetting on every probe.
+    // Charge deterministic textual work here; repeated callers such as graph
+    // and root search share this budget, so thousands of individually small
+    // evaluations are bounded as one user operation rather than resetting on
+    // every probe.
     const std::uint64_t textual_steps =
         static_cast<std::uint64_t>(expression.size()) + 1U;
     if (!active_budget.charge(textual_steps)) {
