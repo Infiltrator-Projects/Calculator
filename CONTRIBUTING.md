@@ -8,7 +8,7 @@ Calculator combines a portable C++ calculation core, a shared desktop interactio
 
 - Keep arithmetic, expression, session and Programmer semantics below platform presentation code.
 - Keep GTK, Win32 and SwiftUI/Objective-C++ mechanics out of the portable calculation domain.
-- Preserve the distinction between Standard immediate semantics, Scientific expression semantics and Programmer fixed-width integer semantics.
+- Preserve the distinction between Standard's conventional mathematical expression semantics, Scientific multiprecision semantics and Programmer fixed-width integer semantics.
 - Treat numerical edge behaviour as part of the feature contract: domains, finite-result requirements, width/radix rules, overflow policy and percentage semantics require deterministic tests.
 - Reuse the pinned Infiltratr Common API when its contract is the correct generic abstraction; improve Common first if Calculator has the stronger generic implementation.
 - Do not move Calculator-specific grammar, calculator interaction policy or mode semantics into Common merely to reduce local code.
@@ -46,7 +46,7 @@ Comments should preserve information expensive to reconstruct: units, precedence
 
 ## Repository discipline
 
-`main` is the authoritative development and release branch. Keep commits focused. Published tags/releases are immutable identities, and release assets must derive from the exact qualified source revision.
+`main` is the authoritative development and release branch. Keep commits focused. Published tags/releases are immutable identities, and release assets must derive from the exact qualified source revision. Manual publication is recovery only: reconcile an existing release from its tagged source revision, or recover a not-yet-tagged release only from the commit that introduced that VERSION.
 
 ## Licence
 
