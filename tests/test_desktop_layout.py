@@ -331,16 +331,18 @@ assert "context.stroke(path, with: .color(palette.text), lineWidth: 2)" in ios, 
     "iPhone graph curve no longer uses the Common text role"
 )
 
+# Calculator-owned portable UI sources are a cohesive XcodeGen source tree.
+# Common remains explicitly enumerated because only its Portable subset belongs
+# in the iOS target; that deliberate subset is independently checked against
+# Common's own CMake contract.
 for needle in (
-    "../src/ui/calculator_ui_controller.cpp",
-    "../src/ui/calculator_ui_controller.hpp",
-    "../src/ui/calculator_ui_contract.hpp",
+    "- path: ../src/ui",
     "../src/infiltratr-common/src/core.c",
     "../src/infiltratr-common/src/design.c",
     "../src/infiltratr-common/include",
     "ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon",
 ):
-    assert needle in ios_project, f"iPhone Common build integration missing: {needle}"
+    assert needle in ios_project, f"iPhone Common/build integration missing: {needle}"
 
 print("Cross-platform desktop UI parity contract passed.")
 
@@ -592,11 +594,11 @@ for needle in (
 ):
     assert needle in ios, f"iPhone advanced tools surface missing: {needle}"
 
-for needle in (
-    "../src/core/advanced_tools.cpp",
-    "../src/core/advanced_tools.hpp",
-):
-    assert needle in ios_project, f"iPhone advanced tools build integration missing: {needle}"
+# XcodeGen owns Calculator's complete portable core tree, so Advanced Tools do
+# not maintain a second per-file iPhone build list.
+assert "- path: ../src/core" in ios_project, (
+    "iPhone portable core source-tree ownership is missing"
+)
 
 for needle in (
     "src/core/advanced_tools.cpp",
