@@ -27,11 +27,17 @@ Standard mode deliberately uses IEEE-754 binary64 because it is the compact ever
 
 Scientific mode is a distinct arbitrary-precision real/complex domain backed by Boost.Multiprecision. The interactive controller uses 50 decimal digits; the core accepts requested precisions from 16 through a maintained ceiling of 1000 digits and is independently oracle-tested across that range. Decimal literals and intermediate Scientific arithmetic remain in that domain; they are not silently routed through binary64. The public Session/Controller boundary carries real and imaginary components as decimal text so platform shells do not acquire a third-party multiprecision ABI. Principal complex branches and exact quadrant/power special cases are Calculator-owned mathematical contracts rather than accidental backend behaviour.
 
-Exact decimal/rational tools, arbitrary-precision integer tools and Programmer fixed-width integers remain separate numeric domains because representation is part of their correctness contract. A further representation should be introduced only when a feature has a domain requirement that the existing representations cannot satisfy cleanly and that requirement can be stated and tested.
+Exact decimal/rational tools and arbitrary-precision integer tools also use the pinned Boost.Multiprecision mechanism rather than carrying a Calculator-owned big-integer implementation. Their grammar, exact-rational normalization, supported exponent/factorial ranges and product safety ceilings remain Calculator semantics. Programmer fixed-width integers remain a separate domain because wraparound is their contract rather than an arbitrary-precision failure case.
+
+Multiprecision Scientific and iterative/arbitrary-precision Advanced Tools share an `EvaluationBudget` for cumulative work, parser/function recursion, input size, output size, optional deadlines and cancellation. Standard's binary64 parser deliberately retains its separate parser-depth policy because its representation and workload are different; sharing a mechanism is required only when the semantic contract is genuinely the same.
+
+A further representation should be introduced only when a feature has a domain requirement that the existing representations cannot satisfy cleanly and that requirement can be stated and tested.
 
 ## Shared foundation boundary
 
-Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.27 for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
+Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f` for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
+
+The exact Common gitlink is part of the build identity independently of its VERSION text. CI verifies both and rejects private-header use, so an accidental dependency revision cannot silently become part of a Calculator release.
 
 Calculator-specific semantics stay local even when they could technically be generalized. Real unary/scientific transforms are shared inside Calculator because they are calculator-domain semantics; the controller and expression parser consume one core implementation rather than moving those rules into Common. Shared code is valuable only when the abstraction is clearer than the duplication it replaces.
 
@@ -53,13 +59,11 @@ A design change should have an identifiable improvement in at least one of corre
 
 Where behaviour is important enough to document as a contract, it should also be represented by automated tests where practical.
 
-
 ## Additional Results
 
 Primary calculation stays visually dominant. Secondary representations belong in an on-demand Additional Results surface rather than being permanently inserted into the keypad or display card. This follows the project's compact-window rule and gives future unit, symbolic or other secondary representations a stable home.
 
 The platform shell may choose native presentation mechanics, but labels and values come from the shared Controller. Programmer's existing Bases surface is the domain-specific form of the same representation model.
-
 
 ## Advanced Tools workbench
 
