@@ -20,15 +20,33 @@ cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 ios = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
 for relative in ADVANCED_MODULES:
     assert relative in cmake, f"CMake omits Advanced Tools module: {relative}"
-    assert f"../{relative}" in ios, f"iPhone omits Advanced Tools module: {relative}"
 
-assert "src/core/advanced_tools_internal.hpp" in ios, (
-    "iPhone source manifest omits the private Advanced Tools boundary"
+assert "src/core/evaluation_budget.cpp" in cmake, (
+    "CMake omits evaluation-budget implementation"
 )
+
+# XcodeGen owns Calculator's portable source trees as cohesive directories.
+# Do not recreate CMake's translation-unit list in project.yml: that historical
+# duplication allowed a new core module to compile on desktop while silently
+# disappearing from iOS until another manifest was edited by hand.
+for source_tree in ("../src/core", "../src/ui"):
+    assert f"- path: {source_tree}" in ios, (
+        f"iPhone no longer owns Calculator source tree: {source_tree}"
+    )
+for relative in ADVANCED_MODULES:
+    assert f"../{relative}" not in ios, (
+        f"iPhone has regressed to per-file Calculator manifest duplication: {relative}"
+    )
 
 dispatcher = (ROOT / "src" / "core" / "advanced_tools.cpp").read_text(
     encoding="utf-8"
 )
+BUDGETED_HANDLERS = {
+    "graph_tool",
+    "equation_tool",
+    "exact_decimal_tool",
+    "arbitrary_precision_tool",
+}
 for handler in (
     "engineering_tool",
     "unit_tool",
@@ -48,7 +66,8 @@ for handler in (
     assert f"ToolResult {handler}(" not in dispatcher, (
         f"Advanced Tools domain implementation leaked back into dispatcher: {handler}"
     )
-    assert f"detail::{handler}(input)" in dispatcher, (
+    arguments = "input, active_budget" if handler in BUDGETED_HANDLERS else "input"
+    assert f"detail::{handler}({arguments})" in dispatcher, (
         f"Advanced Tools dispatcher no longer routes through private module: {handler}"
     )
 

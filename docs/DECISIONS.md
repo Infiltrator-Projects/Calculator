@@ -78,7 +78,6 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** New mathematical capability must state its representation, error model and validation strategy before it is treated as production behaviour.
 
-
 ## ADR-010 — Share mechanics at the narrowest correct layer
 
 **Decision.** Product-neutral mechanics are consumed from pinned Common, while duplicate Calculator-domain semantics are consolidated inside the Calculator C++ core rather than promoted merely because two internal callers exist.
@@ -86,7 +85,6 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** Common supplies product-neutral parsing, checked arithmetic, deterministic ASCII, native design metrics, typography identity, asset provenance and platform infrastructure where its public contract is at least as strong as Calculator's need. Calculator mathematics and history/session presentation remain Calculator semantics and therefore have one Calculator-owned implementation.
 
 **Consequence.** The C/C++ split remains intentional: Common stays C11 infrastructure; Calculator state, parsers and domain logic stay C++17; native shells remain procedural adapters without acquiring mathematical/session ownership.
-
 
 ## ADR-011 — Common 1.19.8 is consumed through the existing public boundary
 
@@ -97,7 +95,6 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** Common 1.19.8 removes duplicated implementation mechanics inside Common without changing its public ABI. Calculator already consumes the relevant product-neutral contracts: decimal-token parsing, theme/palette, structural metrics, typography identity and font-asset provenance. Reaching into Common's new private ASCII or POSIX helpers would make the dependency less stable, not more complete.
 
 **Consequence.** Calculator receives the 1.19.8 implementation improvements everywhere Common is built, while Standard/Scientific/Programmer semantics, session state, history policy, controller behaviour and native platform adaptation remain in their correct Calculator-owned layers.
-
 
 ## ADR-012 — Common 1.19.10 semantic roles are consumed selectively
 
@@ -117,14 +114,13 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Standard/Scientific currently provide decimal, scientific and engineering representations; Programmer provides HEX/DEC/OCT/BIN. Platform shells own presentation and copy interaction only.
 
-
 ## ADR-014 — Scientific owns an arbitrary-precision real/complex domain
 
-**Status.** Active for numeric-domain separation; the former Standard immediate-execution semantic is superseded by ADR-016.
+**Status.** Active for numeric-domain separation; Standard interaction semantics are governed by ADR-016.
 
-**Decision.** Standard remains an IEEE-754 binary64 immediate-calculator domain. Scientific uses Calculator's Boost.Multiprecision real/complex domain at 50 decimal digits by default with a maintained ceiling of 1000 digits. Programmer remains an explicit fixed-width integer domain, while exact decimal/rational and arbitrary-precision integer tools retain their own representations.
+**Decision.** Standard remains an IEEE-754 binary64 real-number domain. Scientific uses Calculator's Boost.Multiprecision real/complex domain at 50 decimal digits by default with a maintained ceiling of 1000 digits. Programmer remains an explicit fixed-width integer domain, while exact decimal/rational and arbitrary-precision integer tools retain their own representations.
 
-**Rationale.** Representation determines what correctness claims are possible. Scientific expressions need precision and complex-domain behaviour that binary64 cannot provide without silent loss, while Standard's interaction contract does not benefit from importing that complexity.
+**Rationale.** Representation determines what correctness claims are possible. Scientific expressions need precision and complex-domain behaviour that binary64 cannot provide without silent loss, while Standard's smaller capability surface does not benefit from importing that representation complexity.
 
 **Consequence.** Scientific decimal literals and intermediate operations remain in the multiprecision backend. The Session/Controller boundary transports real and imaginary components as decimal text, preserving precision without exposing the third-party multiprecision ABI to platform shells.
 
@@ -154,11 +150,20 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Unary transforms, Standard memory recall and future binary64 state-transfer paths must use `serialize_value()`, while `format_value()` and display preferences remain presentation-only. Regression tests verify exact bit-for-bit round trips over boundary values and 50,000 deterministic finite binary64 samples, plus controller tests with rounded/grouped display preferences and memory overflow/range cases.
 
-## ADR-018 — Common 1.19.24 is the current public shared-foundation boundary
+## ADR-018 — Common 1.19.24 shared-foundation boundary
 
-**Decision.** Calculator pins immutable Common 1.19.24 at commit `748e089ae175329471d4cf375522c44081371bd5` and consumes only published Common interfaces whose contracts are at least as strong as the Calculator behaviour they replace.
+**Status.** Historical; superseded by ADR-019.
 
-**Rationale.** Common 1.19.24 retains the numeric parsing, deterministic ASCII, checked arithmetic, theme/palette/metrics/typography and POSIX persistence contracts already used by Calculator while hardening bounded text handling and descriptor-anchored durable atomic publication. The 1.19.24 delta preserves those interfaces while hardening existing graphics range clipping and aliased surface operations. Its promoted local-civil day-phase primitive remains reviewed but is not a substitute for Calculator's Gregorian civil-date transforms, so no unrelated temporal coupling is introduced merely to increase reuse.
+**Decision.** Calculator pinned immutable Common 1.19.24 at commit `748e089ae175329471d4cf375522c44081371bd5` and consumed only published Common interfaces whose contracts were at least as strong as the Calculator behaviour they replaced.
 
-**Consequence.** Calculator inherits the stronger Common persistence implementation without changing Calculator-owned arithmetic, date-tool semantics, session/controller behaviour or native-platform ownership. Scientific engineering-exponent parsing also uses Common's deterministic signed-integer parser, eliminating the final local `std::stoi` path. ADR-015 remains provenance only.
+**Rationale.** Common 1.19.24 retained the numeric parsing, deterministic ASCII, checked arithmetic, theme/palette/metrics/typography and POSIX persistence contracts already used by Calculator while hardening bounded text handling and descriptor-anchored durable atomic publication. Its promoted local-civil day-phase primitive was reviewed but was not a substitute for Calculator's Gregorian civil-date transforms, so no unrelated temporal coupling was introduced merely to increase reuse.
 
+**Consequence.** Calculator inherited the stronger Common persistence implementation without changing Calculator-owned arithmetic, date-tool semantics, session/controller behaviour or native-platform ownership. Scientific engineering-exponent parsing also uses Common's deterministic signed-integer parser. This entry remains dependency provenance only.
+
+## ADR-019 — Common 1.19.35 is the current public shared-foundation boundary
+
+**Decision.** Calculator pins immutable Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. The exact gitlink and public VERSION are build- and CI-validated, and Calculator consumes Common only through published interfaces whose contracts are at least as strong as the local behaviour they replace.
+
+**Rationale.** The current Common baseline preserves the product-neutral parsing, checked arithmetic, deterministic ASCII, durable POSIX I/O, design metrics and typography contracts already relied on by Calculator while providing the semantic design-palette fields now consumed by the native shells. Exact dependency identity matters independently of the VERSION text: another commit carrying the same version string is not an interchangeable build input.
+
+**Consequence.** Common is the one authority for those shared mechanisms and design contracts. Calculator retains ownership of expression grammar, numeric-domain policy, session/controller semantics, Advanced Tools behaviour and native shell adaptation. `tests/test_common_contract.py` protects both the exact dependency revision and the public-API boundary so future Common upgrades must be deliberate rather than incidental.

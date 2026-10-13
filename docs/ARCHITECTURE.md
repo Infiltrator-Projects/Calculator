@@ -1,34 +1,32 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Architecture
 
-Calculator is structured so that calculation semantics are independent of any graphical toolkit. The architecture separates mathematical domains, session state, calculator interaction state, shared product-neutral infrastructure and platform rendering.
+Calculator separates mathematical domains, session state, calculator interaction state, shared product-neutral infrastructure and native platform rendering. Calculation semantics are intentionally independent of graphical toolkits.
 
 ## First-principles design
 
-Calculator begins with explicit mathematical and interaction contracts rather than treating another calculator application as the specification. Conventional calculator behaviour, numerical standards, platform conventions and mature implementations are evidence to examine; Calculator retains ownership of the semantics it exposes.
+Calculator begins with explicit mathematical and interaction contracts rather than treating another calculator application as its specification. Conventional behaviour, numerical standards, platform conventions and mature implementations are evidence; Calculator retains ownership of the semantics it exposes.
 
-First principles does not mean reimplementing every mechanism. The C++ standard library, native platform toolkits and pinned Common are used where their documented contracts are the stronger engineering choice. Dependencies provide mechanisms; Calculator-specific arithmetic, parser, mode and interaction policy remain Calculator-owned.
+First principles does not mean reimplementing mechanisms that already have a stronger generic implementation. The C++ standard library, Boost.Multiprecision, native platform toolkits and pinned Common are used where their contracts are stronger. Calculator-specific arithmetic, parser, mode and interaction policy remain Calculator-owned.
 
 ## Architectural drivers
 
-The design is guided by five constraints:
+The design is governed by five constraints:
 
-1. the same calculation semantics must be testable without a GUI;
-2. Standard, Scientific and Programmer modes have intentionally different evaluation rules and must not be collapsed into one ambiguous parser;
-3. Linux, Windows and iPhone should share domain logic without forcing one platform's UI toolkit onto another;
-4. reusable product-neutral facilities belong in Common, while calculator-specific behaviour remains in this repository; and
-5. releases must be reproducible from an exact source revision and exact Common dependency.
+1. calculation semantics must be testable without a GUI;
+2. Standard, Scientific and Programmer have deliberately different numeric/capability domains and must not be collapsed into one ambiguous parser;
+3. Linux, Windows and iPhone share domain logic without forcing one UI toolkit across platforms;
+4. reusable product-neutral facilities belong in Common, while calculator-specific behaviour remains here; and
+5. a release is an exact source revision plus exact dependency identities, not merely a version string.
 
 ## Dependency direction
-
-The principal dependency direction is:
 
 ```text
 Linux GTK shell ────────┐
 Windows Win32 shell ────┼─> UI contract/controller ─> Session ─> expression core
 iPhone SwiftUI + bridge ─┘                             └──────> Programmer core
 
-Advanced Tools ───────────────────────────────> expression core (graph/root evaluation)
+Advanced Tools ───────────────────────────────> Scientific/domain mechanisms
 Calculator core / theme adapters / iOS bridge ─> Infiltratr Common
 ```
 
@@ -38,150 +36,136 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 ### Expression core
 
-src/core/scientific.* owns the arbitrary-precision real/complex expression domain used by Scientific calculations and precise reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation without routing Scientific intermediates through binary64. src/core/calculator.* remains the binary64 foundation used by Standard mode and supporting finite-real facilities.
+`src/core/scientific.*` owns the arbitrary-precision real/complex expression domain used by Scientific calculations and precise reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation without routing Scientific intermediates through binary64. `src/core/calculator.*` remains the binary64 foundation used by Standard mode and supporting finite-real facilities.
 
-For the binary64 expression path in `src/core/calculator.*`, Calculator decides where the grammar expects a number and Common 1.19.27's `infiltratr_parse_double_token()` owns token recognition and exact locale-independent binary64 conversion. Scientific decimal literals are instead parsed directly into its multiprecision domain. This removes duplicate binary64 scanner mechanics without transferring Calculator's operator/function grammar into Common or routing Scientific input through `double`.
+For the binary64 expression path, Calculator decides where its grammar expects a number and Common 1.19.35 `infiltratr_parse_double_token()` owns locale-independent binary64 token conversion. Scientific decimal literals are parsed directly into the multiprecision domain. This shares conversion mechanics without transferring Calculator grammar into Common or lowering Scientific input through `double`.
 
-Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller both consume that contract, preventing platform/controller copies of square-root, reciprocal, trigonometric and logarithmic semantics.
+Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller consume that contract rather than carrying controller/platform copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
-### Standard arithmetic evaluation
+### Standard arithmetic
 
-Standard mode uses the binary64 arithmetic parser with named constants, variables and functions disabled. Its smaller keypad and grammar surface are a UI/capability distinction, not permission to redefine arithmetic: written infix expressions use conventional operator precedence, exponentiation remains right-associative, parentheses override precedence, and postfix `%` means division by 100.
+Standard uses the binary64 arithmetic parser with named constants, variables and functions disabled. Its smaller keypad and grammar surface are capability distinctions, not permission to redefine arithmetic: written infix expressions use conventional precedence, exponentiation is right-associative, parentheses override precedence, and postfix `%` means division by 100.
 
-The same parsed expression therefore has the same mathematical operator meaning in Standard and Scientific modes; the modes differ in available functions and numeric representation/precision, not in whether multiplication and division bind before addition and subtraction.
+The same written arithmetic operators therefore have the same mathematical meaning in Standard and Scientific. The modes differ in available terms and numeric representation/precision.
 
-Standard also separates computational state from presentation. Binary64 values crossing back into expression state use a shortest exact round-trip decimal serialization; result formatting remains free to round or group for display. Memory maintains an explicit binary64-availability invariant so overflow or a Scientific-only out-of-range value cannot silently become a different Standard value.
+Binary64 values crossing back into computational text use shortest exact round-trip serialization. Human result formatting may round or group for presentation but never becomes later computational state. Memory maintains an explicit binary64-availability invariant so overflow or a Scientific-only out-of-range value cannot silently become a different Standard value.
+
+### Scientific resource boundary
+
+Scientific evaluation and the iterative/arbitrary-precision Advanced Tools share `EvaluationBudget`. It owns the cumulative-work counter, Scientific parser/function recursion limits, input ceiling, arbitrary-precision output ceiling and optional deadline/cancellation path. Caller-supplied limits may tighten product safety bounds but may not relax the hard 20,000-digit arbitrary-precision output ceiling.
+
+Standard's binary64 parser deliberately retains its own parser-depth policy. That is not duplicated ownership of one concern: the Standard and Scientific evaluators are different numeric domains with different workload and representation contracts.
 
 ### Programmer domain
 
-`src/core/programmer.*` owns fixed-width integer calculation. Values are represented as bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Arithmetic overflow wraps by masking to that width; this is intentional Programmer-mode behaviour rather than an unchecked error in the general arithmetic domain. NAND/NOR and ROL/ROR live in the same width-aware layer, so masking and rotate-count semantics are portable and testable.
+`src/core/programmer.*` owns fixed-width integer calculation. Values are bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Arithmetic overflow wraps by masking to that width; this is intentional Programmer behaviour rather than an unchecked error in a general integer engine. Bit operations, shifts, rotates and byte swap live in the same width-aware layer.
 
-Signedness affects decimal presentation of the resulting bit pattern. It does not create a separate stored numeric representation.
+Signedness affects decimal presentation of the resulting bit pattern. It does not create a second stored representation.
 
-### Advanced tool domains
+### Advanced Tool domains
 
-`src/core/advanced_tools.hpp` is the stable public boundary for the fourteen non-keypad calculation families. The implementation is deliberately decomposed into the small dispatcher/catalogue in `advanced_tools.cpp`, shared private adapters in `advanced_tools_internal.hpp`, conversion/network/storage/time mechanics in `advanced_tools_conversion.cpp`, analysis/graph/root mechanics in `advanced_tools_analysis.cpp`, exact rational/arbitrary-integer mechanics in `advanced_tools_exact.cpp`, and financial/Unicode/number/complex mechanics in `advanced_tools_number.cpp`. This remains one portable C++ layer over explicit domain contracts rather than a platform helper.
+`src/core/advanced_tools.hpp` is the public boundary for fourteen non-keypad calculation families. Implementation is decomposed by cohesive domain: the dispatcher/catalogue in `advanced_tools.cpp`; private adapters in `advanced_tools_internal.hpp`; conversion/network/storage/time in `advanced_tools_conversion.cpp`; statistics/graph/root in `advanced_tools_analysis.cpp`; exact rational/arbitrary integer in `advanced_tools_exact.cpp`; and financial/Unicode/number/complex in `advanced_tools_number.cpp`.
 
-Graphing and equation solving reuse the Scientific expression evaluator with a supplied `x` variable; they do not carry a second expression grammar. Every probe is evaluated at the Advanced Tools Scientific precision before the final finite value is converted to binary64 for graph geometry and the deterministic interval solver. Graph sampling is shared, while each shell renders the resulting point sequence natively. Unit conversion likewise evaluates Calculator-owned exact decimal/ratio factor expressions in the Scientific domain, so definitions such as 5/9 and pi/180 are not first rounded into binary64. Exact decimal arithmetic uses decimal literals as exact rationals rather than converting them through binary64. Arbitrary precision is a separate integer domain with an explicit 20,000-digit safety ceiling. Complex arithmetic is an explicit pair-of-binary64 domain and is not silently mixed into the ordinary real parser.
+Graphing and equation solving reuse the Scientific evaluator with supplied `x`; they do not carry a second expression grammar. One `EvaluationBudget` spans all probes so thousands of individually small evaluations cannot reset resource accounting. Samples remain at Advanced Tools Scientific precision until finite graph geometry is converted to binary64.
 
-The Tools workbench is intentionally on-demand. It keeps the main Standard/Scientific/Programmer keypads compact while giving all three platform shells the same catalogue, prompt/example metadata, evaluation results and graph points.
+Unit conversion evaluates Calculator-owned exact decimal/ratio factor expressions in the Scientific domain, so factors such as 5/9 and pi/180 are not first rounded into binary64. Exact decimal arithmetic represents decimal literals as exact rationals. Exact rational and arbitrary-integer arithmetic use Boost.Multiprecision `cpp_int` as the generic integer mechanism; Calculator owns only the grammar, rational normalization, operation limits and user-visible failure semantics. Complex Advanced Tools route through the Scientific multiprecision domain rather than maintaining a weaker parallel binary64 complex engine.
+
+The Tools workbench is intentionally on demand. It keeps the primary Standard/Scientific/Programmer surfaces compact while all native shells consume the same catalogue, prompt/example metadata, evaluation results and graph points.
 
 ## Session layer
 
-`src/core/session.*` owns process-local state that spans individual calculations:
+`src/core/session.*` owns process-local state spanning calculations: reusable variables and functions, a newest-first memory stack, and structured calculation history. History is unbounded by default; embedders/tests may set an explicit limit.
 
-- reusable variables;
-- a newest-first calculator memory stack: MS pushes a slot, MR/M+/M− operate on the newest slot, MC clears all slots, and indexed recall/delete remain Session/Controller-owned; and
-- calculation history, unbounded by default with an optional explicit limit for embedders/tests.
-
-The session delegates mathematical evaluation to the core. It does not implement an alternate expression grammar.
-
-History is unbounded by default to match the maintained desktop behaviour, while embedders/tests may request an explicit Session limit. Session owns a monotonically advancing history revision and the canonical bounded history-text projection used by compact docks; platform shells update history views only when that revision changes instead of rebuilding history on every keystroke. Memory slots retain Scientific values plus an optional exact binary64 view so Standard recall never fabricates a lossy substitute for a Scientific-only value. Variables and user-defined functions may be persisted through the Controller-owned state document; memory and calculation history remain process/session-local.
+Session delegates mathematical evaluation to the core. It owns no alternate expression grammar. Its history revision allows compact views to update only when history changes. Memory slots retain Scientific values plus an optional exact binary64 view, so Standard recall never fabricates a lossy substitute for a Scientific-only value.
 
 ## Shared interaction layer
 
-`src/ui/calculator_ui_contract.hpp` defines the Calculator command vocabulary and canonical button specifications. It also owns desktop-only logical layout metrics and responsive layout classes.
+`src/ui/calculator_ui_contract.hpp` defines the command vocabulary, canonical button specifications and desktop logical layout metrics. `src/ui/calculator_ui_controller.*` owns interaction state and command dispatch across platforms. GTK and Win32 render it directly; the iPhone Objective-C++ bridge exposes it to SwiftUI. Platform code must not maintain competing calculator state machines.
 
-`src/ui/calculator_ui_controller.*` owns calculator interaction state and command dispatch across all three platforms. GTK and Win32 render it directly; the iPhone Objective-C++ bridge exposes its state and command surface to SwiftUI. Platform code must not maintain competing calculator state machines.
-
-Scientific live preview, calculation precision and identifier completion are also controller-owned interaction semantics. Preview uses Session's side-effect-free Scientific path; calculation precision is clamped to the shared 16..1000 digit contract; Tab completion consumes the core function/constant catalogue plus Session variables/functions and never gives a platform shell its own parser.
-
-Controller also owns the versioned persistent-state document for reusable variables, custom functions, Scientific precision and result-presentation preferences. Linux, Windows and iPhone store exactly those bytes through their native mechanisms; no platform shell defines a competing persistence grammar.
-
-The shared desktop metrics remain logical units. GTK consumes them through its layout system; Win32 maps them through per-monitor DPI-aware platform scaling. SwiftUI does not consume those desktop geometry values.
+Scientific live preview, precision and identifier completion are controller-owned interaction semantics. Controller also owns the versioned persistent-state document for reusable variables/functions, Scientific precision and result-presentation preferences. Linux, Windows and iPhone store exactly those bytes through native mechanisms; no shell defines a competing persistence grammar.
 
 ## Platform shells
 
 ### Linux
 
-`src/app/main.cpp` is a GTK4 adapter. It owns GTK widgets, CSS generation, system-theme observation, font discovery, clipboard/window integration and Linux theme persistence.
+`src/app/main.cpp` owns GTK widgets, CSS generation, system-theme observation, font discovery, clipboard/window integration and Linux storage integration. It adapts Controller state rather than owning arithmetic.
 
 ### Windows
 
-`src/app/windows_main.cpp` is a native Win32 adapter. It owns HWND/GDI rendering, DPI conversion, Windows theme observation, native font selection, Registry-backed theme persistence and Windows message handling.
+`src/app/windows_main.cpp` owns HWND/GDI rendering, DPI conversion, Windows theme observation, native font selection, Registry integration and message handling.
 
 ### iPhone
 
-The iPhone interface is native SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary between Swift and the shared C++ controller.
+The iPhone interface is SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary to the same C++ Controller. SwiftUI owns touch-native composition and platform presentation; expression edits and calculator commands remain shared semantics.
 
-SwiftUI owns touch-native composition, platform appearance observation and presentation. Expression edits, mode changes, command enablement, Scientific angle/2nd/HYP/F-E state, memory/history state and calculator operations are routed through the same C++ controller used by the desktop shells. The bridge also exposes the canonical Common Day/Night palette. Desktop geometry and cursor mechanics remain desktop concerns and are not imposed on SwiftUI.
+XcodeGen consumes Calculator's own `src/core` and `src/ui` directories as cohesive source trees. This avoids a second per-file Calculator manifest that could drift from the desktop build. Common is intentionally different: only its portable C subset belongs in iOS, and `tests/test_common_contract.py` derives the expected portable list from Common's own CMake contract.
 
 ## Common boundary
 
-Common is an exact git submodule dependency. Common 1.19.27 owns reusable facilities whose semantics are not specific to Calculator, including exact decimal-token conversion, the Design v1 semantic palette and structural roles, rendering metrics, canonical typography identity and immutable MB Corpo asset provenance. Calculator consumes those contracts together with Common's complete numeric parsers, deterministic ASCII grammar helpers, checked arithmetic, theme persistence keys and POSIX durable-file primitives while deliberately retaining its stricter no-fallback font policy.
+Common is an exact git-submodule dependency. The current authority is Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. CMake and `tests/test_common_contract.py` validate both public VERSION and exact gitlink because a different commit carrying the same version text is not an interchangeable release input.
 
-Calculator must consume Common through its published public surface. It must not include Common private headers such as internal ASCII/read helpers, because doing so would reverse the intended ownership boundary. Common's expanded semantic appearance roles are consumed where their meanings fit Calculator; connection-specific roles remain unused because Calculator has no connection concept.
+Common owns product-neutral numeric parsing, deterministic ASCII helpers, checked arithmetic, durable POSIX I/O, Design v1 semantic palette/metrics, typography identity and immutable MB Corpo asset provenance. Calculator consumes only Common's published headers. Private Common headers are forbidden by contract tests.
 
-Calculator owns expression grammar, Standard-mode capability restrictions, Programmer-mode width semantics, calculator state, command semantics and calculator-specific layout. Code is moved into Common only when it has a stable product-neutral contract and a demonstrated shared consumer.
+Calculator retains expression grammar, mode capability restrictions, Programmer width semantics, calculator/session state, command semantics and Calculator-specific layout. A mechanism moves to Common only when it has a stable product-neutral contract and Common's contract is at least as strong.
 
 ## Numerical representation
 
-Standard uses the binary64 real-number domain with conventional mathematical operator precedence; Scientific uses the shared arbitrary-precision real/complex domain; Programmer uses explicit fixed-width integer bit patterns. Representation is part of the contract rather than an implementation detail hidden by formatting.
+Standard is IEEE-754 binary64 real arithmetic; Scientific is arbitrary-precision real/complex; Programmer is explicit fixed-width bit patterns; exact rational and arbitrary integer tools use separate exact domains. Representation is a product contract, not a formatting detail.
 
-The detailed numerical model, parser semantics, evidence hierarchy, display policy and cross-platform expectations are maintained in [NUMERICS.md](NUMERICS.md). Cross-platform representation and ABI assumptions are maintained in [PORTABILITY.md](PORTABILITY.md).
+Detailed numerical semantics and evidence are maintained in [NUMERICS.md](NUMERICS.md); cross-platform representation and ABI assumptions in [PORTABILITY.md](PORTABILITY.md).
 
 ## Error model
 
-Calculation APIs return explicit success/error results. Invalid syntax, division by zero, unsupported domains and non-finite results are reported as calculation errors rather than silently propagated into the UI.
-
-Platform shells translate those results into presentation state; they do not reinterpret mathematical failure.
+Calculation APIs return explicit success/error results. Invalid syntax, division by zero, unsupported domains, resource-limit exhaustion and non-finite results are calculation failures rather than silently propagated state. Platform shells present those results; they do not reinterpret mathematical failure.
 
 ## Verification and release boundary
 
-The test suite covers expression grammar, bounded parser depth, Standard precedence semantics, Programmer behaviour, session state, UI contract/controller and cross-platform ownership rules. Windows additionally performs native runtime smoke checks. iOS CI compiles both the Simulator and unsigned ARM64 device targets; the Simulator is test evidence, not a public release artifact.
+The suite covers grammar and numeric boundaries, parser depth, Standard precedence, Programmer semantics, session/controller state, Advanced Tools resource limits, Common integration, source ownership, native runtime/package behaviour and platform builds. Windows performs a native runtime/dependency smoke check. iOS CI compiles Simulator and unsigned ARM64-device targets; that proves target compilation and package structure, not signed physical-device installation.
 
-A release is published only after Linux, Windows and iOS jobs succeed from the same source revision. Public binaries and a deterministic source bundle containing the exact Common checkout are derived from that revision, and the Debian package is then verified through the Package Repository publication path. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
+A release is published only after Linux, Windows, iOS and sanitizer gates succeed from one source revision. VERSION is the version authority and redundant Debian/CHANGELOG/AppStream metadata must agree. Manual publication is recovery only: an existing release may be reconciled only while checked out at its exact tag commit; a not-yet-tagged release may be recovered only from the commit that introduced that forward VERSION transition. This prevents later same-version source from replacing immutable release bytes.
+
+Public platform binaries, the deterministic source bundle, native installer, licence and checksum manifest derive from the qualified revision. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
 
 ## Compatibility and runtime identity
 
-The user-facing product and repository are Calculator. Runtime/configuration identifiers that would break installed upgrades, persisted settings or application identity may intentionally retain compatibility naming.
-
-Compatibility identity is not branding. A migration is justified only when it preserves or deliberately transforms existing user state and package continuity. This distinction is recorded in [DECISIONS.md](DECISIONS.md) and [PORTABILITY.md](PORTABILITY.md).
+The user-facing product and repository are Calculator. Runtime/configuration identifiers that would break installed upgrades, persisted settings or application identity may intentionally retain compatibility naming. Compatibility identity is not branding; migration is justified only when it safely preserves or deliberately transforms user state/package continuity.
 
 ## Security and trust model
 
-Calculator parses local expression/variable text and platform configuration as external input. Malformed syntax, numeric overflow/domain failure and unsupported Programmer input must remain contained calculation failures rather than causing undefined behaviour or host command execution.
+Calculator parses local expressions, persisted state and platform configuration as external input. Malformed syntax, numeric-domain failure and resource exhaustion must remain contained calculation failures rather than undefined behaviour or host command execution.
 
-The product has no project-owned privileged daemon or network service. Platform shells own local preference and native UI integration; the portable core must not acquire platform authority merely because a frontend supplies input.
+The product has no project-owned privileged daemon or network service. Platform shells own local preference/native UI integration; the portable core must not acquire platform authority merely because a frontend supplies input.
 
-Release integrity is part of the trust boundary: published artifacts must derive from the exact qualified source revision and must match the release checksum set.
+Release integrity is part of this trust boundary: published artifacts must derive from the exact qualified source revision and match the canonical checksum set.
 
 ## Specialist documents
 
 - [NUMERICS.md](NUMERICS.md) — numeric domains, parser/percentage semantics, evidence basis and precision/error expectations.
 - [TOOLS.md](TOOLS.md) — Advanced Tools catalogue, input grammar, domains and validation rules.
 - [PORTABILITY.md](PORTABILITY.md) — platform, representation, locale, ABI and compatibility boundaries.
-- [UI_PARITY.md](UI_PARITY.md) — shared desktop interaction ownership and iPhone parity boundary.
+- [UI_PARITY.md](UI_PARITY.md) — shared interaction ownership and iPhone parity boundary.
 - [VALIDATION.md](VALIDATION.md) — automated, native-environment and release evidence limits.
 
 ## Design rule
 
-A calculation rule must have one authoritative implementation. If a platform shell needs to reproduce mathematical or calculator-state logic in order to render a control, the abstraction boundary is wrong and should be corrected before adding another copy.
-
+A calculation rule must have one authoritative implementation. If a shell must reproduce mathematical or calculator-state logic to render a control, the boundary is wrong and should be corrected before adding another copy.
 
 ## Packaging boundary
 
 Common is a build/link dependency only. Calculator adds it with `EXCLUDE_FROM_ALL`; Calculator packages must not install Common libraries, headers or CMake metadata.
 
-
 ## Structured history and recall
 
-History is a structured domain model, unbounded by default unless an explicit Session limit is supplied, rather than a platform-owned text log. Each entry records its Calculator mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, fixed width and signed-display context so recall is deterministic even for values that cannot be represented exactly by binary64.
+History is structured domain state rather than a platform-owned text log. Each entry records mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, width and signed-display context so recall is deterministic. Platform shells render/select entries but do not reconstruct mode state or reinterpret history.
 
-The shared Controller exposes newest-first history access and recall. Platform shells render and select those entries but do not reconstruct mode state or reinterpret history themselves. Wide desktop history docking remains a non-interactive summary; explicit recall is handled by the dedicated history surface.
+## Common 1.19.35 semantic presentation boundary
 
+Calculator treats Common's semantic design palette as data, not as a product-specific widget implementation. Native shells map only roles whose semantics apply: headings/results, summaries/input text, kicker/detail/note text, status borders, selected summaries, warnings and focus/hover accents. Connection-specific roles remain unused because Calculator has no connection concept.
 
-## Common 1.19.27 semantic presentation boundary
-
-Calculator treats Common's semantic design palette as data, not as a product-specific widget implementation. Native shells resolve the same Common Day/Night structure and map only semantically relevant roles: headings/results, summaries/input text, kicker/detail/note text, status borders, selected summaries, warning states and focus/hover accents. Connection-specific roles remain unused because Calculator has no connection concept; consuming every field mechanically would weaken rather than strengthen the ownership model.
-
-Windows additionally consumes Common's titlebar and status-border roles for DWM non-client rendering. GTK and Win32 expose keyboard-visible focus using the shared accent-hover role, while SwiftUI keeps native focus/accessibility behaviour and receives explicit key labels/selection state.
-
+Windows additionally consumes Common titlebar/status-border roles for DWM non-client rendering. GTK and Win32 expose keyboard-visible focus through the shared accent semantics; SwiftUI retains native focus/accessibility behaviour while consuming shared labels and selection state.
 
 ## Additional Results boundary
 
-Additional Results is a Calculator-owned representation model, not another calculation engine. The shared Controller evaluates the active domain once and emits labelled representations for native shells to display.
+Additional Results is a Calculator-owned representation model, not another calculation engine. Controller evaluates the active domain once and emits labelled representations for native shells.
 
-Standard exposes decimal, scientific and engineering forms of its finite binary64 value. Scientific builds General/Fixed/Scientific/Engineering representations directly from its retained arbitrary-precision real/complex value. Programmer exposes hexadecimal, signed-or-unsigned decimal, octal and grouped binary forms of the same masked fixed-width bit pattern. Platform shells do not re-evaluate expressions, down-convert precise Scientific values or reinterpret signedness to build these rows.
-
-This deliberately creates an extensible result surface for future unit, symbolic or other representation families. Existing exact and complex domains remain owned by their current calculation engines; new result families can extend the shared model without increasing keypad density or creating platform-specific mathematics.
+Standard exposes decimal/scientific/engineering forms of its finite binary64 value. Scientific builds General/Fixed/Scientific/Engineering forms from its retained arbitrary-precision value. Programmer exposes hexadecimal, signed-or-unsigned decimal, octal and grouped binary forms of one masked bit pattern. Shells do not re-evaluate expressions, down-convert Scientific values or reinterpret signedness to build these rows.

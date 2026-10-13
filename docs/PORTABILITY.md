@@ -26,6 +26,8 @@ Standard uses C++ `double` and relies on the supported toolchains/platforms prov
 
 Scientific uses Calculator's explicit Boost.Multiprecision real/complex backend. That backend remains private to the Scientific implementation; Session, Controller and platform boundaries carry real and imaginary components as decimal text so no third-party multiprecision ABI crosses into GTK, Win32, Objective-C++ or Swift.
 
+Exact rational and arbitrary-integer tools use Boost.Multiprecision `cpp_int` as a private implementation mechanism. Their public contract is Calculator-owned text/results and resource semantics, not a Boost ABI.
+
 Formatted decimal text must not be confused with the internal value of a binary64 domain, while Scientific boundary text is deliberately the stable transport representation of its retained precise components. Numerical semantics and tolerance expectations are defined in [NUMERICS.md](NUMERICS.md).
 
 Support for a platform with materially different binary floating-point or multiprecision behaviour is a compatibility decision requiring explicit validation rather than an automatic consequence of successful compilation.
@@ -38,19 +40,21 @@ External or cross-language boundaries should use explicit-width types where bit 
 
 ## Locale and text boundaries
 
-Numeric expression syntax is locale-independent. Common 1.19.24 owns Calculator's binary64 token/whole-value conversion and complete integer parsing, while deterministic ASCII helpers own grammar classification and case folding. Calculator therefore does not carry competing locale-sensitive scanners or identifier classification.
+Numeric expression syntax is locale-independent. Common 1.19.35 owns Calculator's binary64 token/whole-value conversion and complete integer parsing, while deterministic ASCII helpers own grammar classification and case folding. Calculator therefore does not carry competing locale-sensitive scanners or identifier classification.
 
 User-interface text and platform font rendering may vary by locale/platform, but locale must not silently change the meaning of Calculator's decimal grammar, operators or Programmer radices.
 
 Strings crossing Objective-C++/Swift and native desktop boundaries must use the platform APIs' documented encoding contracts. A presentation encoding issue must not become a second numeric grammar.
 
-## iPhone bridge
+## iPhone bridge and build ownership
 
 `CalculatorBridge` is the language boundary between Swift and the C++ controller. It converts Swift expression/mode/key operations into controller operations, snapshots controller state for presentation, and exposes Common semantic palette values to Swift.
 
-SwiftUI owns touch layout and System appearance resolution. The bridge is deliberately thin: it must not implement arithmetic, memory, history, Programmer or mode semantics independently. The same versioned Controller persistence document carries cross-platform semantic state (mode, angle unit, Programmer context, precision, presentation preferences, history retention, variables and functions); native platforms own only the storage mechanism and truly platform-local window/theme state.
+SwiftUI owns touch layout and System appearance resolution. The bridge is deliberately thin: it must not implement arithmetic, memory, history, Programmer or mode semantics independently. The same versioned Controller persistence document carries cross-platform semantic state; native platforms own only the storage mechanism and truly platform-local window/theme state.
 
-An iOS Simulator build proves Simulator-target compatibility. An unsigned iPhoneOS build proves device-architecture compilation. Neither substitutes for signed physical-device installation evidence.
+XcodeGen consumes `src/core` and `src/ui` as cohesive Calculator-owned source trees rather than duplicating CMake's per-file translation-unit manifest. Common remains explicitly enumerated because only its Portable C subset belongs in the iPhone target; CI derives that expected subset from Common's own CMake contract and rejects drift.
+
+An iOS Simulator build proves Simulator-target compatibility. An unsigned iPhoneOS build proves device-architecture compilation and IPA structure. Neither substitutes for signed physical-device installation evidence.
 
 ## Desktop geometry and DPI
 
@@ -72,9 +76,11 @@ Compatibility naming is an explicit migration concern, not an excuse for stale u
 
 ## Dependency boundary
 
-Common is pinned exactly and supplies reusable product-neutral primitives whose contract matches Calculator's needs. Calculator retains expression grammar, Standard-mode capability policy, Programmer policy and calculator-specific interaction.
+Common is pinned exactly at 1.19.35 commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. Both the version text and exact gitlink are validated because either one alone is insufficient to identify the dependency used for a release.
 
-If Calculator has a stronger implementation of a genuinely generic mechanism, improve Common until the shared contract preserves those advantages; do not weaken the Calculator domain simply to increase reuse.
+Common supplies reusable product-neutral primitives whose public contracts match Calculator's needs. Calculator retains expression grammar, Standard capability policy, Programmer policy, Advanced Tools semantics and calculator-specific interaction. Private Common headers are outside the supported dependency boundary.
+
+If Calculator has a stronger implementation of a genuinely generic mechanism, improve Common until the shared contract preserves those advantages; do not weaken the Calculator domain merely to increase reuse.
 
 ## Review test
 
@@ -86,10 +92,10 @@ A portable change should preserve these properties:
 - fixed-width Programmer behaviour does not rely on undefined signed overflow;
 - numeric grammar remains locale-independent;
 - Objective-C++/Swift adaptation routes commands through the shared controller rather than duplicating calculation rules;
+- Calculator source ownership is not duplicated into a second iOS per-file manifest;
 - native DPI/theme/font behaviour stays a presentation concern, with Windows using per-monitor DPI awareness;
 - compatibility identifiers change only through a deliberate migration; and
 - another native frontend could consume the domain contracts without copying an existing platform shell.
-
 
 ## Additional Results portability
 

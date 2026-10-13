@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "scientific.hpp"
+#include "evaluation_budget.hpp"
 
 #include <boost/multiprecision/cpp_complex.hpp>
 #include <infiltratr/core.h>
@@ -25,16 +26,6 @@ namespace {
 using Real = boost::multiprecision::number<
     boost::multiprecision::backends::cpp_bin_float<kScientificMaxDigits>>;
 using Complex = boost::multiprecision::cpp_complex<kScientificMaxDigits>;
-
-// Both expression nesting and user-function recursion are bounded separately:
-// one protects native parser stack depth, the other prevents cyclic/custom
-// function expansion from becoming an unbounded recursive evaluation.
-// These limits are deliberately conservative across the smallest supported
-// native stacks (notably Windows). They are product safety bounds, not
-// mathematical limits: ordinary calculator expressions should never need this
-// much recursive grammar or user-function expansion.
-constexpr std::size_t kMaxParseDepth = 16;
-constexpr std::size_t kMaxFunctionDepth = 16;
 
 unsigned clamp_digits(unsigned digits) {
     return std::max(kScientificMinDigits, std::min(digits, kScientificMaxDigits));
@@ -603,13 +594,15 @@ public:
         const Functions* functions,
         std::size_t function_depth,
         AngleUnit angle_unit,
-        unsigned digits)
+        unsigned digits,
+        EvaluationBudget& budget)
         : input_(input),
           variables_(variables),
           functions_(functions),
           function_depth_(function_depth),
           angle_unit_(angle_unit),
-          digits_(digits) {}
+          digits_(digits),
+          budget_(budget) {}
 
     ScientificResult run() {
         Complex value;
@@ -624,9 +617,16 @@ private:
     std::size_t function_depth_ = 0;
     AngleUnit angle_unit_ = AngleUnit::Radians;
     unsigned digits_ = kScientificDefaultDigits;
+    EvaluationBudget& budget_;
     std::size_t position_ = 0;
     std::size_t recursion_depth_ = 0;
     std::string error_;
+
+    bool charge(std::uint64_t amount = 1U) {
+        if (budget_.charge(amount)) return true;
+        if (error_.empty()) error_ = budget_.error();
+        return false;
+    }
 
     // Internal nested evaluation stays in the full backend precision. The
     // requested decimal precision is applied only when a value crosses the
@@ -734,6 +734,7 @@ private:
     }
 
     Complex parse_expression() {
+        if (!charge()) return {};
         Complex left = parse_term();
         while (error_.empty()) {
             if (consume('+')) left += parse_term();
@@ -744,6 +745,7 @@ private:
     }
 
     Complex parse_term() {
+        if (!charge()) return {};
         Complex left = parse_unary();
         while (error_.empty()) {
             if (consume('*')) {
@@ -777,8 +779,9 @@ private:
     }
 
     Complex parse_unary() {
-        if (recursion_depth_ >= kMaxParseDepth) {
-            error_ = "expression nesting too deep";
+        if (!charge()) return {};
+        if (!budget_.check_parse_depth(recursion_depth_ + 1U)) {
+            error_ = budget_.error();
             return {};
         }
 
@@ -792,10 +795,21 @@ private:
     }
 
     Complex parse_power() {
+        if (!charge()) return {};
         Complex left = parse_postfix();
         if (error_.empty() &&
             (consume('^') || consume_text("**"))) {
             const Complex right = parse_unary();
+            long long integral_exponent = 0;
+            if (real_integer_exponent(right, integral_exponent)) {
+                const std::uint64_t magnitude = integral_exponent < 0
+                    ? static_cast<std::uint64_t>(-(integral_exponent + 1LL)) + 1ULL
+                    : static_cast<std::uint64_t>(integral_exponent);
+                if (!budget_.check_power_exponent(magnitude)) {
+                    error_ = budget_.error();
+                    return {};
+                }
+            }
             bool valid = true;
             left = principal_power(left, right, valid);
             if (!valid) {
@@ -853,13 +867,17 @@ private:
             error_ = "factorial requires a non-negative integer";
             return {};
         }
-        if (input > 100000) {
+        if (input > Real(std::numeric_limits<unsigned long>::max())) {
             error_ = "factorial input too large";
             return {};
         }
-
         const unsigned long count =
             input.convert_to<unsigned long>();
+        if (!budget_.check_factorial(static_cast<std::uint64_t>(count))) {
+            error_ = budget_.error();
+            return {};
+        }
+        if (!charge(static_cast<std::uint64_t>(count))) return {};
         Real result = 1;
         for (unsigned long i = 2; i <= count; ++i) {
             result *= i;
@@ -868,6 +886,7 @@ private:
     }
 
     Complex parse_postfix() {
+        if (!charge()) return {};
         Complex value = parse_primary();
         while (error_.empty()) {
             if (consume('%')) {
@@ -877,6 +896,13 @@ private:
             } else {
                 long long exponent = 0;
                 if (!parse_superscript_exponent(exponent)) break;
+                const std::uint64_t magnitude = exponent < 0
+                    ? static_cast<std::uint64_t>(-(exponent + 1LL)) + 1ULL
+                    : static_cast<std::uint64_t>(exponent);
+                if (!budget_.check_power_exponent(magnitude)) {
+                    error_ = budget_.error();
+                    return {};
+                }
                 bool valid = true;
                 value = integer_power(value, exponent, valid);
                 if (!valid) {
@@ -931,8 +957,8 @@ private:
             error_ = "wrong function argument count";
             return {};
         }
-        if (function_depth_ >= kMaxFunctionDepth) {
-            error_ = "function recursion too deep";
+        if (!budget_.check_function_depth(function_depth_ + 1U)) {
+            error_ = budget_.error();
             return {};
         }
 
@@ -948,7 +974,7 @@ private:
 
         Parser nested(
             definition.expression, scoped, functions_,
-            function_depth_ + 1U, angle_unit_, digits_);
+            function_depth_ + 1U, angle_unit_, digits_, budget_);
         Complex result;
         if (!nested.run_internal(result)) {
             error_ = nested.error_;
@@ -1355,6 +1381,7 @@ private:
     }
 
     Complex parse_primary() {
+        if (!charge()) return {};
         skip_space();
         if (consume('(')) {
             const Complex value = parse_expression();
@@ -1470,17 +1497,18 @@ scientific_function_catalog() noexcept {
 // This is the only public construction path from expression text into the
 // multiprecision engine: normalize spelling, clamp the requested precision and
 // execute the bounded parser. Ordinary user errors stay in ScientificResult.
-ScientificResult evaluate_scientific(
+ScientificResult evaluate_scientific_unchecked(
     const std::string& expression,
     const ScientificVariables& variables,
     const Functions& functions,
     AngleUnit angle_unit,
-    unsigned decimal_digits) {
+    unsigned decimal_digits,
+    EvaluationBudget& budget) {
     const std::string normalized =
         normalize_expression_spelling(expression);
     return Parser(
         normalized, variables, &functions, 0U,
-        angle_unit, clamp_digits(decimal_digits)).run();
+        angle_unit, clamp_digits(decimal_digits), budget).run();
 }
 
 std::string scientific_value_expression(

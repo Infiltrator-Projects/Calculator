@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #pragma once
 
+#include "evaluation_budget.hpp"
+
 #include <array>
 #include <string>
 #include <string_view>
@@ -10,7 +12,8 @@ namespace calculator::tools {
 
 // Shared resource bound for every Advanced Tools command. Native workbenches
 // may reject oversized input earlier, but the core entry point is authoritative.
-inline constexpr std::size_t kMaxToolInputBytes = 8192U;
+inline constexpr std::size_t kMaxToolInputBytes =
+    EvaluationLimits{}.max_input_bytes;
 
 enum class AdvancedTool {
     Engineering,
@@ -67,7 +70,12 @@ const ToolDescriptor& descriptor(AdvancedTool tool) noexcept;
 
 // Evaluate one tool-domain command. User/input/domain failures are represented
 // by ToolResult::ok/error; graph tools additionally return shared sample points.
-// Platform shells must not reimplement the mathematical operation.
-ToolResult evaluate(AdvancedTool tool, std::string_view input);
+// Platform shells must not reimplement the mathematical operation. A supplied
+// budget is shared by iterative graph/root probes; other tools still receive
+// the same authoritative input/cancellation/deadline check at this boundary.
+ToolResult evaluate(
+    AdvancedTool tool,
+    std::string_view input,
+    EvaluationBudget* budget = nullptr);
 
 } // namespace calculator::tools

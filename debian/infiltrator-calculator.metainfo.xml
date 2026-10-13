@@ -32,6 +32,11 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.40" date="2026-10-13">
+      <description>
+        <p>Forensically harden arbitrary-precision ownership, cumulative evaluation limits, iPhone source wiring, maintained technical documentation and immutable release identity.</p>
+      </description>
+    </release>
     <release version="0.2.39" date="2026-10-12">
       <description>
         <p>Simplify and harden release orchestration with VERSION-driven publication, early metadata validation, extracted smoke helpers, one asset manifest and immutable GitHub Action revisions.</p>

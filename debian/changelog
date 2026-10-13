@@ -1,3 +1,14 @@
+infiltrator-calculator (0.2.40) unstable; urgency=medium
+
+  * Replace bespoke big-integer arithmetic with Boost.Multiprecision cpp_int.
+  * Add cumulative Scientific and Advanced Tools evaluation resource budgets.
+  * Bound exact and arbitrary-precision parser recursion and cooperative work.
+  * Remove duplicate per-file Calculator source wiring from the iPhone build.
+  * Bind release reconciliation to the exact immutable release source revision.
+  * Align maintained architecture, numerical and dependency documentation.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 13 Oct 2026 14:59:00 +1100
+
 infiltrator-calculator (0.2.39) unstable; urgency=medium
 
   * Replace commit-message release detection with VERSION-change preflight.

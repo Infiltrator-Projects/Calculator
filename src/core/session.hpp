@@ -57,8 +57,9 @@ public:
 
     // Supports direct assignment as name=expression. The identifier must begin
     // with an alphabetic character or '_' and '=' immediately follows the name.
-    // Every evaluation, including an error, is recorded in bounded history.
-    // Side-effect-free validation/evaluation using the same variables,
+    // Every evaluation, including an error, is recorded in Session history;
+    // an explicit non-zero history limit may evict the oldest entries.
+    // Side-effect-free validation/evaluation uses the same variables,
     // functions and assignment/definition grammar as evaluate().
     Result preview(
         const std::string& input,

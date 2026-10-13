@@ -4,9 +4,15 @@
 VERSION is the only version authority. The Debian changelog, human changelog
 and AppStream release list are deliberately redundant consumer metadata, so CI
 checks that their newest entries agree before any expensive platform build.
-Release publication is triggered by an actual VERSION change, never by commit
-message wording. An explicit manual publish may be used to reconcile a partial
-or interrupted release without manufacturing a new source version.
+Release publication is triggered by a forward VERSION change, never by commit
+message wording.
+
+Manual publication is recovery, not a second release path. An existing tag may
+be reconciled only while the workflow is running at that tag's exact source
+commit. If the tag was never created because the original publication stopped
+early, recovery is allowed only from the commit that actually introduced the
+new VERSION. This prevents a later same-version main commit from replacing a
+published release's bytes while retaining the old immutable tag identity.
 """
 
 from __future__ import annotations
@@ -39,6 +45,13 @@ def version() -> str:
     if not VERSION_RE.fullmatch(value):
         die(f"VERSION is not a strict semantic patch version: {value!r}")
     return value
+
+
+def version_tuple(value: str) -> tuple[int, int, int]:
+    if not VERSION_RE.fullmatch(value):
+        die(f"invalid semantic patch version: {value!r}")
+    major, minor, patch = (int(part) for part in value.split("."))
+    return major, minor, patch
 
 
 def validate_metadata(expected: str) -> None:
@@ -75,11 +88,9 @@ def validate_metadata(expected: str) -> None:
         die("README.md must refer to VERSION as the authority, not duplicate it")
 
 
-def previous_version(before: str) -> str | None:
-    if not before or set(before) == {"0"}:
-        return None
+def git_output(*args: str) -> str | None:
     completed = subprocess.run(
-        ["git", "show", f"{before}:VERSION"],
+        ["git", *args],
         cwd=ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -88,15 +99,80 @@ def previous_version(before: str) -> str | None:
     if completed.returncode != 0:
         return None
     value = completed.stdout.strip()
+    return value or None
+
+
+def version_at(revision: str) -> str | None:
+    value = git_output("show", f"{revision}:VERSION")
+    if value is None:
+        return None
+    value = value.strip()
     return value if VERSION_RE.fullmatch(value) else None
+
+
+def previous_version(before: str) -> str | None:
+    if not before or set(before) == {"0"}:
+        return None
+    return version_at(before)
+
+
+def head_commit() -> str:
+    value = git_output("rev-parse", "HEAD^{commit}")
+    if value is None:
+        die("unable to resolve the checked-out source commit")
+    return value
+
+
+def release_tag_commit(current: str) -> str | None:
+    return git_output("rev-parse", f"refs/tags/v{current}^{{commit}}")
+
+
+def validate_release_identity(current: str, *, manual: bool) -> None:
+    """Prove that publication cannot change the source behind a version tag."""
+    head = head_commit()
+    tagged = release_tag_commit(current)
+
+    if tagged is not None:
+        if tagged != head:
+            action = "manual reconciliation" if manual else "publication"
+            die(
+                f"{action} for v{current} must run at tagged source {tagged}, "
+                f"not {head}"
+            )
+        return
+
+    if not manual:
+        # A normal forward-version push is the authority that may create the
+        # tag for the first time. Existing-tag reuse was rejected above.
+        return
+
+    parent_version = version_at("HEAD^")
+    if parent_version is None or parent_version == current:
+        die(
+            "manual publication without an existing tag is allowed only from "
+            "the commit that introduced the current VERSION"
+        )
+    if version_tuple(parent_version) >= version_tuple(current):
+        die(
+            "manual publication requires a forward VERSION transition "
+            f"({parent_version} -> {current})"
+        )
 
 
 def should_publish(event: str, before: str, manual_publish: bool, current: str) -> bool:
     if event == "push":
         previous = previous_version(before)
-        return previous is not None and previous != current
-    if event == "workflow_dispatch":
-        return manual_publish
+        if previous is None or previous == current:
+            return False
+        if version_tuple(current) <= version_tuple(previous):
+            die(f"VERSION must move forward for release publication ({previous} -> {current})")
+        validate_release_identity(current, manual=False)
+        return True
+
+    if event == "workflow_dispatch" and manual_publish:
+        validate_release_identity(current, manual=True)
+        return True
+
     return False
 
 

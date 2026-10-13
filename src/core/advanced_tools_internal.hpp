@@ -3,6 +3,7 @@
 
 #include "advanced_tools.hpp"
 #include "calculator.hpp"
+#include "evaluation_budget.hpp"
 #include "scientific.hpp"
 
 #include <infiltratr/core.h>
@@ -120,10 +121,10 @@ ToolResult storage_tool(std::string_view input);
 ToolResult datetime_tool(std::string_view input);
 ToolResult constants_tool(std::string_view input);
 ToolResult statistics_tool(std::string_view input);
-ToolResult graph_tool(std::string_view input);
-ToolResult equation_tool(std::string_view input);
-ToolResult exact_decimal_tool(std::string_view input);
-ToolResult arbitrary_precision_tool(std::string_view input);
+ToolResult graph_tool(std::string_view input, EvaluationBudget& budget);
+ToolResult equation_tool(std::string_view input, EvaluationBudget& budget);
+ToolResult exact_decimal_tool(std::string_view input, EvaluationBudget& budget);
+ToolResult arbitrary_precision_tool(std::string_view input, EvaluationBudget& budget);
 ToolResult financial_tool(std::string_view input);
 ToolResult number_utilities_tool(std::string_view input);
 ToolResult complex_tool(std::string_view input);
