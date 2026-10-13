@@ -49,7 +49,19 @@ EvaluationBudget::EvaluationBudget(EvaluationLimits limits)
 
     if (limits_.timeout.count() > 0) {
         has_deadline_ = true;
-        deadline_ = Clock::now() + limits_.timeout;
+        const Clock::time_point now = Clock::now();
+        const auto remaining = Clock::time_point::max() - now;
+        const auto maximum_timeout =
+            std::chrono::duration_cast<std::chrono::milliseconds>(remaining);
+        if (limits_.timeout >= maximum_timeout) {
+            // Saturation preserves the requested "effectively unbounded in
+            // practice" deadline without overflowing the clock's signed
+            // duration representation.
+            deadline_ = Clock::time_point::max();
+        } else {
+            deadline_ = now +
+                std::chrono::duration_cast<Clock::duration>(limits_.timeout);
+        }
     }
 }
 
