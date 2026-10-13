@@ -38,12 +38,6 @@ ctest --test-dir build --output-on-failure
 
 Platform-visible changes also require the relevant native build/integration evidence. A Simulator build is Simulator evidence; an unsigned iPhoneOS build is device-target compilation evidence; neither is proof of a signed physical-device installation.
 
-## Release preparation
-
-`VERSION` is the single release-version authority. Do not hand-edit the same version into four files independently. Prepare a release with `support/release/prepare_release.py`, supplying the new semantic version, one AppStream summary and one or more release-note bullets. The helper validates the currently published metadata before staging the new `VERSION`, Debian changelog, human changelog and AppStream entries together.
-
-`support/release/release_metadata.py` remains an independent CI gate. A release is therefore not trusted merely because the preparation helper wrote it: pull-request and main-branch preflight must still prove that all release consumers agree. Publication is triggered by an actual `VERSION` change on `main`; manual publish exists only to reconcile an interrupted release of that same source version.
-
 ## Documentation and comments
 
 Read `docs/README.md` for document authority. Architecture belongs in `docs/ARCHITECTURE.md`; rationale in `docs/DESIGN.md`; durable choices in `docs/DECISIONS.md`; direction in `docs/ROADMAP.md`; validation evidence in `docs/VALIDATION.md`; numerical contracts and evidence in `docs/NUMERICS.md`; cross-platform representation and compatibility boundaries in `docs/PORTABILITY.md`; and shared desktop/iPhone ownership rules in `docs/UI_PARITY.md`.

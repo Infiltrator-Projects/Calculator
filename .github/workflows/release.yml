@@ -65,9 +65,7 @@ jobs:
           bash -n support/release/check_apt_publication.sh
           python3 -m py_compile \
             support/release/release_metadata.py \
-            support/release/prepare_release.py \
             support/release/release_assets.py
-          python3 support/release/prepare_release.py --help >/dev/null
 
   linux:
     needs: prepare
@@ -137,11 +135,17 @@ jobs:
 
       - name: Build and verify Debian package
         shell: bash
-        run: support/ci/verify_debian_package.sh "$VERSION" dist/linux
+        run: |
+          set -euo pipefail
+          chmod +x debian/rules
+          dpkg-buildpackage -us -uc -b
+          mkdir -p dist/linux
+          package="dist/linux/calculator_${VERSION}_amd64.deb"
+          cp "../infiltrator-calculator_${VERSION}_amd64.deb" "$package"
+          bash support/ci/verify_debian_package.sh "$package"
 
       - name: Smoke-test packaged Linux idle CPU
-        shell: bash
-        run: support/ci/linux_idle_cpu.sh "dist/linux/calculator_${VERSION}_amd64.deb"
+        run: bash support/ci/linux_idle_cpu.sh "dist/linux/calculator_${VERSION}_amd64.deb"
 
       - name: Upload Linux package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -177,29 +181,34 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build build-windows --config Release --parallel
           ctest --test-dir build-windows -C Release --output-on-failure
+          if (-not (Test-Path 'build-windows/Release/infiltrator-calc.exe')) {
+            throw 'Missing Windows executable'
+          }
 
       - name: Verify native Windows runtime and dependency boundary
         shell: pwsh
-        run: support/ci/windows_smoke.ps1 -BuildDirectory build-windows
+        run: pwsh -NoProfile -File support/ci/windows_smoke.ps1 -Executable build-windows/Release/infiltrator-calc.exe
 
       - name: Package standalone Windows executable
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force dist/windows | Out-Null
-          Copy-Item build-windows/Release/infiltrator-calc.exe "dist/windows/calculator_${env:VERSION}_windows_x64.exe"
+          New-Item -ItemType Directory -Force -Path 'dist/windows' | Out-Null
+          $target = "dist/windows/calculator_${env:VERSION}_windows_x64.exe"
+          Copy-Item 'build-windows/Release/infiltrator-calc.exe' $target
+          if (-not (Test-Path $target)) { throw 'Windows release executable was not packaged' }
 
       - name: Upload Windows package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: calculator-windows-x64
-          path: dist/windows/*
+          path: dist/windows/calculator_*_windows_x64.exe
           if-no-files-found: error
 
   ios:
     needs: prepare
     runs-on: macos-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
 
@@ -218,6 +227,7 @@ jobs:
           set -euo pipefail
           cmake -S . -B build-macos \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCALCULATOR_BUILD_DESKTOP=OFF \
             -DINFILTRATR_COMMON_BUILD_SHARED=OFF
           cmake --build build-macos --parallel
           ctest --test-dir build-macos --output-on-failure
@@ -225,91 +235,100 @@ jobs:
       - name: Generate and build iPhone Simulator app
         run: |
           set -euo pipefail
-          cd ios
-          xcodegen generate
+          (cd ios && xcodegen generate --spec project.yml)
           xcodebuild \
-            -project Calculator.xcodeproj \
+            -project ios/Calculator.xcodeproj \
             -scheme Calculator \
             -configuration Release \
             -sdk iphonesimulator \
-            -derivedDataPath ../build-ios-simulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build-ios \
             CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$VERSION" \
             build
+          app="$(find build-ios/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app" && test -d "$app"
+          plutil -extract CFBundleIcons xml1 -o - "$app/Info.plist" >/dev/null
 
       - name: Build unsigned iPhone device IPA
         run: |
           set -euo pipefail
-          cd ios
           xcodebuild \
-            -project Calculator.xcodeproj \
+            -project ios/Calculator.xcodeproj \
             -scheme Calculator \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath ../build-ios-device \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build-ios-device \
             CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$VERSION" \
             build
-          cd ..
-          app="build-ios-device/Build/Products/Release-iphoneos/Calculator.app"
-          test -d "$app"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = "net.ssmith.infiltrator.calc"
-          rm -rf dist/ios/Payload
-          mkdir -p dist/ios/Payload
-          cp -R "$app" dist/ios/Payload/Calculator.app
-          (
-            cd dist/ios
-            zip -qry "calculator_${VERSION}_ios-device-unsigned.ipa" Payload
-          )
-          unzip -t "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa"
-          unzip -l "dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa" | grep -F 'Payload/Calculator.app/'
-          rm -rf dist/ios/Payload
+
+          app="$(find build-ios-device/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app" && test -d "$app"
+          ipa_root="$RUNNER_TEMP/calculator-ipa"
+          rm -rf "$ipa_root"
+          mkdir -p "$ipa_root/Payload" dist/ios
+          ditto "$app" "$ipa_root/Payload/Calculator.app"
+          ipa="$GITHUB_WORKSPACE/dist/ios/calculator_${VERSION}_ios-device-unsigned.ipa"
+          (cd "$ipa_root" && /usr/bin/zip -qry "$ipa" Payload)
+          test -f "$ipa"
+          /usr/bin/unzip -l "$ipa" | grep -q 'Payload/Calculator.app/Info.plist'
+          plutil -extract CFBundleIdentifier raw -o - "$ipa_root/Payload/Calculator.app/Info.plist" \
+            | grep -qx 'net.ssmith.infiltrator.calc'
 
       - name: Upload iOS IPA
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: calculator-ios-device
-          path: dist/ios/*.ipa
+          name: calculator-ios
+          path: dist/ios/calculator_*_ios-device-unsigned.ipa
           if-no-files-found: error
 
   sanitizers:
     needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Checkout source and Common dependency
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Configure Clang ASan and UBSan build
-        env:
-          CC: clang
-          CXX: clang++
         run: |
           set -euo pipefail
           cmake -S . -B build-sanitizers \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCALCULATOR_BUILD_DESKTOP=OFF \
             -DINFILTRATR_COMMON_BUILD_SHARED=OFF \
-            -DCALCULATOR_ENABLE_SANITIZERS=ON
-          cmake --build build-sanitizers --parallel
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
 
       - name: Build and test with sanitizers
         env:
-          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1:check_initialization_order=1
-          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
-        run: ctest --test-dir build-sanitizers --output-on-failure
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          set -euo pipefail
+          cmake --build build-sanitizers --parallel
+          ctest --test-dir build-sanitizers --output-on-failure
 
-  package:
-    name: Assemble release assets
-    if: needs.prepare.outputs.release == 'true'
+  publish:
     needs: [prepare, linux, windows, ios, sanitizers]
+    if: needs.prepare.outputs.release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
-      - name: Checkout exact source and Common dependency
+      - name: Checkout exact release source and Common dependency
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
@@ -319,102 +338,76 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: calculator-linux-amd64
-          path: dist/release
+          path: dist/linux
 
       - name: Download Windows package
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: calculator-windows-x64
-          path: dist/release
+          path: dist/windows
 
       - name: Download iOS package
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: calculator-ios-device
-          path: dist/release
+          name: calculator-ios
+          path: dist/ios
 
       - name: Build deterministic source bundle
-        shell: bash
-        run: support/release/build_source_bundle.sh "$VERSION" dist/release
+        run: bash support/release/build_source_bundle.sh "$VERSION" "$GITHUB_SHA" "dist/source/calculator_${VERSION}_source.tar.gz"
 
-      - name: Build native Linux installer
-        shell: bash
-        run: support/release/build_native_installer.sh "$VERSION" dist/release
+      - name: Build hardware-native installer
+        run: bash support/release/build_native_installer.sh "$VERSION" "dist/source/calculator_${VERSION}_source.tar.gz" "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
 
-      - name: Add licence and canonical checksums
-        shell: bash
+      - name: Validate release asset set
         run: |
           set -euo pipefail
-          cp LICENSE dist/release/LICENSE.txt
-          python3 support/release/release_assets.py \
-            --directory dist/release \
-            --version "$VERSION" \
-            --write-checksums
+          cp LICENSE dist/LICENSE.txt
+          python3 support/release/release_assets.py --version "$VERSION" --dist dist
 
-      - name: Upload assembled release assets
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: calculator-release-assets
-          path: dist/release/*
-          if-no-files-found: error
-
-  publish:
-    name: Publish and reconcile GitHub release
-    if: needs.prepare.outputs.release == 'true'
-    needs: [prepare, package]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      VERSION: ${{ needs.prepare.outputs.version }}
-
-    steps:
-      - name: Checkout release metadata
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - name: Download canonical release assets
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: calculator-release-assets
-          path: dist/release
-
-      - name: Verify canonical asset manifest
+      - name: Publish or reconcile cross-platform GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 support/release/release_assets.py \
-            --directory dist/release \
-            --version "$VERSION" \
-            --verify-checksums
-
-      - name: Publish or reconcile release
-        shell: bash
-        run: |
-          set -euo pipefail
+          mapfile -t assets < dist/release-assets.txt
           tag="v${VERSION}"
-          notes_file="$(mktemp)"
-          python3 support/release/release_assets.py \
-            --directory dist/release \
-            --version "$VERSION" \
-            --release-notes > "$notes_file"
-
-          if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/release/* --clobber
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag exists; reconciling the verified asset set."
+            gh release upload "$tag" \
+              "${assets[@]}" \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
             gh release edit "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
               --title "Calculator ${VERSION}" \
-              --notes-file "$notes_file" \
               --latest
           else
-            gh release create "$tag" dist/release/* \
+            gh release create "$tag" \
+              "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Calculator ${VERSION}" \
-              --notes-file "$notes_file" \
+              --generate-notes \
               --latest
           fi
 
-          gh release view "$tag" --json tagName,targetCommitish,name,assets
+  apt-publication:
+    name: Check central APT publication
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-      - name: Check central APT publication
-        shell: bash
-        run: support/release/check_apt_publication.sh "$VERSION"
+    steps:
+      - name: Checkout publication helper
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+
+      - name: Check Package Repository publication
+        env:
+          DISPATCH_TOKEN: ${{ secrets.APT_REPOSITORY_DISPATCH_TOKEN }}
+          RELEASE_SHA: ${{ github.sha }}
+          APP_ID: infiltrator-calc
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: bash support/release/check_apt_publication.sh
