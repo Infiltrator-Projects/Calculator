@@ -20,22 +20,23 @@ cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 ios = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
 for relative in ADVANCED_MODULES:
     assert relative in cmake, f"CMake omits Advanced Tools module: {relative}"
-    assert f"../{relative}" in ios, f"iPhone omits Advanced Tools module: {relative}"
 
-for relative in (
-    "src/core/evaluation_budget.cpp",
-    "src/core/evaluation_budget.hpp",
-):
-    assert relative in cmake or relative.endswith(".hpp"), (
-        f"CMake omits evaluation-budget implementation: {relative}"
-    )
-    assert f"../{relative}" in ios, (
-        f"iPhone omits evaluation-budget source: {relative}"
-    )
-
-assert "src/core/advanced_tools_internal.hpp" in ios, (
-    "iPhone source manifest omits the private Advanced Tools boundary"
+assert "src/core/evaluation_budget.cpp" in cmake, (
+    "CMake omits evaluation-budget implementation"
 )
+
+# XcodeGen owns Calculator's portable source trees as cohesive directories.
+# Do not recreate CMake's translation-unit list in project.yml: that historical
+# duplication allowed a new core module to compile on desktop while silently
+# disappearing from iOS until another manifest was edited by hand.
+for source_tree in ("../src/core", "../src/ui"):
+    assert f"- path: {source_tree}" in ios, (
+        f"iPhone no longer owns Calculator source tree: {source_tree}"
+    )
+for relative in ADVANCED_MODULES:
+    assert f"../{relative}" not in ios, (
+        f"iPhone has regressed to per-file Calculator manifest duplication: {relative}"
+    )
 
 dispatcher = (ROOT / "src" / "core" / "advanced_tools.cpp").read_text(
     encoding="utf-8"
