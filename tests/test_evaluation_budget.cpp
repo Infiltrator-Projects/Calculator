@@ -3,6 +3,7 @@
 #include "../src/core/evaluation_budget.hpp"
 #include "../src/core/scientific.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -29,6 +30,8 @@ int main() {
         calculator::kScientificDefaultDigits, &input_budget);
     check(!scientific.ok, "Scientific rejects input beyond the shared byte limit");
     check(input_budget.failed(), "oversized Scientific input exhausts its budget");
+    check(input_budget.error() == "input exceeds evaluation input limit",
+          "input ceiling keeps its explicit failure diagnostic");
 
     EvaluationLimits depth_limits;
     depth_limits.max_parse_depth = 2U;
@@ -117,6 +120,12 @@ int main() {
               zero_budget.limits().max_power_exponent == calculator::kEvaluationMaxPowerExponent &&
               zero_budget.limits().max_output_digits == calculator::kEvaluationMaxOutputDigits,
           "zero cannot disable product evaluation safety ceilings");
+
+    EvaluationLimits maximum_timeout_limits;
+    maximum_timeout_limits.timeout = std::chrono::milliseconds::max();
+    EvaluationBudget maximum_timeout_budget(maximum_timeout_limits);
+    check(maximum_timeout_budget.check(),
+          "maximum timeout saturates without overflowing the monotonic clock");
 
     EvaluationLimits graph_limits;
     graph_limits.max_steps = 50U;
