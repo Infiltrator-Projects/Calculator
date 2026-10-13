@@ -2,45 +2,53 @@
 
 # Numerical semantics and evidence
 
-Calculator exposes explicit computational contracts rather than unexplained numeric output. Each mode must define its representation, grammar or interaction rule, domain limits, error behaviour and validation strategy.
-
-This document is the specialist source of truth for numerical behaviour and evidence. [ARCHITECTURE.md](ARCHITECTURE.md) owns module boundaries, [DESIGN.md](DESIGN.md) owns project-wide rationale, and code/tests remain authoritative for executable behaviour.
+Calculator exposes explicit computational contracts rather than unexplained numeric output. Each domain defines its representation, grammar, limits, failure semantics and validation strategy. This document is the specialist source of truth for those numerical contracts; [ARCHITECTURE.md](ARCHITECTURE.md) owns module boundaries and [DESIGN.md](DESIGN.md) owns project-wide rationale.
 
 ## Evidence hierarchy
 
 A numerical rule should prefer evidence in this order:
 
-1. an applicable mathematical or computing standard whose semantics are explicit;
-2. the documented C++/platform library contract used by the implementation;
+1. an applicable mathematical or computing standard with explicit semantics;
+2. the documented contract of the C++/third-party mechanism actually used;
 3. established mathematical definitions or independently checkable reference values;
-4. a documented Calculator interaction rule when calculator-style behaviour is conventional but not standardised;
-5. unsupported/error when the project cannot justify deterministic behaviour.
+4. a documented Calculator interaction rule where behaviour is conventional but not standardised; and
+5. explicit unsupported/error when deterministic behaviour cannot be justified.
 
-A familiar result, another calculator's output or a plausible display string is not enough by itself to establish correctness.
+Another calculator's output is useful comparative evidence, not this project's specification.
 
-## Real-number representation
+## Numeric domains
 
-Standard uses C++ double and relies on conventional IEEE-754 binary64 behaviour. Scientific uses Calculator's explicit arbitrary-precision real/complex domain backed by Boost.Multiprecision cpp_bin_float / cpp_complex. Interactive calculation precision defaults to 50 decimal digits and is user-selectable from 16 through 1000 digits. The core evaluation API accepts the same supported range, and release-CI oracle coverage exercises it.
+Calculator deliberately uses several representations because no one representation has the strongest contract for every mode.
 
-Scientific decimal literals are parsed directly into that multiprecision domain, and intermediate arithmetic/transcendental/complex results are not silently routed through binary64. The Session/Controller boundary stores real and imaginary components as decimal text so the shared public C++ state preserves the precise value without exposing a third-party multiprecision ABI. Interactive Scientific precision defaults to 50 decimal digits but is user-selectable from 16 through 1000 digits; this calculation precision is deliberately separate from display decimal-place preferences.
+- **Standard** uses finite IEEE-754 binary64 (`double`).
+- **Scientific** uses Boost.Multiprecision arbitrary-precision real/complex values (`cpp_bin_float`/`cpp_complex`), 50 decimal digits by default and selectable from 16 through 1000 digits.
+- **Programmer** uses explicit 8/16/32/64-bit masked integer bit patterns.
+- **Exact Decimal** uses exact integer numerator/denominator pairs backed by Boost.Multiprecision `cpp_int`.
+- **Arbitrary Precision** uses signed Boost.Multiprecision `cpp_int` values.
 
-Formatting does not create precision. Standard binary64 presentation remains distinct from Scientific multiprecision presentation, Programmer fixed-width integers and the specialist exact/arbitrary tool domains.
+Boost is an implementation mechanism, not a public ABI. Scientific crosses Session/Controller/platform boundaries as real/imaginary decimal text; exact/integer tools expose Calculator-owned text results.
 
-Standard therefore has two deliberately separate decimal-output paths. `format_value()` and display preferences are presentation and may round, group or otherwise format a value for a person. `serialize_value()` is computational state: it emits the shortest locale-independent decimal that round-trips to the exact same finite binary64 value. Interactive unary operations, memory recall and any other binary64 state boundary must use the latter and must never reconstruct computation from rounded display text.
+## Standard computational state versus presentation
+
+Within Standard, the binary64 value is authoritative. `serialize_value()` emits the shortest locale-independent decimal that round-trips to exactly the same finite binary64 value and is used whenever a result must re-enter computational expression state. `format_value()` is presentation and may round or group for a person.
+
+Presentation is never reparsed as computation. A fixed-decimal or grouped display preference may change what is shown without changing subsequent arithmetic. Memory retains a Scientific value plus an optional exact binary64 view; overflow or a Scientific-only out-of-range value cannot silently become a fabricated Standard approximation.
 
 ## Shared constant authority
 
-Constant names, aliases, binary64 presentation values, physical units and definition kind have one canonical catalogue in `calculator.*`. Scientific resolves that same catalogue at its active precision: mathematical constants are constructed mathematically, decimal physical constants are constructed from their canonical decimal spelling, and reduced Planck's constant is derived from exact SI Planck h divided by 2π. This avoids a second drifting list of Scientific constant values.
+Constant names, aliases, binary64 values, units and definition kinds have one canonical catalogue in `calculator.*`. Scientific resolves the same catalogue at its active precision: mathematical constants are constructed mathematically, canonical decimal physical constants are constructed from their decimal definition, and reduced Planck's constant is derived from Planck `h / (2*pi)`.
 
-## Binary64 decimal token conversion
+A new constant must not introduce a second Scientific-only catalogue merely because the representation differs.
 
-In the binary64 expression path, Calculator owns grammar and decides when a numeric operand is expected. Common 1.19.24 owns the product-neutral decimal-token mechanic through `infiltratr_parse_double_token()`: it advances a cursor across one finite ASCII-decimal token and performs the same exact locale-independent binary64 conversion used by Common's complete-string parser.
+## Binary64 token conversion
 
-That path therefore no longer carries a private binary64 decimal scanner. NaN, infinity, hexadecimal floating-point syntax, malformed exponents, overflow and underflow-to-zero are rejected by the shared conversion contract while operator precedence and expression structure remain Calculator-owned. Scientific is deliberately different: its decimal literals are parsed directly into the multiprecision real/complex domain and never pass through this binary64 conversion.
+Calculator owns binary64 expression grammar and decides when a number is expected. Common 1.19.35 owns product-neutral locale-independent decimal token conversion through `infiltratr_parse_double_token()` and the related complete numeric parsers.
 
-## Scientific expression grammar
+This rejects NaN, infinity, hexadecimal floating-point spelling, malformed exponents, overflow and underflow-to-zero according to the shared conversion contract while keeping precedence and expression structure Calculator-owned. Scientific literals do not pass through binary64; they enter the multiprecision domain directly.
 
-The expression evaluator implements:
+## Expression grammar and precedence
+
+Standard and Scientific use the same operator meaning for their shared arithmetic grammar:
 
 ```text
 expression  := term (("+" | "-") term)*
@@ -48,158 +56,102 @@ term        := unary (("*" | "/") unary)*
 unary       := ("+" | "-") unary | power
 power       := postfix ["^" unary]
 postfix     := primary ("%" | "!")*
-primary     := number
-             | identifier
-             | identifier "(" expression ")"
-             | "(" expression ")"
+primary     := number | identifier | identifier "(" expression ")" | "(" expression ")"
 ```
 
-Exponentiation is right-associative and binds more tightly than a leading sign: `-2^2` means `-(2^2)`, while `2^-2` is valid.
+Exponentiation is right-associative and binds more tightly than a leading sign: `-2^2` is `-(2^2)`, while `2^-2` is valid. Postfix `%` means division by 100; it is not contextual pending-operator percentage. Therefore Standard evaluates `100 + 10%` as `100.1`, `100 * 10%` as `10`, and `200 + 200 / 2` as `300`.
 
-Postfix `%` divides a value by 100 in expression mode. Scientific factorial accepts real non-negative integral inputs through the maintained 100000 safety ceiling and evaluates the product in the multiprecision real domain; invalid, complex or oversized factorial inputs fail explicitly.
+Standard disables named constants, variables and functions. Scientific enables them and performs the same shared operator semantics in its wider numeric domain.
 
-Scientific elementary and complex operations execute in the shared multiprecision backend. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians, including secant/cosecant/cotangent and their inverses; the corresponding hyperbolic reciprocal/inverse functions are unit-independent. Roots, powers, reciprocal, logarithmic/exponential, real/imaginary/conjugate and rounding-related operations retain high precision where mathematically defined. Complex logarithms and non-integer powers use the documented principal branch with argument in (-pi, pi], so an exact negative real lies on the +pi side of the cut. Exact integer powers use exponentiation by squaring, real half-integer powers of exact negative reals preserve their exact quadrantal phase, and exact trigonometric quadrant arguments are normalised to exact 0/±1 values rather than leaking tiny finite-pi residues. Domain-invalid or non-finite results are explicit calculation failures rather than values silently propagated into the UI.
+## Scientific semantics
 
-Recursive grammar descent is explicitly bounded in both the Scientific expression parser and Programmer parser. Scientific parser and user-function recursion limits are deliberately conservative for the smallest supported native stacks, including Windows, and excessive nesting fails deterministically with `expression nesting too deep` or `function recursion too deep` rather than consuming unbounded native stack. User-defined function calls remain internal full-precision expression boundaries; factoring an expression into a function does not introduce an extra requested-precision rounding step.
+Scientific decimal literals and intermediates remain multiprecision. Trigonometric and inverse-trigonometric functions support radians, degrees and gradians; hyperbolic functions are unit-independent. Reciprocal trig/hyperbolic families execute in the same backend.
 
-## Standard arithmetic semantics
+Complex logarithms and non-integer powers use the documented principal branch with argument in `(-pi, pi]`. Exact integer powers use exponentiation by squaring. Real half-integer powers of exact negative reals preserve exact quadrantal phase, and exact trigonometric quadrant arguments are normalised to exact `0`/`±1` values rather than exposing finite-pi residue as mathematical signal.
 
-Standard mode is intentionally smaller than Scientific, but it is not a second definition of arithmetic. It uses the binary64 expression grammar with named constants, variables and functions disabled. Conventional operator precedence applies: exponentiation before multiplication/division before addition/subtraction, with parentheses providing explicit grouping.
+Scientific factorial accepts real, non-negative integral input through the maintained 100000 operation ceiling. Invalid, complex or oversized inputs fail explicitly.
 
-Postfix `%` has one literal meaning in Standard as it does in expression mathematics: divide the preceding value by 100. Therefore `100 + 10%` is `100.1`, `100 * 10%` is `10`, and `200 + 200 / 2` is `300`.
+User-defined functions are evaluated in the same active multiprecision domain. Entering a function boundary does not create an additional requested-precision rounding boundary.
 
-This rule is deliberate for the greenfield Calculator design. Historical immediate-execution behaviour is not preserved merely for compatibility with older four-function calculators, because an expression displayed as infix mathematics should evaluate according to that mathematics.
+## Evaluation resource semantics
 
-The same principle applies after an operation. Display rounding is not state rounding. If Standard computes a finite binary64 value, subsequent operations consume that exact binary64 value, serialized losslessly when it must re-enter expression state. A user preference such as fixed three-decimal display or thousands grouping may change what is shown, but cannot change later arithmetic. Each memory slot retains its Scientific value and, when exactly representable in the Standard domain, a binary64 view. Overflow is rejected without mutating the newest slot, and a Scientific-only out-of-range slot remains valid for Scientific recall but is unavailable to Standard rather than being replaced with a fabricated approximation.
+Multiprecision Scientific and iterative/arbitrary-precision Advanced Tools share `EvaluationBudget`. Its defaults provide:
+
+- 8192 UTF-8 input bytes;
+- a cumulative five-million-step work budget;
+- Scientific/Advanced Tool recursive parse depth of 16;
+- user-function recursion depth of 16;
+- Scientific factorial ceiling 100000;
+- generic exponent ceiling 100000000;
+- a non-relaxable product maximum of 20,000 materialised arbitrary-precision decimal digits; and
+- optional monotonic timeout plus cooperative cancellation.
+
+Callers may tighten limits but cannot use a custom budget to relax the 20,000-digit product safety ceiling. Graph/root probes share one budget across the complete user operation instead of resetting it for each sample. Exact/arbitrary parsers account for recursive unary/parenthesised/power descent against the same parse-depth authority, and iterative big-integer work checks the budget cooperatively.
+
+Standard's binary64 parser has a separate deliberate depth policy because it is a different domain and workload; sharing one numeric grammar does not require pretending all resource contracts are identical.
 
 ## Programmer domain
 
-Programmer mode operates on bit patterns constrained to the selected 8, 16, 32 or 64-bit width. Byte-order reversal (`bswap`) reverses bytes only inside that selected width; 8-bit values are therefore unchanged and wider values remain masked to their fixed-width domain.
+Programmer values are masked to the selected 8, 16, 32 or 64-bit width after operations. Wraparound is deliberate domain semantics, not native signed-overflow behaviour. Signed display interprets the same final bit pattern using two's-complement presentation; it does not change the stored value.
 
-Arithmetic intentionally wraps by masking to the selected width. This is the domain semantics, not an unchecked-overflow accident. Signed display interprets the final masked pattern using two's-complement presentation; it does not change the stored bit pattern or evaluation domain.
+Numeric literals use the selected radix and optional prefixes must agree with that radix. Shift counts are decimal control quantities and unsafe counts are rejected before native shifting. `>>` is logical right shift; `ashr` is explicit arithmetic-right shift with sign extension from the selected width. NAND, NOR and XNOR are width-masked. Rotates reduce counts modulo width. Byte swap reverses bytes only inside the selected width, so 8-bit values are unchanged. `%` is integer remainder with zero-divisor failure.
 
-Numeric literals use the selected radix. Matching binary/octal/hex prefixes are accepted only when consistent with that radix. Shift counts are decimal control quantities and values outside the implementation's safe shift contract are rejected before executing a native shift. NAND and NOR are width-masked after each operation. Rotate-left and rotate-right are also width-aware and reduce the rotate count modulo the selected width, avoiding undefined native shift behaviour.
+Programmer expectations are exact integer/bit-pattern comparisons, never floating tolerances.
 
-Programmer semantics should be validated with exact integer expectations rather than floating-point tolerances.
+## Exact Decimal
 
-## Constants and elementary functions
+Exact Decimal parses decimal literals directly into exact numerator/power-of-ten denominator values. `+`, `-`, `*`, `/`, unary signs and parentheses operate on those rational values; normalization uses exact integer GCD. `0.1 + 0.2` is therefore exactly `3/10`.
 
-`pi` and `e` are built-in constants and are reserved identifiers: variable assignment cannot replace them. Standard/supporting binary64 transforms use the C++ standard mathematical facilities over `double`; Scientific evaluates its corresponding real/complex operations in the Boost.Multiprecision backend and retains the configured precision through intermediate results.
+Decimal exponent spelling is supported within the maintained scale limit. A terminating decimal projection is emitted when the normalized denominator contains only factors of 2 and 5 and the projection remains within product safety bounds. The exact fraction remains authoritative even when an optional terminating-decimal rendering would be too large.
 
-The project does not claim bit-for-bit transcendental equality across different binary64 standard libraries or multiprecision backend implementations. Regression tests therefore use mathematically justified tolerances appropriate to the represented domain, while exact parser/Programmer contracts use exact comparisons where appropriate.
+## Arbitrary Precision
 
-New constants or functions should document source/definition, accepted domain, representation and meaningful boundary cases before being treated as complete.
+Arbitrary Precision supports signed integer `+`, `-`, `*`, right-associative non-negative integer `^`, parentheses and postfix `!`. Exponents are limited to 100000 and factorial to 1000 by this tool's domain contract, which is intentionally stricter than the generic Scientific ceilings.
 
-## Display formatting
+The generic big-integer mechanism is Boost.Multiprecision `cpp_int`; Calculator does not maintain its own limb arithmetic, long multiplication, division or GCD engine. Product-specific grammar, limits, output semantics and failure wording remain local.
 
-Calculator keeps result formatting in the shared core/controller rather than platform shells. Standard retains its locale-independent binary64 formatter. Scientific formats the retained arbitrary-precision real/complex components directly in General, Fixed, Scientific or Engineering form using the selected precision and display preferences; formatting never requires conversion through double.
+## Advanced Tools precision boundaries
 
-Platform shells must not introduce independent numeric formatting rules that change the represented Calculator result.
+Unit conversion evaluates source values, exact decimal/ratio factors and affine offsets in the Scientific multiprecision domain. Definitions such as `5/9` and `pi/180` are therefore not first rounded into binary64.
 
-Structured history is also semantic state, not merely display text. Scientific
-entries retain the angle unit and calculation precision that produced them, and
-Programmer entries retain radix/width/signedness; recall restores that context
-before the expression is re-evaluated or edited.
+Graph and real-root expressions use Scientific evaluation with supplied `x`. Samples are evaluated under one cumulative budget. Finite results cross explicitly into binary64 only where native graph geometry and deterministic real-interval search require it. Invalid/non-finite samples remain discontinuity markers rather than being connected through.
 
-## Errors and unavailable results
+Equation solving is a deterministic numerical real-root finder: interval segmentation identifies candidates, sign-changing intervals are refined by safeguarded bisection, stationary candidates are separately refined, results are re-evaluated before admission and duplicates are coalesced. It is not a symbolic algebra system.
 
-Malformed syntax, excessive parser nesting, division by zero, invalid function domains, factorial violations, unknown identifiers/functions, attempts to assign reserved constants, non-finite real results, invalid Programmer digits and unsafe shift counts are explicit failures. Interactive expression input is bounded to 8192 UTF-8 bytes at the shared Controller boundary, and Advanced Tools independently enforce the same bound at their shared core entry point, so typed/pasted text cannot bypass platform UI limits and become an unbounded parser/allocation workload.
+Complex Advanced Tools are adapters over the Scientific multiprecision engine rather than a second `std::complex<double>` calculation path. Add/subtract/multiply/divide, conjugate, magnitude, argument and polar results therefore inherit Scientific complex-domain semantics.
 
-A plausible substitute result is not an acceptable fallback. If a requested future numeric domain cannot establish a justified value under its contract, unsupported/error is preferable to invented precision.
-
-## Cross-platform numerical validation
-
-Portable core tests are the primary numerical oracle for platform parity. Native shells should present the same core result rather than independently re-evaluating expressions.
-
-Validation should distinguish exact contracts from approximate real-number contracts:
-
-- parser structure, integer bit patterns, radix rules and state transitions should normally compare exactly;
-- transcendental/real arithmetic should use a tolerance justified by the operation and expected magnitude;
-- UI string tests should test the documented display contract rather than infer internal binary equality from text.
-
-A Simulator or different host standard library may provide useful cross-platform evidence without proving bit-identical results on every physical platform.
-
-## References
-
-The maintained numerical basis includes:
-
-- IEEE Std 754-2019 / ISO/IEC 60559:2020 for floating-point arithmetic concepts and binary formats;
-- ISO/IEC 14882:2017 (C++17) and the supported standard-library implementations for C++ `double`, `<cmath>` and `std::to_chars` interfaces used by the project;
-- conventional mathematical definitions for elementary functions and operator precedence; and
-- Calculator-owned regression tests for Standard capability restrictions, conventional precedence and literal postfix percentage semantics.
-
-External references establish specific rules; they do not make another calculator implementation the specification for this project.
-
-## Adding a numerical capability
-
-Before a new mathematical capability is accepted, establish the numeric representation and units, grammar/interaction semantics, valid and invalid domains, overflow/underflow or exactness policy, display policy, authoritative definition/reference, cross-platform expectations, and deterministic reference values/boundary tests.
-
-If those cannot be stated precisely, the capability is not ready to be advertised as complete.
-
-
-## Programmer multi-radix representation
-
-A Programmer result is one fixed-width masked bit pattern. The representation view does not re-evaluate the expression four times: it renders that one value as binary, octal, decimal and hexadecimal. Binary, octal and hexadecimal remain unsigned bit-pattern views and are grouped for readability without altering the underlying expression/state text. The decimal row follows the current signed/unsigned presentation toggle. This keeps representation switching observational rather than computational.
-
+Network IPv4/CIDR operations use exact 32-bit address arithmetic with 64-bit counts. Storage cluster/allocation counts use checked integer arithmetic; human-capacity conversions reuse the canonical multiprecision digital-storage definitions. Civil-date operations use Gregorian integer day transforms for years 1..9999; Unix conversion is explicitly UTC and requires the documented `Z` form.
 
 ## Engineering notation
 
-Engineering notation is a presentation of the existing finite binary64 result, not a separate numerical domain. The exponent is an integer multiple of three and the mantissa is scaled accordingly. Formatting is locale-independent and deterministic across supported platforms.
+Engineering notation is presentation of an existing value, not another numeric domain. Standard's binary64 formatter derives one rounded scientific representation and rearranges it so the exponent is a multiple of three. This avoids computing a `pow(10, exponent)` scale that could underflow for the smallest finite subnormals and allows rounding carry to cross an engineering exponent boundary correctly.
 
-For example, `12345` is presented as `12.345e+03` and `0.00123` as `1.23e-03`. The canonical decimal and scientific representations remain available alongside it in Additional Results.
+Scientific engineering presentation operates on the retained multiprecision value. Additional Results never invents precision: every row is another representation of the same domain value.
 
-The engineering formatter derives its mantissa and exponent from one rounded scientific representation instead of computing a decimal scale with `pow(10, exponent)`. This keeps the smallest finite binary64 subnormals representable instead of underflowing an intermediate scale to zero, and it lets decimal rounding carry across engineering exponent boundaries before the mantissa is rearranged.
+## Display formatting and structured history
 
-Boundary regressions cover zero, signed finite values, the smallest positive subnormal, the largest finite binary64 value and a mantissa-rounding carry into the next engineering exponent.
+Formatting is shared core/controller policy, not a platform-shell calculation. Scientific formats retained multiprecision components directly in General, Fixed, Scientific or Engineering forms without conversion through `double`.
 
-Additional Results never invents precision: Standard rows describe the same binary64 value, while Scientific rows are alternative presentations of the same retained arbitrary-precision real/complex value.
+History is structured semantic state. Scientific entries retain the angle unit and calculation precision that produced them; Programmer entries retain radix, width and signed-display context. Recall restores the recorded context rather than reconstructing semantics from display text.
 
+## Failure model
 
-## Advanced-tool precision boundaries
+Malformed syntax, excessive recursion, division by zero, invalid mathematical domains, resource-budget exhaustion, factorial/exponent violations, unknown identifiers/functions, reserved-constant assignment, non-finite real results, invalid Programmer digits and unsafe shifts are explicit failures.
 
-Unit conversion evaluates source values, exact decimal/ratio factors and affine offsets in the Scientific multiprecision domain. Graph and real-root probes also use the Scientific evaluator. Native graph coordinates and the deterministic interval search remain finite binary64 geometry, so high-precision expression semantics are retained up to the explicit geometry boundary rather than being reduced at parse/evaluation entry.
+A plausible substitute result is not an acceptable fallback. If a numeric domain cannot justify a value under its contract, error/unsupported is preferable to invented precision.
 
-Calendar date arithmetic is integer civil-date arithmetic, not floating-point duration arithmetic. Month/year shifts clamp to the valid last day of the target month and stay within years 1..9999.
+## Validation evidence
 
-## Advanced tool numeric domains
+Exact contracts—parser structure, integer bit patterns, radix rules, state transitions and exact rational results—normally compare exactly. Real/transcendental results use tolerances justified by operation and magnitude.
 
-The Tools workbench deliberately uses more than one numeric representation.
+Scientific has independent MPFR/MPC oracle coverage, including principal-branch and reciprocal-family cases, so the production Boost implementation is not its own sole numerical oracle. Boundary tests cover binary64 round trips, subnormals/extremes, precision selection, parser/function recursion, memory overflow/range handling, Advanced Tools budgets and large exact/integer operations.
 
-Engineering, descriptive statistics and the dedicated Complex workbench use finite binary64 values and reject malformed or non-finite inputs. General Unit Conversion uses the Scientific multiprecision domain and is dimension-checked before applying exact decimal/ratio scale and affine-offset expressions; temperature conversions therefore retain affine semantics without first rounding definitions into binary64.
+Native platform shells are expected to present the shared result; they are not separate numerical oracles. Simulator/device-target compilation is portability evidence, not proof of physical-device behaviour.
 
-Graph and real-root expressions are evaluated by the Scientific engine. Their renderer coordinates and deterministic real interval search remain finite binary64 geometry after that evaluation boundary.
+## References
 
-Network IPv4/CIDR operations use exact 32-bit address arithmetic and 64-bit address counts. Storage conversion and RAID human-capacity calculations reuse the same canonical multiprecision digital-storage unit definitions as Unit Conversion; cluster/allocation counts remain checked 64-bit integer arithmetic.
+The maintained basis includes IEEE Std 754-2019 / ISO/IEC 60559:2020 for floating-point concepts, ISO/IEC 14882:2017 (C++17), documented Boost.Multiprecision contracts, conventional mathematical definitions for operator precedence and elementary functions, and Calculator-owned regression/oracle tests for the specific interaction and branch conventions described above.
 
-Civil-date operations validate Gregorian dates in years 1 through 9999 and use integer day-number transforms. Unix conversion is explicitly UTC and requires the documented `YYYY-MM-DDTHH:MM:SSZ` form.
+## Adding a numerical capability
 
-### Exact decimal/rational arithmetic
-
-Exact Decimal parses decimal literals directly into integer numerator / power-of-ten denominator pairs. Addition, subtraction, multiplication and division operate on those integer ratios, so `0.1 + 0.2` is represented exactly as `3/10`, not as a rounded binary64 approximation. A terminating decimal projection is emitted when the resulting denominator is a power of ten. Results are bounded by the maintained 20,000-digit safety ceiling.
-
-### Arbitrary-precision integer arithmetic
-
-Arbitrary Precision is an integer domain implemented with base-10^9 limbs. It supports signed `+`, `-`, `*`, right-associative non-negative integer powers, parentheses and factorial through 1000. It does not pretend integer division is exact when it has not been requested as part of the contract. Results are capped at 20,000 decimal digits to bound memory and run time.
-
-### Complex arithmetic
-
-Complex values are explicit `real,imaginary` pairs. The current workbench supports add/subtract/multiply/divide, conjugate, magnitude, argument and polar reporting. Components are binary64; division by zero is an explicit failure.
-
-### Graphing and equation solving
-
-Graphing evaluates the existing Scientific grammar with a supplied `x` variable over 2..4096 evenly spaced samples. Invalid/non-finite samples are retained as discontinuity markers rather than connected through by the renderer.
-
-Equation solving searches a caller-specified real interval with deterministic segmentation and safeguarded bisection on validated sign changes. Returned candidates are re-evaluated before admission and deduplicated. The solver is a real numerical root finder, not a symbolic algebra system; absence of a validated root in the interval is reported explicitly.
-
-
-## Reciprocal trigonometric principal branches
-
-Scientific secant, cosecant and cotangent families execute in the same multiprecision complex domain as sine, cosine and tangent. Inverse secant/cosecant use the reciprocal followed by the existing principal inverse function. Inverse cotangent uses the established `atan(1/z)` principal branch, with `acot(0) = pi/2`; this makes the branch explicit instead of inheriting an accidental `pi/2-atan(z)` convention. Inverse hyperbolic cotangent uses `atanh(1/z)`, with `acoth(0) = i*pi/2`. The MPFR/MPC forensic oracle independently constructs these reference values.
-
-## Programmer logical extensions
-
-Programmer `>>` remains a logical right shift over the selected fixed-width bit pattern. `ashr` is the explicit arithmetic-right-shift operator and sign-extends from the selected width; it therefore does not overload signed display state with computational meaning. XNOR is a fixed-width complement of XOR, and `%` is integer remainder with the same width masking and zero-divisor failure contract as Programmer division. Byte swap remains a unary fixed-width operation.
-
-## Advanced Tools numerical reuse
-
-The Complex tool and Number Utilities arbitrary-root operation are adapters over the Scientific multiprecision engine. They no longer maintain independent `std::complex<double>` or `std::pow(double)` calculation paths. Tool syntax remains intentionally compact, but entering or computing values outside binary64 range no longer forces those two tools through a weaker numeric domain.
+Before acceptance, establish the representation and units, grammar/interaction semantics, valid/invalid domains, exactness/overflow policy, resource limits, display policy, authoritative definition/reference, cross-platform expectations, failure/recovery semantics and deterministic boundary tests. If those cannot be stated precisely, the capability is not complete.
