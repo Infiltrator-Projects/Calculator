@@ -9,9 +9,17 @@
 
 namespace calculator {
 
-// One resource policy for expression evaluation and iterative calculator tools.
-// The defaults preserve Calculator's established public limits while adding a
-// cumulative work budget and an optional monotonic deadline/cancellation path.
+// Hard product safety ceiling for materialised arbitrary-precision decimal
+// output. Callers may tighten this through EvaluationLimits but may not relax
+// it: a caller-supplied budget is a restriction mechanism, not permission to
+// bypass Calculator's product safety contract.
+inline constexpr std::size_t kEvaluationMaxOutputDigits = 20000U;
+
+// Resource policy shared by the multiprecision Scientific evaluator and the
+// Advanced Tools operations that perform iterative or arbitrary-precision
+// work. Binary64 Standard evaluation retains its separate, deliberately wider
+// parser-depth contract; the two domains have different representations and
+// workload characteristics and are not falsely collapsed into one parser.
 struct EvaluationLimits {
     std::size_t max_input_bytes = 8192U;
     std::uint64_t max_steps = 5000000U;
@@ -19,7 +27,7 @@ struct EvaluationLimits {
     std::size_t max_function_depth = 16U;
     std::uint64_t max_factorial = 100000U;
     std::uint64_t max_power_exponent = 100000000U;
-    std::size_t max_output_digits = 20000U;
+    std::size_t max_output_digits = kEvaluationMaxOutputDigits;
     std::chrono::milliseconds timeout{0};
 };
 
