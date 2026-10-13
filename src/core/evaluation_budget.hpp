@@ -52,7 +52,7 @@ public:
     const EvaluationLimits& limits() const noexcept { return limits_; }
     std::uint64_t steps() const noexcept { return steps_; }
     const std::string& error() const noexcept { return error_; }
-    bool failed() const noexcept { return !error_.empty(); }
+    bool failed() const noexcept { return failed_; }
 
 private:
     using Clock = std::chrono::steady_clock;
@@ -62,6 +62,7 @@ private:
     bool has_deadline_ = false;
     std::uint64_t steps_ = 0U;
     std::atomic_bool cancelled_{false};
+    bool failed_ = false;
     std::string error_;
 
     bool fail(const char* message) noexcept;
