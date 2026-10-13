@@ -7,6 +7,17 @@
 #include <utility>
 
 namespace calculator {
+namespace {
+
+template <typename T>
+void clamp_product_ceiling(T& value, T maximum) noexcept {
+    // Zero traditionally means "unbounded" in many limit APIs. That meaning is
+    // unsafe here: EvaluationLimits may narrow Calculator's product policy but
+    // must never turn off the parser/work/input safety contract.
+    if (value == T{} || value > maximum) value = maximum;
+}
+
+} // namespace
 
 // scientific.cpp retains the parser implementation behind this explicit
 // budget-aware internal entry. Public callers cross the wrapper below so
@@ -21,13 +32,21 @@ ScientificResult evaluate_scientific_unchecked(
 
 EvaluationBudget::EvaluationBudget(EvaluationLimits limits)
     : limits_(std::move(limits)) {
-    // max_output_digits is a caller-tightenable ceiling, never an override of
-    // Calculator's hard product safety bound. Treat zero (normally meaning
-    // "unbounded" for optional limits) as the hard ceiling for this field.
-    if (limits_.max_output_digits == 0U ||
-        limits_.max_output_digits > kEvaluationMaxOutputDigits) {
-        limits_.max_output_digits = kEvaluationMaxOutputDigits;
-    }
+    clamp_product_ceiling(
+        limits_.max_input_bytes, kEvaluationMaxInputBytes);
+    clamp_product_ceiling(
+        limits_.max_steps, kEvaluationMaxSteps);
+    clamp_product_ceiling(
+        limits_.max_parse_depth, kEvaluationMaxParseDepth);
+    clamp_product_ceiling(
+        limits_.max_function_depth, kEvaluationMaxFunctionDepth);
+    clamp_product_ceiling(
+        limits_.max_factorial, kEvaluationMaxFactorial);
+    clamp_product_ceiling(
+        limits_.max_power_exponent, kEvaluationMaxPowerExponent);
+    clamp_product_ceiling(
+        limits_.max_output_digits, kEvaluationMaxOutputDigits);
+
     if (limits_.timeout.count() > 0) {
         has_deadline_ = true;
         deadline_ = Clock::now() + limits_.timeout;
@@ -61,8 +80,7 @@ bool EvaluationBudget::check() noexcept {
 
 bool EvaluationBudget::check_input(std::size_t bytes) noexcept {
     if (!check()) return false;
-    if (limits_.max_input_bytes != 0U &&
-        bytes > limits_.max_input_bytes) {
+    if (bytes > limits_.max_input_bytes) {
         return fail("input exceeds evaluation input limit");
     }
     return true;
@@ -71,11 +89,9 @@ bool EvaluationBudget::check_input(std::size_t bytes) noexcept {
 bool EvaluationBudget::charge(std::uint64_t count) noexcept {
     if (!check()) return false;
     if (count == 0U) return true;
-    if (limits_.max_steps != 0U) {
-        if (steps_ > limits_.max_steps ||
-            count > limits_.max_steps - steps_) {
-            return fail("evaluation requires too many steps");
-        }
+    if (steps_ > limits_.max_steps ||
+        count > limits_.max_steps - steps_) {
+        return fail("evaluation requires too many steps");
     }
     if (count > std::numeric_limits<std::uint64_t>::max() - steps_) {
         return fail("evaluation requires too many steps");
@@ -87,8 +103,7 @@ bool EvaluationBudget::charge(std::uint64_t count) noexcept {
 bool EvaluationBudget::check_parse_depth(
     std::size_t prospective_depth) noexcept {
     if (!check()) return false;
-    if (limits_.max_parse_depth != 0U &&
-        prospective_depth > limits_.max_parse_depth) {
+    if (prospective_depth > limits_.max_parse_depth) {
         return fail("expression nesting too deep");
     }
     return true;
@@ -97,8 +112,7 @@ bool EvaluationBudget::check_parse_depth(
 bool EvaluationBudget::check_function_depth(
     std::size_t prospective_depth) noexcept {
     if (!check()) return false;
-    if (limits_.max_function_depth != 0U &&
-        prospective_depth > limits_.max_function_depth) {
+    if (prospective_depth > limits_.max_function_depth) {
         return fail("function recursion too deep");
     }
     return true;
@@ -106,7 +120,7 @@ bool EvaluationBudget::check_function_depth(
 
 bool EvaluationBudget::check_factorial(std::uint64_t value) noexcept {
     if (!check()) return false;
-    if (limits_.max_factorial != 0U && value > limits_.max_factorial) {
+    if (value > limits_.max_factorial) {
         return fail("factorial input too large");
     }
     return true;
@@ -115,8 +129,7 @@ bool EvaluationBudget::check_factorial(std::uint64_t value) noexcept {
 bool EvaluationBudget::check_power_exponent(
     std::uint64_t magnitude) noexcept {
     if (!check()) return false;
-    if (limits_.max_power_exponent != 0U &&
-        magnitude > limits_.max_power_exponent) {
+    if (magnitude > limits_.max_power_exponent) {
         return fail("power exponent too large");
     }
     return true;
