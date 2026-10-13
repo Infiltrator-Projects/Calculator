@@ -14,7 +14,14 @@ namespace calculator::tools::detail {
 namespace {
 
 using BigInt = boost::multiprecision::cpp_int;
-constexpr std::size_t kMaxBigIntDigits = 20000U;
+
+// These are domain limits, not alternate resource-budget authorities. The
+// shared EvaluationBudget owns input/work/recursion/output ceilings; these
+// narrower values define syntax that Calculator intentionally supports in the
+// exact-decimal and integer tools.
+constexpr std::size_t kMaxDecimalScale = 4096U;
+constexpr std::uint64_t kMaxIntegerExponent = 100000U;
+constexpr std::uint64_t kMaxIntegerFactorial = 1000U;
 
 BigInt absolute(BigInt value) {
     if (value < 0) value = -value;
@@ -39,9 +46,37 @@ bool charge_or_error(EvaluationBudget& budget, std::string& error,
     return false;
 }
 
+// Recursive descent is bounded by the same budget as Scientific parsing. The
+// guard is RAII so every early return restores the parser's current depth.
+class ParseDepthGuard {
+public:
+    ParseDepthGuard(EvaluationBudget& budget, std::size_t& depth,
+                    std::string& error)
+        : depth_(depth) {
+        if (budget.check_parse_depth(depth + 1U)) {
+            ++depth_;
+            entered_ = true;
+        } else if (error.empty()) {
+            error = budget.error();
+        }
+    }
+
+    ~ParseDepthGuard() {
+        if (entered_) --depth_;
+    }
+
+    explicit operator bool() const noexcept { return entered_; }
+
+private:
+    std::size_t& depth_;
+    bool entered_ = false;
+};
+
 bool parse_bigint_digits(std::string_view digits, BigInt& value,
                          EvaluationBudget& budget, std::string& error) {
-    if (digits.empty() || digits.size() > kMaxBigIntDigits) return false;
+    if (digits.empty() || digits.size() > kEvaluationMaxOutputDigits) {
+        return false;
+    }
     value = 0;
     for (const char character : digits) {
         if (character < '0' || character > '9') return false;
@@ -122,16 +157,14 @@ bool power_checked(BigInt base, std::uint64_t exponent, BigInt& result,
     std::uint64_t remaining = exponent;
     while (remaining != 0U) {
         if (!charge_or_error(budget, error)) return false;
-        if ((remaining & 1U) != 0U) {
-            if (!multiply_checked(result, base, result, budget, error)) {
-                return false;
-            }
+        if ((remaining & 1U) != 0U &&
+            !multiply_checked(result, base, result, budget, error)) {
+            return false;
         }
         remaining >>= 1U;
-        if (remaining != 0U) {
-            if (!multiply_checked(base, base, base, budget, error)) {
-                return false;
-            }
+        if (remaining != 0U &&
+            !multiply_checked(base, base, base, budget, error)) {
+            return false;
         }
     }
     return true;
@@ -139,7 +172,7 @@ bool power_checked(BigInt base, std::uint64_t exponent, BigInt& result,
 
 bool power10(std::size_t exponent, BigInt& result,
              EvaluationBudget& budget, std::string& error) {
-    if (exponent > 4096U) {
+    if (exponent > kMaxDecimalScale) {
         error = "Decimal scale exceeds safety limit.";
         return false;
     }
@@ -169,7 +202,7 @@ bool exact_add(const Exact& left, const Exact& right, bool subtract,
     else result.numerator += right_scaled;
     result.denominator = std::move(denominator);
     if (!check_bigint(result.numerator, budget)) {
-        error = budget.error();
+        if (error.empty()) error = budget.error();
         return false;
     }
     return normalize(result, budget, error);
@@ -229,7 +262,10 @@ bool terminating_decimal(const Exact& value, std::string& decimal,
     if (denominator != 1) return true;
 
     const std::size_t scale = std::max(twos, fives);
-    if (scale > kMaxBigIntDigits) return true;
+    // The exact fraction remains valid even when rendering its terminating
+    // decimal would exceed the product output ceiling; omit only that optional
+    // representation rather than rejecting the exact rational result.
+    if (scale > kEvaluationMaxOutputDigits) return true;
 
     BigInt scaled = absolute(value.numerator);
     BigInt factor;
@@ -277,6 +313,7 @@ public:
         Exact value = expression();
         skip();
         if (!error_.empty()) return failure(error_);
+        if (budget_.failed()) return failure(budget_.error());
         if (position_ != input_.size()) {
             return failure("Unexpected input in exact-decimal expression.");
         }
@@ -297,6 +334,7 @@ private:
     std::string_view input_;
     EvaluationBudget& budget_;
     std::size_t position_ = 0U;
+    std::size_t recursion_depth_ = 0U;
     std::string error_;
 
     void skip() {
@@ -363,6 +401,8 @@ private:
     }
 
     Exact unary() {
+        ParseDepthGuard depth(budget_, recursion_depth_, error_);
+        if (!depth) return {};
         if (take('+')) return unary();
         if (take('-')) {
             Exact value = unary();
@@ -407,10 +447,6 @@ private:
             error_ = "Expected a decimal literal.";
             return {};
         }
-        if (digits.empty()) {
-            error_ = "Invalid decimal literal.";
-            return {};
-        }
 
         BigInt numerator;
         if (!parse_bigint_digits(digits, numerator, budget_, error_)) {
@@ -442,7 +478,7 @@ private:
             if (!parse_u64_range(
                     input_.substr(
                         exponent_start, position_ - exponent_start),
-                    0U, 4096U, parsed)) {
+                    0U, kMaxDecimalScale, parsed)) {
                 error_ = "Decimal exponent exceeds safety limit.";
                 return {};
             }
@@ -486,11 +522,12 @@ public:
         BigInt value = expression();
         skip();
         if (!error_.empty()) return failure(error_);
+        if (budget_.failed()) return failure(budget_.error());
         if (position_ != input_.size()) {
             return failure("Unexpected arbitrary-precision input.");
         }
         if (!check_bigint(value, budget_)) {
-            return failure("Result exceeds the 20,000-digit safety limit.");
+            return failure(budget_.error());
         }
         return success(value.str());
     }
@@ -499,6 +536,7 @@ private:
     std::string_view input_;
     EvaluationBudget& budget_;
     std::size_t position_ = 0U;
+    std::size_t recursion_depth_ = 0U;
     std::string error_;
 
     void skip() {
@@ -531,7 +569,7 @@ private:
                 break;
             }
             if (!check_bigint(left, budget_)) {
-                error_ = "Result exceeds the 20,000-digit safety limit.";
+                if (error_.empty()) error_ = budget_.error();
                 return 0;
             }
         }
@@ -545,9 +583,6 @@ private:
             BigInt product;
             if (!multiply_checked(
                     left, right, product, budget_, error_)) {
-                if (error_ == "result exceeds evaluation output limit") {
-                    error_ = "Result exceeds the 20,000-digit safety limit.";
-                }
                 return 0;
             }
             left = std::move(product);
@@ -556,6 +591,8 @@ private:
     }
 
     BigInt unary() {
+        ParseDepthGuard depth(budget_, recursion_depth_, error_);
+        if (!depth) return 0;
         if (take('+')) return unary();
         if (take('-')) return -unary();
         return power();
@@ -567,7 +604,7 @@ private:
 
         BigInt exponent_value = unary();
         if (!error_.empty()) return 0;
-        if (exponent_value < 0 || exponent_value > 100000) {
+        if (exponent_value < 0 || exponent_value > kMaxIntegerExponent) {
             error_ = "Exponent must be a non-negative integer <= 100000.";
             return 0;
         }
@@ -575,11 +612,6 @@ private:
             exponent_value.convert_to<std::uint64_t>();
         BigInt result;
         if (!power_checked(base, exponent, result, budget_, error_)) {
-            if (error_ == "power exponent too large") {
-                error_ = "Exponent must be a non-negative integer <= 100000.";
-            } else if (error_ == "result exceeds evaluation output limit") {
-                error_ = "Result exceeds the 20,000-digit safety limit.";
-            }
             return 0;
         }
         return result;
@@ -588,21 +620,23 @@ private:
     BigInt postfix() {
         BigInt value = primary();
         while (error_.empty() && take('!')) {
-            if (value < 0 || value > 1000) {
+            if (value < 0 || value > kMaxIntegerFactorial) {
                 error_ = "Factorial requires an integer from 0 to 1000.";
                 return 0;
             }
             const std::uint64_t count = value.convert_to<std::uint64_t>();
-            if (!budget_.check_factorial(count) ||
-                !budget_.charge(count > 1U ? count - 1U : 1U)) {
+            if (!budget_.check_factorial(count)) {
                 error_ = budget_.error();
                 return 0;
             }
             BigInt factorial = 1;
             for (std::uint64_t index = 2U; index <= count; ++index) {
+                // Charge inside the loop rather than in one up-front lump so
+                // cancellation/deadline state is observed cooperatively.
+                if (!charge_or_error(budget_, error_)) return 0;
                 factorial *= index;
                 if (!check_bigint(factorial, budget_)) {
-                    error_ = "Result exceeds the 20,000-digit safety limit.";
+                    if (error_.empty()) error_ = budget_.error();
                     return 0;
                 }
             }
