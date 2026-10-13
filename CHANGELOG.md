@@ -6,10 +6,19 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.40 — 2026-10-13
+
+- Replace Calculator's bespoke arbitrary-precision integer engine with the pinned Boost.Multiprecision `cpp_int` mechanism while retaining Calculator-owned exact/integer grammar, rational semantics and product limits.
+- Add one cumulative `EvaluationBudget` across Scientific and iterative/arbitrary Advanced Tools, with explicit input, work, recursion, output, deadline and cancellation contracts plus a non-relaxable 20,000-digit product ceiling.
+- Bound exact and arbitrary-precision recursive descent, make long integer work observe cancellation/deadlines cooperatively, and keep failure state independent of diagnostic-string allocation.
+- Remove duplicate per-file Calculator source wiring from the iPhone project: XcodeGen now owns the cohesive core/UI source trees while Common's genuinely platform-specific Portable subset remains explicit and regression-checked.
+- Bind manual release reconciliation to the exact immutable tag source, reject version rollback/reuse from later same-version source, and retain a single release-decision authority.
+- Advance pinned GitHub Actions revisions and align the maintained architecture, design, decisions, numerics, portability, validation and contributor contracts with Common 1.19.35 and current Calculator behaviour.
+
 ## 0.2.39 — 2026-10-12
 
 - Replace release publication based on a `Release ` commit-message prefix with explicit `VERSION`-change detection plus an intentional manual-publish input.
-- Add an early release-metadata preflight that requires `VERSION`, the Debian changelog, this changelog and the newest AppStream release to agree before expensive platform jobs start.
+- Add an early release-metadata preflight that requires `VERSION`, the Debian changelog, this changelog and the newest AppStream release to agree before any expensive platform job starts.
 - Remove the literal source-version copy from README so `VERSION` is the single authority rather than one of several values humans must remember to bump.
 - Move the large Debian package check, Linux idle-CPU smoke test, Windows native runtime/dependency smoke test, deterministic source bundling, native-installer assembly and central APT polling out of workflow YAML into focused support scripts.
 - Generate the release asset list and SHA-256 manifest once from a canonical asset definition instead of repeating the same filenames across verification, hashing and publication steps.
@@ -407,7 +416,7 @@ No unreleased changes.
 
 ## 0.1.32 — 2026-09-19
 
-- Bound Programmer-mode recursive parsing so excessively nested parentheses or unary operators fail deterministically with `expression nesting too deep` instead of risking native stack exhaustion.
+- Bound recursive Programmer parsing so excessively nested parentheses or unary operators fail deterministically with `expression nesting too deep` instead of risking native stack exhaustion.
 - Added permanent Programmer regression coverage for deep parenthesis and unary chains.
 
 ## Recording policy
