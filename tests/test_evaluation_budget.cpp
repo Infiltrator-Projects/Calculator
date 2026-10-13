@@ -76,20 +76,47 @@ int main() {
     check(power_budget.error() == "power exponent too large",
           "power limit reports the budget error");
 
-    EvaluationLimits relaxed_output_limits;
-    relaxed_output_limits.max_output_digits =
-        calculator::kEvaluationMaxOutputDigits + 1000U;
-    EvaluationBudget relaxed_output_budget(relaxed_output_limits);
-    check(relaxed_output_budget.limits().max_output_digits ==
-              calculator::kEvaluationMaxOutputDigits,
+    EvaluationLimits relaxed_limits;
+    relaxed_limits.max_input_bytes = calculator::kEvaluationMaxInputBytes + 1U;
+    relaxed_limits.max_steps = calculator::kEvaluationMaxSteps + 1U;
+    relaxed_limits.max_parse_depth = calculator::kEvaluationMaxParseDepth + 1U;
+    relaxed_limits.max_function_depth = calculator::kEvaluationMaxFunctionDepth + 1U;
+    relaxed_limits.max_factorial = calculator::kEvaluationMaxFactorial + 1U;
+    relaxed_limits.max_power_exponent = calculator::kEvaluationMaxPowerExponent + 1U;
+    relaxed_limits.max_output_digits = calculator::kEvaluationMaxOutputDigits + 1U;
+    EvaluationBudget relaxed_budget(relaxed_limits);
+    check(relaxed_budget.limits().max_input_bytes == calculator::kEvaluationMaxInputBytes,
+          "caller cannot relax hard input ceiling");
+    check(relaxed_budget.limits().max_steps == calculator::kEvaluationMaxSteps,
+          "caller cannot relax hard work ceiling");
+    check(relaxed_budget.limits().max_parse_depth == calculator::kEvaluationMaxParseDepth,
+          "caller cannot relax hard parse-depth ceiling");
+    check(relaxed_budget.limits().max_function_depth == calculator::kEvaluationMaxFunctionDepth,
+          "caller cannot relax hard function-depth ceiling");
+    check(relaxed_budget.limits().max_factorial == calculator::kEvaluationMaxFactorial,
+          "caller cannot relax hard factorial ceiling");
+    check(relaxed_budget.limits().max_power_exponent == calculator::kEvaluationMaxPowerExponent,
+          "caller cannot relax hard exponent ceiling");
+    check(relaxed_budget.limits().max_output_digits == calculator::kEvaluationMaxOutputDigits,
           "caller cannot relax hard arbitrary-precision output ceiling");
 
-    EvaluationLimits zero_output_limits;
-    zero_output_limits.max_output_digits = 0U;
-    EvaluationBudget zero_output_budget(zero_output_limits);
-    check(zero_output_budget.limits().max_output_digits ==
-              calculator::kEvaluationMaxOutputDigits,
-          "zero output limit does not disable product safety ceiling");
+    EvaluationLimits zero_limits;
+    zero_limits.max_input_bytes = 0U;
+    zero_limits.max_steps = 0U;
+    zero_limits.max_parse_depth = 0U;
+    zero_limits.max_function_depth = 0U;
+    zero_limits.max_factorial = 0U;
+    zero_limits.max_power_exponent = 0U;
+    zero_limits.max_output_digits = 0U;
+    EvaluationBudget zero_budget(zero_limits);
+    check(zero_budget.limits().max_input_bytes == calculator::kEvaluationMaxInputBytes &&
+              zero_budget.limits().max_steps == calculator::kEvaluationMaxSteps &&
+              zero_budget.limits().max_parse_depth == calculator::kEvaluationMaxParseDepth &&
+              zero_budget.limits().max_function_depth == calculator::kEvaluationMaxFunctionDepth &&
+              zero_budget.limits().max_factorial == calculator::kEvaluationMaxFactorial &&
+              zero_budget.limits().max_power_exponent == calculator::kEvaluationMaxPowerExponent &&
+              zero_budget.limits().max_output_digits == calculator::kEvaluationMaxOutputDigits,
+          "zero cannot disable product evaluation safety ceilings");
 
     EvaluationLimits graph_limits;
     graph_limits.max_steps = 50U;
