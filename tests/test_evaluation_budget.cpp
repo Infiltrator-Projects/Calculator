@@ -40,6 +40,22 @@ int main() {
     check(depth_budget.error() == "expression nesting too deep",
           "Scientific parse-depth failure is reported by the budget");
 
+    EvaluationLimits exact_depth_limits;
+    exact_depth_limits.max_parse_depth = 3U;
+    EvaluationBudget exact_depth_budget(exact_depth_limits);
+    const auto exact_depth = calculator::tools::evaluate(
+        calculator::tools::AdvancedTool::ExactDecimal,
+        "----1", &exact_depth_budget);
+    check(!exact_depth.ok && exact_depth_budget.failed(),
+          "exact-decimal unary recursion consumes parse-depth budget");
+
+    EvaluationBudget integer_depth_budget(exact_depth_limits);
+    const auto integer_depth = calculator::tools::evaluate(
+        calculator::tools::AdvancedTool::ArbitraryPrecision,
+        "2^2^2^2", &integer_depth_budget);
+    check(!integer_depth.ok && integer_depth_budget.failed(),
+          "integer power recursion consumes parse-depth budget");
+
     EvaluationLimits factorial_limits;
     factorial_limits.max_factorial = 5U;
     EvaluationBudget factorial_budget(factorial_limits);
@@ -60,6 +76,21 @@ int main() {
     check(power_budget.error() == "power exponent too large",
           "power limit reports the budget error");
 
+    EvaluationLimits relaxed_output_limits;
+    relaxed_output_limits.max_output_digits =
+        calculator::kEvaluationMaxOutputDigits + 1000U;
+    EvaluationBudget relaxed_output_budget(relaxed_output_limits);
+    check(relaxed_output_budget.limits().max_output_digits ==
+              calculator::kEvaluationMaxOutputDigits,
+          "caller cannot relax hard arbitrary-precision output ceiling");
+
+    EvaluationLimits zero_output_limits;
+    zero_output_limits.max_output_digits = 0U;
+    EvaluationBudget zero_output_budget(zero_output_limits);
+    check(zero_output_budget.limits().max_output_digits ==
+              calculator::kEvaluationMaxOutputDigits,
+          "zero output limit does not disable product safety ceiling");
+
     EvaluationLimits graph_limits;
     graph_limits.max_steps = 50U;
     EvaluationBudget graph_budget(graph_limits);
@@ -78,6 +109,14 @@ int main() {
     check(!scientific.ok, "cancelled evaluation stops before parsing");
     check(cancelled.error() == "evaluation cancelled",
           "cancellation has a stable diagnostic");
+
+    EvaluationBudget cancelled_integer;
+    cancelled_integer.cancel();
+    const auto integer_cancelled = calculator::tools::evaluate(
+        calculator::tools::AdvancedTool::ArbitraryPrecision,
+        "100!", &cancelled_integer);
+    check(!integer_cancelled.ok && cancelled_integer.failed(),
+          "cancelled arbitrary-precision work stops at the shared boundary");
 
     if (failures != 0) {
         std::cerr << failures << " evaluation budget test(s) failed\n";
