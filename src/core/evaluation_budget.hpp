@@ -9,10 +9,18 @@
 
 namespace calculator {
 
-// Hard product safety ceiling for materialised arbitrary-precision decimal
-// output. Callers may tighten this through EvaluationLimits but may not relax
-// it: a caller-supplied budget is a restriction mechanism, not permission to
-// bypass Calculator's product safety contract.
+// Product safety ceilings for multiprecision/iterative evaluation. A custom
+// EvaluationLimits object is a restriction mechanism: callers may choose a
+// smaller positive bound but cannot disable or raise these ceilings. Keeping
+// the hard maxima explicit prevents an embedding surface from accidentally
+// bypassing parser-stack, input-size or computational-work invariants that the
+// ordinary Calculator UI relies on.
+inline constexpr std::size_t kEvaluationMaxInputBytes = 8192U;
+inline constexpr std::uint64_t kEvaluationMaxSteps = 5000000U;
+inline constexpr std::size_t kEvaluationMaxParseDepth = 16U;
+inline constexpr std::size_t kEvaluationMaxFunctionDepth = 16U;
+inline constexpr std::uint64_t kEvaluationMaxFactorial = 100000U;
+inline constexpr std::uint64_t kEvaluationMaxPowerExponent = 100000000U;
 inline constexpr std::size_t kEvaluationMaxOutputDigits = 20000U;
 
 // Resource policy shared by the multiprecision Scientific evaluator and the
@@ -21,12 +29,12 @@ inline constexpr std::size_t kEvaluationMaxOutputDigits = 20000U;
 // parser-depth contract; the two domains have different representations and
 // workload characteristics and are not falsely collapsed into one parser.
 struct EvaluationLimits {
-    std::size_t max_input_bytes = 8192U;
-    std::uint64_t max_steps = 5000000U;
-    std::size_t max_parse_depth = 16U;
-    std::size_t max_function_depth = 16U;
-    std::uint64_t max_factorial = 100000U;
-    std::uint64_t max_power_exponent = 100000000U;
+    std::size_t max_input_bytes = kEvaluationMaxInputBytes;
+    std::uint64_t max_steps = kEvaluationMaxSteps;
+    std::size_t max_parse_depth = kEvaluationMaxParseDepth;
+    std::size_t max_function_depth = kEvaluationMaxFunctionDepth;
+    std::uint64_t max_factorial = kEvaluationMaxFactorial;
+    std::uint64_t max_power_exponent = kEvaluationMaxPowerExponent;
     std::size_t max_output_digits = kEvaluationMaxOutputDigits;
     std::chrono::milliseconds timeout{0};
 };
