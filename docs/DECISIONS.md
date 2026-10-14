@@ -167,3 +167,11 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** The current Common baseline preserves the product-neutral parsing, checked arithmetic, deterministic ASCII, durable POSIX I/O, design metrics and typography contracts already relied on by Calculator while providing the semantic design-palette fields now consumed by the native shells. Exact dependency identity matters independently of the VERSION text: another commit carrying the same version string is not an interchangeable build input.
 
 **Consequence.** Common is the one authority for those shared mechanisms and design contracts. Calculator retains ownership of expression grammar, numeric-domain policy, session/controller semantics, Advanced Tools behaviour and native shell adaptation. `tests/test_common_contract.py` protects both the exact dependency revision and the public-API boundary so future Common upgrades must be deliberate rather than incidental.
+
+## ADR-020 — Desktop entry points orchestrate; persistence and native primitives have explicit owners
+
+**Decision.** GTK and Win32 entry-point translation units own application/window orchestration only. Linux XDG persistence, Windows Calculator Registry persistence and reusable Win32 text/DPI/theme primitives live in named platform modules. The shared `Controller` remains one object and one state authority, but its implementation is partitioned into interaction/dispatch, session/persistence and derived-presentation translation units.
+
+**Rationale.** File size alone is not an architectural defect, and arbitrary splitting merely moves complexity. The reviewed desktop entry points had instead accumulated unrelated authorities: storage policy, compatibility readers, native conversion/DPI utilities and window orchestration. Those are independently cohesive responsibilities with distinct failure and maintenance boundaries.
+
+**Consequence.** Platform mains stay readable as lifecycle/event choreography; storage paths and compatibility readers have one owner per platform; reusable Win32 primitives have one owner; and structural tests reject regression back into monolithic entry points. No new calculator state object or arithmetic abstraction is introduced.

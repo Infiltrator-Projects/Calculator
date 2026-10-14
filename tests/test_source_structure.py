@@ -75,4 +75,47 @@ assert len(dispatcher.splitlines()) < 200, (
     "Advanced Tools dispatcher has grown back into a god file"
 )
 
+
+# Desktop entry points are orchestration boundaries. Persistence and reusable
+# native primitives have named owners so platform mains cannot silently absorb
+# storage policy or utility implementations again.
+UI_MODULES = (
+    "src/ui/calculator_ui_controller.cpp",
+    "src/ui/calculator_ui_state.cpp",
+    "src/ui/calculator_ui_presentation.cpp",
+)
+PLATFORM_MODULES = (
+    "src/app/linux_persistence.cpp",
+    "src/app/windows_platform.cpp",
+    "src/app/windows_persistence.cpp",
+)
+for relative in UI_MODULES + PLATFORM_MODULES:
+    assert (ROOT / relative).is_file(), f"missing architecture module: {relative}"
+    assert relative in cmake, f"CMake omits architecture module: {relative}"
+
+controller_dispatch = (ROOT / "src/ui/calculator_ui_controller.cpp").read_text(encoding="utf-8")
+controller_state = (ROOT / "src/ui/calculator_ui_state.cpp").read_text(encoding="utf-8")
+controller_presentation = (ROOT / "src/ui/calculator_ui_presentation.cpp").read_text(encoding="utf-8")
+for method in ("persistent_state_text", "load_persistent_state_text", "recall_history", "recall_memory"):
+    assert f"Controller::{method}(" not in controller_dispatch, f"Controller state leaked back into dispatch TU: {method}"
+    assert f"Controller::{method}(" in controller_state, f"Controller state TU lost ownership of: {method}"
+for method in ("additional_results", "programmer_bits", "format_display", "button_label", "command_enabled"):
+    assert f"Controller::{method}(" not in controller_dispatch, f"Controller presentation leaked back into dispatch TU: {method}"
+    assert f"Controller::{method}(" in controller_presentation, f"Controller presentation TU lost ownership of: {method}"
+
+linux_main = (ROOT / "src/app/main.cpp").read_text(encoding="utf-8")
+linux_persistence = (ROOT / "src/app/linux_persistence.cpp").read_text(encoding="utf-8")
+for mechanism in ("g_get_user_data_dir", "g_get_user_config_dir", "infiltratr_atomic_file_write_bytes", "infiltratr_read_text_file_alloc"):
+    assert mechanism not in linux_main, f"Linux storage mechanism leaked into main.cpp: {mechanism}"
+    assert mechanism in linux_persistence, f"Linux persistence owner lost mechanism: {mechanism}"
+
+windows_main = (ROOT / "src/app/windows_main.cpp").read_text(encoding="utf-8")
+windows_persistence = (ROOT / "src/app/windows_persistence.cpp").read_text(encoding="utf-8")
+windows_platform = (ROOT / "src/app/windows_platform.cpp").read_text(encoding="utf-8")
+assert 'L"Software\\\\Infiltrator\\\\Calc"' not in windows_main, "Windows app Registry identity leaked back into windows_main.cpp"
+assert 'L"Software\\\\Infiltrator\\\\Calc"' in windows_persistence, "Windows persistence owner lost Calculator Registry identity"
+for mechanism in ("MultiByteToWideChar", "GetDpiForWindow"):
+    assert mechanism not in windows_main, f"Reusable Win32 primitive leaked back into windows_main.cpp: {mechanism}"
+    assert mechanism in windows_platform, f"Windows platform owner lost primitive: {mechanism}"
+
 print("Calculator source modularity contract passed.")

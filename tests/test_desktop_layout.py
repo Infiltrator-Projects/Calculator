@@ -2,8 +2,26 @@
 from hashlib import sha256
 from pathlib import Path
 
-linux = Path("src/app/main.cpp").read_text(encoding="utf-8")
-windows = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
+# Native-platform contracts span orchestration plus their explicitly owned
+# persistence/platform modules. Keep the main translation units separately so
+# layout/event assertions can remain scoped to the orchestration boundary.
+linux_main = Path("src/app/main.cpp").read_text(encoding="utf-8")
+linux_persistence = "\n".join((
+    Path("src/app/linux_persistence.cpp").read_text(encoding="utf-8"),
+    Path("src/app/linux_persistence.hpp").read_text(encoding="utf-8"),
+))
+linux = linux_main + "\n" + linux_persistence
+
+windows_main = Path("src/app/windows_main.cpp").read_text(encoding="utf-8")
+windows_platform = "\n".join((
+    Path("src/app/windows_platform.cpp").read_text(encoding="utf-8"),
+    Path("src/app/windows_platform.hpp").read_text(encoding="utf-8"),
+))
+windows_persistence = "\n".join((
+    Path("src/app/windows_persistence.cpp").read_text(encoding="utf-8"),
+    Path("src/app/windows_persistence.hpp").read_text(encoding="utf-8"),
+))
+windows = "\n".join((windows_main, windows_platform, windows_persistence))
 contract = Path("src/ui/calculator_ui_contract.hpp").read_text(encoding="utf-8")
 theme = Path("src/ui/calculator_theme.hpp").read_text(encoding="utf-8")
 ios = Path("ios/Sources/ContentView.swift").read_text(encoding="utf-8")
@@ -19,7 +37,7 @@ for needle in (
     "calculator::ui::typography().brand_family",
     "calculator::ui::design_metrics()",
     "calculator::ui::desktop_preferred_height(mode)",
-    "calculator::ui::desktop_preferred_height(Mode::Standard)",
+    "desktop_preferred_height(ui::Mode::Standard)",
 ):
     assert needle in linux, f"Linux Common/design contract missing: {needle}"
 
@@ -396,11 +414,13 @@ assert "refusing silent font substitution" in linux
 
 for needle in (
     "DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2",
-    "GetDpiForWindow",
     "WM_DPICHANGED",
     "CALCULATOR_ICON_RESOURCE",
 ):
-    assert needle in windows, f"Windows DPI/icon contract missing: {needle}"
+    assert needle in windows_main, f"Windows DPI/icon orchestration contract missing: {needle}"
+assert "GetDpiForWindow" in windows_platform, (
+    "Windows platform module lost per-monitor DPI ownership"
+)
 
 assert "CALCULATOR_ICON_RESOURCE=1001" in cmake
 assert "assets/windows/calculator.ico" in cmake
@@ -711,12 +731,14 @@ for needle in (
 ):
     assert needle in ios_model, f"iPhone semantic-state persistence missing: {needle}"
 
-# Mint-class converter remains first-class and persistent on Linux.
-assert '"conversion.ini"' in linux
-assert 'conversion_dimension' in linux
-assert 'conversion_from' in linux
-assert 'conversion_to' in linux
-assert 'Swap source and target units' in linux
+# Mint-class converter remains first-class and persistent on Linux. The
+# widget/workflow stays in the GTK orchestrator while the storage identity is
+# owned solely by LinuxPersistence.
+assert '"conversion.ini"' in linux_persistence
+assert 'conversion_dimension' in linux_main
+assert 'conversion_from' in linux_main
+assert 'conversion_to' in linux_main
+assert 'Swap source and target units' in linux_main
 
 # Mint/GNOME-class state persistence includes calculator semantics, not only
 # geometry. Legacy variable/function/presentation files remain read-only
@@ -727,13 +749,15 @@ for needle in (
     'programmer-base',
     'programmer-width',
     'programmer-signed',
-    'load_user_variables',
-    'load_user_functions',
-    'load_display_preferences',
+    'load_legacy_variables',
+    'load_legacy_functions',
+    'load_legacy_display_preferences',
     'save_controller_state',
     'persistent_state_text()',
 ):
-    assert needle in linux, f'Linux persistent calculator state missing: {needle}'
+    assert needle in linux_persistence, (
+        f'Linux persistence owner missing calculator state contract: {needle}'
+    )
 
 for forbidden in (
     'save_user_variables',

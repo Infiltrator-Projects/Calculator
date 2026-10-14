@@ -1,3 +1,13 @@
+infiltrator-calculator (0.2.41) unstable; urgency=medium
+
+  * Decompose Controller implementation by cohesive ownership boundaries.
+  * Extract Linux XDG persistence from the GTK entry point.
+  * Extract Windows Registry persistence and reusable native platform helpers.
+  * Add structural tests protecting desktop-shell ownership boundaries.
+  * Align maintained architecture decisions with the reduced shell design.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Wed, 14 Oct 2026 10:55:00 +1100
+
 infiltrator-calculator (0.2.40) unstable; urgency=medium
 
   * Replace bespoke big-integer arithmetic with Boost.Multiprecision cpp_int.

@@ -6,6 +6,14 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.41 — 2026-10-14
+
+- Decompose the shared Controller implementation by real ownership boundaries while retaining one Controller state object and public API.
+- Move Linux XDG persistence and compatibility readers out of the GTK entry point into a sole storage adapter.
+- Move Calculator Registry persistence plus reusable Win32 text, DPI and system-theme primitives out of the Windows entry point.
+- Add structural architecture tests preventing persistence, presentation and native utility ownership from collapsing back into monolithic entry points.
+- Document the desktop orchestration boundary and preserve arithmetic, interaction semantics and release behaviour unchanged.
+
 ## 0.2.40 — 2026-10-13
 
 - Replace Calculator's bespoke arbitrary-precision integer engine with the pinned Boost.Multiprecision `cpp_int` mechanism while retaining Calculator-owned exact/integer grammar, rational semantics and product limits.

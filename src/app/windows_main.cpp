@@ -11,6 +11,8 @@
 #include "../ui/calculator_ui_controller.hpp"
 #include "../core/advanced_tools.hpp"
 #include "../ui/calculator_theme.hpp"
+#include "windows_persistence.hpp"
+#include "windows_platform.hpp"
 
 #include <algorithm>
 #include <array>
@@ -59,6 +61,13 @@ constexpr int kIdBaseSwapEndian = 5070;
 
 using calculator::ui::ThemeMode;
 using calculator::ui::ThemePalette;
+using calculator::app::win32::system_prefers_dark;
+using calculator::app::win32::sx;
+using calculator::app::win32::utf8_to_wide;
+using calculator::app::win32::wide_to_utf8;
+using calculator::app::win32::win32_multiline_text;
+using calculator::app::win32::window_dpi;
+using calculator::app::win32::window_text;
 
 ThemeMode g_theme_mode = ThemeMode::System;
 ThemePalette g_theme_palette{};
@@ -166,182 +175,9 @@ RECT g_display_rect{};
 WNDPROC g_old_edit_proc = nullptr;
 
 Controller g_controller;
+calculator::app::WindowsPersistence g_persistence{g_controller};
 bool g_status_fault = false;
 
-std::wstring utf8_to_wide(const std::string& text) {
-    if (text.empty()) return {};
-    const int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-                                          text.data(), static_cast<int>(text.size()),
-                                          nullptr, 0);
-    if (count <= 0) {
-        const int fallback = MultiByteToWideChar(CP_ACP, 0, text.data(),
-                                                 static_cast<int>(text.size()),
-                                                 nullptr, 0);
-        if (fallback <= 0) return {};
-        std::wstring wide(static_cast<std::size_t>(fallback), L'\0');
-        MultiByteToWideChar(CP_ACP, 0, text.data(), static_cast<int>(text.size()),
-                            wide.data(), fallback);
-        return wide;
-    }
-
-    std::wstring wide(static_cast<std::size_t>(count), L'\0');
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-                        text.data(), static_cast<int>(text.size()),
-                        wide.data(), count);
-    return wide;
-}
-
-std::wstring win32_multiline_text(std::string_view text) {
-    std::string normalized;
-    normalized.reserve(text.size() + text.size() / 8U);
-    char previous = '\0';
-    for (char ch : text) {
-        if (ch == '\n' && previous != '\r') normalized.push_back('\r');
-        normalized.push_back(ch);
-        previous = ch;
-    }
-    return utf8_to_wide(normalized);
-}
-
-std::string wide_to_utf8(const std::wstring& text) {
-    if (text.empty()) return {};
-    const int count = WideCharToMultiByte(CP_UTF8, 0, text.data(),
-                                          static_cast<int>(text.size()),
-                                          nullptr, 0, nullptr, nullptr);
-    if (count <= 0) return {};
-    std::string utf8(static_cast<std::size_t>(count), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()),
-                        utf8.data(), count, nullptr, nullptr);
-    return utf8;
-}
-
-std::wstring window_text(HWND window) {
-    const int length = GetWindowTextLengthW(window);
-    if (length <= 0) return {};
-    std::vector<wchar_t> buffer(static_cast<std::size_t>(length) + 1U, L'\0');
-    GetWindowTextW(window, buffer.data(), length + 1);
-    return std::wstring(buffer.data(), static_cast<std::size_t>(length));
-}
-
-// All shared desktop dimensions are logical 96-DPI units. Win32 is solely
-// responsible for mapping them to device pixels; calculation/layout contracts
-// therefore stay independent of monitor DPI.
-int window_dpi(HWND window) {
-    if (window != nullptr) {
-        const UINT dpi = GetDpiForWindow(window);
-        if (dpi != 0U) return static_cast<int>(dpi);
-    }
-
-    HDC dc = GetDC(window);
-    int dpi = 96;
-    if (dc != nullptr) {
-        dpi = GetDeviceCaps(dc, LOGPIXELSX);
-        ReleaseDC(window, dc);
-    }
-    return dpi > 0 ? dpi : 96;
-}
-
-int sx(HWND window, int logical) {
-    return MulDiv(logical, window_dpi(window), 96);
-}
-
-bool system_prefers_dark() {
-    DWORD value = 1;
-    DWORD size = sizeof(value);
-    const LSTATUS status = RegGetValueW(
-        HKEY_CURRENT_USER,
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-        L"AppsUseLightTheme",
-        RRF_RT_REG_DWORD,
-        nullptr,
-        &value,
-        &size);
-    return status == ERROR_SUCCESS ? value == 0 : true;
-}
-
-ThemeMode load_theme_mode() {
-    DWORD value = 0;
-    DWORD size = sizeof(value);
-    const LSTATUS status = RegGetValueW(
-        HKEY_CURRENT_USER,
-        L"Software\\Infiltrator\\Calc",
-        L"ThemeMode",
-        RRF_RT_REG_DWORD,
-        nullptr,
-        &value,
-        &size);
-    if (status != ERROR_SUCCESS) return ThemeMode::System;
-    if (value == 1) return ThemeMode::Day;
-    if (value == 2) return ThemeMode::Night;
-    return ThemeMode::System;
-}
-
-void save_theme_mode() {
-    HKEY key = nullptr;
-    if (RegCreateKeyExW(
-            HKEY_CURRENT_USER,
-            L"Software\\Infiltrator\\Calc",
-            0, nullptr, 0, KEY_SET_VALUE,
-            nullptr, &key, nullptr) != ERROR_SUCCESS) {
-        return;
-    }
-    DWORD value = 0;
-    if (g_theme_mode == ThemeMode::Day) value = 1;
-    else if (g_theme_mode == ThemeMode::Night) value = 2;
-    (void)RegSetValueExW(
-        key, L"ThemeMode", 0, REG_DWORD,
-        reinterpret_cast<const BYTE*>(&value), sizeof(value));
-    RegCloseKey(key);
-}
-
-void save_controller_state() {
-    HKEY key = nullptr;
-    if (RegCreateKeyExW(
-            HKEY_CURRENT_USER,
-            L"Software\\Infiltrator\\Calc",
-            0, nullptr, 0, KEY_SET_VALUE,
-            nullptr, &key, nullptr) != ERROR_SUCCESS) {
-        return;
-    }
-    const std::wstring state =
-        utf8_to_wide(g_controller.persistent_state_text());
-    const DWORD bytes = static_cast<DWORD>(
-        (state.size() + 1U) * sizeof(wchar_t));
-    (void)RegSetValueExW(
-        key, L"ControllerStateV1", 0, REG_SZ,
-        reinterpret_cast<const BYTE*>(state.c_str()), bytes);
-    RegCloseKey(key);
-}
-
-void load_controller_state() {
-    DWORD type = 0U;
-    DWORD bytes = 0U;
-    if (RegGetValueW(
-            HKEY_CURRENT_USER,
-            L"Software\\Infiltrator\\Calc",
-            L"ControllerStateV1",
-            RRF_RT_REG_SZ,
-            &type, nullptr, &bytes) != ERROR_SUCCESS ||
-        type != REG_SZ || bytes < sizeof(wchar_t) ||
-        bytes > static_cast<DWORD>(
-            (Controller::kMaxPersistentStateBytes + 1U) *
-            sizeof(wchar_t))) {
-        return;
-    }
-
-    std::vector<wchar_t> buffer(
-        static_cast<std::size_t>(bytes / sizeof(wchar_t)), L'\0');
-    if (RegGetValueW(
-            HKEY_CURRENT_USER,
-            L"Software\\Infiltrator\\Calc",
-            L"ControllerStateV1",
-            RRF_RT_REG_SZ,
-            &type, buffer.data(), &bytes) != ERROR_SUCCESS) {
-        return;
-    }
-    const std::wstring state(buffer.data());
-    (void)g_controller.load_persistent_state_text(wide_to_utf8(state));
-}
 
 void resolve_theme() {
     const bool system_dark = system_prefers_dark();
@@ -619,7 +455,7 @@ void dispatch_command(const ButtonSpec& spec) {
     if (spec.command == Command::Equals ||
         spec.command == Command::CycleAngleUnit ||
         calculator::ui::is_programmer_selector(spec.command)) {
-        save_controller_state();
+        g_persistence.save_controller_state();
     }
     SetFocus(g_expression);
 }
@@ -629,7 +465,7 @@ void calculate_from_entry() {
     const auto result =
         g_controller.dispatch(Command::Equals, expression_cursor());
     render_state(result.cursor);
-    save_controller_state();
+    g_persistence.save_controller_state();
     SetFocus(g_expression);
 }
 
@@ -1406,7 +1242,7 @@ void show_precision_menu(HWND owner) {
         g_controller.set_scientific_digits(
             precision_presets[
                 static_cast<std::size_t>(selected - kIdPrecisionBase)]);
-        save_controller_state();
+        g_persistence.save_controller_state();
         render_state();
     } else if (selected >= kIdHistoryLimitBase &&
                selected < kIdHistoryLimitBase +
@@ -1414,7 +1250,7 @@ void show_precision_menu(HWND owner) {
         g_controller.set_history_limit(
             history_presets[
                 static_cast<std::size_t>(selected - kIdHistoryLimitBase)]);
-        save_controller_state();
+        g_persistence.save_controller_state();
         refresh_history();
         render_state();
     }
@@ -1434,7 +1270,7 @@ void apply_theme(bool persist) {
     apply_theme_to_window(g_history_window);
     apply_theme_to_window(g_tools_window);
     apply_theme_to_window(g_bases_window);
-    if (persist) save_theme_mode();
+    if (persist) g_persistence.save_theme_mode(g_theme_mode);
 }
 
 void create_controls(HWND window) {
@@ -2422,7 +2258,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         if (id == kIdModeStandard) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Standard);
-            save_controller_state();
+            g_persistence.save_controller_state();
             update_mode_ui();
             resize_main_for_mode(window, Mode::Standard);
             layout_main(window);
@@ -2431,7 +2267,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         if (id == kIdModeScientific) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Scientific);
-            save_controller_state();
+            g_persistence.save_controller_state();
             update_mode_ui();
             resize_main_for_mode(window, Mode::Scientific);
             layout_main(window);
@@ -2440,7 +2276,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         if (id == kIdModeProgrammer) {
             sync_controller_expression();
             g_controller.set_mode(Mode::Programmer);
-            save_controller_state();
+            g_persistence.save_controller_state();
             update_mode_ui();
             resize_main_for_mode(window, Mode::Programmer);
             layout_main(window);
@@ -2523,7 +2359,7 @@ LRESULT CALLBACK main_proc(HWND window, UINT message,
         return 0;
 
     case WM_DESTROY:
-        save_controller_state();
+        g_persistence.save_controller_state();
         PostQuitMessage(0);
         return 0;
 
@@ -2570,8 +2406,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show_command) {
     };
     InitCommonControlsEx(&controls);
 
-    g_theme_mode = load_theme_mode();
-    load_controller_state();
+    g_theme_mode = g_persistence.load_theme_mode();
+    g_persistence.load_controller_state();
     resolve_theme();
     recreate_theme_brushes();
 

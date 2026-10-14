@@ -2,9 +2,9 @@
 #include "../ui/calculator_ui_controller.hpp"
 #include "../core/advanced_tools.hpp"
 #include "../ui/calculator_theme.hpp"
+#include "linux_persistence.hpp"
 
 #include <infiltratr/core.h>
-#include <infiltratr/posix.h>
 
 #include <cstdint>
 #include <limits>
@@ -70,45 +70,10 @@ bool responsive_layout_initialized = false;
 int history_navigation_index = -1;
 
 Controller controller;
+calculator::app::LinuxPersistence persistence{controller};
 ThemeMode theme_mode = ThemeMode::System;
 bool effective_dark_theme = true;
 
-// Linux persistence policy: Calculator owns file formats and XDG locations;
- // Common owns private-directory creation plus durable/atomic file I/O. Reads
- // treat an empty file as a valid empty document and malformed content is
- // rejected by the owning Controller/Session parser before state is replaced.
-bool ensure_private_directory(const char* path) {
-    return path && *path &&
-           infiltratr_mkdir_parents(path, 0700U) == 0;
-}
-
-bool write_private_file(const char* path, std::string_view data) {
-    return path &&
-           infiltratr_atomic_file_write_bytes(
-               path, INFILTRATR_ATOMIC_FILE_PRIVATE,
-               data.data(), data.size()) == 0;
-}
-
-bool read_text_file(const char* path, std::string& data) {
-    if (!path) return false;
-
-    char* contents = nullptr;
-    std::size_t length = 0U;
-    const InfiltratrIoResult status =
-        infiltratr_read_text_file_alloc(path, &contents, &length);
-    if (status == INFILTRATR_IO_EMPTY) {
-        data.clear();
-        return true;
-    }
-    if (status != INFILTRATR_IO_OK) {
-        std::free(contents);
-        return false;
-    }
-
-    data.assign(contents, length);
-    std::free(contents);
-    return true;
-}
 
 // Calculator has exactly three approved MB Corpo faces: S Regular, S Bold
 // and A Condensed Regular. GTK selects the S regular/bold face by weight and
@@ -139,279 +104,15 @@ bool system_prefers_dark() {
     return dark;
 }
 
-ThemeMode load_theme_mode() {
-    gchar* path = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc", "theme", nullptr);
-    ThemeMode mode = ThemeMode::System;
-    std::string value;
-    if (read_text_file(path, value)) {
-        while (!value.empty() &&
-               infiltratr_ascii_is_space(
-                   static_cast<unsigned char>(value.back()))) {
-            value.pop_back();
-        }
-        ThemeMode parsed = ThemeMode::System;
-        if (calculator::ui::theme_mode_parse(value.c_str(), parsed)) {
-            mode = parsed;
-        }
-    }
-    g_free(path);
-    return mode;
-}
-
-bool user_functions_loaded = false;
-bool user_variables_loaded = false;
-
-// User variables/functions are loaded once per process. Secondary Calculator
-// windows are independent processes, so this does not create cross-window
-// mutable state inside the GTK shell.
-void load_user_variables() {
-    if (user_variables_loaded) return;
-    user_variables_loaded = true;
-    gchar* path = g_build_filename(
-        g_get_user_data_dir(), "infiltrator-calc", "variables", nullptr);
-    std::string contents;
-    if (read_text_file(path, contents)) {
-        if (!controller.load_variables_text(contents)) {
-            g_printerr(
-                "Calculator ignored malformed variables data at %s\n", path);
-        }
-    }
-    g_free(path);
-}
-
-void load_user_functions() {
-    if (user_functions_loaded) return;
-    user_functions_loaded = true;
-
-    gchar* path = g_build_filename(
-        g_get_user_data_dir(), "infiltrator-calc", "custom-functions", nullptr);
-    std::string contents;
-    if (read_text_file(path, contents)) {
-        if (!controller.load_function_definitions_text(contents)) {
-            g_printerr(
-                "Calculator ignored malformed custom-functions data at %s\n",
-                path);
-        }
-    }
-    g_free(path);
-}
-
-const char* result_format_name(ResultFormat format) {
-    switch (format) {
-    case ResultFormat::Fixed: return "fixed";
-    case ResultFormat::Scientific: return "scientific";
-    case ResultFormat::Engineering: return "engineering";
-    case ResultFormat::Automatic: return "automatic";
-    }
-    return "automatic";
-}
-
-ResultFormat result_format_from_name(const char* name) {
-    if (!name) return ResultFormat::Automatic;
-    if (g_strcmp0(name, "fixed") == 0) return ResultFormat::Fixed;
-    if (g_strcmp0(name, "scientific") == 0) return ResultFormat::Scientific;
-    if (g_strcmp0(name, "engineering") == 0) return ResultFormat::Engineering;
-    return ResultFormat::Automatic;
-}
-
-void load_display_preferences() {
-    gchar* path = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc",
-        "presentation.ini", nullptr);
-    GKeyFile* key = g_key_file_new();
-    DisplayPreferences prefs = controller.display_preferences();
-    if (g_key_file_load_from_file(key, path, G_KEY_FILE_NONE, nullptr)) {
-        if (g_key_file_has_key(key, "Presentation", "format", nullptr)) {
-            gchar* value = g_key_file_get_string(
-                key, "Presentation", "format", nullptr);
-            prefs.format = result_format_from_name(value);
-            g_free(value);
-        }
-        if (g_key_file_has_key(
-                key, "Presentation", "decimal-places", nullptr)) {
-            const gint value = g_key_file_get_integer(
-                key, "Presentation", "decimal-places", nullptr);
-            prefs.decimal_places =
-                static_cast<unsigned>(std::clamp(value, 0, 15));
-        }
-        if (g_key_file_has_key(
-                key, "Presentation", "group-thousands", nullptr)) {
-            prefs.group_thousands = g_key_file_get_boolean(
-                key, "Presentation", "group-thousands", nullptr);
-        }
-        if (g_key_file_has_key(
-                key, "Presentation", "trailing-zeroes", nullptr)) {
-            prefs.trailing_zeroes = g_key_file_get_boolean(
-                key, "Presentation", "trailing-zeroes", nullptr);
-        }
-    }
-    controller.set_display_preferences(prefs);
-    g_key_file_unref(key);
-    g_free(path);
-}
-
-
-bool controller_state_loaded = false;
-
-void save_controller_state() {
-    gchar* directory = g_build_filename(
-        g_get_user_data_dir(), "infiltrator-calc", nullptr);
-    if (ensure_private_directory(directory)) {
-        gchar* path = g_build_filename(directory, "state-v1", nullptr);
-        const std::string text = controller.persistent_state_text();
-        if (!write_private_file(path, text)) {
-            g_printerr(
-                "Calculator could not persist shared state to %s\n", path);
-        }
-        g_free(path);
-    }
-    g_free(directory);
-}
-
-bool load_controller_state() {
-    if (controller_state_loaded) return true;
-    controller_state_loaded = true;
-
-    gchar* path = g_build_filename(
-        g_get_user_data_dir(), "infiltrator-calc", "state-v1", nullptr);
-    std::string contents;
-    const bool found = read_text_file(path, contents);
-    g_free(path);
-
-    if (found && controller.load_persistent_state_text(contents)) {
-        return contents.rfind("INFILTRATOR_CALCULATOR_STATE 2\n", 0U) == 0U;
-    }
-    if (found) {
-        g_printerr("Calculator ignored malformed shared state document.\n");
-    }
-
-    // One-release migration path from the older Linux-specific files. The
-    // caller applies legacy desktop semantic state before publishing v2.
-    load_user_functions();
-    load_user_variables();
-    load_display_preferences();
-    return false;
-}
-
-struct DesktopState {
-    int width = calculator::ui::kDesktopMetrics.default_width;
-    int height = calculator::ui::desktop_preferred_height(Mode::Standard);
-    Mode selected_mode = Mode::Standard;
-    int angle_code = static_cast<int>(calculator::AngleUnit::Degrees);
-    int programmer_base_code =
-        static_cast<int>(calculator::ProgrammerBase::Decimal);
-    int programmer_width_code =
-        static_cast<int>(calculator::IntegerWidth::Bits64);
-    bool programmer_signed_flag = false;
-};
-
-DesktopState load_desktop_state() {
-    DesktopState state;
-    gchar* path = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc",
-        "desktop.ini", nullptr);
-    GKeyFile* key = g_key_file_new();
-    if (g_key_file_load_from_file(key, path, G_KEY_FILE_NONE, nullptr)) {
-        if (g_key_file_has_key(key, "Window", "width", nullptr)) {
-            state.width = g_key_file_get_integer(
-                key, "Window", "width", nullptr);
-        }
-        if (g_key_file_has_key(key, "Window", "height", nullptr)) {
-            state.height = g_key_file_get_integer(
-                key, "Window", "height", nullptr);
-        }
-        if (g_key_file_has_key(key, "Window", "mode", nullptr)) {
-            const gint mode = g_key_file_get_integer(
-                key, "Window", "mode", nullptr);
-            if (mode >= static_cast<gint>(Mode::Standard) &&
-                mode <= static_cast<gint>(Mode::Programmer)) {
-                state.selected_mode = static_cast<Mode>(mode);
-            }
-        }
-        if (g_key_file_has_key(key, "Calculator", "angle-unit", nullptr)) {
-            const gint angle = g_key_file_get_integer(
-                key, "Calculator", "angle-unit", nullptr);
-            if (angle >= static_cast<gint>(calculator::AngleUnit::Degrees) &&
-                angle <= static_cast<gint>(calculator::AngleUnit::Gradians)) {
-                state.angle_code = angle;
-            }
-        }
-        if (g_key_file_has_key(key, "Calculator", "programmer-base", nullptr)) {
-            const gint base = g_key_file_get_integer(
-                key, "Calculator", "programmer-base", nullptr);
-            if (base >= static_cast<gint>(calculator::ProgrammerBase::Binary) &&
-                base <= static_cast<gint>(calculator::ProgrammerBase::Hexadecimal)) {
-                state.programmer_base_code = base;
-            }
-        }
-        if (g_key_file_has_key(key, "Calculator", "programmer-width", nullptr)) {
-            const gint width = g_key_file_get_integer(
-                key, "Calculator", "programmer-width", nullptr);
-            if (width == 8 || width == 16 || width == 32 || width == 64) {
-                state.programmer_width_code = width;
-            }
-        }
-        if (g_key_file_has_key(key, "Calculator", "programmer-signed", nullptr)) {
-            state.programmer_signed_flag = g_key_file_get_boolean(
-                key, "Calculator", "programmer-signed", nullptr);
-        }
-    }
-    g_key_file_unref(key);
-    g_free(path);
-
-    const auto& metrics = calculator::ui::kDesktopMetrics;
-    state.width = std::clamp(
-        state.width, metrics.minimum_width, 2000);
-    state.height = std::clamp(
-        state.height,
-        calculator::ui::desktop_minimum_height(state.selected_mode), 1600);
-    return state;
-}
-
-void save_desktop_state(GtkWidget* window) {
-    if (!window) return;
-    gchar* directory = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (!ensure_private_directory(directory)) {
-        g_free(directory);
-        return;
-    }
-    gchar* path = g_build_filename(directory, "desktop.ini", nullptr);
-    GKeyFile* key = g_key_file_new();
-    g_key_file_set_integer(
-        key, "Window", "width", gtk_widget_get_width(window));
-    g_key_file_set_integer(
-        key, "Window", "height", gtk_widget_get_height(window));
-    gsize length = 0;
-    gchar* data = g_key_file_to_data(key, &length, nullptr);
-    if (data) {
-        (void)write_private_file(
-            path, std::string_view(data, static_cast<std::size_t>(length)));
-        g_free(data);
-    }
-    g_key_file_unref(key);
-    g_free(path);
-    g_free(directory);
-}
 
 gboolean on_main_close_request(GtkWindow* window, gpointer) {
-    save_desktop_state(GTK_WIDGET(window));
-    save_controller_state();
+    persistence.save_desktop_state(
+        gtk_widget_get_width(GTK_WIDGET(window)),
+        gtk_widget_get_height(GTK_WIDGET(window)));
+    persistence.save_controller_state();
     return FALSE;
 }
 
-void save_theme_mode() {
-    gchar* directory = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (ensure_private_directory(directory)) {
-        gchar* path = g_build_filename(directory, "theme", nullptr);
-        const char* value = calculator::ui::theme_mode_key(theme_mode);
-        (void)write_private_file(path, value);
-        g_free(path);
-    }
-    g_free(directory);
-}
 
 const ThemePalette& active_palette() {
     const bool system_dark = system_prefers_dark();
@@ -588,7 +289,7 @@ void apply_preferences_window(PreferencesWindowState* state) {
     controller.set_history_limit(static_cast<std::size_t>(
         gtk_spin_button_get_value_as_int(
             GTK_SPIN_BUTTON(state->history_limit))));
-    save_controller_state();
+    persistence.save_controller_state();
     render_state();
 }
 
@@ -1168,25 +869,10 @@ std::vector<std::string> converter_dimensions() {
 }
 
 ConversionPreferences load_conversion_preferences() {
-    ConversionPreferences prefs;
-    gchar* path = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc", "conversion.ini", nullptr);
-    GKeyFile* key = g_key_file_new();
-    if (g_key_file_load_from_file(key, path, G_KEY_FILE_NONE, nullptr)) {
-        auto load = [&](const char* name, std::string& target) {
-            if (!g_key_file_has_key(key, "Conversion", name, nullptr)) return;
-            gchar* value = g_key_file_get_string(key, "Conversion", name, nullptr);
-            if (value && *value) target = value;
-            g_free(value);
-        };
-        load("dimension", prefs.dimension);
-        load("from", prefs.from);
-        load("to", prefs.to);
-    }
-    g_key_file_unref(key);
-    g_free(path);
-    return prefs;
+    const auto stored = persistence.load_conversion_preferences();
+    return {stored.dimension, stored.from, stored.to};
 }
+
 
 void save_conversion_preferences(ToolWindowState* state) {
     if (!state || state->updating_conversion) return;
@@ -1194,29 +880,9 @@ void save_conversion_preferences(ToolWindowState* state) {
     const std::string from = drop_down_text(state->conversion_from);
     const std::string to = drop_down_text(state->conversion_to);
     if (dimension.empty() || from.empty() || to.empty()) return;
-
-    gchar* directory = g_build_filename(
-        g_get_user_config_dir(), "infiltrator-calc", nullptr);
-    if (!ensure_private_directory(directory)) {
-        g_free(directory);
-        return;
-    }
-    gchar* path = g_build_filename(directory, "conversion.ini", nullptr);
-    GKeyFile* key = g_key_file_new();
-    g_key_file_set_string(key, "Conversion", "dimension", dimension.c_str());
-    g_key_file_set_string(key, "Conversion", "from", from.c_str());
-    g_key_file_set_string(key, "Conversion", "to", to.c_str());
-    gsize length = 0;
-    gchar* data = g_key_file_to_data(key, &length, nullptr);
-    if (data) {
-        (void)write_private_file(
-            path, std::string_view(data, static_cast<std::size_t>(length)));
-        g_free(data);
-    }
-    g_key_file_unref(key);
-    g_free(path);
-    g_free(directory);
+    persistence.save_conversion_preferences({dimension, from, to});
 }
+
 
 void populate_conversion_units(ToolWindowState* state,
                                std::string_view preferred_from = {},
@@ -1593,7 +1259,7 @@ void on_activate(GtkEntry*) {
         Command::Equals,
         position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
     render_state(result.cursor);
-    save_controller_state();
+    persistence.save_controller_state();
 }
 
 void on_button_clicked(GtkButton*, gpointer data) {
@@ -1611,7 +1277,7 @@ void on_button_clicked(GtkButton*, gpointer data) {
     if (spec->command == Command::Equals ||
         spec->command == Command::CycleAngleUnit ||
         calculator::ui::is_programmer_selector(spec->command)) {
-        save_controller_state();
+        persistence.save_controller_state();
     }
     gtk_widget_grab_focus(expression_entry);
 }
@@ -1622,8 +1288,10 @@ void on_mode_clicked(GtkButton*, gpointer data) {
     const Mode mode = static_cast<Mode>(encoded - 1);
     controller.set_mode(mode);
     render_state();
-    save_controller_state();
-    if (main_window) save_desktop_state(main_window);
+    persistence.save_controller_state();
+    if (main_window) persistence.save_desktop_state(
+            gtk_widget_get_width(main_window),
+            gtk_widget_get_height(main_window));
 
     // Standard mode has four fewer keypad rows than the extended modes.
     // Keep it compact instead of carrying the Scientific/Programmer height.
@@ -1906,7 +1574,7 @@ void apply_css(GtkWidget* window) {
 
 void on_theme_clicked(GtkButton*, gpointer) {
     theme_mode = calculator::ui::next_theme_mode(theme_mode);
-    save_theme_mode();
+    persistence.save_theme_mode(theme_mode);
     if (main_window) apply_css(main_window);
 }
 
@@ -2191,9 +1859,9 @@ void activate(GtkApplication* app, gpointer) {
 
     GtkWidget* window = gtk_application_window_new(app);
     main_window = window;
-    theme_mode = load_theme_mode();
-    const bool shared_semantic_state = load_controller_state();
-    DesktopState desktop_state = load_desktop_state();
+    theme_mode = persistence.load_theme_mode();
+    const bool shared_semantic_state = persistence.load_controller_state();
+    auto desktop_state = persistence.load_desktop_state();
     if (!shared_semantic_state) {
         controller.set_angle_unit(
             static_cast<calculator::AngleUnit>(desktop_state.angle_code));
@@ -2204,7 +1872,7 @@ void activate(GtkApplication* app, gpointer) {
                 desktop_state.programmer_width_code),
             desktop_state.programmer_signed_flag);
         controller.set_mode(desktop_state.selected_mode);
-        save_controller_state();
+        persistence.save_controller_state();
     } else {
         desktop_state.selected_mode = controller.state().mode;
     }
@@ -2455,7 +2123,7 @@ int main(int argc, char** argv) {
     const int status_code =
         g_application_run(G_APPLICATION(app), argc, argv);
 
-    save_controller_state();
+    persistence.save_controller_state();
     if (css_provider) g_object_unref(css_provider);
     g_object_unref(app);
     return status_code;
