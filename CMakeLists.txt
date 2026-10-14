@@ -113,6 +113,8 @@ target_link_libraries(calculator-core PUBLIC
 
 add_library(calculator-ui STATIC
     src/ui/calculator_ui_controller.cpp
+    src/ui/calculator_ui_state.cpp
+    src/ui/calculator_ui_presentation.cpp
 )
 
 target_include_directories(calculator-ui PUBLIC
@@ -198,6 +200,8 @@ if(CALCULATOR_BUILD_DESKTOP)
         # runtime closure and depends only on Windows system components.
         add_executable(infiltrator-calc WIN32
             src/app/windows_main.cpp
+            src/app/windows_platform.cpp
+            src/app/windows_persistence.cpp
         )
 
         file(TO_NATIVE_PATH
@@ -261,6 +265,7 @@ if(CALCULATOR_BUILD_DESKTOP)
 
         add_executable(infiltrator-calc
             src/app/main.cpp
+            src/app/linux_persistence.cpp
         )
         add_executable(infiltrator-calc-cli
             src/app/cli_main.cpp

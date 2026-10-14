@@ -80,7 +80,7 @@ Session delegates mathematical evaluation to the core. It owns no alternate expr
 
 ## Shared interaction layer
 
-`src/ui/calculator_ui_contract.hpp` defines the command vocabulary, canonical button specifications and desktop logical layout metrics. `src/ui/calculator_ui_controller.*` owns interaction state and command dispatch across platforms. GTK and Win32 render it directly; the iPhone Objective-C++ bridge exposes it to SwiftUI. Platform code must not maintain competing calculator state machines.
+`src/ui/calculator_ui_contract.hpp` defines the command vocabulary, canonical button specifications and desktop logical layout metrics. `calculator_ui_controller.cpp` owns interaction mutation and command dispatch; `calculator_ui_state.cpp` owns session/history and the versioned semantic-state document; and `calculator_ui_presentation.cpp` owns derived labels, enablement and representations. These are translation-unit boundaries around one `Controller` object, not competing state objects. GTK and Win32 render that controller directly; the iPhone Objective-C++ bridge exposes it to SwiftUI.
 
 Scientific live preview, precision and identifier completion are controller-owned interaction semantics. Controller also owns the versioned persistent-state document for reusable variables/functions, Scientific precision and result-presentation preferences. Linux, Windows and iPhone store exactly those bytes through native mechanisms; no shell defines a competing persistence grammar.
 
@@ -88,11 +88,11 @@ Scientific live preview, precision and identifier completion are controller-owne
 
 ### Linux
 
-`src/app/main.cpp` owns GTK widgets, CSS generation, system-theme observation, font discovery, clipboard/window integration and Linux storage integration. It adapts Controller state rather than owning arithmetic.
+`src/app/main.cpp` owns GTK widget composition, CSS generation, system-theme observation, font discovery and event/window orchestration. `src/app/linux_persistence.*` is the sole Linux storage adapter for XDG locations, compatibility readers and durable writes. The entry point therefore adapts Controller state without also owning persistence mechanics.
 
 ### Windows
 
-`src/app/windows_main.cpp` owns HWND/GDI rendering, DPI conversion, Windows theme observation, native font selection, Registry integration and message handling.
+`src/app/windows_main.cpp` owns HWND/GDI composition, native font selection and message/event orchestration. `src/app/windows_platform.*` owns reusable Win32 text/DPI/theme primitives; `src/app/windows_persistence.*` is the sole Calculator Registry-storage adapter. The main translation unit no longer mixes rendering choreography with storage policy and reusable native mechanics.
 
 ### iPhone
 
