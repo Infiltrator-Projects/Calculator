@@ -1,3 +1,10 @@
+infiltrator-calculator (0.2.42) unstable; urgency=medium
+
+  * Advance the pinned GitHub artifact upload and download action revisions.
+  * Consolidate the completed architecture and dependency-update branches.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Thu, 15 Oct 2026 23:58:48 +0000
+
 infiltrator-calculator (0.2.41) unstable; urgency=medium
 
   * Decompose Controller implementation by cohesive ownership boundaries.

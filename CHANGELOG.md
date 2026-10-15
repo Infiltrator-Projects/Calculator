@@ -6,6 +6,11 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.42 — 2026-10-15
+
+- Update the pinned GitHub artifact upload and download actions to their verified patch releases, including improved rate-limit retry handling.
+- Consolidate the completed architecture branches and dependency update onto main.
+
 ## 0.2.41 — 2026-10-14
 
 - Decompose the shared Controller implementation by real ownership boundaries while retaining one Controller state object and public API.
