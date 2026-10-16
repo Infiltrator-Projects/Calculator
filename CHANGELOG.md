@@ -6,6 +6,10 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.44 — 2026-10-17
+
+- Align Calculator package and native-installer names and migrate existing package identities safely.
+
 ## 0.2.43 — 2026-10-16
 
 - Archive committed Git objects and exact recursive dependency gitlinks in private temporary directories, excluding dirty and untracked runner state.
