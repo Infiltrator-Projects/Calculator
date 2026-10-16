@@ -13,7 +13,7 @@ override_dh_auto_test:
 # Linux Mint Software Manager resolves APT icons from local package-name aliases.
 override_dh_install:
 	dh_install
-	install -D -m 0644 debian/infiltrator-calc.svg \
+	install -D -m 0644 debian/calculator.svg \
 		"$(CURDIR)/debian/calculator/usr/share/app-install/icons/calculator.svg"
 	if [ -f .calculator-native-build-info ]; then \
 		install -D -m 0644 .calculator-native-build-info \

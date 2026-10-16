@@ -9,11 +9,8 @@ Homepage: https://github.com/Infiltrator-Projects/Calculator
 
 Package: calculator
 Architecture: any
-Provides: infiltrator-calculator (= ${binary:Version}), infiltrator-calc (= ${binary:Version})
-Breaks: infiltrator-calculator (<< ${binary:Version}), infiltrator-calc (<< ${binary:Version})
-Replaces: infiltrator-calculator (<< ${binary:Version}), infiltrator-calc (<< ${binary:Version})
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: native cross-platform calculator
  Calculator is a native GTK4 desktop calculator with a portable
  calculation core. The Debian/APT package identity is calculator;
- existing infiltrator-calculator and infiltrator-calc installations migrate through versioned package transitions.
+ existing calculator and calculator installations migrate through versioned package transitions.

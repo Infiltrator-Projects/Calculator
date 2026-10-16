@@ -45,7 +45,7 @@ targets:
       - path: ../src/infiltratr-common/src/design.c
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: net.ssmith.infiltrator.calc
+        PRODUCT_BUNDLE_IDENTIFIER: net.ssmith.calculator
         PRODUCT_NAME: Calculator
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Calculator

@@ -22,7 +22,7 @@ measure_idle_cpu() {
 
   # Calculator-owned GTK warnings are product defects.  Keep them fatal while
   # disabling only the absent accessibility bus in this headless environment.
-  env GTK_A11Y=none G_DEBUG=fatal-warnings "$@" infiltrator-calc >"$log" 2>&1 &
+  env GTK_A11Y=none G_DEBUG=fatal-warnings "$@" calculator >"$log" 2>&1 &
   pid=$!
   sleep 5
 

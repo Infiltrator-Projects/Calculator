@@ -20,10 +20,10 @@ trap 'rm -f "$listing"' EXIT
 dpkg-deb --fsys-tarfile "$package" | tar -tf - > "$listing"
 
 required=(
-  './usr/bin/infiltrator-calc'
-  './usr/bin/infiltrator-calc-cli'
-  './usr/share/applications/net.ssmith.infiltrator.calc.desktop'
-  './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg'
+  './usr/bin/calculator'
+  './usr/bin/calculator-cli'
+  './usr/share/applications/net.ssmith.calculator.desktop'
+  './usr/share/icons/hicolor/scalable/apps/calculator.svg'
   './usr/share/app-install/icons/calculator.svg'
   './usr/share/metainfo/calculator.metainfo.xml'
   './usr/share/fonts/truetype/calculator/mb_corpo_a_cond_regular.ttf'

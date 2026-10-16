@@ -142,7 +142,7 @@ std::string Controller::persistent_state_text() const {
     }
 
     std::ostringstream out;
-    out << "INFILTRATOR_CALCULATOR_STATE 2\n"
+    out << "CALCULATOR_STATE 2\n"
         << "mode=" << static_cast<unsigned>(state_.mode) << '\n'
         << "angle-unit=" << static_cast<unsigned>(state_.angle_unit) << '\n'
         << "programmer-base=" << programmer_base << '\n'
@@ -212,8 +212,8 @@ bool Controller::load_persistent_state_text(std::string_view text) {
 
     std::string_view line;
     if (!read_line(line)) return false;
-    const bool state_v2 = line == "INFILTRATOR_CALCULATOR_STATE 2";
-    if (!state_v2 && line != "INFILTRATOR_CALCULATOR_STATE 1") {
+    const bool state_v2 = line == "CALCULATOR_STATE 2";
+    if (!state_v2 && line != "CALCULATOR_STATE 1") {
         return false;
     }
 

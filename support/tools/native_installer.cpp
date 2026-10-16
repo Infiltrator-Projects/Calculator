@@ -22,9 +22,9 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr const char *kPayloadMarker =
-    "\n__INFILTRATOR_CALCULATOR_NATIVE_PAYLOAD_V1__\n";
+    "\n__CALCULATOR_NATIVE_PAYLOAD_V1__\n";
 constexpr const char *kPackageName = "calculator";
-constexpr const char *kExecutable = "/usr/bin/infiltrator-calc";
+constexpr const char *kExecutable = "/usr/bin/calculator";
 constexpr const char *kBuildInfo =
     "/usr/share/doc/calculator/BUILD-INFO";
 
@@ -472,7 +472,7 @@ int main(int argc, char **argv)
         set_build_flags(generate_flags, generate_ldflags);
         run_required(build_command, source_root);
 
-        const fs::path gui = source_root / "build" / "infiltrator-calc";
+        const fs::path gui = source_root / "build" / "calculator";
         if (executable(gui.string())) {
             std::cout << "Exercising Calculator startup and GTK rendering paths...\n";
             const int result = run_process(

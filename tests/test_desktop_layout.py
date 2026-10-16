@@ -790,7 +790,7 @@ for needle in (
 for needle in (
     "GDK_KEY_n",
     "spawn_independent_calculator()",
-    "INFILTRATOR_CALC_NEW_INSTANCE",
+    "CALCULATOR_NEW_INSTANCE",
     "G_APPLICATION_NON_UNIQUE",
     "g_spawn_async(",
     "Ctrl+N                New independent Calculator window",

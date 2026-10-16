@@ -87,7 +87,7 @@ final class CalculatorModel: ObservableObject {
 
     private let bridge = CalculatorBridge()
     private static let persistentStateKey =
-        "net.ssmith.infiltrator.calc.controller-state-v1"
+        "net.ssmith.calculator.controller-state-v1"
 
     init() {
         if let saved = UserDefaults.standard.string(

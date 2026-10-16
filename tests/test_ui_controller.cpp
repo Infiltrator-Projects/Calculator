@@ -704,7 +704,7 @@ int main() {
     controller.set_history_limit(500U);
     CHECK(controller.history_limit() == 500U);
     const std::string persistent_state = controller.persistent_state_text();
-    CHECK(persistent_state.find("INFILTRATOR_CALCULATOR_STATE 2") == 0U);
+    CHECK(persistent_state.find("CALCULATOR_STATE 2") == 0U);
 
     Controller restored;
     CHECK(restored.load_persistent_state_text(persistent_state));
@@ -728,7 +728,7 @@ int main() {
 
     // Existing v1 documents remain readable during the migration.
     const std::string legacy_state =
-        "INFILTRATOR_CALCULATOR_STATE 1\n"
+        "CALCULATOR_STATE 1\n"
         "scientific-digits=50\n"
         "result-format=0\n"
         "decimal-places=9\n"
@@ -744,7 +744,7 @@ int main() {
 
     const std::string before_bad_state = restored.persistent_state_text();
     CHECK(!restored.load_persistent_state_text(
-        "INFILTRATOR_CALCULATOR_STATE 2\nmode=9\n"));
+        "CALCULATOR_STATE 2\nmode=9\n"));
     CHECK(restored.persistent_state_text() == before_bad_state);
 
     // Oversize typed/pasted expressions fail at the shared Controller boundary

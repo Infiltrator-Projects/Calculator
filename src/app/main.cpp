@@ -1655,13 +1655,13 @@ bool spawn_independent_calculator() {
             g_error_free(error);
             error = nullptr;
         }
-        self = g_strdup("infiltrator-calc");
+        self = g_strdup("calculator");
     }
 
     gchar** environment = g_get_environ();
     environment = g_environ_setenv(
         environment,
-        "INFILTRATOR_CALC_NEW_INSTANCE",
+        "CALCULATOR_NEW_INSTANCE",
         "1",
         TRUE);
 
@@ -1888,7 +1888,7 @@ void activate(GtkApplication* app, gpointer) {
     }
 
     gtk_window_set_title(GTK_WINDOW(window), "Calculator");
-    gtk_window_set_icon_name(GTK_WINDOW(window), "infiltrator-calc");
+    gtk_window_set_icon_name(GTK_WINDOW(window), "calculator");
     gtk_window_set_default_size(
         GTK_WINDOW(window),
         desktop_state.width,
@@ -2108,7 +2108,7 @@ void configure_linux_renderer_for_display() {
 
 int main(int argc, char** argv) {
     GApplicationFlags flags = G_APPLICATION_DEFAULT_FLAGS;
-    const char* independent = g_getenv("INFILTRATOR_CALC_NEW_INSTANCE");
+    const char* independent = g_getenv("CALCULATOR_NEW_INSTANCE");
     if (independent && independent[0] != '\0') {
         flags = static_cast<GApplicationFlags>(
             flags | G_APPLICATION_NON_UNIQUE);
@@ -2116,7 +2116,7 @@ int main(int argc, char** argv) {
 
     GtkApplication* app =
         gtk_application_new(
-            "net.ssmith.infiltrator.calc",
+            "net.ssmith.calculator",
             flags);
     g_signal_connect(app, "activate", G_CALLBACK(activate), nullptr);
 

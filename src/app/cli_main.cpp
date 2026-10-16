@@ -14,11 +14,11 @@ namespace {
 std::filesystem::path user_function_path() {
     if (const char* xdg = std::getenv("XDG_DATA_HOME"); xdg && *xdg) {
         return std::filesystem::path(xdg) /
-               "infiltrator-calc" / "custom-functions";
+               "calculator" / "custom-functions";
     }
     if (const char* home = std::getenv("HOME"); home && *home) {
         return std::filesystem::path(home) /
-               ".local" / "share" / "infiltrator-calc" /
+               ".local" / "share" / "calculator" /
                "custom-functions";
     }
     return {};
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
         return ok ? 0 : 1;
     }
     if (argc > 2) {
-        std::cerr << "Usage: infiltrator-calc-cli [expression]\n";
+        std::cerr << "Usage: calculator-cli [expression]\n";
         return 2;
     }
 

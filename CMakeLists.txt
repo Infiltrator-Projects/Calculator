@@ -26,8 +26,8 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.35")
-set(INFILTRATR_COMMON_EXPECTED_COMMIT "7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f")
+set(INFILTRATR_COMMON_EXPECTED_VERSION "1.19.46")
+set(INFILTRATR_COMMON_EXPECTED_COMMIT "fc2c72cb038a8e4c1e0bc62145adf533fbfd7923")
 set(CALCULATOR_MULTIPRECISION_EXPECTED_COMMIT "1f7acd34fe929573c131e869867dc1d12b8080b6")
 set(CALCULATOR_MULTIPRECISION_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/boost-multiprecision")
 
@@ -198,7 +198,7 @@ if(CALCULATOR_BUILD_DESKTOP)
     if(WIN32)
         # Windows has a native shell so the release executable has no GTK/GLib
         # runtime closure and depends only on Windows system components.
-        add_executable(infiltrator-calc WIN32
+        add_executable(calculator WIN32
             src/app/windows_main.cpp
             src/app/windows_platform.cpp
             src/app/windows_persistence.cpp
@@ -233,14 +233,14 @@ if(CALCULATOR_BUILD_DESKTOP)
             "1101 RCDATA \"${CALCULATOR_FONT_S_REGULAR_RC}\"\n"
             "1102 RCDATA \"${CALCULATOR_FONT_S_BOLD_RC}\"\n"
             "1103 RCDATA \"${CALCULATOR_FONT_A_COND_REGULAR_RC}\"\n")
-        target_sources(infiltrator-calc PRIVATE "${CALCULATOR_WINDOWS_FONT_RC}")
-        target_compile_definitions(infiltrator-calc PRIVATE
+        target_sources(calculator PRIVATE "${CALCULATOR_WINDOWS_FONT_RC}")
+        target_compile_definitions(calculator PRIVATE
             CALCULATOR_ICON_RESOURCE=1001
             CALCULATOR_FONT_RESOURCE_REGULAR=1101
             CALCULATOR_FONT_RESOURCE_BOLD=1102
             CALCULATOR_FONT_RESOURCE_CONDENSED=1103)
 
-        target_link_libraries(infiltrator-calc PRIVATE
+        target_link_libraries(calculator PRIVATE
             calculator-ui
             user32
             gdi32
@@ -248,13 +248,13 @@ if(CALCULATOR_BUILD_DESKTOP)
             advapi32
         )
         if(MSVC)
-            target_compile_options(infiltrator-calc PRIVATE /W4 /utf-8)
+            target_compile_options(calculator PRIVATE /W4 /utf-8)
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-            target_compile_options(infiltrator-calc PRIVATE
+            target_compile_options(calculator PRIVATE
                 -Wall -Wextra -Wpedantic -Wshadow
                 -Werror=shadow -Werror=deprecated-declarations
             )
-            target_link_options(infiltrator-calc PRIVATE
+            target_link_options(calculator PRIVATE
                 -static-libgcc
                 -static-libstdc++
             )
@@ -263,20 +263,20 @@ if(CALCULATOR_BUILD_DESKTOP)
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
 
-        add_executable(infiltrator-calc
+        add_executable(calculator
             src/app/main.cpp
             src/app/linux_persistence.cpp
         )
-        add_executable(infiltrator-calc-cli
+        add_executable(calculator-cli
             src/app/cli_main.cpp
         )
-        target_link_libraries(infiltrator-calc-cli PRIVATE
+        target_link_libraries(calculator-cli PRIVATE
             calculator-core
             InfiltratrCommon::Common
         )
-        install(TARGETS infiltrator-calc-cli RUNTIME DESTINATION bin)
+        install(TARGETS calculator-cli RUNTIME DESTINATION bin)
 
-        target_link_libraries(infiltrator-calc PRIVATE
+        target_link_libraries(calculator PRIVATE
             calculator-ui
             InfiltratrCommon::Common
             PkgConfig::GTK4
@@ -286,13 +286,13 @@ if(CALCULATOR_BUILD_DESKTOP)
             DESTINATION share/fonts/truetype/calculator)
 
         if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-            target_compile_options(infiltrator-calc PRIVATE
+            target_compile_options(calculator PRIVATE
                 -Wall -Wextra -Wpedantic -Wshadow
             )
         endif()
     endif()
 
-    install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
+    install(TARGETS calculator RUNTIME DESTINATION bin)
     install(FILES LICENSE DESTINATION share/doc/calculator OPTIONAL)
 endif()
 

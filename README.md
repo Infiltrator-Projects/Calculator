@@ -85,7 +85,7 @@ A release is published only after Linux, Windows and iOS builds and the shared-c
 
 ### Compatibility identifiers
 
-The user-facing product name is **Calculator**. The Debian/APT package identity is `calculator`. The existing executable/configuration identifier `infiltrator-calc` and iOS bundle identifier `net.ssmith.infiltrator.calc` remain stable compatibility identities so settings, launch paths and installed application identity are not broken. Existing `infiltrator-calc` Debian package installations migrate through the central repository transition package.
+The user-facing product name is **Calculator**. The Debian/APT package identity is `calculator`. The existing executable/configuration identifier `calculator` and iOS bundle identifier `net.ssmith.calculator` remain stable compatibility identities so settings, launch paths and installed application identity are not broken. Existing `calculator` Debian package installations migrate through the central repository transition package.
 
 ## Shared design
 

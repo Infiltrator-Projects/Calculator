@@ -1,10 +1,16 @@
+calculator (0.2.45) unstable; urgency=medium
+
+  * Use canonical alpha names throughout; remove package aliases and migrations.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 17 Oct 2026 10:24:00 +1100
+
 calculator (0.2.44) unstable; urgency=medium
 
   * Align product, package and published artifact names; preserve legacy upgrades.
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 17 Oct 2026 10:00:00 +1100
 
-infiltrator-calculator (0.2.43) unstable; urgency=medium
+calculator (0.2.43) unstable; urgency=medium
 
   * Package exact committed source and recursive dependency identities.
   * Qualify source/native candidates once and preserve immutable public bytes.
@@ -12,14 +18,14 @@ infiltrator-calculator (0.2.43) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 16 Oct 2026 02:50:00 +0000
 
-infiltrator-calculator (0.2.42) unstable; urgency=medium
+calculator (0.2.42) unstable; urgency=medium
 
   * Advance the pinned GitHub artifact upload and download action revisions.
   * Consolidate the completed architecture and dependency-update branches.
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 15 Oct 2026 23:58:48 +0000
 
-infiltrator-calculator (0.2.41) unstable; urgency=medium
+calculator (0.2.41) unstable; urgency=medium
 
   * Decompose Controller implementation by cohesive ownership boundaries.
   * Extract Linux XDG persistence from the GTK entry point.
@@ -29,7 +35,7 @@ infiltrator-calculator (0.2.41) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Wed, 14 Oct 2026 10:55:00 +1100
 
-infiltrator-calculator (0.2.40) unstable; urgency=medium
+calculator (0.2.40) unstable; urgency=medium
 
   * Replace bespoke big-integer arithmetic with Boost.Multiprecision cpp_int.
   * Add cumulative Scientific and Advanced Tools evaluation resource budgets.
@@ -40,7 +46,7 @@ infiltrator-calculator (0.2.40) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 13 Oct 2026 14:59:00 +1100
 
-infiltrator-calculator (0.2.39) unstable; urgency=medium
+calculator (0.2.39) unstable; urgency=medium
 
   * Replace commit-message release detection with VERSION-change preflight.
   * Reject Debian, human changelog and AppStream version drift before platform builds.
@@ -51,7 +57,7 @@ infiltrator-calculator (0.2.39) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 12 Oct 2026 21:00:00 +1100
 
-infiltrator-calculator (0.2.38) unstable; urgency=medium
+calculator (0.2.38) unstable; urgency=medium
 
   * Rework the iPhone main layout so the title can no longer be crushed by toolbar controls.
   * Stack the branding above 44-point toolbar actions and keep the title and kicker to one line.
@@ -60,7 +66,7 @@ infiltrator-calculator (0.2.38) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 28 Sep 2026 13:00:00 +1000
 
-infiltrator-calculator (0.2.37) unstable; urgency=medium
+calculator (0.2.37) unstable; urgency=medium
 
   * Publish the iPhone device build as an IPA instead of a raw app ZIP.
   * Package the device application under the standard Payload/Calculator.app IPA layout.
@@ -68,7 +74,7 @@ infiltrator-calculator (0.2.37) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 28 Sep 2026 12:45:00 +1000
 
-infiltrator-calculator (0.2.36) unstable; urgency=medium
+calculator (0.2.36) unstable; urgency=medium
 
   * Publish a first-class hardware-native Linux installer release asset.
   * Build locally with native CPU tuning and LTO, with an aggressive two-pass PGO profile.
@@ -77,7 +83,7 @@ infiltrator-calculator (0.2.36) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 28 Sep 2026 12:20:00 +1000
 
-infiltrator-calculator (0.2.35) unstable; urgency=medium
+calculator (0.2.35) unstable; urgency=medium
 
   * Reuse Common 1.19.27 for strict Unicode scalar-to-UTF-8 encoding.
   * Remove the duplicate Calculator UTF-8 byte encoder and strengthen Unicode regression coverage.
@@ -86,28 +92,28 @@ infiltrator-calculator (0.2.35) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 07:00:00 +1000
 
-infiltrator-calculator (0.2.34) unstable; urgency=medium
+calculator (0.2.34) unstable; urgency=medium
 
   * Align Linux mode tabs with the 30 px publisher desktop control height.
   * Preserve keypad geometry, calculation engines, other platform shells and dependencies.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 05:52:00 +1000
 
-infiltrator-calculator (0.2.33) unstable; urgency=medium
+calculator (0.2.33) unstable; urgency=medium
 
   * Align Linux toolbar controls with the 30 px publisher desktop control height.
   * Preserve keypad geometry, calculation engines, other platform shells and dependencies.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 00:16:00 +1000
 
-infiltrator-calculator (0.2.32) unstable; urgency=medium
+calculator (0.2.32) unstable; urgency=medium
 
   * Align Linux toolbar-button corners with the shared compact suite radius.
   * Keep calculator behaviour, platform engines and dependency boundaries unchanged.
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 19:00:00 +1000
 
-infiltrator-calculator (0.2.31) unstable; urgency=medium
+calculator (0.2.31) unstable; urgency=medium
 
   * Harden reciprocal Scientific functions with independent MPFR/MPC coverage.
   * Reuse Scientific multiprecision arithmetic in Complex and arbitrary-root tools.
@@ -117,7 +123,7 @@ infiltrator-calculator (0.2.31) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 15:35:00 +1000
 
-infiltrator-calculator (0.2.30) unstable; urgency=medium
+calculator (0.2.30) unstable; urgency=medium
 
   * Preserve Scientific angle-unit and precision context in history recall.
   * Add reciprocal trig/hyperbolic functions and inverse families.
@@ -125,7 +131,7 @@ infiltrator-calculator (0.2.30) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 14:30:00 +1000
 
-infiltrator-calculator (0.2.29) unstable; urgency=medium
+calculator (0.2.29) unstable; urgency=medium
 
   * Repair the Linux source contract after persistence consolidation.
   * Bound Advanced Tools input and persist shared semantic state v2.
@@ -136,7 +142,7 @@ infiltrator-calculator (0.2.29) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 12:47:00 +1000
 
-infiltrator-calculator (0.2.28) unstable; urgency=medium
+calculator (0.2.28) unstable; urgency=medium
 
   * Complete Scientific-domain graph sampling and stronger regression coverage.
   * Preserve full Scientific precision in the Constants workbench.
@@ -147,7 +153,7 @@ infiltrator-calculator (0.2.28) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 11:25:00 +1000
 
-infiltrator-calculator (0.2.27) unstable; urgency=medium
+calculator (0.2.27) unstable; urgency=medium
 
   * Preserve Scientific precision in graph/root and unit-conversion tools.
   * Add calendar-aware date arithmetic and structured date differences.
@@ -156,7 +162,7 @@ infiltrator-calculator (0.2.27) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 24 Sep 2026 10:00:00 +1000
 
-infiltrator-calculator (0.2.26) unstable; urgency=medium
+calculator (0.2.26) unstable; urgency=medium
 
   * Pin the exact released Common 1.19.24 foundation.
   * Inherit hardened shared graphics range and alias handling.
@@ -164,7 +170,7 @@ infiltrator-calculator (0.2.26) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 18:18:00 +1000
 
-infiltrator-calculator (0.2.25) unstable; urgency=medium
+calculator (0.2.25) unstable; urgency=medium
 
   * Fix malformed Linux GTK CSS and native history-row alignment.
   * Make Calculator-owned GTK warnings fatal in packaged Linux smoke tests.
@@ -172,7 +178,7 @@ infiltrator-calculator (0.2.25) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 18:10:00 +1000
 
-infiltrator-calculator (0.2.24) unstable; urgency=medium
+calculator (0.2.24) unstable; urgency=medium
 
   * Modularise the Advanced Tools core into domain-focused implementation units.
   * Keep its public API and Common 1.19.23 boundary unchanged.
@@ -180,7 +186,7 @@ infiltrator-calculator (0.2.24) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 15:55:00 +1000
 
-infiltrator-calculator (0.2.23) unstable; urgency=medium
+calculator (0.2.23) unstable; urgency=medium
 
   * Eliminate Calculator-owned compiler warnings found by the final forensic build-log audit.
   * Use GTK's current CSS provider API and remove shadowed/unused code.
@@ -188,7 +194,7 @@ infiltrator-calculator (0.2.23) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 15:05:00 +1000
 
-infiltrator-calculator (0.2.22) unstable; urgency=medium
+calculator (0.2.22) unstable; urgency=medium
 
   * Move to Common 1.19.23 and inherit its hardened persistence implementation.
   * Use Common's deterministic signed-integer parser for Scientific engineering exponents.
@@ -196,7 +202,7 @@ infiltrator-calculator (0.2.22) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 14:45:00 +1000
 
-infiltrator-calculator (0.2.21) unstable; urgency=medium
+calculator (0.2.21) unstable; urgency=medium
 
   * Prefer GTK's mature accelerated GL renderer on Linux when no explicit renderer is selected.
   * Preserve explicit GSK_RENDERER overrides for diagnostics and compatibility.
@@ -204,7 +210,7 @@ infiltrator-calculator (0.2.21) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 14:15:00 +1000
 
-infiltrator-calculator (0.2.20) unstable; urgency=medium
+calculator (0.2.20) unstable; urgency=medium
 
   * Forensically validate Scientific real/complex arithmetic with an 8192-bit MPFR/MPC oracle.
   * Fix principal branches, exact integer/half-integer powers and exact trig quadrants.
@@ -213,7 +219,7 @@ infiltrator-calculator (0.2.20) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 12:52:00 +1000
 
-infiltrator-calculator (0.2.19) unstable; urgency=medium
+calculator (0.2.19) unstable; urgency=medium
 
   * Preserve exact binary64 state across Standard unary transforms and memory recall.
   * Reject memory overflow and Scientific-only out-of-range values without substitution.
@@ -222,7 +228,7 @@ infiltrator-calculator (0.2.19) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 11:45:00 +1000
 
-infiltrator-calculator (0.2.18) unstable; urgency=medium
+calculator (0.2.18) unstable; urgency=medium
 
   * Use conventional mathematical precedence in Standard mode.
   * Remove historical immediate left-to-right and contextual-percent semantics.
@@ -231,7 +237,7 @@ infiltrator-calculator (0.2.18) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 10:30:00 +1000
 
-infiltrator-calculator (0.2.17) unstable; urgency=medium
+calculator (0.2.17) unstable; urgency=medium
 
   * Remove permanent GTK frame-clock polling from the Linux shell.
   * Make responsive layout react to window size notifications instead.
@@ -239,7 +245,7 @@ infiltrator-calculator (0.2.17) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 11:02:00 +1000
 
-infiltrator-calculator (0.2.16) unstable; urgency=medium
+calculator (0.2.16) unstable; urgency=medium
 
   * Preserve multiline Advanced Tools results on Windows.
   * Replace the Windows Bases warning MessageBox with native representations and bits.
@@ -247,7 +253,7 @@ infiltrator-calculator (0.2.16) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 10:42:00 +1000
 
-infiltrator-calculator (0.2.15) unstable; urgency=medium
+calculator (0.2.15) unstable; urgency=medium
 
   * Keep graph data light on Night and dark on Day across all native shells.
   * Fix Linux Tools result text contrast in Day mode.
@@ -255,7 +261,7 @@ infiltrator-calculator (0.2.15) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Tue, 22 Sep 2026 10:28:00 +1000
 
-infiltrator-calculator (0.2.14) unstable; urgency=medium
+calculator (0.2.14) unstable; urgency=medium
 
   * Complete the documentation/commentary audit after a repository-wide consistency pass.
   * Correct remaining stale Scientific, Tools, history and portability contracts.
@@ -263,7 +269,7 @@ infiltrator-calculator (0.2.14) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 16:09:00 +1000
 
-infiltrator-calculator (0.2.13) unstable; urgency=medium
+calculator (0.2.13) unstable; urgency=medium
 
   * Synchronise canonical documentation with current numeric, tool and Common contracts.
   * Strengthen public API and implementation commentary for non-obvious invariants.
@@ -271,7 +277,7 @@ infiltrator-calculator (0.2.13) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 15:58:00 +1000
 
-infiltrator-calculator (0.2.12) unstable; urgency=medium
+calculator (0.2.12) unstable; urgency=medium
 
   * Complete remaining safe Common-to-Calculator reuse from the 1.19.20 audit.
   * Use Common bounded parsers and checked signed date arithmetic.
@@ -279,7 +285,7 @@ infiltrator-calculator (0.2.12) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 14:48:00 +1000
 
-infiltrator-calculator (0.2.11) unstable; urgency=medium
+calculator (0.2.11) unstable; urgency=medium
 
   * Move to Common 1.19.20 and consume its numeric, ASCII and checked-arithmetic contracts.
   * Use Common theme persistence and durable POSIX file-publication primitives.
@@ -287,7 +293,7 @@ infiltrator-calculator (0.2.11) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 14:35:00 +1000
 
-infiltrator-calculator (0.2.10) unstable; urgency=medium
+calculator (0.2.10) unstable; urgency=medium
 
   * Complete integrated arbitrary-precision real/complex Scientific evaluation.
   * Preserve precise Scientific values through shared Session and Controller state.
@@ -295,7 +301,7 @@ infiltrator-calculator (0.2.10) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 13:45:00 +1000
 
-infiltrator-calculator (0.2.9) unstable; urgency=medium
+calculator (0.2.9) unstable; urgency=medium
 
   * Cache Controller expression validation and result state.
   * Add Session preview and history revision contracts.
@@ -303,7 +309,7 @@ infiltrator-calculator (0.2.9) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 11:55:00 +1000
 
-infiltrator-calculator (0.2.8) unstable; urgency=medium
+calculator (0.2.8) unstable; urgency=medium
 
   * Add Standard-mode CE current-entry clearing semantics.
   * Align Standard keypad layout across Linux, Windows and iPhone.
@@ -311,7 +317,7 @@ infiltrator-calculator (0.2.8) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 11:06:00 +1000
 
-infiltrator-calculator (0.2.7) unstable; urgency=medium
+calculator (0.2.7) unstable; urgency=medium
 
   * Correct the Windows application icon to the canonical Calculator artwork.
   * Prevent the compact Windows result/status area from clipping display values.
@@ -319,7 +325,7 @@ infiltrator-calculator (0.2.7) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Mon, 21 Sep 2026 10:48:00 +1000
 
-infiltrator-calculator (0.2.6) unstable; urgency=medium
+calculator (0.2.6) unstable; urgency=medium
 
   * Add Ctrl+N independent Calculator windows for GNOME/Mint parity.
   * Keep each new window in an independent process and calculator session.
@@ -327,7 +333,7 @@ infiltrator-calculator (0.2.6) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 20:54:00 +1000
 
-infiltrator-calculator (0.2.5) unstable; urgency=medium
+calculator (0.2.5) unstable; urgency=medium
 
   * Complete Mint/GNOME 41.1 digital-storage and volume conversion parity.
   * Add Linux mode, Tools, close/quit and shortcut-help keyboard actions.
@@ -335,21 +341,21 @@ infiltrator-calculator (0.2.5) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 20:31:00 +1000
 
-infiltrator-calculator (0.2.4) unstable; urgency=medium
+calculator (0.2.4) unstable; urgency=medium
 
   * Persist user variables and semantic calculator settings on Linux.
   * Restore angle unit and Programmer radix/width/signed state.
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 20:12:00 +1000
 
-infiltrator-calculator (0.2.3) unstable; urgency=medium
+calculator (0.2.3) unstable; urgency=medium
 
   * Add a first-class persistent Linux unit-conversion picker.
   * Pin Mint replacement validation to GNOME Calculator 41.1.
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 19:56:00 +1000
 
-infiltrator-calculator (0.2.2) unstable; urgency=medium
+calculator (0.2.2) unstable; urgency=medium
 
   * Keep the Linux Tools title-bar close action local to the Tools workbench.
   * Track the GTK Tools window as an explicit reusable secondary application window.
@@ -358,7 +364,7 @@ infiltrator-calculator (0.2.2) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 18:58:00 +1000
 
-infiltrator-calculator (0.2.1) unstable; urgency=medium
+calculator (0.2.1) unstable; urgency=medium
 
   * Reset Scientific F-E notation when clearing a calculation.
   * Canonically reduce exact rational fractions and render terminating rationals as exact decimals.
@@ -368,7 +374,7 @@ infiltrator-calculator (0.2.1) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 18:25:00 +1000
 
-infiltrator-calculator (0.2.0) unstable; urgency=medium
+calculator (0.2.0) unstable; urgency=medium
 
   * Complete all twelve planned advanced calculator capability families.
   * Add engineering, conversion, ICT/network, storage and date/time tools.
@@ -379,7 +385,7 @@ infiltrator-calculator (0.2.0) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 17:45:00 +1000
 
-infiltrator-calculator (0.1.43) unstable; urgency=medium
+calculator (0.1.43) unstable; urgency=medium
 
   * Harden engineering notation at binary64 subnormal and maximum boundaries.
   * Preserve exponent carry before engineering mantissa rearrangement.
@@ -389,7 +395,7 @@ infiltrator-calculator (0.1.43) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 16:45:00 +1000
 
-infiltrator-calculator (0.1.42) unstable; urgency=medium
+calculator (0.1.42) unstable; urgency=medium
 
   * Add shared Additional Results for Standard and Scientific modes.
   * Add deterministic engineering notation alongside decimal and scientific forms.
@@ -400,9 +406,9 @@ infiltrator-calculator (0.1.42) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 16:42:00 +1000
 
-infiltrator-calculator (0.1.41) unstable; urgency=medium
+calculator (0.1.41) unstable; urgency=medium
 
-  * Release Calculator against immutable Infiltratr Common 1.19.10.
+  * Release Calculator against immutable Libraries 1.19.10.
   * Consume the expanded Common semantic palette on GTK, Win32 and iPhone.
   * Use Common titlebar and status-border roles in native Windows rendering.
   * Make the Windows result a direct click-to-copy surface.
@@ -412,7 +418,7 @@ infiltrator-calculator (0.1.41) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 15:25:00 +1000
 
-infiltrator-calculator (0.1.40) unstable; urgency=medium
+calculator (0.1.40) unstable; urgency=medium
 
   * Add simultaneous BIN/OCT/DEC/HEX Programmer representations.
   * Preserve signed decimal and exact non-decimal bit-pattern semantics.
@@ -422,7 +428,7 @@ infiltrator-calculator (0.1.40) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 12:35:00 +1000
 
-infiltrator-calculator (0.1.39) unstable; urgency=medium
+calculator (0.1.39) unstable; urgency=medium
 
   * Add structured cross-platform calculation history and exact recall.
   * Preserve Programmer radix, width and signed context in history entries.
@@ -432,7 +438,7 @@ infiltrator-calculator (0.1.39) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 12:15:00 +1000
 
-infiltrator-calculator (0.1.38) unstable; urgency=medium
+calculator (0.1.38) unstable; urgency=medium
 
   * Expand Scientific mode with 2nd/HYP layers, DEG/RAD/GRAD and F-E notation.
   * Add gradian-aware inverse/hyperbolic transforms and additional unary functions.
@@ -442,9 +448,9 @@ infiltrator-calculator (0.1.38) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 20 Sep 2026 11:58:00 +1000
 
-infiltrator-calculator (0.1.37) unstable; urgency=medium
+calculator (0.1.37) unstable; urgency=medium
 
-  * Advance Calculator to immutable Infiltratr Common 1.19.8.
+  * Advance Calculator to immutable Libraries 1.19.8.
   * Keep the established public Common boundary; 1.19.8 changes implementation internals, not public ABI.
   * Strengthen regression coverage against private Common-header coupling.
   * Rebuild Linux, Windows and iPhone from the exact Common 1.19.8 revision.
@@ -452,9 +458,9 @@ infiltrator-calculator (0.1.37) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 23:54:00 +1000
 
-infiltrator-calculator (0.1.36) unstable; urgency=medium
+calculator (0.1.36) unstable; urgency=medium
 
-  * Advance the shared foundation to immutable Infiltratr Common 1.19.7.
+  * Advance the shared foundation to immutable Libraries 1.19.7.
   * Replace the private decimal-token scanner with Common's exact token parser.
   * Consume Common typography, design metrics and font-asset provenance.
   * Centralise unary/scientific transforms in the C++ calculation core.
@@ -463,7 +469,7 @@ infiltrator-calculator (0.1.36) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 23:32:00 +1000
 
-infiltrator-calculator (0.1.35) unstable; urgency=medium
+calculator (0.1.35) unstable; urgency=medium
 
   * Restore the intended compact Standard-mode desktop geometry.
   * Move Standard 480px and extended 610px sizing into the shared desktop contract.
@@ -473,7 +479,7 @@ infiltrator-calculator (0.1.35) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 22:48:00 +1000
 
-infiltrator-calculator (0.1.34) unstable; urgency=medium
+calculator (0.1.34) unstable; urgency=medium
 
   * Remove unused vertical space below the Linux Standard keypad.
   * Let the Standard panel and keypad consume the shared 520px window allocation.
@@ -481,7 +487,7 @@ infiltrator-calculator (0.1.34) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 22:41:00 +1000
 
-infiltrator-calculator (0.1.33) unstable; urgency=medium
+calculator (0.1.33) unstable; urgency=medium
 
   * Replace the Linux application icon with the shared non-automotive Infiltrator icon language.
   * Use the same dark graphite field, #72dcff cyan linework and simplified glyph style as the InfiltratorFS catalogue identity.
@@ -489,7 +495,7 @@ infiltrator-calculator (0.1.33) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 22:30:00 +1000
 
-infiltrator-calculator (0.1.32) unstable; urgency=medium
+calculator (0.1.32) unstable; urgency=medium
 
   * Bound recursive Programmer parsing for nested parentheses and unary operators.
   * Return a deterministic nesting error instead of risking native stack exhaustion.
@@ -497,7 +503,7 @@ infiltrator-calculator (0.1.32) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 21:55:00 +1000
 
-infiltrator-calculator (0.1.31) unstable; urgency=medium
+calculator (0.1.31) unstable; urgency=medium
 
   * Route iPhone interaction through the shared C++ controller, restoring Standard immediate arithmetic and contextual percentage parity.
   * Keep Standard mode isolated from Scientific grammar, reject writes to pi/e, and bound recursive expression nesting.
@@ -508,7 +514,7 @@ infiltrator-calculator (0.1.31) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 21:17:00 +1000
 
-infiltrator-calculator (0.1.30) unstable; urgency=medium
+calculator (0.1.30) unstable; urgency=medium
 
   * Install the Calculator artwork under the exact Debian package-name alias used by Linux Mint Software Manager.
   * Keep the icon owned by the Calculator package; no shared icon helper package is required.
@@ -516,7 +522,7 @@ infiltrator-calculator (0.1.30) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 19:15:00 +1000
 
-infiltrator-calculator (0.1.29) unstable; urgency=medium
+calculator (0.1.29) unstable; urgency=medium
 
   * Enforce the three approved MB Corpo text faces across Linux, Windows and iPhone.
   * Package the verified S Regular, S Bold and A Condensed Regular faces with releases.
@@ -527,7 +533,7 @@ infiltrator-calculator (0.1.29) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 19:08:00 +1000
 
-infiltrator-calculator (0.1.28) unstable; urgency=medium
+calculator (0.1.28) unstable; urgency=medium
 
   * Restore the three approved MB Corpo typography faces on Linux.
   * Remove explicit Sans and Segoe UI desktop font fallbacks.
@@ -537,7 +543,7 @@ infiltrator-calculator (0.1.28) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 18:45:00 +1000
 
-infiltrator-calculator (0.1.27) unstable; urgency=medium
+calculator (0.1.27) unstable; urgency=medium
 
   * Reduce the Linux Standard-mode window height while retaining room for extended modes.
   * Use the native Linux sans-serif UI family instead of display fonts for application text.
@@ -546,7 +552,7 @@ infiltrator-calculator (0.1.27) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 18:32:00 +1000
 
-infiltrator-calculator (0.1.26) unstable; urgency=medium
+calculator (0.1.26) unstable; urgency=medium
 
   * Add AppStream desktop-application metadata for Linux software centres.
   * Associate the Debian package with the existing Calculator desktop file and icon.
@@ -554,7 +560,7 @@ infiltrator-calculator (0.1.26) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 18:15:00 +1000
 
-infiltrator-calculator (0.1.25) unstable; urgency=medium
+calculator (0.1.25) unstable; urgency=medium
 
   * Pin repository builds to the exact Common 1.19.3 release commit.
   * Run Linux, Windows, iPhone and ASan/UBSan verification on every main change.
@@ -565,15 +571,15 @@ infiltrator-calculator (0.1.25) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 17:58:00 +1000
 
-infiltrator-calculator (0.1.24) unstable; urgency=medium
+calculator (0.1.24) unstable; urgency=medium
 
-  * Move the Debian/APT package identity from infiltrator-calc to infiltrator-calculator.
+  * Move the Debian/APT package identity from calculator to calculator.
   * Preserve the Calculator product name, existing executable/configuration identities, Windows executable and iOS bundle identity.
-  * Migrate existing infiltrator-calc installations through the central repository transition package.
+  * Migrate existing calculator installations through the central repository transition package.
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 13:02:00 +1000
 
-infiltrator-calc (0.1.23) unstable; urgency=medium
+calculator (0.1.23) unstable; urgency=medium
 
   * Fix GTK history dock visibility at normal startup size.
   * Force the first valid responsive-layout initialization.
@@ -581,7 +587,7 @@ infiltrator-calc (0.1.23) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Sat, 19 Sep 2026 00:23:00 +1000
 
-infiltrator-calc (0.1.22) unstable; urgency=medium
+calculator (0.1.22) unstable; urgency=medium
 
   * Complete the internal product rename to Calculator.
   * Rename CMake, C++, iOS and native Windows internal identities.
@@ -590,7 +596,7 @@ infiltrator-calc (0.1.22) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 21:46:00 +1000
 
-infiltrator-calc (0.1.21) unstable; urgency=medium
+calculator (0.1.21) unstable; urgency=medium
 
   * Bring architecture, design and implementation documentation up to the current cross-platform system.
   * Document numerical, ownership and platform-boundary contracts.
@@ -599,7 +605,7 @@ infiltrator-calc (0.1.21) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 21:18:00 +1000
 
-infiltrator-calc (0.1.20) unstable; urgency=medium
+calculator (0.1.20) unstable; urgency=medium
 
   * Deepen Common 1.19.2 integration across Linux, Windows and iPhone.
   * Use Common's deterministic decimal parser for calculator numeric tokens.
@@ -608,33 +614,33 @@ infiltrator-calc (0.1.20) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 20:25:00 +1000
 
-infiltrator-calc (0.1.19) unstable; urgency=medium
+calculator (0.1.19) unstable; urgency=medium
 
   * Rename the user-facing application to Calculator.
-  * Preserve the infiltrator-calc package, executable and configuration identifiers for upgrade compatibility.
+  * Preserve the calculator package, executable and configuration identifiers for upgrade compatibility.
   * Update Linux, Windows and iPhone display names consistently.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 19:26:00 +1000
 
-infiltrator-calc (0.1.18) unstable; urgency=medium
+calculator (0.1.18) unstable; urgency=medium
 
-  * Advance the shared foundation to Infiltratr Common 1.19.2.
+  * Advance the shared foundation to Libraries 1.19.2.
   * Keep Linux, Windows and iPhone on the same immutable Common revision.
   * Rebuild the cross-platform release after the repository publication fix.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 19:26:00 +1000
 
-infiltrator-calc (0.1.17) unstable; urgency=medium
+calculator (0.1.17) unstable; urgency=medium
 
   * Add persistent System, Day and Night themes on Linux, Windows and iPhone.
   * Keep System mode platform-authoritative rather than inventing a third palette.
-  * Consume canonical semantic Day/Night theme values from Infiltratr Common 1.19.1.
+  * Consume canonical semantic Day/Night theme values from Libraries 1.19.1.
   * Persist explicit theme overrides and react to host appearance changes.
   * Extend cross-platform theme parity and Windows runtime smoke coverage.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 16:52:00 +1000
 
-infiltrator-calc (0.1.16) unstable; urgency=medium
+calculator (0.1.16) unstable; urgency=medium
 
   * Add shared compact, regular and wide responsive desktop states.
   * Dock history on wide GTK and Win32 layouts while retaining the popup on normal widths.
@@ -645,7 +651,7 @@ infiltrator-calc (0.1.16) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 14:05:00 +1000
 
-infiltrator-calc (0.1.15) unstable; urgency=medium
+calculator (0.1.15) unstable; urgency=medium
 
   * Add a canonical cross-platform calculator UI contract for layout, roles and commands.
   * Add a platform-neutral UI controller for calculator mode and interaction state.
@@ -655,7 +661,7 @@ infiltrator-calc (0.1.15) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 13:42:00 +1000
 
-infiltrator-calc (0.1.14) unstable; urgency=medium
+calculator (0.1.14) unstable; urgency=medium
 
   * Bring the Linux GTK shell up to the compact Windows interaction hierarchy.
   * Reduce the default Linux window to 380x620 and tighten desktop spacing.
@@ -665,7 +671,7 @@ infiltrator-calc (0.1.14) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 13:18:00 +1000
 
-infiltrator-calc (0.1.13) unstable; urgency=medium
+calculator (0.1.13) unstable; urgency=medium
 
   * Refine the native Windows Standard layout using Microsoft Calculator UX patterns as a reference.
   * Split memory controls into a compact strip above a six-row Standard keypad.
@@ -675,7 +681,7 @@ infiltrator-calc (0.1.13) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 13:12:00 +1000
 
-infiltrator-calc (0.1.12) unstable; urgency=medium
+calculator (0.1.12) unstable; urgency=medium
 
   * Rework the native Windows shell to a compact calculator density.
   * Repaint mutually exclusive owner-drawn selections immediately when modes or programmer options change.
@@ -685,7 +691,7 @@ infiltrator-calc (0.1.12) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 12:10:00 +1000
 
-infiltrator-calc (0.1.11) unstable; urgency=medium
+calculator (0.1.11) unstable; urgency=medium
 
   * Fix native Windows keypad creation during WM_CREATE so calculator keys are visible.
   * Add a Windows startup smoke test that verifies the complete child button set is created.
@@ -693,36 +699,36 @@ infiltrator-calc (0.1.11) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 11:58:00 +1000
 
-infiltrator-calc (0.1.10) unstable; urgency=medium
+calculator (0.1.10) unstable; urgency=medium
 
   * Replace the Windows GTK/MSYS2 shell with a native Win32 interface over the shared C++ core.
   * Build Windows with Visual Studio/MSVC and the static runtime so the published EXE is standalone.
   * Remove the GTK/GLib portable runtime archive from Windows release assets.
   * Reject Windows builds that import GTK/GLib, GCC, libstdc++, winpthread or VC redistributable DLLs.
-  * Keep the Linux GTK4 and iPhone SwiftUI shells on Infiltratr Common 1.18.1.
+  * Keep the Linux GTK4 and iPhone SwiftUI shells on Libraries 1.18.1.
   * Restore a compact Linux GTK desktop density so the complete keypad fits normal work areas.
   * Reduce Linux keypad height/spacing and disable vertical row stretching so the equals key remains visible.
   * Add a CI regression guard for the Linux desktop size contract.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 11:40:00 +1000
 
-infiltrator-calc (0.1.9) unstable; urgency=medium
+calculator (0.1.9) unstable; urgency=medium
 
-  * Advance the shared foundation to the immutable Infiltratr Common 1.18.1 release.
+  * Advance the shared foundation to the immutable Libraries 1.18.1 release.
   * Keep the Common version guard and exact gitlink aligned across Linux, Windows and iPhone builds.
   * Rebuild all published platform artifacts against Common 1.18.1.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 11:20:00 +1000
 
-infiltrator-calc (0.1.8) unstable; urgency=medium
+calculator (0.1.8) unstable; urgency=medium
 
-  * Pin the shared foundation to the immutable Infiltratr Common 1.18.0 release.
+  * Pin the shared foundation to the immutable Libraries 1.18.0 release.
   * Fail CMake configuration if the Common submodule reports any other version.
   * Rebuild Linux, Windows and iPhone release artifacts against the same Common revision.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 10:13:00 +1000
 
-infiltrator-calc (0.1.7) unstable; urgency=medium
+calculator (0.1.7) unstable; urgency=medium
 
   * Add a native SwiftUI iPhone interface over the same portable C++ calculation engine.
   * Add an Objective-C++ bridge for Standard, Scientific and Programmer calculations, memory, variables and history.
@@ -732,7 +738,7 @@ infiltrator-calc (0.1.7) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 10:00:00 +1000
 
-infiltrator-calc (0.1.6) unstable; urgency=medium
+calculator (0.1.6) unstable; urgency=medium
 
   * Redesign the calculator shell with larger controls, clearer visual hierarchy and stronger number/operator/action separation.
   * Replace the cycling MODE control with an explicit Standard, Scientific and Programmer mode strip.
@@ -742,7 +748,7 @@ infiltrator-calc (0.1.6) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 09:45:00 +1000
 
-infiltrator-calc (0.1.5) unstable; urgency=medium
+calculator (0.1.5) unstable; urgency=medium
 
   * Disambiguate Programmer width controls as W8, W16, W32 and W64 so numeric keypad input remains available.
   * Preserve the Standard, Scientific and Programmer mode switch as one integrated calculator workflow.
@@ -750,7 +756,7 @@ infiltrator-calc (0.1.5) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 09:05:00 +1000
 
-infiltrator-calc (0.1.4) unstable; urgency=medium
+calculator (0.1.4) unstable; urgency=medium
 
   * Add Programmer mode with binary, octal, decimal and hexadecimal bases.
   * Add 8, 16, 32 and 64-bit integer widths with unsigned/signed display.
@@ -760,7 +766,7 @@ infiltrator-calc (0.1.4) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 09:00:00 +1000
 
-infiltrator-calc (0.1.3) unstable; urgency=medium
+calculator (0.1.3) unstable; urgency=medium
 
   * Add reusable calculation variables with name=expression assignment.
   * Add a shared calculation-session layer for variables, memory and bounded history.
@@ -770,7 +776,7 @@ infiltrator-calc (0.1.3) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 08:45:00 +1000
 
-infiltrator-calc (0.1.2) unstable; urgency=medium
+calculator (0.1.2) unstable; urgency=medium
 
   * Complete the Standard calculator control set with percent, sign, square, square root and reciprocal operations.
   * Add calculator memory controls and cursor-aware keypad entry with backspace.
@@ -780,16 +786,16 @@ infiltrator-calc (0.1.2) unstable; urgency=medium
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 18 Sep 2026 05:30:00 +1000
 
-infiltrator-calc (0.1.1) unstable; urgency=medium
+calculator (0.1.1) unstable; urgency=medium
 
   * Rebuild the GTK interface around the Infiltrator graphite/silver design contract.
   * Apply MB Corpo UI and brand typography roles with runtime fallback.
   * Tighten calculator layout, display hierarchy and control styling.
-  * Keep the portable calculation core on Infiltratr Common.
+  * Keep the portable calculation core on Libraries.
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 17 Sep 2026 22:00:00 +1000
 
-infiltrator-calc (0.1.0) unstable; urgency=medium
+calculator (0.1.0) unstable; urgency=medium
 
   * Initial Infiltrator Calc desktop release.
 

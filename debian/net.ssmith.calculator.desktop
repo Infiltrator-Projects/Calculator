@@ -2,9 +2,9 @@
 Type=Application
 Name=Calculator
 Comment=Native cross-platform calculator
-Exec=infiltrator-calc
-Icon=infiltrator-calc
+Exec=calculator
+Icon=calculator
 Terminal=false
 Categories=Utility;Calculator;GTK;
-StartupWMClass=net.ssmith.infiltrator.calc
+StartupWMClass=net.ssmith.calculator
 StartupNotify=true

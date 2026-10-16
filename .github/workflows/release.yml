@@ -185,13 +185,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build build-windows --config Release --parallel
           ctest --test-dir build-windows -C Release --output-on-failure
-          if (-not (Test-Path 'build-windows/Release/infiltrator-calc.exe')) {
+          if (-not (Test-Path 'build-windows/Release/calculator.exe')) {
             throw 'Missing Windows executable'
           }
 
       - name: Verify native Windows runtime and dependency boundary
         shell: pwsh
-        run: pwsh -NoProfile -File support/ci/windows_smoke.ps1 -Executable build-windows/Release/infiltrator-calc.exe
+        run: pwsh -NoProfile -File support/ci/windows_smoke.ps1 -Executable build-windows/Release/calculator.exe
 
       - name: Package standalone Windows executable
         shell: pwsh
@@ -199,7 +199,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path 'dist/windows' | Out-Null
           $target = "dist/windows/calculator_${env:VERSION}_windows_x64.exe"
-          Copy-Item 'build-windows/Release/infiltrator-calc.exe' $target
+          Copy-Item 'build-windows/Release/calculator.exe' $target
           if (-not (Test-Path $target)) { throw 'Windows release executable was not packaged' }
 
       - name: Upload Windows package
@@ -279,7 +279,7 @@ jobs:
           test -f "$ipa"
           /usr/bin/unzip -l "$ipa" | grep -q 'Payload/Calculator.app/Info.plist'
           plutil -extract CFBundleIdentifier raw -o - "$ipa_root/Payload/Calculator.app/Info.plist" \
-            | grep -qx 'net.ssmith.infiltrator.calc'
+            | grep -qx 'net.ssmith.calculator'
 
       - name: Upload iOS IPA
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

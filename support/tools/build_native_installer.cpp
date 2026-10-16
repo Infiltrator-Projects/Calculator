@@ -10,7 +10,7 @@
 namespace {
 
 constexpr const char *kPayloadMarker =
-    "\n__INFILTRATOR_CALCULATOR_NATIVE_PAYLOAD_V1__\n";
+    "\n__CALCULATOR_NATIVE_PAYLOAD_V1__\n";
 
 [[noreturn]] void fail(const std::string &message)
 {

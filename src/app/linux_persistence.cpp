@@ -12,7 +12,7 @@
 
 namespace calculator::app {
 namespace {
-constexpr char kProductDirectory[] = "infiltrator-calc";
+constexpr char kProductDirectory[] = "calculator";
 
 bool ensure_private_directory(const char* path) {
     return path && *path && infiltratr_mkdir_parents(path, 0700U) == 0;
@@ -124,7 +124,7 @@ bool LinuxPersistence::load_controller_state() {
     const bool found = read_text_file(path, contents);
     g_free(path);
     if (found && controller_.load_persistent_state_text(contents))
-        return contents.rfind("INFILTRATOR_CALCULATOR_STATE 2\n", 0U) == 0U;
+        return contents.rfind("CALCULATOR_STATE 2\n", 0U) == 0U;
     if (found) g_printerr("Calculator ignored malformed shared state document.\n");
     load_legacy_functions(); load_legacy_variables(); load_legacy_display_preferences();
     return false;

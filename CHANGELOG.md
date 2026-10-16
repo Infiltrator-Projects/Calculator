@@ -2,6 +2,10 @@
 
 This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
 
+## 0.2.45 - 2026-10-17
+
+- Use canonical alpha product and package identities without migration aliases.
+
 ## Unreleased
 
 No unreleased changes.
