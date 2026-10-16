@@ -27,7 +27,7 @@ from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
-DEBIAN_RE = re.compile(r"^infiltrator-calculator \(([^)]+)\)")
+DEBIAN_RE = re.compile(r"^calculator \(([^)]+)\)")
 CHANGELOG_RE = re.compile(r"^## ([0-9]+\.[0-9]+\.[0-9]+)\b", re.MULTILINE)
 
 
@@ -71,7 +71,7 @@ def validate_metadata(expected: str) -> None:
         )
 
     try:
-        root = ET.fromstring(read_text("debian/infiltrator-calculator.metainfo.xml"))
+        root = ET.fromstring(read_text("debian/calculator.metainfo.xml"))
     except ET.ParseError as exc:
         die(f"AppStream XML is not well formed: {exc}")
     release = root.find("./releases/release")

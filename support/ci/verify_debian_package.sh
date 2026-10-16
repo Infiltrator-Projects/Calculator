@@ -10,7 +10,7 @@ package="$1"
 [[ -f "$package" ]] || { echo "missing Debian package: $package" >&2; exit 1; }
 
 dpkg-deb --info "$package"
-[[ "$(dpkg-deb -f "$package" Package)" == "infiltrator-calculator" ]] || {
+[[ "$(dpkg-deb -f "$package" Package)" == "calculator" ]] || {
   echo "unexpected Debian package identity" >&2
   exit 1
 }
@@ -24,11 +24,11 @@ required=(
   './usr/bin/infiltrator-calc-cli'
   './usr/share/applications/net.ssmith.infiltrator.calc.desktop'
   './usr/share/icons/hicolor/scalable/apps/infiltrator-calc.svg'
-  './usr/share/app-install/icons/infiltrator-calculator.svg'
-  './usr/share/metainfo/infiltrator-calculator.metainfo.xml'
-  './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_a_cond_regular.ttf'
-  './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_s_bold.ttf'
-  './usr/share/fonts/truetype/infiltrator-calculator/mb_corpo_s_regular.ttf'
+  './usr/share/app-install/icons/calculator.svg'
+  './usr/share/metainfo/calculator.metainfo.xml'
+  './usr/share/fonts/truetype/calculator/mb_corpo_a_cond_regular.ttf'
+  './usr/share/fonts/truetype/calculator/mb_corpo_s_bold.ttf'
+  './usr/share/fonts/truetype/calculator/mb_corpo_s_regular.ttf'
 )
 for path in "${required[@]}"; do
   grep -Fqx "$path" "$listing" || {

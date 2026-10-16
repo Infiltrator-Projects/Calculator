@@ -27,7 +27,7 @@ Windows Win32 shell ────┼─> UI contract/controller ─> Session ─>
 iPhone SwiftUI + bridge ─┘                             └──────> Programmer core
 
 Advanced Tools ───────────────────────────────> Scientific/domain mechanisms
-Calculator core / theme adapters / iOS bridge ─> Infiltratr Common
+Calculator core / theme adapters / iOS bridge ─> Libraries
 ```
 
 Higher layers may adapt lower-layer state for presentation. Lower layers must not depend on GTK, Win32, SwiftUI or other platform UI APIs.

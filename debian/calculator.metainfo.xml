@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.44" date="2026-10-17">
+      <description><p>Align product and package names while preserving upgrades from previous package identities.</p></description>
+    </release>
     <release version="0.2.43" date="2026-10-16">
       <description><p>Make source packaging deterministic from committed inputs and qualify immutable release artifacts through one producer.</p></description>
     </release>

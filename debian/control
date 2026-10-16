@@ -1,4 +1,4 @@
-Source: infiltrator-calculator
+Source: calculator
 Section: utils
 Priority: optional
 Maintainer: Shannon Smith <infiltratr@yandex.com>
@@ -7,13 +7,13 @@ Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Homepage: https://github.com/Infiltrator-Projects/Calculator
 
-Package: infiltrator-calculator
+Package: calculator
 Architecture: any
-Provides: infiltrator-calc
-Breaks: infiltrator-calc (<< 0.1.24)
-Replaces: infiltrator-calc (<< 0.1.24)
+Provides: infiltrator-calculator (= ${binary:Version}), infiltrator-calc (= ${binary:Version})
+Breaks: infiltrator-calculator (<< ${binary:Version}), infiltrator-calc (<< ${binary:Version})
+Replaces: infiltrator-calculator (<< ${binary:Version}), infiltrator-calc (<< ${binary:Version})
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: native cross-platform calculator
  Calculator is a native GTK4 desktop calculator with a portable
- calculation core. The protected Debian/APT identity is infiltrator-calculator;
- existing infiltrator-calc package installations migrate through the repository transition package.
+ calculation core. The Debian/APT package identity is calculator;
+ existing infiltrator-calculator and infiltrator-calc installations migrate through versioned package transitions.

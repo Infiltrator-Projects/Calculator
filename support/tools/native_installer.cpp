@@ -23,10 +23,10 @@ namespace {
 
 constexpr const char *kPayloadMarker =
     "\n__INFILTRATOR_CALCULATOR_NATIVE_PAYLOAD_V1__\n";
-constexpr const char *kPackageName = "infiltrator-calculator";
+constexpr const char *kPackageName = "calculator";
 constexpr const char *kExecutable = "/usr/bin/infiltrator-calc";
 constexpr const char *kBuildInfo =
-    "/usr/share/doc/infiltrator-calculator/BUILD-INFO";
+    "/usr/share/doc/calculator/BUILD-INFO";
 
 [[noreturn]] void fail(const std::string &message)
 {
@@ -161,7 +161,7 @@ void extract_embedded_payload(const fs::path &archive_path)
 
 fs::path make_temp_directory()
 {
-    std::string pattern = "/tmp/infiltrator-calculator-native-XXXXXX";
+    std::string pattern = "/tmp/calculator-native-XXXXXX";
     std::vector<char> storage(pattern.begin(), pattern.end());
     storage.push_back('\0');
     char *created = ::mkdtemp(storage.data());
@@ -280,7 +280,7 @@ bool build_tree_contains(const fs::path &root, const std::string &needle)
 
 fs::path find_debian_package(const fs::path &directory, const std::string &version)
 {
-    const std::string prefix = "infiltrator-calculator_" + version + "_";
+    const std::string prefix = "calculator_" + version + "_";
     std::error_code error;
     for (const auto &entry : fs::directory_iterator(directory, error)) {
         if (error) break;
@@ -320,7 +320,7 @@ void usage()
 {
     std::cout
         << "Calculator hardware-native installer\n\n"
-        << "Usage: infiltrator-calculator-<version>-native-installer.run [options]\n\n"
+        << "Usage: calculator-<version>-native-installer.run [options]\n\n"
         << "Options:\n"
         << "  --profile native|aggressive|portable\n"
         << "  --jobs NUMBER\n"

@@ -14,8 +14,8 @@ override_dh_auto_test:
 override_dh_install:
 	dh_install
 	install -D -m 0644 debian/infiltrator-calc.svg \
-		"$(CURDIR)/debian/infiltrator-calculator/usr/share/app-install/icons/infiltrator-calculator.svg"
+		"$(CURDIR)/debian/calculator/usr/share/app-install/icons/calculator.svg"
 	if [ -f .calculator-native-build-info ]; then \
 		install -D -m 0644 .calculator-native-build-info \
-			"$(CURDIR)/debian/infiltrator-calculator/usr/share/doc/infiltrator-calculator/BUILD-INFO"; \
+			"$(CURDIR)/debian/calculator/usr/share/doc/calculator/BUILD-INFO"; \
 	fi

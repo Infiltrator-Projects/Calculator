@@ -1,6 +1,6 @@
 [submodule "src/infiltratr-common"]
 	path = src/infiltratr-common
-	url = https://github.com/Infiltrator-Projects/Infiltrator-Libraries.git
+	url = https://github.com/Infiltrator-Projects/Libraries.git
 
 [submodule "src/boost-multiprecision"]
 	path = src/boost-multiprecision

@@ -112,7 +112,7 @@ jobs:
         run: python3 tests/test_desktop_layout.py
 
       - name: Validate AppStream metadata
-        run: appstreamcli validate debian/infiltrator-calculator.metainfo.xml
+        run: appstreamcli validate debian/calculator.metainfo.xml
 
       - name: Build and test on Linux
         run: |
@@ -132,7 +132,7 @@ jobs:
           dpkg-buildpackage -us -uc -b
           mkdir -p dist/linux
           package="dist/linux/calculator_${VERSION}_amd64.deb"
-          cp "../infiltrator-calculator_${VERSION}_amd64.deb" "$package"
+          cp "../calculator_${VERSION}_amd64.deb" "$package"
           bash support/ci/verify_debian_package.sh "$package"
 
       - name: Smoke-test packaged Linux idle CPU
@@ -142,7 +142,7 @@ jobs:
         run: |
           set -euo pipefail
           bash support/release/build_source_bundle.sh "$VERSION" "$GITHUB_SHA" "dist/source/calculator_${VERSION}_source.tar.gz"
-          bash support/release/build_native_installer.sh "$VERSION" "dist/source/calculator_${VERSION}_source.tar.gz" "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
+          bash support/release/build_native_installer.sh "$VERSION" "dist/source/calculator_${VERSION}_source.tar.gz" "dist/native/calculator-${VERSION}-native-installer.run"
           printf '%s\n' "$GITHUB_SHA" > dist/SOURCE_COMMIT
           (cd dist && sha256sum SOURCE_COMMIT linux/* source/* native/* > LINUX_SHA256SUMS)
 
@@ -360,7 +360,7 @@ jobs:
           set -euo pipefail
           test "$(cat dist/SOURCE_COMMIT)" = "$GITHUB_SHA"
           (cd dist && sha256sum -c LINUX_SHA256SUMS)
-          chmod +x "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
+          chmod +x "dist/native/calculator-${VERSION}-native-installer.run"
 
       - name: Validate release asset set
         run: |

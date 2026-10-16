@@ -30,7 +30,7 @@ def main() -> int:
         dist / "windows" / f"calculator_{version}_windows_x64.exe",
         dist / "ios" / f"calculator_{version}_ios-device-unsigned.ipa",
         dist / "source" / f"calculator_{version}_source.tar.gz",
-        dist / "native" / f"infiltrator-calculator-{version}-native-installer.run",
+        dist / "native" / f"calculator-{version}-native-installer.run",
         dist / "LICENSE.txt",
     ]
 

@@ -283,7 +283,7 @@ if(CALCULATOR_BUILD_DESKTOP)
         )
 
         install(FILES ${CALCULATOR_FONT_FILES}
-            DESTINATION share/fonts/truetype/infiltrator-calculator)
+            DESTINATION share/fonts/truetype/calculator)
 
         if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
             target_compile_options(infiltrator-calc PRIVATE
@@ -293,7 +293,7 @@ if(CALCULATOR_BUILD_DESKTOP)
     endif()
 
     install(TARGETS infiltrator-calc RUNTIME DESTINATION bin)
-    install(FILES LICENSE DESTINATION share/doc/infiltrator-calculator OPTIONAL)
+    install(FILES LICENSE DESTINATION share/doc/calculator OPTIONAL)
 endif()
 
 if(BUILD_TESTING)

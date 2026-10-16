@@ -10,7 +10,7 @@ Calculator combines a portable C++ calculation core, a shared desktop interactio
 - Keep GTK, Win32 and SwiftUI/Objective-C++ mechanics out of the portable calculation domain.
 - Preserve the distinction between Standard's conventional mathematical expression semantics, Scientific multiprecision semantics and Programmer fixed-width integer semantics.
 - Treat numerical edge behaviour as part of the feature contract: domains, finite-result requirements, width/radix rules, overflow policy and percentage semantics require deterministic tests.
-- Reuse the pinned Infiltratr Common API when its contract is the correct generic abstraction; improve Common first if Calculator has the stronger generic implementation.
+- Reuse the pinned Libraries API when its contract is the correct generic abstraction; improve Common first if Calculator has the stronger generic implementation.
 - Do not move Calculator-specific grammar, calculator interaction policy or mode semantics into Common merely to reduce local code.
 - Preserve compatibility identifiers when changing them would break installed upgrades, settings or application identity.
 - Add the narrowest useful regression for reproducible behavioural, numerical, platform or packaging defects.
