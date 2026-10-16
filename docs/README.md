@@ -4,6 +4,7 @@ This directory is the canonical documentation entry point for Calculator. The In
 
 ## Canonical baseline
 
+- [Engineering philosophy](PHILOSOPHY.md) — governing engineering and documentation standard.
 - [Architecture](ARCHITECTURE.md) — ownership, layers, dependencies and system boundaries.
 - [Design](DESIGN.md) — first-principles goals, non-goals, trade-offs and failure philosophy.
 - [Decisions](DECISIONS.md) — durable architectural decisions and consequences.
