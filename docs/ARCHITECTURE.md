@@ -122,9 +122,9 @@ Calculation APIs return explicit success/error results. Invalid syntax, division
 
 The suite covers grammar and numeric boundaries, parser depth, Standard precedence, Programmer semantics, session/controller state, Advanced Tools resource limits, Common integration, source ownership, native runtime/package behaviour and platform builds. Windows performs a native runtime/dependency smoke check. iOS CI compiles Simulator and unsigned ARM64-device targets; that proves target compilation and package structure, not signed physical-device installation.
 
-A release is published only after Linux, Windows, iOS and sanitizer gates succeed from one source revision. VERSION is the version authority and redundant Debian/CHANGELOG/AppStream metadata must agree. Manual publication is recovery only: an existing release may be reconciled only while checked out at its exact tag commit; a not-yet-tagged release may be recovered only from the commit that introduced that forward VERSION transition. This prevents later same-version source from replacing immutable release bytes.
+A release is published only after Linux, Windows, iOS and sanitizer gates succeed from one source revision. VERSION is the version authority and redundant Debian/CHANGELOG/AppStream metadata must agree. An untagged forward VERSION remains pending across corrective commits. Once its tag exists, manual recovery requires that exact source and verifies existing public bytes without replacing them.
 
-Public platform binaries, the deterministic source bundle, native installer, licence and checksum manifest derive from the qualified revision. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
+Linux qualification owns source-archive and native-installer production. The source archive uses committed Git objects and exact recursive gitlinks in a private temporary directory; local edits and untracked files cannot enter it. The publisher downloads sealed candidates and owns draft promotion and remote-byte verification. Central APT ingestion owns its separate distribution state. [VALIDATION.md](VALIDATION.md) defines what each evidence class proves and does not prove.
 
 ## Compatibility and runtime identity
 

@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.43" date="2026-10-16">
+      <description><p>Make source packaging deterministic from committed inputs and qualify immutable release artifacts through one producer.</p></description>
+    </release>
     <release version="0.2.42" date="2026-10-15">
       <description>
         <p>Update the verified artifact action revisions and consolidate the completed release work onto main.</p>

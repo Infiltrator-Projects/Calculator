@@ -1,3 +1,11 @@
+infiltrator-calculator (0.2.43) unstable; urgency=medium
+
+  * Package exact committed source and recursive dependency identities.
+  * Qualify source/native candidates once and preserve immutable public bytes.
+  * Retain pending release intent and honor test configuration.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 16 Oct 2026 02:50:00 +0000
+
 infiltrator-calculator (0.2.42) unstable; urgency=medium
 
   * Advance the pinned GitHub artifact upload and download action revisions.

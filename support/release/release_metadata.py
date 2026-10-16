@@ -10,9 +10,9 @@ message wording.
 Manual publication is recovery, not a second release path. An existing tag may
 be reconciled only while the workflow is running at that tag's exact source
 commit. If the tag was never created because the original publication stopped
-early, recovery is allowed only from the commit that actually introduced the
-new VERSION. This prevents a later same-version main commit from replacing a
-published release's bytes while retaining the old immutable tag identity.
+early, the untagged VERSION remains pending through corrective commits. Its
+introduction must be a committed forward transition. Existing tags still bind
+manual publication to their exact source, preserving immutable release bytes.
 """
 
 from __future__ import annotations
@@ -128,44 +128,29 @@ def release_tag_commit(current: str) -> str | None:
 
 
 def validate_release_identity(current: str, *, manual: bool) -> None:
-    """Prove that publication cannot change the source behind a version tag."""
+    """Keep existing tags immutable; allow correction before a tag is created."""
     head = head_commit()
     tagged = release_tag_commit(current)
-
     if tagged is not None:
         if tagged != head:
             action = "manual reconciliation" if manual else "publication"
-            die(
-                f"{action} for v{current} must run at tagged source {tagged}, "
-                f"not {head}"
-            )
+            die(f"{action} for v{current} must run at tagged source {tagged}, not {head}")
         return
 
-    if not manual:
-        # A normal forward-version push is the authority that may create the
-        # tag for the first time. Existing-tag reuse was rejected above.
-        return
-
-    parent_version = version_at("HEAD^")
-    if parent_version is None or parent_version == current:
-        die(
-            "manual publication without an existing tag is allowed only from "
-            "the commit that introduced the current VERSION"
-        )
-    if version_tuple(parent_version) >= version_tuple(current):
-        die(
-            "manual publication requires a forward VERSION transition "
-            f"({parent_version} -> {current})"
-        )
+    introduced = git_output("log", "-1", "--format=%H", "HEAD", "--", "VERSION")
+    parent_version = version_at(f"{introduced}^") if introduced else None
+    if parent_version is None or version_tuple(parent_version) >= version_tuple(current):
+        die("untagged publication requires a committed forward VERSION transition")
 
 
 def should_publish(event: str, before: str, manual_publish: bool, current: str) -> bool:
     if event == "push":
         previous = previous_version(before)
-        if previous is None or previous == current:
-            return False
-        if version_tuple(current) <= version_tuple(previous):
+        if previous is not None and version_tuple(current) < version_tuple(previous):
             die(f"VERSION must move forward for release publication ({previous} -> {current})")
+        tagged = release_tag_commit(current)
+        if tagged is not None and tagged != head_commit() and previous == current:
+            return False
         validate_release_identity(current, manual=False)
         return True
 

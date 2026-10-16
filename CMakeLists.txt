@@ -296,6 +296,7 @@ if(CALCULATOR_BUILD_DESKTOP)
     install(FILES LICENSE DESTINATION share/doc/infiltrator-calculator OPTIONAL)
 endif()
 
+if(BUILD_TESTING)
 add_executable(calculator-test
     tests/test_calculator.cpp
 )
@@ -424,4 +425,4 @@ if(CALCULATOR_ENABLE_MPFR_ORACLE_TESTS)
         NAME calculator-scientific-oracle
         COMMAND calculator-scientific-oracle-test)
 endif()
-
+endif()

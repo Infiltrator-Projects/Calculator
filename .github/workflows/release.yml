@@ -62,10 +62,15 @@ jobs:
           bash -n support/ci/linux_idle_cpu.sh
           bash -n support/release/build_source_bundle.sh
           bash -n support/release/build_native_installer.sh
-          bash -n support/release/check_apt_publication.sh
+          bash -n support/release/publish.sh
           python3 -m py_compile \
             support/release/release_metadata.py \
             support/release/release_assets.py
+
+      - name: Exercise production release and archive contracts
+        run: |
+          python3 tests/test_source_bundle.py
+          python3 tests/test_release_metadata.py
 
   linux:
     needs: prepare
@@ -96,20 +101,6 @@ jobs:
             libmpfr-dev \
             pkg-config \
             xvfb
-
-      - name: Compile native installer tooling
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p build-installer-tools
-          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -static \
-            support/tools/native_installer.cpp \
-            -o build-installer-tools/calculator-native-installer
-          g++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
-            support/tools/build_native_installer.cpp \
-            -o build-installer-tools/build-native-installer
-          build-installer-tools/calculator-native-installer --help >/dev/null
-          build-installer-tools/build-native-installer --help >/dev/null
 
       - name: Verify Common integration contract
         run: python3 tests/test_common_contract.py
@@ -147,11 +138,24 @@ jobs:
       - name: Smoke-test packaged Linux idle CPU
         run: bash support/ci/linux_idle_cpu.sh "dist/linux/calculator_${VERSION}_amd64.deb"
 
+      - name: Build committed source and native installer once
+        run: |
+          set -euo pipefail
+          bash support/release/build_source_bundle.sh "$VERSION" "$GITHUB_SHA" "dist/source/calculator_${VERSION}_source.tar.gz"
+          bash support/release/build_native_installer.sh "$VERSION" "dist/source/calculator_${VERSION}_source.tar.gz" "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
+          printf '%s\n' "$GITHUB_SHA" > dist/SOURCE_COMMIT
+          (cd dist && sha256sum SOURCE_COMMIT linux/* source/* native/* > LINUX_SHA256SUMS)
+
       - name: Upload Linux package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: calculator-linux-amd64
-          path: dist/linux/*
+          path: |
+            dist/linux/*
+            dist/source/*
+            dist/native/*
+            dist/SOURCE_COMMIT
+            dist/LINUX_SHA256SUMS
           if-no-files-found: error
 
   windows:
@@ -328,17 +332,16 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
-      - name: Checkout exact release source and Common dependency
+      - name: Checkout exact release metadata
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: recursive
           fetch-depth: 0
 
       - name: Download Linux package
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: calculator-linux-amd64
-          path: dist/linux
+          path: dist
 
       - name: Download Windows package
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -352,11 +355,12 @@ jobs:
           name: calculator-ios
           path: dist/ios
 
-      - name: Build deterministic source bundle
-        run: bash support/release/build_source_bundle.sh "$VERSION" "$GITHUB_SHA" "dist/source/calculator_${VERSION}_source.tar.gz"
-
-      - name: Build hardware-native installer
-        run: bash support/release/build_native_installer.sh "$VERSION" "dist/source/calculator_${VERSION}_source.tar.gz" "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
+      - name: Verify exact Linux source and installer candidates
+        run: |
+          set -euo pipefail
+          test "$(cat dist/SOURCE_COMMIT)" = "$GITHUB_SHA"
+          (cd dist && sha256sum -c LINUX_SHA256SUMS)
+          chmod +x "dist/native/infiltrator-calculator-${VERSION}-native-installer.run"
 
       - name: Validate release asset set
         run: |
@@ -364,50 +368,8 @@ jobs:
           cp LICENSE dist/LICENSE.txt
           python3 support/release/release_assets.py --version "$VERSION" --dist dist
 
-      - name: Publish or reconcile cross-platform GitHub release
+      - name: Publish exact qualified release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mapfile -t assets < dist/release-assets.txt
-          tag="v${VERSION}"
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $tag exists; reconciling the verified asset set."
-            gh release upload "$tag" \
-              "${assets[@]}" \
-              --clobber \
-              --repo "$GITHUB_REPOSITORY"
-            gh release edit "$tag" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "Calculator ${VERSION}" \
-              --latest
-          else
-            gh release create "$tag" \
-              "${assets[@]}" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Calculator ${VERSION}" \
-              --generate-notes \
-              --latest
-          fi
-
-  apt-publication:
-    name: Check central APT publication
-    needs: [prepare, publish]
-    if: needs.prepare.outputs.release == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout publication helper
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 1
-
-      - name: Check Package Repository publication
-        env:
-          DISPATCH_TOKEN: ${{ secrets.APT_REPOSITORY_DISPATCH_TOKEN }}
-          RELEASE_SHA: ${{ github.sha }}
-          APP_ID: infiltrator-calc
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: bash support/release/check_apt_publication.sh
+          EXPECTED_SHA: ${{ github.sha }}
+        run: bash support/release/publish.sh

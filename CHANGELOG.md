@@ -6,6 +6,13 @@ This changelog records user-visible, compatibility, architecture and validation 
 
 No unreleased changes.
 
+## 0.2.43 — 2026-10-16
+
+- Archive committed Git objects and exact recursive dependency gitlinks in private temporary directories, excluding dirty and untracked runner state.
+- Produce source/native candidates once in Linux qualification; verify sealed artifacts and immutable staged/public bytes during publication.
+- Keep untagged forward-version release intent across corrective commits, preserve public release identities, honor BUILD_TESTING and separate central APT scheduling.
+- Add production packaging concurrency, contamination, dependency identity, failure-preservation and Git-history release fixtures.
+
 ## 0.2.42 — 2026-10-15
 
 - Update the pinned GitHub artifact upload and download actions to their verified patch releases, including improved rate-limit retry handling.

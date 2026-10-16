@@ -46,7 +46,7 @@ Comments should preserve information expensive to reconstruct: units, precedence
 
 ## Repository discipline
 
-`main` is the authoritative development and release branch. Keep commits focused. Published tags/releases are immutable identities, and release assets must derive from the exact qualified source revision. Manual publication is recovery only: reconcile an existing release from its tagged source revision, or recover a not-yet-tagged release only from the commit that introduced that VERSION.
+`main` is the authoritative development and release branch. Keep commits focused. Published tags/releases are immutable identities, and release assets must derive from the exact qualified source revision. Manual publication is recovery only: verify an existing release at its tagged source revision without changing public bytes. An untagged forward VERSION remains pending through corrective commits until the complete candidate qualifies.
 
 ## Licence
 

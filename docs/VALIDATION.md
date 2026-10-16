@@ -6,7 +6,7 @@ Validation distinguishes implemented behaviour from behaviour that has actually 
 
 ## Automated evidence
 
-The repository uses one cross-platform workflow, `.github/workflows/release.yml`. The workflow orchestrates rather than reimplements release mechanics. Focused helpers under `support/ci/` and `support/release/` own Debian inspection, Linux idle-CPU measurement, Windows runtime/dependency smoke testing, deterministic source packaging, native-installer assembly, release-asset/checksum generation and Package Repository publication checks.
+The repository uses one cross-platform workflow, `.github/workflows/release.yml`. The workflow orchestrates rather than reimplements release mechanics. Focused helpers under `support/ci/` and `support/release/` own Debian inspection, Linux idle-CPU measurement, Windows runtime/dependency smoke testing, deterministic source packaging, native-installer assembly, release-asset/checksum generation and immutable draft promotion.
 
 `VERSION` is the sole source-version authority. Preflight rejects disagreement with the newest Debian changelog, human changelog or AppStream release before expensive platform work begins. A forward VERSION transition, not commit-message wording, is what creates release intent.
 
@@ -16,7 +16,7 @@ The `tests/` tree protects expression grammar and nesting, Scientific precision 
 
 The dedicated `calculator-standard-math` forensic suite enumerates two-operator `+ - * /` precedence combinations over signed operands, explicit grouping, power/unary/postfix/domain boundaries, and computational-state round trips for curated IEEE-754 boundaries plus 50,000 deterministic finite binary64 patterns. Controller regressions prove fixed-decimal/grouped presentation cannot alter later arithmetic or memory recall and that repeated Equals captures the intended top-level operation.
 
-Pull requests, every `main` push and manual dispatch run the same platform qualification jobs. A manual `publish` dispatch is recovery only. If `vVERSION` already exists, preflight requires the checked-out commit to be that exact tag target. If publication failed before a tag existed, manual recovery is permitted only at the commit whose parent carries the previous version. Later same-version commits therefore cannot be used to replace bytes behind an immutable version identity.
+Pull requests, every `main` push and manual dispatch run the same platform qualification jobs. A manual `publish` dispatch is recovery only. If `vVERSION` already exists, preflight requires the checked-out commit to be that exact tag target. An untagged forward VERSION remains pending across corrective commits, each of which must qualify in full. Existing public bytes are compared and preserved.
 
 Verification:
 
@@ -29,9 +29,11 @@ Verification:
 - compiles and packages an unsigned ARM64 iPhoneOS IPA with bundle-identifier/structure checks;
 - verifies Common version/gitlink/public API ownership and derives the expected iOS Common Portable source subset from Common's own CMake;
 - verifies Calculator's iOS source ownership is directory-based rather than a duplicated per-file build manifest;
-- constructs a deterministic source bundle containing the exact Common checkout and a hardware-native Linux installer from that source payload;
+- constructs source from committed Git objects and exact recursive dependency gitlinks, then builds the native installer once in Linux qualification;
 - derives one canonical release-asset list plus SHA-256 manifest; and
-- verifies central Package Repository publication for the Debian package.
+- verifies all staged remote bytes before public promotion and again afterward.
+
+Package Repository independently ingests the public Debian release and owns its catalogue/APT qualification and monitoring. Distribution scheduling does not decide whether Calculator binaries qualified.
 
 GitHub Actions dependencies are pinned to immutable commit revisions and updated through controlled Dependabot proposals. Workflow permissions are read-only by default; only publication receives repository-content write permission.
 
@@ -63,13 +65,17 @@ The exact pinned Common 1.19.35 public contract is checked for semantic design r
 
 The exact source revision intended for release must pass all applicable automated gates. Published assets must derive from that revision, checksums must cover every published project payload, the source bundle must contain the exact Common dependency revision, and redundant release metadata must agree with VERSION.
 
-A normal release is created only by a forward VERSION transition on `main`. Manual publication may recover/reconcile only the same source identity as described above. It is not a mechanism for rebuilding an old version from newer same-version source. Published tags/releases are immutable identities even when a recovery action uses `--clobber`: reconciliation is permitted only because preflight has already proved the source commit is identical to the tag source.
+A normal release is created only by a forward VERSION transition on `main`. Manual publication may recover/reconcile only the same source identity as described above. It is not a mechanism for rebuilding an old version from newer same-version source. Draft assets may be repaired before promotion. Public tags and asset bytes remain unchanged; a different rebuilt candidate cannot replace an existing public artifact. Recovery should reuse the original qualified artifacts.
 
 Documentation must not advertise removed, known-failing or merely planned behaviour as supported.
 
 ## Manual/environment-dependent evidence
 
 Physical-device installation, signing/provisioning, accessibility, visual layout across real DPI/theme/font combinations and interactions hosted CI cannot faithfully reproduce require explicit native-environment observation. Manual evidence supplements automation and should record what environment and behaviour were actually observed.
+
+## Release-mechanics regressions
+
+Preflight runs `tests/test_source_bundle.py` against disposable repositories with recursive gitlinks, spaces, dirty/untracked files, mismatched or absent dependencies and concurrent packagers. It checks exact content, repeat bytes, failure preservation and private cleanup. `tests/test_release_metadata.py` exercises the actual decision code against Git history: a forward version, corrective commits, exact-tag retry, maintenance after publication and rejected rollback/reuse. `BUILD_TESTING=OFF` omits Calculator test targets without changing production assertion modes.
 
 ## Regression rule
 
