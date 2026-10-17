@@ -322,7 +322,7 @@ void usage()
         << "Calculator hardware-native installer\n\n"
         << "Usage: calculator-<version>-native-installer.run [options]\n\n"
         << "Options:\n"
-        << "  --profile native|aggressive|portable\n"
+        << "  --profile native|aggressive|portable (default: aggressive)\n"
         << "  --jobs NUMBER\n"
         << "  --skip-tests\n"
         << "  --no-strip\n"
@@ -345,7 +345,7 @@ int positive_integer(const std::string &text)
 
 int main(int argc, char **argv)
 {
-    std::string profile = "native";
+    std::string profile = "aggressive";
     int jobs = 0;
     bool skip_tests = false;
     bool no_strip = false;
