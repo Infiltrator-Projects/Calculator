@@ -1,3 +1,10 @@
+calculator (0.2.47) unstable; urgency=medium
+
+  * Make the hardware-native installer default to CPU-native LTO with trained two-pass PGO.
+  * Preserve automatic prerequisite installation and explicit alternate build profiles.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 17 Oct 2026 14:40:00 +1100
+
 calculator (0.2.46) unstable; urgency=medium
 
   * Keep one Calculator executable and expose terminal operation through /cli.
