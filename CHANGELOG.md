@@ -2,6 +2,11 @@
 
 This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
 
+## 0.2.47 - 2026-10-17
+
+- Make the hardware-native installer use the aggressive profile by default: CPU-native tuning, link-time optimisation and trained two-pass PGO.
+- Keep automatic prerequisite installation and the explicit native/portable profile overrides.
+
 ## 0.2.46 - 2026-10-17
 
 - Keep Calculator as one installed executable while exposing terminal operation through the explicit `/cli` mode.
