@@ -2,7 +2,7 @@
 Type=Application
 Name=Calculator
 Comment=Native cross-platform calculator
-Exec=calculator
+Exec=/Programs/calculator
 Icon=calculator
 Terminal=false
 Categories=Utility;Calculator;GTK;
