@@ -9,7 +9,7 @@ Homepage: https://github.com/Infiltrator-Projects/Calculator
 
 Package: calculator
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, ca-certificates, fontconfig, xz-utils, wget | curl
 Description: native cross-platform calculator
  Calculator is a native GTK4 desktop calculator with a portable
  calculation core. The Debian/APT package identity is calculator;
