@@ -93,6 +93,32 @@ for relative in UI_MODULES + PLATFORM_MODULES:
     assert (ROOT / relative).is_file(), f"missing architecture module: {relative}"
     assert relative in cmake, f"CMake omits architecture module: {relative}"
 
+# Linux exposes exactly one Calculator executable. Terminal operation is an
+# explicit /cli mode of that executable, never a second calculator-cli command.
+for relative in (
+    "src/app/linux_entry.cpp",
+    "src/app/cli_mode.cpp",
+    "src/app/cli_mode.hpp",
+):
+    assert (ROOT / relative).is_file(), f"missing Linux mode module: {relative}"
+assert not (ROOT / "src/app/cli_main.cpp").exists(), (
+    "obsolete separate CLI entry point returned"
+)
+assert "calculator-cli" not in cmake, (
+    "CMake must not build a separate Calculator CLI executable"
+)
+assert "src/app/linux_entry.cpp" in cmake, (
+    "CMake omits the single Calculator process dispatcher"
+)
+assert "src/app/cli_mode.cpp" in cmake, (
+    "CMake omits Calculator /cli implementation"
+)
+linux_entry = (ROOT / "src/app/linux_entry.cpp").read_text(encoding="utf-8")
+assert '"/cli"' in linux_entry, "Calculator entry point lost /cli dispatch"
+assert "calculator_gui_main" in linux_entry, (
+    "Calculator entry point no longer routes normal launch to the GTK shell"
+)
+
 controller_dispatch = (ROOT / "src/ui/calculator_ui_controller.cpp").read_text(encoding="utf-8")
 controller_state = (ROOT / "src/ui/calculator_ui_state.cpp").read_text(encoding="utf-8")
 controller_presentation = (ROOT / "src/ui/calculator_ui_presentation.cpp").read_text(encoding="utf-8")
