@@ -94,7 +94,7 @@ for relative in UI_MODULES + PLATFORM_MODULES:
     assert relative in cmake, f"CMake omits architecture module: {relative}"
 
 # Linux exposes exactly one Calculator executable. Terminal operation is an
-# explicit /cli mode of that executable, never a second calculator-cli command.
+# explicit /cli mode of that executable, never a second installed program.
 for relative in (
     "src/app/linux_entry.cpp",
     "src/app/cli_mode.cpp",
@@ -104,9 +104,13 @@ for relative in (
 assert not (ROOT / "src/app/cli_main.cpp").exists(), (
     "obsolete separate CLI entry point returned"
 )
-assert "calculator-cli" not in cmake, (
-    "CMake must not build a separate Calculator CLI executable"
-)
+for forbidden in (
+    "add_executable(calculator-cli",
+    "install(TARGETS calculator-cli",
+):
+    assert forbidden not in cmake, (
+        "CMake must not build or install a separate Calculator CLI executable"
+    )
 assert "src/app/linux_entry.cpp" in cmake, (
     "CMake omits the single Calculator process dispatcher"
 )
