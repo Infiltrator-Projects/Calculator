@@ -1,3 +1,11 @@
+calculator (0.2.50) unstable; urgency=medium
+
+  * Use /System/Resources/Fonts as the persistent Linux machine font cache.
+  * Pin Libraries 1.19.51 and install its verified native font bootstrap.
+  * Stop packaging Calculator-owned MB Corpo TTF copies and never remove shared fonts on uninstall.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 17 Oct 2026 20:20:00 +1100
+
 calculator (0.2.49) unstable; urgency=medium
 
   * Publish the post-0.2.48 native filesystem implementation as a new immutable release.
@@ -126,14 +134,14 @@ calculator (0.2.35) unstable; urgency=medium
 calculator (0.2.34) unstable; urgency=medium
 
   * Align Linux mode tabs with the 30 px publisher desktop control height.
-  * Preserve keypad geometry, calculation engines, other platform shells and dependencies.
+  * Preserve calculator keypad geometry, calculation engines, other platform shells and dependencies.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 05:52:00 +1000
 
 calculator (0.2.33) unstable; urgency=medium
 
   * Align Linux toolbar controls with the 30 px publisher desktop control height.
-  * Preserve keypad geometry, calculation engines, other platform shells and dependencies.
+  * Preserve calculator keypad geometry, display, engine, Windows/iPhone shells, dependencies and Common APIs unchanged.
 
  -- Shannon Smith <infiltratr@yandex.com>  Fri, 25 Sep 2026 00:16:00 +1000
 
