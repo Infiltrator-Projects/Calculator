@@ -1,3 +1,11 @@
+calculator (0.2.49) unstable; urgency=medium
+
+  * Publish the post-0.2.48 native filesystem implementation as a new immutable release.
+  * Keep Calculator exclusively at /Programs/calculator with no /usr/bin compatibility entry.
+  * Keep standalone Debian, source and aggressive-native installation aligned with the InfiltratorOS skeleton and native PATH contract.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 17 Oct 2026 16:08:00 +1100
+
 calculator (0.2.48) unstable; urgency=medium
 
   * Install the Linux executable only in the native /Programs namespace.

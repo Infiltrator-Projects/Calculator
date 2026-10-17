@@ -2,6 +2,12 @@
 
 This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
 
+## 0.2.49 - 2026-10-17
+
+- Publish the product changes made after the immutable 0.2.48 release instead of mutating that release identity.
+- Keep `/Programs/calculator` as Calculator's sole Linux executable location with no `/usr/bin` compatibility entry.
+- Keep CMake/source installation, Debian packaging, desktop launch, package qualification and the aggressive hardware-native installer on the same native filesystem contract.
+
 ## 0.2.48 - 2026-10-17
 
 - Install Calculator's Linux executable at `/Programs/calculator`, with no `/usr/bin` executable or compatibility link.
