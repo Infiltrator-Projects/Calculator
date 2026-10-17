@@ -2,6 +2,13 @@
 
 This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
 
+## 0.2.48 - 2026-10-17
+
+- Install Calculator's Linux executable at `/Programs/calculator`, with no `/usr/bin` executable or compatibility link.
+- Make standalone source, Debian and native installation establish the native InfiltratorOS filesystem skeleton when it is absent.
+- Add `/System/Commands:/Programs` to future login-shell PATHs through a package-owned bridge while desktop launch uses the absolute native path.
+- Make release qualification reject the obsolete `/System/Programs` split and any Calculator executable under `/usr/bin`.
+
 ## 0.2.47 - 2026-10-17
 
 - Make the hardware-native installer use the aggressive profile by default: CPU-native tuning, link-time optimisation and trained two-pass PGO.
@@ -51,7 +58,7 @@ No unreleased changes.
 - Add one cumulative `EvaluationBudget` across Scientific and iterative/arbitrary Advanced Tools, with explicit input, work, recursion, output, deadline and cancellation contracts plus a non-relaxable 20,000-digit product ceiling.
 - Bound exact and arbitrary-precision recursive descent, make long integer work observe cancellation/deadlines cooperatively, and keep failure state independent of diagnostic-string allocation.
 - Remove duplicate per-file Calculator source wiring from the iPhone project: XcodeGen now owns the cohesive core/UI source trees while Common's genuinely platform-specific Portable subset remains explicit and regression-checked.
-- Bind manual release reconciliation to the exact immutable tag source, reject version rollback/reuse from later same-version source, and retain a single release-decision authority.
+- Bind manual release reconciliation to the exact immutable release source, reject version rollback/reuse from later same-version source, and retain a single release-decision authority.
 - Advance pinned GitHub Actions revisions and align the maintained architecture, design, decisions, numerics, portability, validation and contributor contracts with Common 1.19.35 and current Calculator behaviour.
 
 ## 0.2.39 — 2026-10-12
@@ -378,7 +385,7 @@ No unreleased changes.
 - Add native Additional Results surfaces on GTK, Win32 and iPhone while preserving the compact Standard window and the existing Programmer Bases interaction.
 - Keep iPhone and GTK Additional Results selectable for copy workflows and preserve the Windows click-to-copy primary result behaviour.
 - Update active architecture/numerics/design documentation to the actual Common 1.19.10 baseline while retaining historical Common 1.19.8 decisions as history.
-- Extend core, controller, cross-platform and native Windows smoke regressions for the new representations and mode-specific Results/Bases visibility contract.
+- Extend core, controller/cross-platform and native Windows smoke regressions for the new representations and mode-specific Results/Bases visibility contract.
 
 ## 0.1.41 — 2026-09-20
 
@@ -450,7 +457,7 @@ No unreleased changes.
 
 ## 0.1.33 — 2026-09-19
 
-- Replaced the Linux Calculator artwork with the shared non-automotive Infiltrator icon language: dark graphite field, #72dcff cyan linework and a simplified calculator glyph.
+- Replaced the Linux Calculator artwork with the shared non-automotive Infiltrator icon language: dark graphite tile, #72dcff cyan linework and a simplified calculator glyph.
 - Kept the same project-owned SVG wired through the desktop launcher and Linux Mint Software Manager package alias.
 
 ## 0.1.32 — 2026-09-19
