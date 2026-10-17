@@ -74,7 +74,7 @@ Detailed ownership, numerical, portability and validation contracts are maintain
 
 Releases are multi-platform by default. The same versioned source is built and tested across all three targets:
 
-- Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `calculator`) plus `calculator-<version>-native-installer.run`, a self-contained native installer that carries the exact release source and builds locally for the target CPU;
+- Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `calculator`) plus `calculator-<version>-native-installer.run`, a self-contained native installer that carries the exact release source and builds locally for the target CPU. On Linux the installed executable is `/Programs/calculator`; the package creates the native InfiltratorOS filesystem skeleton when needed and never installs a Calculator executable or compatibility link under `/usr/bin`;
 - Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
 - iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes the physical-device build as `calculator_<version>_ios-device-unsigned.ipa`, using the standard `Payload/Calculator.app` IPA layout;
 - Source: `calculator_<version>_source.tar.gz`, a deterministic bundle of committed Calculator source and the exact recursive dependency gitlinks used by the release.
@@ -85,7 +85,7 @@ A release is published only after Linux, Windows and iOS builds and the shared-c
 
 ### Compatibility identifiers
 
-The user-facing product name is **Calculator**. The Debian/APT package identity is `calculator`. The existing executable/configuration identifier `calculator` and iOS bundle identifier `net.ssmith.calculator` remain stable compatibility identities so settings, launch paths and installed application identity are not broken. Existing `calculator` Debian package installations migrate through the central repository transition package.
+The user-facing product name is **Calculator**. The Debian/APT package identity is `calculator`. The executable/configuration identifier remains `calculator` and the iOS bundle identifier remains `net.ssmith.calculator`. On Linux the executable's authoritative location is `/Programs/calculator`; `/System/Commands` and `/Programs` are added to future login-shell PATHs by the native-path profile bridge, with no `/usr/bin` executable alias.
 
 ## Shared design
 
