@@ -24,7 +24,7 @@ namespace {
 constexpr const char *kPayloadMarker =
     "\n__CALCULATOR_NATIVE_PAYLOAD_V1__\n";
 constexpr const char *kPackageName = "calculator";
-constexpr const char *kExecutable = "/usr/bin/calculator";
+constexpr const char *kExecutable = "/Programs/calculator";
 constexpr const char *kBuildInfo =
     "/usr/share/doc/calculator/BUILD-INFO";
 
