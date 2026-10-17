@@ -21,7 +21,6 @@ dpkg-deb --fsys-tarfile "$package" | tar -tf - > "$listing"
 
 required=(
   './usr/bin/calculator'
-  './usr/bin/calculator-cli'
   './usr/share/applications/net.ssmith.calculator.desktop'
   './usr/share/icons/hicolor/scalable/apps/calculator.svg'
   './usr/share/app-install/icons/calculator.svg'
@@ -36,6 +35,11 @@ for path in "${required[@]}"; do
     exit 1
   }
 done
+
+if grep -Fqx './usr/bin/calculator-cli' "$listing"; then
+  echo "Calculator must expose one installed executable; calculator-cli is forbidden." >&2
+  exit 1
+fi
 
 if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' "$listing"; then
   echo "Calculator package leaked Common development/runtime payloads." >&2

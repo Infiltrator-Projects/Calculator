@@ -263,18 +263,13 @@ if(CALCULATOR_BUILD_DESKTOP)
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
 
+        # Calculator intentionally ships one executable. If a terminal mode is
+        # ever exposed, it must be selected by the calculator executable (for
+        # example `calculator /cli`) rather than by a second installed command.
         add_executable(calculator
             src/app/main.cpp
             src/app/linux_persistence.cpp
         )
-        add_executable(calculator-cli
-            src/app/cli_main.cpp
-        )
-        target_link_libraries(calculator-cli PRIVATE
-            calculator-core
-            InfiltratrCommon::Common
-        )
-        install(TARGETS calculator-cli RUNTIME DESTINATION bin)
 
         target_link_libraries(calculator PRIVATE
             calculator-ui
@@ -392,7 +387,8 @@ if(CALCULATOR_ENABLE_MPFR_ORACLE_TESTS)
         calculator-precision-oracle-test PRIVATE
         calculator-core
         "${CALCULATOR_MPC_LIBRARY}"
-        "${CALCULATOR_MPFR_LIBRARY}")
+        "${CALCULATOR_MPFR_LIBRARY}"
+    )
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         target_compile_options(
             calculator-precision-oracle-test PRIVATE
@@ -414,7 +410,8 @@ if(CALCULATOR_ENABLE_MPFR_ORACLE_TESTS)
         calculator-scientific-oracle-test PRIVATE
         calculator-core
         "${CALCULATOR_MPC_LIBRARY}"
-        "${CALCULATOR_MPFR_LIBRARY}")
+        "${CALCULATOR_MPFR_LIBRARY}"
+    )
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         target_compile_options(
             calculator-scientific-oracle-test PRIVATE
