@@ -1,3 +1,11 @@
+calculator (0.2.48) unstable; urgency=medium
+
+  * Install the Linux executable only in the native /Programs namespace.
+  * Establish the InfiltratorOS filesystem skeleton and native command PATH when installed standalone.
+  * Remove /usr/bin and /System/Programs from the Calculator package contract.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sat, 17 Oct 2026 15:05:00 +1100
+
 calculator (0.2.47) unstable; urgency=medium
 
   * Make the hardware-native installer default to CPU-native LTO with trained two-pass PGO.
@@ -66,7 +74,7 @@ calculator (0.2.39) unstable; urgency=medium
   * Replace commit-message release detection with VERSION-change preflight.
   * Reject Debian, human changelog and AppStream version drift before platform builds.
   * Extract large Linux, Windows, packaging and APT release checks from workflow YAML.
-  * Generate release asset paths and checksums from one canonical manifest.
+  * Generate release asset paths and SHA-256 manifest from one canonical manifest.
   * Pin GitHub Actions to immutable revisions, reduce default token permissions and add Dependabot updates.
   * Run the same verification gates on pull requests before merge.
 
