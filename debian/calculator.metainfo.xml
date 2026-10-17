@@ -32,6 +32,7 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.47" date="2026-10-17"><description><p>Make the native installer default to CPU-native LTO with trained two-pass PGO while retaining automatic prerequisite installation.</p></description></release>
     <release version="0.2.46" date="2026-10-17"><description><p>Expose terminal operation as /cli mode of the single Calculator executable and forbid a separate calculator-cli program.</p></description></release>
     <release version="0.2.45" date="2026-10-17"><description><p>Use canonical names throughout the alpha application and package.</p></description></release>
     <release version="0.2.44" date="2026-10-17">
@@ -77,7 +78,7 @@
     </release>
     <release version="0.2.31" date="2026-09-24">
       <description>
-        <p>Harden reciprocal Scientific validation, unify multiprecision Advanced Tools, add Programmer XNOR/arithmetic shift/modulo and Standard repeated Equals.</p>
+        <p>Harden reciprocal Scientific functions, consolidate multiprecision Advanced Tools paths, and extend Programmer and Standard semantics.</p>
       </description>
     </release>
     <release version="0.2.30" date="2026-09-24">
