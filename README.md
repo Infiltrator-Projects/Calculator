@@ -16,96 +16,26 @@ The project is deliberately larger in ambition than a four-function calculator, 
 
 ## Engineering ethos
 
-Calculator is a first-principles engineering project. The question is not
-simply how to reproduce an existing calculator, but what a calculator should be
-when it is designed today with the strongest available mathematics, numerical
-methods, human-interface research, platform capabilities and software
-engineering practice.
+Calculator is a first-principles engineering project. The question is not simply how to reproduce an existing calculator, but what a calculator should be when it is designed today with the strongest available mathematics, numerical methods, human-interface research, platform capabilities and software engineering practice.
 
-"Modern" is not treated as a synonym for "better". New techniques are adopted
-when they improve correctness, precision, performance, resilience, usability,
-accessibility or maintainability; older techniques are retained when they
-remain the better solution. Existing mature implementations are evidence to
-study, not specifications to clone. Their hard-won lessons are separated from
-their historical platform and compatibility constraints, then reconsidered
-against current research and the needs of this project.
+## Linux native installation
 
-The implementation therefore aims for the best justified approach rather than
-the newest fashionable one or the easiest conventional one. Architectural
-decisions should be measurable, testable and explainable. Where a capability
-can be shared cleanly across platforms, it is implemented once; platform code
-is kept for genuinely platform-specific behaviour. Features are not considered
-finished merely because they work in the common case: edge conditions,
-numerical behaviour, accessibility, failure modes and regression protection are
-part of the feature.
-
-The same principle applies across the wider software family: start from the
-problem, study what is known now, preserve proven ideas that still deserve to
-survive, replace assumptions that no longer do, and prove the result in real
-use.
-
-## Appearance
-
-Calculator supports **System**, **Day** and **Night** appearance modes on Linux, Windows and iPhone. System detects the host light/dark preference and resolves it to the exact Common Day or Night palette; Day is the white Infiltrator palette and Night is the MB graphite/black palette with the canonical blue accent. Platform code owns only theme detection, persistence and native rendering. Calculator consumes Common's semantic heading, summary, kicker, detail/note, status-border, focus/hover and warning roles where those meanings apply instead of collapsing the richer design contract into a few generic colours.
+Calculator's Linux executable has one authoritative home: `/Programs/calculator`. Debian packages, source/package builds and the hardware-native installer establish the native InfiltratorOS filesystem skeleton if it is absent, install no Calculator executable or compatibility symlink under `/usr/bin`, and use an absolute native path in the desktop launcher. `/System/Commands` and `/Programs` are added to future login-shell PATHs by a package-owned profile bridge.
 
 ## Current capabilities
 
-Calculator has three explicitly switchable modes presented as a visible mode strip on desktop and iPhone, so Standard, Scientific and Programmer are directly selectable rather than hidden behind a cycling control:
-
-- Standard — conventional precedence-aware arithmetic, literal postfix percentages, powers, unary operations and memory, with repeated Equals applying the previous top-level operation to the prior result;
-- Scientific — integrated arbitrary-precision real/complex expression evaluation with user-selectable 16–1000 decimal-digit calculation precision (50 digits by default), trigonometric functions including secant/cosecant/cotangent, their inverse and hyperbolic families, logarithmic/exponential functions, roots and powers, factorial/percentage operations, DEG/RAD/GRAD angle units, a 2nd-function layer and shared General/Fixed/Scientific/Engineering display formatting; and
-- Programmer — binary, octal, decimal and hexadecimal fixed-width integer arithmetic, complement, AND/OR/XOR/NAND/NOR/XNOR, logical and arithmetic-right shifts, modulo, rotate-left/right, fixed-width byte-order reversal (`bswap` / **BSWAP**), 8/16/32/64-bit widths, unsigned/signed display, grouped non-decimal presentation, and an on-demand simultaneous BIN/OCT/DEC/HEX representation view. Width controls are explicitly labelled W8, W16, W32 and W64 so they do not conflict with numeric keypad entry.
-
-The calculator also provides reusable variables and custom functions through one versioned cross-platform persistent-state contract, structured calculation history that is unbounded by default with a persisted user-selectable retention cap, exact Programmer and Scientific (angle/precision) context recall, individual history-entry deletion plus whole-history clearing, and a newest-first multi-memory stack behind the familiar MC/MR/MS/M+/M− controls. MS pushes a new slot; MR/M+/M− act on the newest slot; MC clears all slots; and the native History & Memory surfaces on Linux, Windows and iPhone can recall or delete individual slots. A shared calculation-session layer remains authoritative above the parser. Persistent state v2 also carries the selected mode, Scientific angle unit, Programmer radix/width/signedness and history-retention preference so those semantic choices restore consistently on Linux, Windows and iPhone. Scientific expressions can assign reusable variables such as `x=42`; the scientific constant catalogue now includes `pi`, `e`, `tau`, `phi` and widely used SI physical constants such as `c0`, `G`, `h`, `hbar`, `kB`, `NA`, `qe`, `me`, `mp`, `g0`, `eps0`, `mu0` and `Rgas`. Standard mode remains deliberately confined to numeric arithmetic rather than silently exposing Scientific constants, variables or functions; that smaller feature surface does not change the mathematical meaning of the operators it does expose.
-
-Calculator provides a native **Tools** workbench on Linux, Windows and iPhone. The shared C++ implementation provides fourteen domain families: engineering/electrical calculations, multiprecision general unit conversion, ICT/network subnet and transfer calculations, storage/filesystem capacity and allocation calculations that reuse the same canonical digital-storage unit definitions, calendar-aware date/time arithmetic, a Scientific-precision constants catalogue, descriptive statistics, native graphing, real equation solving, exact-decimal/rational arithmetic, arbitrary-precision integer arithmetic, complex-number arithmetic, financial calculations and number utilities. Complex-tool arithmetic and arbitrary roots reuse the same multiprecision Scientific engine rather than maintaining weaker binary64 duplicates. Linux and Windows render the graph natively through Cairo/GDI; iPhone renders the same shared sample points with SwiftUI Canvas. Tool syntax and domain contracts are documented in [docs/TOOLS.md](docs/TOOLS.md).
-
-Standard and Scientific modes also expose an **Additional Results** surface generated by the shared controller. Standard presents canonical decimal/scientific/engineering views of its binary64 result; Scientific formats the retained arbitrary-precision real/complex value directly, without down-converting through double or re-evaluating it in a platform shell. Programmer mode uses the same result-model idea for simultaneous HEX/DEC/OCT/BIN representations.
-
-Scientific results preview live through the same side-effect-free shared Session evaluator used for command state, and desktop Scientific input supports shared Tab completion across built-in functions, constants, persisted variables and user-defined functions; built-in discovery is case-tolerant while user-defined identifiers retain their exact spelling. Interactive expression text is bounded at the shared Controller boundary, and Advanced Tools enforce the same 8192-byte core-entry limit, so native paste/input paths cannot bypass the parser/resource contract. Controls are state-aware: commands that cannot currently succeed are disabled consistently by the shared controller (for example MR/MC before memory is populated, invalid Programmer digits for the selected radix, and unary/equals operations without a usable operand). Result text is selectable on Linux and iPhone, while the native Windows result is a direct click-to-copy surface; keyboard focus is visibly indicated on desktop controls, and native accessibility semantics remain attached to platform controls. Features are considered complete only when implementation, tests and documented behaviour agree.
-
-## Architecture summary
-
-Linux and Windows consume the same Calculator-owned UI contract and controller: modes, button order, commands, logical desktop sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. iPhone retains native SwiftUI touch composition, but its Objective-C++ bridge routes expression edits and calculator commands through the same C++ controller instead of maintaining a second calculator state machine.
-
-Detailed ownership, numerical, portability and validation contracts are maintained under [docs/](docs/README.md).
+Calculator provides Standard, Scientific and Programmer modes, reusable variables and custom functions, structured history, multiple memory slots, arbitrary-precision Scientific calculation, Programmer fixed-width arithmetic, and fourteen advanced tool families across its native platform shells. Detailed ownership, numerical, portability and validation contracts are maintained under [docs/](docs/README.md).
 
 ## Release platforms
 
-Releases are multi-platform by default. The same versioned source is built and tested across all three targets:
+Releases are multi-platform by default from one versioned source:
 
-- Linux x64: `calculator_<version>_amd64.deb` (Debian/APT package identity `calculator`) plus `calculator-<version>-native-installer.run`, a self-contained native installer that carries the exact release source and builds locally for the target CPU. On Linux the installed executable is `/Programs/calculator`; the package creates the native InfiltratorOS filesystem skeleton when needed and never installs a Calculator executable or compatibility link under `/usr/bin`;
-- Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable built with the static MSVC runtime and no GTK/GLib runtime bundle;
-- iPhone: a native SwiftUI application is compiled for both iOS Simulator and real iPhone ARM64 device architecture. CI uses the Simulator build as test evidence and publishes the physical-device build as `calculator_<version>_ios-device-unsigned.ipa`, using the standard `Payload/Calculator.app` IPA layout;
-- Source: `calculator_<version>_source.tar.gz`, a deterministic bundle of committed Calculator source and the exact recursive dependency gitlinks used by the release.
+- Linux x64: `calculator_<version>_amd64.deb` and `calculator-<version>-native-installer.run`; authoritative executable `/Programs/calculator`.
+- Windows x64: `calculator_<version>_windows_x64.exe`, a native standalone Win32 executable.
+- iPhone: `calculator_<version>_ios-device-unsigned.ipa` using the standard `Payload/Calculator.app` layout.
+- Source: `calculator_<version>_source.tar.gz`, a deterministic source/dependency bundle.
 
-The published `.ipa` is structurally a real iPhone IPA but remains unsigned because the repository does not contain an Apple signing identity or provisioning profile. It can therefore be re-signed by an authorised installation workflow; normal direct device installation still requires valid Apple signing and provisioning.
-
-A release is published only after Linux, Windows and iOS builds and the shared-core tests succeed.
-
-### Compatibility identifiers
-
-The user-facing product name is **Calculator**. The Debian/APT package identity is `calculator`. The executable/configuration identifier remains `calculator` and the iOS bundle identifier remains `net.ssmith.calculator`. On Linux the executable's authoritative location is `/Programs/calculator`; `/System/Commands` and `/Programs` are added to future login-shell PATHs by the native-path profile bridge, with no `/usr/bin` executable alias.
-
-## Shared design
-
-Calculator uses Common as its reusable software foundation and follows the canonical shared Design v1 visual contract. The common design language is a graphite/silver foundation with near-black backgrounds, layered dark panels, restrained silver borders and MB Corpo typography roles.
-
-Common is the released shared presentation and infrastructure baseline. Calculator keeps its proven domain boundary while consuming the complete Day/Night semantic palette, canonical typography/metrics, parser and checked infrastructure through Common rather than maintaining local copies. No Calculator-domain semantics are moved into Common merely to increase reuse.
-
-The calculation core links against `InfiltratrCommon::Portable` from the exact pinned Common gitlink. CMake verifies both the checked-out Common `VERSION` and, in repository builds, the exact immutable commit, so a stale or same-version/wrong-revision submodule fails configuration instead of silently building. Calculator consumes Common's exact numeric parsers, deterministic ASCII grammar helpers, checked unsigned arithmetic, native semantic palette/theme persistence contract, structural design metrics and typography identity rather than maintaining private copies of those product-neutral contracts. Linux/CLI persistence also uses Common's POSIX directory and durable atomic-file primitives while Calculator-owned file formats and application state remain local. The iPhone target compiles the same Common Portable source set and obtains its Day/Night semantic palette through the Objective-C++ bridge instead of carrying a Swift colour mirror.
-
-## Typography
-
-Calculator-owned text is restricted to the same three established MB Corpo faces on Linux, Windows and iPhone. There is no deliberate generic fourth text family such as Sans or Segoe UI.
-
-The three approved font files and roles are:
-
-- `mb_corpo_s_regular.ttf` — `MB Corpo S Title WEB` regular interface text;
-- `mb_corpo_s_bold.ttf` — `MB Corpo S Title WEB` bold interface text, actions and emphasis;
-- `mb_corpo_a_cond_regular.ttf` — `MB Corpo A Title Cond WEB` product and display titles.
-
-Common owns the canonical MB Corpo family names, role weights, filenames and immutable first-party archive provenance. Calculator deliberately applies Common's permitted strict no-fallback policy: release builds fetch the exact Common-declared archive, verify its archive/file hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
+The native Linux installer defaults to the aggressive profile: `-O3`, CPU-native tuning, LTO and measured two-pass PGO. `--system-package-mode` permits InfiltratorOS to run the same installer as root after its package transaction completes.
 
 ## Build
 
@@ -119,43 +49,11 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-On Linux, Calculator respects an explicit `GSK_RENDERER` selection. When none is supplied it chooses after the display opens: a composited desktop with usable OpenGL gets GTK's mature accelerated `gl` renderer, while non-composited or GL-incapable displays fall back to Cairo instead of forcing software EGL. This retains the low-idle-CPU policy on ordinary Mint/Cinnamon desktops while remaining sane on headless and remote X servers. Release CI measures packaged idle CPU under the application default and Cairo paths, and also exercises explicit GL; a hosted runner that exposes no DRI3 device is reported as an environment limitation rather than misclassified as an application CPU regression.
-
-On Debian-family systems the initial development dependencies are the standard C/C++ toolchain, CMake, GTK4 development packages and pkg-config. MPFR is optional for ordinary builds; release CI enables the dedicated high-precision numerical oracle with `-DCALCULATOR_ENABLE_MPFR_ORACLE_TESTS=ON` and `libmpfr-dev`. Windows builds use Visual Studio/MSVC and the Windows SDK only; GTK, GLib, MinGW and third-party runtime DLLs are not required for the Windows executable.
-
-The Linux release also publishes `calculator-<version>-native-installer.run`. The installer is itself a compiled C++ executable with the deterministic release source archive appended as an embedded payload; it does not depend on a shell bootstrap. Its `native` profile uses `-O3 -march=native -mtune=native` plus LTO. Its `aggressive` profile performs an instrumented first build, trains through Calculator's tests and GTK startup/rendering paths, then rebuilds with measured PGO data, LTO and CPU-native tuning. `--system-package-mode` permits Infiltrator OS to run the same installer as root after its package transaction completes, while ordinary direct use keeps privilege elevation limited to prerequisite and final package installation.
-
-## Project structure
-
-```text
-src/
-├── app/                 Native GTK/Linux and Win32/Windows platform shells
-├── core/                Portable calculation, advanced-tool, session and Programmer engines
-├── ui/                  Shared command/controller contract, desktop metrics and theme adapter
-└── infiltratr-common/   Exact shared Common gitlink
-
-ios/
-├── Sources/             Native SwiftUI iPhone application
-├── Bridge/              Objective-C++ bridge into the shared C++ core
-└── project.yml          Reproducible XcodeGen project definition
-
-tests/                   Core, session, UI-contract and cross-platform regression tests
-docs/                    Architecture, design, numerics, portability and validation contracts
-```
-
 ## Release direction
 
-The project uses `main` as its working branch and follows the project release discipline: test the exact source commit, build from that commit, and publish immutable release identities. `VERSION` is the single version authority. The release preflight requires the newest Debian changelog, human changelog and AppStream entry to agree with it; publication is triggered by an actual `VERSION` change (or an explicit manual publish), not by fragile commit-message wording. Pull requests run the same build/test gates without publishing. Release asset names, checksum generation and publication are driven from one generated manifest so those paths cannot silently diverge.
-
-The packaged form is a generic Debian package suitable for the Package Repository and future distribution integration.
+The project uses `main` as its working branch. `VERSION` is the single version authority; release preflight requires Debian changelog, human changelog and AppStream metadata to agree before publication.
 
 ## Licence
 
 Copyright © 1993-2026 Shannon Smith.
-
-Calculator is licensed under the GNU General Public License version 3 or, at your option, any later version (`GPL-3.0-or-later`).
-
-
-## Forensic comparison discipline
-
-Cross-project audits are tracked in [docs/FORENSIC_PARITY.md](docs/FORENSIC_PARITY.md). A future Microsoft/GNOME/KDE/Qalculate comparison must first classify a candidate as already implemented, intentionally different, known/deferred, or genuinely new before proposing work. This prevents an already-fixed or consciously deferred item from being repeatedly reported as a fresh defect.
+Calculator is licensed under GPL-3.0-or-later.
