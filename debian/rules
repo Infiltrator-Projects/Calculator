@@ -13,9 +13,9 @@ override_dh_auto_test:
 # Linux Mint Software Manager resolves APT icons from local package-name aliases.
 override_dh_install:
 	dh_install
-	# MB Corpo is a native machine resource, not Calculator-owned payload.
+	# MB Corpo is a persistent native machine resource, not Calculator payload.
 	rm -rf "$(CURDIR)/debian/calculator/usr/share/fonts/truetype/calculator"
-	install -D -m 0755 support/resources/infiltratr-native-fonts.sh \
+	install -D -m 0755 src/infiltratr-common/cmake/InfiltratrEnsureNativeFonts.sh \
 		"$(CURDIR)/debian/calculator/usr/lib/calculator/ensure-native-fonts"
 	install -D -m 0644 debian/calculator.svg \
 		"$(CURDIR)/debian/calculator/usr/share/app-install/icons/calculator.svg"

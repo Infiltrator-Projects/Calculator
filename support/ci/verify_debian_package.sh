@@ -16,19 +16,19 @@ dpkg-deb --info "$package"
 }
 
 listing="$(mktemp)"
-trap 'rm -f "$listing"' EXIT
+control_dir="$(mktemp -d)"
+trap 'rm -f "$listing"; rm -rf "$control_dir"' EXIT
 dpkg-deb --fsys-tarfile "$package" | tar -tf - > "$listing"
+dpkg-deb -e "$package" "$control_dir"
 
 required=(
   './Programs/calculator'
   './etc/profile.d/91-infiltrator-calculator-path.sh'
+  './usr/lib/calculator/ensure-native-fonts'
   './usr/share/applications/net.ssmith.calculator.desktop'
   './usr/share/icons/hicolor/scalable/apps/calculator.svg'
   './usr/share/app-install/icons/calculator.svg'
   './usr/share/metainfo/calculator.metainfo.xml'
-  './usr/share/fonts/truetype/calculator/mb_corpo_a_cond_regular.ttf'
-  './usr/share/fonts/truetype/calculator/mb_corpo_s_bold.ttf'
-  './usr/share/fonts/truetype/calculator/mb_corpo_s_regular.ttf'
 )
 for path in "${required[@]}"; do
   grep -Fqx "$path" "$listing" || {
@@ -70,6 +70,19 @@ if grep -Eq '^\./usr/bin/(calculator|calculator-cli)$' "$listing"; then
 fi
 if grep -Fqx './System/Programs/' "$listing"; then
   echo "The obsolete /System/Programs split must not return." >&2
+  exit 1
+fi
+if grep -Eq 'mb_corpo_.*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf$' "$listing"; then
+  echo "Calculator must not package duplicate MB Corpo font binaries." >&2
+  exit 1
+fi
+
+grep -Fq '/usr/lib/calculator/ensure-native-fonts' "$control_dir/postinst" || {
+  echo "Calculator postinst must establish the native font cache." >&2
+  exit 1
+}
+if grep -Eq '(rm|rmdir).*System/Resources/Fonts' "$control_dir"/*; then
+  echo "Calculator uninstall scripts must never remove shared native fonts." >&2
   exit 1
 fi
 
