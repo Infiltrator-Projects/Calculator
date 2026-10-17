@@ -20,7 +20,8 @@ trap 'rm -f "$listing"' EXIT
 dpkg-deb --fsys-tarfile "$package" | tar -tf - > "$listing"
 
 required=(
-  './usr/bin/calculator'
+  './Programs/calculator'
+  './etc/profile.d/91-infiltrator-calculator-path.sh'
   './usr/share/applications/net.ssmith.calculator.desktop'
   './usr/share/icons/hicolor/scalable/apps/calculator.svg'
   './usr/share/app-install/icons/calculator.svg'
@@ -36,8 +37,39 @@ for path in "${required[@]}"; do
   }
 done
 
-if grep -Fqx './usr/bin/calculator-cli' "$listing"; then
-  echo "Calculator must expose one installed executable; calculator-cli is forbidden." >&2
+native_directories=(
+  './Programs/'
+  './System/Commands/'
+  './System/Libraries/'
+  './System/Devices/'
+  './System/Filesystems/'
+  './System/Kernel/Images/'
+  './System/Kernel/Modules/'
+  './System/Kernel/Firmware/'
+  './System/Resources/Calendars/'
+  './System/Resources/Clocks/'
+  './System/Resources/Fonts/'
+  './System/Resources/Locales/'
+  './System/Resources/Icons/'
+  './System/Resources/Themes/'
+  './System/Preferences/'
+  './Users/'
+  './Volumes/'
+  './Temporary/'
+)
+for path in "${native_directories[@]}"; do
+  grep -Fqx "$path" "$listing" || {
+    echo "Debian package is missing native filesystem directory: $path" >&2
+    exit 1
+  }
+done
+
+if grep -Eq '^\./usr/bin/(calculator|calculator-cli)$' "$listing"; then
+  echo "Calculator must not install executables under /usr/bin." >&2
+  exit 1
+fi
+if grep -Fqx './System/Programs/' "$listing"; then
+  echo "The obsolete /System/Programs split must not return." >&2
   exit 1
 fi
 
