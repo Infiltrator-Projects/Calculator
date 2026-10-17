@@ -2,6 +2,12 @@
 
 This changelog records user-visible, compatibility, architecture and validation changes for Calculator. Detailed commit-by-commit history remains in Git.
 
+## 0.2.46 - 2026-10-17
+
+- Keep Calculator as one installed executable while exposing terminal operation through the explicit `/cli` mode.
+- Remove the separate `calculator-cli` program and make package/source validation reject its return.
+- Add release-gated coverage for `calculator /cli "2+2"` while preserving the normal GTK launch path.
+
 ## 0.2.45 - 2026-10-17
 
 - Use canonical alpha product and package identities without migration aliases.
