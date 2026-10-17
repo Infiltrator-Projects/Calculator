@@ -263,12 +263,18 @@ if(CALCULATOR_BUILD_DESKTOP)
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
 
-        # Calculator intentionally ships one executable. If a terminal mode is
-        # ever exposed, it must be selected by the calculator executable (for
-        # example `calculator /cli`) rather than by a second installed command.
+        # Calculator has one process identity. The small Linux dispatcher owns
+        # mode selection; the existing GTK shell remains a cohesive translation
+        # unit whose entry symbol is renamed only within that source file.
         add_executable(calculator
+            src/app/linux_entry.cpp
             src/app/main.cpp
+            src/app/cli_mode.cpp
             src/app/linux_persistence.cpp
+        )
+        set_source_files_properties(
+            src/app/main.cpp
+            PROPERTIES COMPILE_DEFINITIONS "main=calculator_gui_main"
         )
 
         target_link_libraries(calculator PRIVATE
@@ -283,6 +289,16 @@ if(CALCULATOR_BUILD_DESKTOP)
         if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
             target_compile_options(calculator PRIVATE
                 -Wall -Wextra -Wpedantic -Wshadow
+            )
+        endif()
+
+        if(BUILD_TESTING)
+            add_test(
+                NAME calculator-cli-mode
+                COMMAND calculator /cli "2+2"
+            )
+            set_tests_properties(
+                calculator-cli-mode PROPERTIES PASS_REGULAR_EXPRESSION "^4"
             )
         endif()
     endif()
