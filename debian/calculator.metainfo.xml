@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.55" date="2026-10-18">
+      <description><p>Fix same-version native package reinstall handling and reject older source releases before compiling or installing.</p></description>
+    </release>
     <release version="0.2.54" date="2026-10-18">
       <description><p>Improve compact GTK control contrast and readability using the extended MB Corpo typography and Common semantic roles.</p></description>
     </release>

@@ -132,6 +132,12 @@ On Debian-family systems the initial development dependencies are the standard C
 
 The Linux release also publishes `calculator-<version>-native-installer.run`. The installer is itself a compiled C++ executable with the deterministic release source archive appended as an embedded payload; it does not depend on a shell bootstrap. Its `native` profile uses `-O3 -march=native -mtune=native` plus LTO. Its `aggressive` profile performs an instrumented first build, trains through Calculator's tests and GTK startup/rendering paths, then rebuilds with measured PGO data, LTO and CPU-native tuning. `--system-package-mode` permits Infiltrator OS to run the same installer as root after its package transaction completes, while ordinary direct use keeps privilege elevation limited to prerequisite and final package installation.
 
+The installer supports replacing a repository binary with a CPU-optimised build
+of the same version, including APT's same-version downgrade classification when
+dependency metadata differs. It compares Debian versions with `dpkg` before
+building and immediately before installation, rejects older source releases, and
+allows the explicit local reinstall only when the installed version is equal.
+
 ## Project structure
 
 ```text

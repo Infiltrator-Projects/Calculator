@@ -181,6 +181,7 @@ bool prerequisites_available()
 {
     static const char *paths[] = {
         "/usr/bin/g++",          "/usr/bin/cmake",        "/usr/bin/ctest",
+        "/usr/bin/dpkg",
         "/usr/bin/dpkg-buildpackage", "/usr/bin/dpkg-query", "/usr/bin/apt-get",
         "/usr/bin/tar",          "/usr/bin/gzip",         "/usr/bin/xvfb-run",
         "/usr/bin/timeout"
@@ -212,26 +213,80 @@ void ensure_prerequisites(bool system_package_mode, bool dry_run)
         fail("required Calculator native-build prerequisites remain unavailable");
 }
 
-bool package_installed(const std::string &package)
+std::optional<std::string> package_version_from_status(
+    std::istream &input, const std::string &package)
 {
-    std::ifstream input("/var/lib/dpkg/status");
-    if (!input) return false;
     std::string line;
     bool matching_package = false;
     bool installed_status = false;
+    std::string version;
     while (std::getline(input, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty() || line == "\r") {
-            if (matching_package && installed_status) return true;
+            if (matching_package && installed_status && !version.empty()) return version;
             matching_package = false;
             installed_status = false;
+            version.clear();
             continue;
         }
         if (line.rfind("Package: ", 0) == 0)
             matching_package = line.substr(9U) == package;
         else if (line == "Status: install ok installed")
             installed_status = true;
+        else if (line.rfind("Version: ", 0) == 0)
+            version = line.substr(9U);
     }
-    return matching_package && installed_status;
+    if (matching_package && installed_status && !version.empty()) return version;
+    return std::nullopt;
+}
+
+std::optional<std::string> installed_package_version(const std::string &package)
+{
+    std::ifstream input("/var/lib/dpkg/status");
+    if (!input) fail("cannot read installed package versions");
+    return package_version_from_status(input, package);
+}
+
+bool package_installed(const std::string &package)
+{
+    return installed_package_version(package).has_value();
+}
+
+bool same_version_reinstall(const std::string &target_version,
+                            const std::optional<std::string> &installed_version)
+{
+    if (!installed_version) return false;
+    const auto compare = [&](const std::string &operation) {
+        const int result = run_process({ "/usr/bin/dpkg", "--compare-versions",
+                                          *installed_version, operation, target_version },
+                                        std::nullopt, true);
+        if (result != 0 && result != 1)
+            fail("cannot compare installed Calculator version " + *installed_version +
+                 " with native source version " + target_version);
+        return result == 0;
+    };
+    if (compare("gt"))
+        fail("refusing to replace installed Calculator " + *installed_version +
+             " with older native source version " + target_version);
+    return compare("eq");
+}
+
+std::vector<std::string> package_install_arguments(
+    const fs::path &package, const std::string &version,
+    const std::optional<std::string> &installed_version)
+{
+    std::vector<std::string> arguments{
+        "/usr/bin/apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y"
+    };
+    // APT may classify a same-version local rebuild as a downgrade when its
+    // dependency metadata differs from the repository binary. Permit that
+    // replacement only after dpkg confirms that the versions are equal.
+    if (same_version_reinstall(version, installed_version)) {
+        arguments.emplace_back("--reinstall");
+        arguments.emplace_back("--allow-downgrades");
+    }
+    arguments.push_back(package.string());
+    return arguments;
 }
 
 bool tree_has_suffix(const fs::path &root, const std::string &suffix)
@@ -429,6 +484,9 @@ int main(int argc, char **argv)
     if (source_root.empty()) fail("embedded source archive has no Calculator source root");
 
     const std::string version = read_first_line(source_root / "VERSION");
+    // Reject older source before either expensive build pass, and check again
+    // at installation in case another package manager ran during compilation.
+    (void)same_version_reinstall(version, installed_package_version(kPackageName));
     const fs::path pgo_directory = work / "pgo";
     if (!fs::create_directory(pgo_directory, error) || error)
         fail("cannot create PGO profile directory");
@@ -511,8 +569,8 @@ int main(int argc, char **argv)
 
     const fs::path package = find_debian_package(work, version);
     std::cout << "Installing locally built package: " << package << '\n';
-    run_required(privileged({ "/usr/bin/apt-get", "-o", "DPkg::Lock::Timeout=300",
-                              "install", "-y", package.string() },
+    run_required(privileged(package_install_arguments(
+                                package, version, installed_package_version(kPackageName)),
                             system_package_mode));
 
     if (!package_installed(kPackageName) || !executable(kExecutable) ||

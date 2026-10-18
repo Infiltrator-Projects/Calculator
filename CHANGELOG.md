@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.55 - 2026-10-18
+
+- Fix hardware-native installation when APT classifies a locally rebuilt package as a downgrade despite matching the installed version.
+- Explicitly reinstall equal versions after checking with dpkg; refuse genuinely older source versions before building and check again before installation.
+- Test fresh installs, upgrades, same-version rebuilds and version ordering with epochs and local revisions.
+
 ## 0.2.54 - 2026-10-18
 
 - Improve GTK compact Calculator legibility after reviewing running Linux screenshots: larger MB Corpo Text on controls and clearer mode, memory and status labels.
