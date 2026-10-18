@@ -188,17 +188,18 @@ for palette_name in ("day", "night"):
             f"Common {EXPECTED_VERSION} {palette_name} palette missing semantic role: {role}"
         )
 
-canonical_fonts = design_contract["typography"]["font_files"]
+# The historic Common three-face JSON stays available for old consumers,
+# but the 0.2.53 app intentionally bundles the verified extended role selection.
 ios_project_text = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
 ios_typography_text = (
     ROOT / "ios" / "Sources" / "CalculatorTypography.swift"
 ).read_text(encoding="utf-8")
-for filename in canonical_fonts.values():
+for filename in selected_fonts:
     assert filename in ios_project_text, (
-        f"iPhone bundle declaration drifted from Common typography: {filename}"
+        f"iPhone bundle declaration omits extended typography: {filename}"
     )
     assert Path(filename).stem in ios_typography_text, (
-        f"iPhone typography registration drifted from Common typography: {filename}"
+        f"iPhone font registration omits extended typography: {filename}"
     )
 
 # iPhone compiles Common directly, so derive the canonical Portable source list
