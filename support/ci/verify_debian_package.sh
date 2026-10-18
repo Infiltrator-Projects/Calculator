@@ -72,7 +72,7 @@ if grep -Fqx './System/Programs/' "$listing"; then
   echo "The obsolete /System/Programs split must not return." >&2
   exit 1
 fi
-if grep -Eq '(mb_corpo_|daimler_).*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf
+if grep -Eq '(mb_corpo_|daimler_).*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf$' "$listing"; then
   echo "Calculator must not package duplicate MB Corpo font binaries." >&2
   exit 1
 fi
