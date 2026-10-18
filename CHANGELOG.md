@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.51 - 2026-10-18
+
+- Optimise Linux Calculator font hierarchy using the InfiltratorOS 23-face shared cache: MB Corpo S Text for reading and keypad, S Text Cond for compact toolbar/mode/status labels, A Title Cond for identity and A Screen2 Cond for the large numerical result.
+- Keep the original pinned Common three-face font bundle as a safe fallback for standalone installations without the newer machine cache; Windows/iPhone native font registration remains unchanged in this release.
+- Preserve controller, precision, layout/geometry, existing colour/interaction contract and numerical semantics.
+
 This file records the current Calculator release line. The complete pre-0.2.50 release ledger is preserved verbatim in [CHANGELOG_HISTORY.md](CHANGELOG_HISTORY.md); immutable Git tags and GitHub Releases remain the authority for exact historical source and assets.
 
 ## 0.2.50 - 2026-10-17

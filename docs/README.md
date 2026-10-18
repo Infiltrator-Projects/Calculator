@@ -28,6 +28,7 @@ Code and tests remain authoritative for executable behaviour. Immutable tags/rel
 - [Numerical semantics](NUMERICS.md) — evidence hierarchy, numeric representations, expression/Standard/Programmer semantics, display precision and numerical failure contracts.
 - [Portability](PORTABILITY.md) — language, platform, representation, locale, bridge, ABI and compatibility boundaries.
 - [UI parity](UI_PARITY.md) — shared controller ownership, desktop-layout responsibilities and native-shell parity boundaries.
+- [InfiltratorOS 23-font role map](https://github.com/Infiltrator-Projects/InfiltratorOS/blob/main/docs/FONT-ROLES.md) — audited family names and cross-application role choices.
 - [Linux Mint / GNOME Calculator parity](MINT_PARITY.md) — exact Mint 22.x replacement baseline, adopted behaviours and remaining architectural differences.
 - [Advanced Tools](TOOLS.md) — user-facing tool catalogue, command forms, examples, numeric domains and limits.
 - [Forensic parity ledger](FORENSIC_PARITY.md) — comparison baseline for Microsoft, GNOME/Debian and other calculators, including implemented, intentional and deferred differences.

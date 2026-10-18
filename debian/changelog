@@ -1,3 +1,12 @@
+calculator (0.2.51) unstable; urgency=medium
+
+  * Optimise Linux font hierarchy using MB Corpo Text, Condensed and Screen2
+    faces when the verified InfiltratorOS shared 23-face cache is present.
+  * Preserve the pinned Common fonts for standalone installations and retain
+    existing Windows/iPhone typography registration and calculator semantics.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 18 Oct 2026 16:00:00 +1100
+
 calculator (0.2.50) unstable; urgency=medium
 
   * Use /System/Resources/Fonts as the persistent Linux machine font cache.

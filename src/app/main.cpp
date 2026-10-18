@@ -75,9 +75,10 @@ ThemeMode theme_mode = ThemeMode::System;
 bool effective_dark_theme = true;
 
 
-// Calculator has exactly three approved MB Corpo faces: S Regular, S Bold
-// and A Condensed Regular. GTK selects the S regular/bold face by weight and
-// the A condensed face for display text; no fourth family is selected here.
+// The original three pinned Common faces remain the verified minimum.
+// When InfiltratorOS provides the newer 23-face shared cache, GTK selects
+// task-specific Text, Condensed and Screen families for the wider UI.
+// The older verified faces stay as fallback for standalone installations.
 std::string hex_colour(std::uint32_t value) {
     char buffer[8] = {};
     std::snprintf(buffer, sizeof(buffer), "#%06X", value & 0xFFFFFFU);
@@ -1480,19 +1481,19 @@ void apply_css(GtkWidget* window) {
     const std::string warning_border = hex_colour(p.warning_border_rgb);
 
     const std::string css =
-        "*{font-family:\"" + ui + "\";font-weight:400;}"
+        "*{font-family:\"MB Corpo S Text WEB\",\"" + ui + "\";font-weight:400;}"
         "window,.shell{background:" + background + ";color:" + text + ";}"
         ".shell{padding:" + std::to_string(metrics.shell_padding) + "px;}"
         ".calculator-column{background:" + background + ";}"
         ".header{margin-bottom:0;}"
         ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + heading + ";}"
-        ".toolbar-button{background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
+        ".toolbar-button{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
             "border-radius:" + std::to_string(design.small_radius) + "px;min-height:30px;padding:0 " +
             std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700;}"
         ".toolbar-button:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + ";}"
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
             std::to_string(design.compact_spacing / 2U) + "px;}"
-        ".mode-tab{background:transparent;color:" + kicker + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
+        ".mode-tab{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";background:transparent;color:" + kicker + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "min-height:30px;font-size:11px;font-weight:700;padding:0 8px;}"
         ".mode-tab:hover{background:" + surface_hover + ";color:" + text + ";}"
         ".mode-tab.selected{background:" + primary + ";color:" + primary_text + ";}"
@@ -1502,10 +1503,10 @@ void apply_css(GtkWidget* window) {
         ".expression{background:" + input + ";color:" + summary + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none;}"
         ".expression:focus{border:0;outline:none;box-shadow:none;}"
-        ".result{font-family:\"" + brand + "\";font-size:30px;font-weight:400;color:" + heading + ";padding-top:2px;}"
-        ".status{font-size:10px;font-weight:700;letter-spacing:.04em;color:" + note + ";}"
+        ".result{font-family:\"MB Corpo A Screen2 Cond WEB\",\"" + brand + "\";font-size:30px;font-weight:400;color:" + heading + ";padding-top:2px;}"
+        ".status{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";font-size:10px;font-weight:700;letter-spacing:.04em;color:" + note + ";}"
         ".status.fault{color:" + fault + ";}"
-        ".calc-button{border:1px solid " + border + ";border-radius:" +
+        ".calc-button{font-family:\"MB Corpo S Text WEB\",\"" + ui + "\";border:1px solid " + border + ";border-radius:" +
             std::to_string(design.control_radius) + "px;min-height:" +
             std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0;}"
         ".calc-button:disabled{opacity:.38;}"
@@ -1525,7 +1526,7 @@ void apply_css(GtkWidget* window) {
         ".calc-button.equals:hover{background:" + equals_hover + ";border-color:" + equals_hover + ";}"
         ".history-dock{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px;padding:" +
             std::to_string(design.control_spacing) + "px;}"
-        ".history-text{background:" + panel + ";color:" + detail_label + ";font-size:12px;}"
+        ".history-text{font-family:\"MB Corpo S Text WEB\",\"" + ui + "\";background:" + panel + ";color:" + detail_label + ";font-size:12px;}"
         ".history-list{background:" + panel + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.card_radius) + "px;}"
         ".history-row{background:" + card + ";padding:" +
             std::to_string(design.control_spacing) +

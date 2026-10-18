@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.51" date="2026-10-18">
+      <description><p>Improve Linux Calculator typography with new MB Corpo Text and compact controls plus a Screen2 numerical readout when InfiltratorOS's extended font cache is available.</p></description>
+    </release>
     <release version="0.2.50" date="2026-10-17">
       <description><p>Use the persistent native /System/Resources/Fonts cache on Linux through the verified Libraries 1.19.51 bootstrap while keeping Windows font embedding private.</p></description>
     </release>
