@@ -76,3 +76,7 @@ Linux uses a GTK workbench and Cairo graph rendering. Windows uses a native Win3
 The canonical [23-font inventory and product role map](https://github.com/Infiltrator-Projects/InfiltratorOS/blob/main/docs/FONT-ROLES.md) supplies an optional higher-fidelity Linux GTK font hierarchy. The same Calculator-owned UI state/controller remains authoritative; font selection is presentation only. On Linux, MB Corpo S Text handles keypad and reading, S Text Cond handles compact tool labels, A Title Cond identifies Calculator and A Screen2 Cond presents the primary computed result. The original pinned Common three faces remain supported fallbacks when the larger shared font cache has not been provisioned by InfiltratorOS.
 
 The independently distributed Windows and iPhone font bundles have not yet been expanded in this release; their existing native three-face layouts remain supported but are not evidence of complete 23-face visual parity.
+
+### Standalone Linux face provisioning (0.2.52)
+
+The native Debian package now ships two installer-side scripts from its pinned Common 1.19.57 revision. The legacy three-face script preserves compatibility and the new extended script populates all 23 verified shared resources from a pinned immutable InfiltratorOS snapshot. Calculator's uninstall does not delete shared fonts; optional role-specific Linux families now resolve on a standalone Linux installation without requiring the InfiltratorOS package. Windows/iPhone intentionally retain their earlier private font bundles.

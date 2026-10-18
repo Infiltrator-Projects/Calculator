@@ -17,6 +17,8 @@ override_dh_install:
 	rm -rf "$(CURDIR)/debian/calculator/usr/share/fonts/truetype/calculator"
 	install -D -m 0755 src/infiltratr-common/cmake/InfiltratrEnsureNativeFonts.sh \
 		"$(CURDIR)/debian/calculator/usr/lib/calculator/ensure-native-fonts"
+	install -D -m 0755 src/infiltratr-common/cmake/InfiltratrEnsureExtendedFonts.sh \
+		"$(CURDIR)/debian/calculator/usr/lib/calculator/ensure-extended-fonts"
 	install -D -m 0644 debian/calculator.svg \
 		"$(CURDIR)/debian/calculator/usr/share/app-install/icons/calculator.svg"
 	if [ -f .calculator-native-build-info ]; then \

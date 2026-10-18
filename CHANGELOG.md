@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.52 - 2026-10-18
+
+- Pin Libraries/Common 1.19.57 with its verified extended 23-face native font installer so a standalone Linux Calculator has the same MB Corpo Text, Condensed and Screen2 choices as an InfiltratorOS installation.
+- Add the extended font helper alongside the legacy Common bootstrap, execute both during Debian package configuration and retain fonts as persistent shared machine resources independent of Calculator uninstall.
+- Keep existing Windows/iPhone privately embedded three-face asset sets and numerical behaviour unchanged.
+
 ## 0.2.51 - 2026-10-18
 
 - Optimise Linux Calculator font hierarchy using the InfiltratorOS 23-face shared cache: MB Corpo S Text for reading and keypad, S Text Cond for compact toolbar/mode/status labels, A Title Cond for identity and A Screen2 Cond for the large numerical result.

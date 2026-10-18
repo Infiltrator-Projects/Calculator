@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.52" date="2026-10-18">
+      <description><p>Qualify standalone Linux installation of the 23-face shared MB Corpo typography catalogue via pinned Common 1.19.57, without duplicating font payloads in the Calculator package.</p></description>
+    </release>
     <release version="0.2.51" date="2026-10-18">
       <description><p>Improve Linux Calculator typography with new MB Corpo Text and compact controls plus a Screen2 numerical readout when InfiltratorOS's extended font cache is available.</p></description>
     </release>
