@@ -1456,7 +1456,6 @@ void apply_css(GtkWidget* window) {
     const std::string border = hex_colour(p.border_rgb);
     const std::string text = hex_colour(p.text_rgb);
     const std::string title = hex_colour(p.title_rgb);
-    const std::string muted = hex_colour(p.muted_rgb);
     const std::string subtle = hex_colour(p.subtle_rgb);
     const std::string primary = hex_colour(p.button_background_rgb);
     const std::string primary_text = hex_colour(p.button_foreground_rgb);
@@ -1471,9 +1470,7 @@ void apply_css(GtkWidget* window) {
     const std::string equals_hover = hex_colour(p.equals_hover_rgb);
     const std::string heading = hex_colour(p.heading_rgb);
     const std::string summary = hex_colour(p.summary_rgb);
-    const std::string kicker = hex_colour(p.kicker_rgb);
     const std::string detail_label = hex_colour(p.detail_label_rgb);
-    const std::string note = hex_colour(p.note_rgb);
     const std::string status_border = hex_colour(p.status_border_rgb);
     const std::string accent_hover = hex_colour(p.accent_hover_rgb);
     const std::string selected_summary = hex_colour(p.selected_summary_rgb);
