@@ -6,8 +6,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMON = ROOT / "src" / "infiltratr-common"
-EXPECTED_VERSION = "1.19.51"
-EXPECTED_COMMIT = "2dd9a36a3dba1d069c59ad6d10e697253a91ebca"
+EXPECTED_VERSION = "1.19.57"
+EXPECTED_COMMIT = "0cfa4a36cf84034fd77d5c17a59990f068d5c1fb"
 
 assert (COMMON / "VERSION").read_text(encoding="utf-8").strip() == EXPECTED_VERSION
 
