@@ -364,43 +364,47 @@ for needle in (
 
 print("Cross-platform desktop UI parity contract passed.")
 
-# Calculator-owned text has exactly three approved MB Corpo faces. Release
-# builds carry those exact verified TTFs, and platform shells do not deliberately
-# select a generic fourth family.
+# Native shells choose five typography roles from the same immutable
+# 23-face source. Check actual bundle declarations, integrity plumbing and
+# family validation rather than assuming the retired Common 3-face archive.
 for needle in (
-    "mb_corpo_s_regular.ttf",
-    "mb_corpo_s_bold.ttf",
-    "mb_corpo_a_cond_regular.ttf",
+    "mb_corpo_s_text_regular.ttf",
+    "mb_corpo_s_text_bold.ttf",
+    "mb_corpo_a_title_cond_regular.ttf",
+    "mb_corpo_s_text_cond_bold.ttf",
+    "mb_corpo_a_screen_2_cond_regular.ttf",
 ):
-    assert needle in ios_project, f"iPhone font bundle declaration missing: {needle}"
+    assert needle in ios_project, f"iPhone extended face is missing: {needle}"
+    assert needle in ios_font_script, f"iPhone font source list omits: {needle}"
+    assert needle in cmake, f"Windows resource role omits: {needle}"
 
 for needle in (
-    "typography.assets.source_repository",
-    "typography.assets.source_commit",
-    "typography.assets.archive_sha256",
-    "typography.font_files.brand_regular",
-    "typography.font_files.ui_bold",
-    "typography.font_files.ui_regular",
+    "REVISION=",
+    "SHA256SUMS",
+    "shasum -a 256",
 ):
-    assert needle in ios_font_script, f"iPhone Common typography metadata missing: {needle}"
+    assert needle in ios_font_script, f"iPhone font integrity validation missing: {needle}"
 
 for needle in (
-    "InfiltratrTypographyAssets.cmake",
-    "INFILTRATR_MB_CORPO_ARCHIVE_URL",
-    "INFILTRATR_MB_CORPO_ARCHIVE_SHA256",
-    "INFILTRATR_MB_CORPO_BRAND_REGULAR_FILE",
-    "INFILTRATR_MB_CORPO_UI_BOLD_FILE",
-    "INFILTRATR_MB_CORPO_UI_REGULAR_FILE",
+    "CALCULATOR_EXTENDED_FONTS_COMMIT",
+    "CALCULATOR_FONT_MANIFEST_COUNT EQUAL 23",
+    "EXPECTED_HASH",
+    "CALCULATOR_FONT_RESOURCE_COMPACT=1104",
+    "CALCULATOR_FONT_RESOURCE_RESULT=1105",
 ):
-    assert needle in cmake, f"desktop Common typography provenance missing: {needle}"
+    assert needle in cmake, f"Windows extended typography contract missing: {needle}"
 
 for needle in (
-    "MBCorpoSTitleWEB-Regular",
-    "MBCorpoSTitleWEB-Bold",
-    "MBCorpoATitleCondWEB-Regular",
+    "CTFontCopyFamilyName",
+    "expectedFamily",
+    "mb_corpo_s_text_regular",
+    "mb_corpo_s_text_bold",
+    "mb_corpo_a_title_cond_regular",
+    "mb_corpo_s_text_cond_bold",
+    "mb_corpo_a_screen_2_cond_regular",
     "preconditionFailure",
 ):
-    assert needle in ios_typography, f"iPhone strict MB typography missing: {needle}"
+    assert needle in ios_typography, f"iPhone strict extended typography missing: {needle}"
 
 assert "CalculatorTypography.verifyBundledFonts()" in ios_app
 assert ".font(.system(" not in ios, "Calculator-owned iPhone text reintroduced a system font"
@@ -409,6 +413,8 @@ assert ".monospaced" not in ios, "iPhone history reintroduced a fourth text face
 assert "CALCULATOR_FONT_RESOURCE_REGULAR=1101" in cmake
 assert "CALCULATOR_FONT_RESOURCE_BOLD=1102" in cmake
 assert "CALCULATOR_FONT_RESOURCE_CONDENSED=1103" in cmake
+assert 'L"MB Corpo A Screen2 Cond WEB"' in windows
+assert "GetTextFaceW" in windows
 assert "AddFontMemResourceEx" in windows
 assert "refusing silent font substitution" in linux
 
