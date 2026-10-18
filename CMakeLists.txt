@@ -203,7 +203,7 @@ if(CALCULATOR_BUILD_DESKTOP)
             file(TO_NATIVE_PATH "${CALCULATOR_FONT_FILE}" CALCULATOR_FONT_RC_PATH)
             string(REPLACE "\\" "\\\\" CALCULATOR_FONT_RC_PATH "${CALCULATOR_FONT_RC_PATH}")
             string(APPEND CALCULATOR_WINDOWS_FONT_RC_LINES
-                "${CALCULATOR_FONT_ID} RCDATA \"\${CALCULATOR_FONT_RC_PATH}\"\n")
+                "${CALCULATOR_FONT_ID} RCDATA \"${CALCULATOR_FONT_RC_PATH}\"\n")
         endforeach()
 
         # Windows has a native shell so the release executable has no GTK/GLib
