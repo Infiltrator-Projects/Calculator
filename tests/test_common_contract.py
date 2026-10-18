@@ -131,36 +131,39 @@ for required in (
 ):
     assert required in calls, f"Calculator is not consuming Common {EXPECTED_VERSION} {required}"
 
-typography_assets = (
-    COMMON / "cmake" / "InfiltratrTypographyAssets.cmake"
+# The old three-face archive remains available for existing Common consumers.
+# Calculator's extended Windows/iPhone faces must instead match the exact
+# SHA-256-qualified 23-face source revision of pinned Common's installer.
+extended_installer = (
+    COMMON / "cmake" / "InfiltratrEnsureExtendedFonts.sh"
 ).read_text(encoding="utf-8")
-assert "InfiltratrTypographyAssets.cmake" in cmake
-for variable in (
-    "INFILTRATR_MB_CORPO_ARCHIVE_URL",
-    "INFILTRATR_MB_CORPO_ARCHIVE_SHA256",
-    "INFILTRATR_MB_CORPO_BRAND_REGULAR_FILE",
-    "INFILTRATR_MB_CORPO_UI_BOLD_FILE",
-    "INFILTRATR_MB_CORPO_UI_REGULAR_FILE",
-):
-    assert variable in typography_assets, f"Common typography metadata missing {variable}"
-    assert variable in cmake, f"Calculator duplicates Common typography metadata: {variable}"
+revision_match = re.search(
+    r'^SOURCE_COMMIT="([a-f0-9]{40})"$',
+    extended_installer, re.MULTILINE,
+)
+assert revision_match is not None, "Common extended font source is not pinned"
+revision = revision_match.group(1)
+assert f'set(CALCULATOR_EXTENDED_FONTS_COMMIT "{revision}")' in cmake
+assert "EXPECTED_HASH" in cmake and "CALCULATOR_FONT_MANIFEST_COUNT EQUAL 23" in cmake
 
-# The iPhone font bundler reads canonical provenance directly from Common's
-# design contract rather than carrying another commit/hash table.
 ios_font_script = (ROOT / "ios" / "bundle-fonts.sh").read_text(encoding="utf-8")
-for key in (
-    "typography.assets.source_repository",
-    "typography.assets.source_commit",
-    "typography.assets.archive_path",
-    "typography.assets.archive_sha256",
-    "typography.font_files.brand_regular",
-    "typography.font_files.ui_bold",
-    "typography.font_files.ui_regular",
-    "typography.assets.file_sha256.brand_regular",
-    "typography.assets.file_sha256.ui_bold",
-    "typography.assets.file_sha256.ui_regular",
-):
-    assert key in ios_font_script, f"iPhone font bundler bypasses Common metadata: {key}"
+assert f'REVISION="{revision}"' in ios_font_script
+assert "shasum -a 256" in ios_font_script
+assert 'wc -l < "${MANIFEST}"' in ios_font_script
+
+selected_fonts = (
+    "mb_corpo_s_text_regular.ttf",
+    "mb_corpo_s_text_bold.ttf",
+    "mb_corpo_a_title_cond_regular.ttf",
+    "mb_corpo_s_text_cond_bold.ttf",
+    "mb_corpo_a_screen_2_cond_regular.ttf",
+)
+ios_project = (ROOT / "ios" / "project.yml").read_text(encoding="utf-8")
+for filename in selected_fonts:
+    assert filename in cmake, f"Missing verified Windows role: {filename}"
+    assert filename in ios_font_script, f"Missing verified iPhone role: {filename}"
+    assert filename in ios_project, f"iPhone bundle omits {filename}"
+
 
 design_contract = json.loads(
     (COMMON / "design" / "infiltrator-design-v1.json").read_text(encoding="utf-8")
