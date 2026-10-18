@@ -93,24 +93,3 @@ if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/Inf
 fi
 
 echo "Debian package contract passed: $package"
- "$listing"; then
-  echo "Calculator must not package duplicate MB Corpo font binaries." >&2
-  exit 1
-fi
-
-grep -Fq '/usr/lib/calculator/ensure-extended-fonts' "$control_dir/postinst" || {
-  echo "Calculator postinst must establish the verified 23-face native font cache." >&2
-  exit 1
-}
-if grep -Eq '(rm|rmdir).*System/Resources/Fonts' "$control_dir"/*; then
-  echo "Calculator uninstall scripts must never remove shared native fonts." >&2
-  exit 1
-fi
-
-if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' "$listing"; then
-  echo "Calculator package leaked Common development/runtime payloads." >&2
-  cat "$listing" >&2
-  exit 1
-fi
-
-echo "Debian package contract passed: $package"
