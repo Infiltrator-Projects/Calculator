@@ -265,7 +265,18 @@ try {
         throw "Windows did not use the required MB Corpo title font: $($font.lfFaceName)"
     }
 
-    Write-Host "Windows UI smoke passed: ${clientWidth}x${clientHeight}; theme, layout, modes, arithmetic and title font are correct."
+    $resultFontHandle = [CalcSmoke]::SendMessage(
+        $result, 0x0031, [IntPtr]::Zero, [IntPtr]::Zero)
+    $resultFont = New-Object LOGFONT
+    if ($resultFontHandle -eq [IntPtr]::Zero -or
+        [CalcSmoke]::GetObject($resultFontHandle, $fontSize, [ref]$resultFont) -eq 0) {
+        throw 'Windows result font could not be inspected'
+    }
+    if ($resultFont.lfFaceName -ne 'MB Corpo A Screen2 Cond WEB') {
+        throw "Windows result was not set in the dedicated Screen2 readout face: $($resultFont.lfFaceName)"
+    }
+
+    Write-Host "Windows UI smoke passed: ${clientWidth}x${clientHeight}; theme, layout, arithmetic, MB Corpo brand and Screen2 result fonts are correct."
 }
 finally {
     if ($null -ne $process -and -not $process.HasExited) {
