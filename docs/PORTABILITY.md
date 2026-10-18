@@ -66,7 +66,7 @@ Portability requires equivalent interaction/state ownership, not pixel-identical
 
 Common owns Day/Night semantic design values, structural design metrics and canonical typography identity. Each platform owns System-theme detection and native rendering; Calculator deliberately applies the Common-permitted strict no-fallback MB Corpo policy.
 
-Calculator-owned text is restricted to three canonical MB Corpo faces: S Regular, S Bold and A Condensed Regular. Release builds bundle or embed those exact hash-verified font resources on every platform. Missing or mismatched Calculator fonts are a build/startup failure; silently substituting a fourth font family is outside the product contract.
+Calculator-owned typography chooses task-specific faces from the 23-font InfiltratorOS collection. Linux uses the verified shared machine font cache; the native Windows and iPhone shells embed five verified fonts (S Text Regular/Bold, S Text Cond Bold, A Title Cond and A Screen2 Cond). The selected TTFs and the canonical SHA-256 manifest are fetched from the same pinned InfiltratorOS source revision. Missing or mismatched Calculator fonts are a build/startup failure; unverified platform font substitution is outside the product contract.
 
 ## Compatibility and installed identity
 
