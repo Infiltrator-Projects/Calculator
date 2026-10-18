@@ -142,58 +142,68 @@ endif()
 
 if(CALCULATOR_BUILD_DESKTOP)
     if(WIN32)
-        # Windows embeds and privately registers the three verified faces in the
-        # standalone EXE. Linux instead uses the native machine font cache.
-        set(CALCULATOR_FONT_ARCHIVE
-            "${CMAKE_CURRENT_BINARY_DIR}/calculator-mb-corpo-fonts.tar.xz")
-        file(DOWNLOAD
-            "${INFILTRATR_MB_CORPO_ARCHIVE_URL}"
-            "${CALCULATOR_FONT_ARCHIVE}"
-            EXPECTED_HASH
-                "SHA256=${INFILTRATR_MB_CORPO_ARCHIVE_SHA256}"
-            TLS_VERIFY ON
+        # The Windows executable owns verified private font resources, while
+        # Linux uses the persistent /System/Resources/Fonts cache. The source
+        # revision is immutable: the manifest and every selected TTF come from
+        # the same audited 23-face InfiltratorOS inventory.
+        set(CALCULATOR_EXTENDED_FONTS_COMMIT "66c17fe9ea3ea9678b4028ffea1862a37d488f79")
+        set(CALCULATOR_FONT_DIR "${CMAKE_CURRENT_BINARY_DIR}/calculator-fonts")
+        file(MAKE_DIRECTORY "${CALCULATOR_FONT_DIR}")
+        set(CALCULATOR_FONT_BASE
+            "https://raw.githubusercontent.com/Infiltrator-Projects/InfiltratorOS/${CALCULATOR_EXTENDED_FONTS_COMMIT}/assets/fonts")
+        set(CALCULATOR_FONT_MANIFEST "${CALCULATOR_FONT_DIR}/SHA256SUMS")
+        file(DOWNLOAD "${CALCULATOR_FONT_BASE}/SHA256SUMS"
+            "${CALCULATOR_FONT_MANIFEST}" TLS_VERIFY ON
             STATUS CALCULATOR_FONT_DOWNLOAD_STATUS)
         list(GET CALCULATOR_FONT_DOWNLOAD_STATUS 0 CALCULATOR_FONT_DOWNLOAD_CODE)
         if(NOT CALCULATOR_FONT_DOWNLOAD_CODE EQUAL 0)
-            list(GET CALCULATOR_FONT_DOWNLOAD_STATUS 1 CALCULATOR_FONT_DOWNLOAD_MESSAGE)
-            message(FATAL_ERROR
-                "Unable to obtain the canonical Calculator font archive: "
-                "${CALCULATOR_FONT_DOWNLOAD_MESSAGE}")
+            message(FATAL_ERROR "Unable to retrieve pinned 23-face font inventory")
+        endif()
+        file(STRINGS "${CALCULATOR_FONT_MANIFEST}" CALCULATOR_FONT_MANIFEST_LINES)
+        list(LENGTH CALCULATOR_FONT_MANIFEST_LINES CALCULATOR_FONT_MANIFEST_COUNT)
+        if(NOT CALCULATOR_FONT_MANIFEST_COUNT EQUAL 23)
+            message(FATAL_ERROR "Incomplete canonical 23-face font inventory")
         endif()
 
-        set(CALCULATOR_FONT_DIR "${CMAKE_CURRENT_BINARY_DIR}/calculator-fonts")
-        file(REMOVE_RECURSE "${CALCULATOR_FONT_DIR}")
-        file(MAKE_DIRECTORY "${CALCULATOR_FONT_DIR}")
-        file(ARCHIVE_EXTRACT
-            INPUT "${CALCULATOR_FONT_ARCHIVE}"
-            DESTINATION "${CALCULATOR_FONT_DIR}")
-
-        set(CALCULATOR_FONT_A_COND_REGULAR
-            "${CALCULATOR_FONT_DIR}/${INFILTRATR_MB_CORPO_BRAND_REGULAR_FILE}")
-        set(CALCULATOR_FONT_S_BOLD
-            "${CALCULATOR_FONT_DIR}/${INFILTRATR_MB_CORPO_UI_BOLD_FILE}")
-        set(CALCULATOR_FONT_S_REGULAR
-            "${CALCULATOR_FONT_DIR}/${INFILTRATR_MB_CORPO_UI_REGULAR_FILE}")
-        set(CALCULATOR_FONT_FILES
-            "${CALCULATOR_FONT_A_COND_REGULAR}"
-            "${CALCULATOR_FONT_S_BOLD}"
-            "${CALCULATOR_FONT_S_REGULAR}")
-        set(CALCULATOR_FONT_EXPECTED_SHA256
-            "${INFILTRATR_MB_CORPO_BRAND_REGULAR_SHA256}"
-            "${INFILTRATR_MB_CORPO_UI_BOLD_SHA256}"
-            "${INFILTRATR_MB_CORPO_UI_REGULAR_SHA256}")
-        foreach(CALCULATOR_FONT_INDEX RANGE 0 2)
-            list(GET CALCULATOR_FONT_FILES
-                 ${CALCULATOR_FONT_INDEX} CALCULATOR_FONT_FILE)
-            list(GET CALCULATOR_FONT_EXPECTED_SHA256
-                 ${CALCULATOR_FONT_INDEX} CALCULATOR_FONT_SHA256_EXPECTED)
-            file(SHA256
-                 "${CALCULATOR_FONT_FILE}" CALCULATOR_FONT_SHA256_ACTUAL)
-            if(NOT CALCULATOR_FONT_SHA256_ACTUAL
-               STREQUAL CALCULATOR_FONT_SHA256_EXPECTED)
-                message(FATAL_ERROR
-                    "Calculator font hash mismatch: ${CALCULATOR_FONT_FILE}")
+        set(CALCULATOR_WINDOWS_FONT_ROLES
+            "1101|mb_corpo_s_text_regular.ttf"
+            "1102|mb_corpo_s_text_bold.ttf"
+            "1103|mb_corpo_a_title_cond_regular.ttf"
+            "1104|mb_corpo_s_text_cond_bold.ttf"
+            "1105|mb_corpo_a_screen_2_cond_regular.ttf")
+        set(CALCULATOR_WINDOWS_FONT_RC_LINES "")
+        foreach(CALCULATOR_FONT_ROLE IN LISTS CALCULATOR_WINDOWS_FONT_ROLES)
+            string(REPLACE "|" ";" CALCULATOR_FONT_PARTS "${CALCULATOR_FONT_ROLE}")
+            list(GET CALCULATOR_FONT_PARTS 0 CALCULATOR_FONT_ID)
+            list(GET CALCULATOR_FONT_PARTS 1 CALCULATOR_FONT_NAME)
+            set(CALCULATOR_FONT_EXPECTED_SHA "")
+            foreach(CALCULATOR_MANIFEST_LINE IN LISTS CALCULATOR_FONT_MANIFEST_LINES)
+                string(REPLACE "  " ";" CALCULATOR_MANIFEST_PARTS "${CALCULATOR_MANIFEST_LINE}")
+                list(LENGTH CALCULATOR_MANIFEST_PARTS CALCULATOR_MANIFEST_PART_COUNT)
+                if(CALCULATOR_MANIFEST_PART_COUNT EQUAL 2)
+                    list(GET CALCULATOR_MANIFEST_PARTS 1 CALCULATOR_MANIFEST_NAME)
+                    if(CALCULATOR_MANIFEST_NAME STREQUAL CALCULATOR_FONT_NAME)
+                        list(GET CALCULATOR_MANIFEST_PARTS 0 CALCULATOR_FONT_EXPECTED_SHA)
+                    endif()
+                endif()
+            endforeach()
+            string(LENGTH "${CALCULATOR_FONT_EXPECTED_SHA}" CALCULATOR_FONT_SHA_LENGTH)
+            if(NOT CALCULATOR_FONT_SHA_LENGTH EQUAL 64)
+                message(FATAL_ERROR "Missing checksum for ${CALCULATOR_FONT_NAME}")
             endif()
+            set(CALCULATOR_FONT_FILE "${CALCULATOR_FONT_DIR}/${CALCULATOR_FONT_NAME}")
+            file(DOWNLOAD "${CALCULATOR_FONT_BASE}/${CALCULATOR_FONT_NAME}"
+                "${CALCULATOR_FONT_FILE}" TLS_VERIFY ON
+                EXPECTED_HASH "SHA256=${CALCULATOR_FONT_EXPECTED_SHA}"
+                STATUS CALCULATOR_FONT_DOWNLOAD_STATUS)
+            list(GET CALCULATOR_FONT_DOWNLOAD_STATUS 0 CALCULATOR_FONT_DOWNLOAD_CODE)
+            if(NOT CALCULATOR_FONT_DOWNLOAD_CODE EQUAL 0)
+                message(FATAL_ERROR "Unable to verify font ${CALCULATOR_FONT_NAME}")
+            endif()
+            file(TO_NATIVE_PATH "${CALCULATOR_FONT_FILE}" CALCULATOR_FONT_RC_PATH)
+            string(REPLACE "\\" "\\\\" CALCULATOR_FONT_RC_PATH "${CALCULATOR_FONT_RC_PATH}")
+            string(APPEND CALCULATOR_WINDOWS_FONT_RC_LINES
+                "${CALCULATOR_FONT_ID} RCDATA \"\${CALCULATOR_FONT_RC_PATH}\"\n")
         endforeach()
 
         # Windows has a native shell so the release executable has no GTK/GLib
@@ -204,18 +214,6 @@ if(CALCULATOR_BUILD_DESKTOP)
             src/app/windows_persistence.cpp
         )
 
-        file(TO_NATIVE_PATH
-             "${CALCULATOR_FONT_S_REGULAR}" CALCULATOR_FONT_S_REGULAR_RC)
-        file(TO_NATIVE_PATH
-             "${CALCULATOR_FONT_S_BOLD}" CALCULATOR_FONT_S_BOLD_RC)
-        file(TO_NATIVE_PATH
-             "${CALCULATOR_FONT_A_COND_REGULAR}" CALCULATOR_FONT_A_COND_REGULAR_RC)
-        string(REPLACE "\\" "\\\\"
-               CALCULATOR_FONT_S_REGULAR_RC "${CALCULATOR_FONT_S_REGULAR_RC}")
-        string(REPLACE "\\" "\\\\"
-               CALCULATOR_FONT_S_BOLD_RC "${CALCULATOR_FONT_S_BOLD_RC}")
-        string(REPLACE "\\" "\\\\"
-               CALCULATOR_FONT_A_COND_REGULAR_RC "${CALCULATOR_FONT_A_COND_REGULAR_RC}")
         set(CALCULATOR_WINDOWS_ICON
             "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/calculator.ico")
         if(NOT EXISTS "${CALCULATOR_WINDOWS_ICON}")
@@ -230,15 +228,15 @@ if(CALCULATOR_BUILD_DESKTOP)
             "${CMAKE_CURRENT_BINARY_DIR}/calculator-fonts.rc")
         file(WRITE "${CALCULATOR_WINDOWS_FONT_RC}"
             "1001 ICON \"${CALCULATOR_WINDOWS_ICON_RC}\"\n"
-            "1101 RCDATA \"${CALCULATOR_FONT_S_REGULAR_RC}\"\n"
-            "1102 RCDATA \"${CALCULATOR_FONT_S_BOLD_RC}\"\n"
-            "1103 RCDATA \"${CALCULATOR_FONT_A_COND_REGULAR_RC}\"\n")
+            "${CALCULATOR_WINDOWS_FONT_RC_LINES}")
         target_sources(calculator PRIVATE "${CALCULATOR_WINDOWS_FONT_RC}")
         target_compile_definitions(calculator PRIVATE
             CALCULATOR_ICON_RESOURCE=1001
             CALCULATOR_FONT_RESOURCE_REGULAR=1101
             CALCULATOR_FONT_RESOURCE_BOLD=1102
-            CALCULATOR_FONT_RESOURCE_CONDENSED=1103)
+            CALCULATOR_FONT_RESOURCE_CONDENSED=1103
+            CALCULATOR_FONT_RESOURCE_COMPACT=1104
+            CALCULATOR_FONT_RESOURCE_RESULT=1105)
 
         target_link_libraries(calculator PRIVATE
             calculator-ui

@@ -1,3 +1,11 @@
+calculator (0.2.53) unstable; urgency=medium
+
+  * Embed five independently verified extended MB Corpo families in the
+    Windows executable and iPhone app, matching the Linux font-role hierarchy.
+  * Use A Screen2 for results and Text/Condensed for reading and controls.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 18 Oct 2026 16:45:00 +1100
+
 calculator (0.2.52) unstable; urgency=medium
 
   * Pin Common 1.19.57 for the immutable 23-face shared font catalogue.

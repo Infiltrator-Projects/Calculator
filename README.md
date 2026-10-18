@@ -103,15 +103,16 @@ The calculation core links against `InfiltratrCommon::Portable` from the exact p
 
 ## Typography
 
-Calculator-owned text is restricted to the same three established MB Corpo faces on Linux, Windows and iPhone. There is no deliberate generic fourth text family such as Sans or Segoe UI.
+Calculator uses a task-specific subset of the 23 SHA-256-verified MB Corpo/Daimler faces from [InfiltratorOS's shared font inventory](https://github.com/Infiltrator-Projects/InfiltratorOS/blob/main/docs/FONT-ROLES.md). The five fonts used by the Windows and iPhone native shells are independently verified against the same immutable InfiltratorOS inventory and registered/bundled by each platform's native mechanism:
 
-The three approved font files and roles are:
+- `mb_corpo_s_text_regular.ttf` — normal labels, expression entry and history;
+- `mb_corpo_s_text_bold.ttf` — keypad text, actions and emphasis;
+- `mb_corpo_a_title_cond_regular.ttf` — product branding;
+- `mb_corpo_s_text_cond_bold.ttf` — short dense controls and indicators;
+- `mb_corpo_a_screen_2_cond_regular.ttf` — large result readout.
 
-- `mb_corpo_s_regular.ttf` — `MB Corpo S Title WEB` regular interface text;
-- `mb_corpo_s_bold.ttf` — `MB Corpo S Title WEB` bold interface text, actions and emphasis;
-- `mb_corpo_a_cond_regular.ttf` — `MB Corpo A Title Cond WEB` product and display titles.
+Linux acquires the complete verified 23-face collection in the persistent `/System/Resources/Fonts` cache; it does not put private copies into the Calculator package. All platforms preserve Common's semantic Day/Night colours and Calculator's single arithmetic/interaction controller. The new fonts affect presentation, not calculation precision or string contents. No silent substitution for missing required MB faces is intended.
 
-Common owns the canonical MB Corpo family names, role weights, filenames and immutable first-party archive provenance. Calculator deliberately applies Common's permitted strict no-fallback policy: release builds fetch the exact Common-declared archive, verify its archive/file hashes, then package the three faces with Linux, embed them privately in the Windows executable, and bundle them into the iPhone application. Linux and iPhone refuse silent Calculator-owned text-font substitution if the required faces are unavailable; Windows registers the embedded faces into the process before creating UI fonts.
 
 ## Build
 

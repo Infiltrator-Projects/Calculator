@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.53 - 2026-10-18
+
+- Align Calculator's Windows and iPhone font resources with five verified 23-face MB Corpo roles: S Text Regular/Bold, S Text Cond Bold, A Title Cond and A Screen2 Cond.
+- Verify the exact pinned InfiltratorOS inventory and each selected TTF before embedding in the Windows EXE or iPhone bundle; reject missing registered font families rather than substituting generic fonts.
+- Apply Screen2 to Windows/iPhone results, reserve A Title Cond for product identity and Cond Bold for short controls; preserve calculation, native geometry and Common palette semantics.
+
 ## 0.2.52 - 2026-10-18
 
 - Pin Libraries/Common 1.19.57 with its verified extended 23-face native font installer so a standalone Linux Calculator has the same MB Corpo Text, Condensed and Screen2 choices as an InfiltratorOS installation.

@@ -1,62 +1,44 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
+# The same immutable verified font inventory as native InfiltratorOS.
 set -eu
 
-DESIGN_JSON="${SRCROOT}/../src/infiltratr-common/design/infiltrator-design-v1.json"
-
-common_value() {
-    /usr/bin/plutil -extract "$1" raw -o - "${DESIGN_JSON}"
-}
-
-SOURCE_REPOSITORY="$(common_value typography.assets.source_repository)"
-SOURCE_COMMIT="$(common_value typography.assets.source_commit)"
-ARCHIVE_PATH="$(common_value typography.assets.archive_path)"
-ARCHIVE_SHA256="$(common_value typography.assets.archive_sha256)"
-
-BRAND_FILE="$(common_value typography.font_files.brand_regular)"
-UI_BOLD_FILE="$(common_value typography.font_files.ui_bold)"
-UI_REGULAR_FILE="$(common_value typography.font_files.ui_regular)"
-
-BRAND_SHA256="$(common_value typography.assets.file_sha256.brand_regular)"
-UI_BOLD_SHA256="$(common_value typography.assets.file_sha256.ui_bold)"
-UI_REGULAR_SHA256="$(common_value typography.assets.file_sha256.ui_regular)"
-
-URL="https://raw.githubusercontent.com/${SOURCE_REPOSITORY}/${SOURCE_COMMIT}/${ARCHIVE_PATH}"
-ARCHIVE="${DERIVED_FILE_DIR}/calculator-mb-corpo-fonts.tar.xz"
-FONT_DIR="${DERIVED_FILE_DIR}/calculator-mb-fonts"
+REVISION="66c17fe9ea3ea9678b4028ffea1862a37d488f79"
+BASE="https://raw.githubusercontent.com/Infiltrator-Projects/InfiltratorOS/${REVISION}/assets/fonts"
+WORK="${DERIVED_FILE_DIR}/calculator-extended-fonts"
 DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+mkdir -p "${WORK}" "${DEST}"
+MANIFEST="${WORK}/SHA256SUMS"
+curl --fail --location --retry 3 --silent --show-error \
+    "${BASE}/SHA256SUMS" --output "${MANIFEST}"
 
-mkdir -p "${DERIVED_FILE_DIR}" "${DEST}"
-curl -fL --retry 3 --retry-delay 2 "${URL}" -o "${ARCHIVE}"
-
-actual="$(shasum -a 256 "${ARCHIVE}" | awk '{print $1}')"
-[ "${actual}" = "${ARCHIVE_SHA256}" ] || {
-    echo "error: Calculator MB Corpo archive hash mismatch" >&2
+[ "$(wc -l < "${MANIFEST}" | tr -d ' ')" -eq 23 ] || {
+    echo "error: canonical 23-face MB/Daimler manifest is incomplete" >&2
     exit 1
 }
 
-rm -rf "${FONT_DIR}"
-mkdir -p "${FONT_DIR}"
-tar -xJf "${ARCHIVE}" -C "${FONT_DIR}"
-
-check_font() {
-    file="$1"
-    expected="$2"
-    [ -f "${FONT_DIR}/${file}" ] || {
-        echo "error: Calculator font archive is missing ${file}" >&2
+for filename in \
+    mb_corpo_s_text_regular.ttf \
+    mb_corpo_s_text_bold.ttf \
+    mb_corpo_a_title_cond_regular.ttf \
+    mb_corpo_s_text_cond_bold.ttf \
+    mb_corpo_a_screen_2_cond_regular.ttf
+do
+    checksum="$(awk -v font="${filename}" '$2 == font { print $1 }' "${MANIFEST}")"
+    [ "${#checksum}" -eq 64 ] || {
+        echo "error: missing SHA-256 for ${filename}" >&2
         exit 1
     }
-    actual_font="$(shasum -a 256 "${FONT_DIR}/${file}" | awk '{print $1}')"
-    [ "${actual_font}" = "${expected}" ] || {
-        echo "error: Calculator font hash mismatch: ${file}" >&2
+    case "${checksum}" in *[!0-9a-f]*)
+        echo "error: malformed SHA-256 for ${filename}" >&2; exit 1 ;;
+    esac
+    staged="${WORK}/${filename}"
+    curl --fail --location --retry 3 --silent --show-error \
+        "${BASE}/${filename}" --output "${staged}"
+    actual="$(shasum -a 256 "${staged}" | awk '{print $1}')"
+    [ "${actual}" = "${checksum}" ] || {
+        echo "error: verified MB Corpo font mismatch: ${filename}" >&2
         exit 1
     }
-}
-
-check_font "${BRAND_FILE}" "${BRAND_SHA256}"
-check_font "${UI_BOLD_FILE}" "${UI_BOLD_SHA256}"
-check_font "${UI_REGULAR_FILE}" "${UI_REGULAR_SHA256}"
-
-cp "${FONT_DIR}/${BRAND_FILE}" "${DEST}/"
-cp "${FONT_DIR}/${UI_BOLD_FILE}" "${DEST}/"
-cp "${FONT_DIR}/${UI_REGULAR_FILE}" "${DEST}/"
+    cp "${staged}" "${DEST}/${filename}"
+done

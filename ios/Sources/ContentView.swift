@@ -227,7 +227,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Calculator")
-                    .font(CalculatorTypography.display(29, relativeTo: .title))
+                    .font(CalculatorTypography.brand(29, relativeTo: .title))
                     .foregroundStyle(palette.heading)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -477,7 +477,9 @@ private struct CalculatorKey: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(CalculatorTypography.bold(kind == .equals ? 18 : 15, relativeTo: .body))
+                .font(kind == .utility
+                    ? CalculatorTypography.compact(15, relativeTo: .body)
+                    : CalculatorTypography.bold(kind == .equals ? 18 : 15, relativeTo: .body))
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
                 .frame(maxWidth: .infinity, minHeight: 46)

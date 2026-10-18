@@ -6,19 +6,20 @@ import UIKit
 enum CalculatorTypography {
     private struct BundledFont {
         let resource: String
-        let expectedPostScriptName: String
+        let expectedFamily: String
     }
 
     private static let bundledFonts = [
-        BundledFont(
-            resource: "mb_corpo_s_regular",
-            expectedPostScriptName: "MBCorpoSTitleWEB-Regular"),
-        BundledFont(
-            resource: "mb_corpo_s_bold",
-            expectedPostScriptName: "MBCorpoSTitleWEB-Bold"),
-        BundledFont(
-            resource: "mb_corpo_a_cond_regular",
-            expectedPostScriptName: "MBCorpoATitleCondWEB-Regular")
+        BundledFont(resource: "mb_corpo_s_text_regular",
+                    expectedFamily: "MB Corpo S Text WEB"),
+        BundledFont(resource: "mb_corpo_s_text_bold",
+                    expectedFamily: "MB Corpo S Text WEB"),
+        BundledFont(resource: "mb_corpo_a_title_cond_regular",
+                    expectedFamily: "MB Corpo A Title Cond WEB"),
+        BundledFont(resource: "mb_corpo_s_text_cond_bold",
+                    expectedFamily: "MB Corpo S Text WEB Cond"),
+        BundledFont(resource: "mb_corpo_a_screen_2_cond_regular",
+                    expectedFamily: "MB Corpo A Screen2 Cond WEB")
     ]
 
     private static let resolvedPostScriptNames: [String: String] = {
@@ -45,7 +46,8 @@ enum CalculatorTypography {
 
             let ctFont = CTFontCreateWithFontDescriptor(descriptor, 12, nil)
             let postScriptName = CTFontCopyPostScriptName(ctFont) as String
-            guard postScriptName == font.expectedPostScriptName else {
+            let family = CTFontCopyFamilyName(ctFont) as String
+            guard family == font.expectedFamily else {
                 preconditionFailure(
                     "Calculator font identity mismatch: \(font.resource).ttf")
             }
@@ -56,15 +58,23 @@ enum CalculatorTypography {
     }()
 
     static var uiRegularName: String {
-        requiredName("mb_corpo_s_regular")
+        requiredName("mb_corpo_s_text_regular")
     }
 
     static var uiBoldName: String {
-        requiredName("mb_corpo_s_bold")
+        requiredName("mb_corpo_s_text_bold")
     }
 
     static var displayName: String {
-        requiredName("mb_corpo_a_cond_regular")
+        requiredName("mb_corpo_a_screen_2_cond_regular")
+    }
+
+    static var brandName: String {
+        requiredName("mb_corpo_a_title_cond_regular")
+    }
+
+    static var compactName: String {
+        requiredName("mb_corpo_s_text_cond_bold")
     }
 
     private static func requiredName(_ resource: String) -> String {
@@ -108,13 +118,23 @@ enum CalculatorTypography {
         required(displayName, size: size, relativeTo: style)
     }
 
+    static func brand(_ size: CGFloat, relativeTo style: Font.TextStyle) -> Font {
+        required(brandName, size: size, relativeTo: style)
+    }
+
+    static func compact(_ size: CGFloat, relativeTo style: Font.TextStyle) -> Font {
+        required(compactName, size: size, relativeTo: style)
+    }
+
     static let body = regular(17, relativeTo: .body)
 
     static func verifyBundledFonts() {
         for (resource, name) in [
-            ("mb_corpo_s_regular", uiRegularName),
-            ("mb_corpo_s_bold", uiBoldName),
-            ("mb_corpo_a_cond_regular", displayName)
+            ("mb_corpo_s_text_regular", uiRegularName),
+            ("mb_corpo_s_text_bold", uiBoldName),
+            ("mb_corpo_a_title_cond_regular", brandName),
+            ("mb_corpo_s_text_cond_bold", compactName),
+            ("mb_corpo_a_screen_2_cond_regular", displayName)
         ] {
             guard UIFont(name: name, size: 12) != nil else {
                 preconditionFailure(

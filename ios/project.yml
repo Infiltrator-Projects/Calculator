@@ -53,9 +53,11 @@ targets:
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIAppFonts:
-          - mb_corpo_a_cond_regular.ttf
-          - mb_corpo_s_bold.ttf
-          - mb_corpo_s_regular.ttf
+          - mb_corpo_s_text_regular.ttf
+          - mb_corpo_s_text_bold.ttf
+          - mb_corpo_a_title_cond_regular.ttf
+          - mb_corpo_s_text_cond_bold.ttf
+          - mb_corpo_a_screen_2_cond_regular.ttf
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_OBJC_BRIDGING_HEADER: "$(SRCROOT)/Bridge/Calculator-Bridging-Header.h"
         HEADER_SEARCH_PATHS:
@@ -72,8 +74,10 @@ targets:
         inputFiles:
           - "$(SRCROOT)/bundle-fonts.sh"
         outputFiles:
-          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_a_cond_regular.ttf"
-          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_bold.ttf"
-          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_regular.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_text_regular.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_text_bold.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_a_title_cond_regular.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_s_text_cond_bold.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/mb_corpo_a_screen_2_cond_regular.ttf"
     scheme:
       gatherCoverageData: false

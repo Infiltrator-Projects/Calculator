@@ -237,7 +237,9 @@ bool register_bundled_fonts() {
     return
         register_font_resource(CALCULATOR_FONT_RESOURCE_REGULAR) &&
         register_font_resource(CALCULATOR_FONT_RESOURCE_BOLD) &&
-        register_font_resource(CALCULATOR_FONT_RESOURCE_CONDENSED);
+        register_font_resource(CALCULATOR_FONT_RESOURCE_CONDENSED) &&
+        register_font_resource(CALCULATOR_FONT_RESOURCE_COMPACT) &&
+        register_font_resource(CALCULATOR_FONT_RESOURCE_RESULT);
 }
 
 HFONT make_font(HWND window, int point_size, int weight, const wchar_t* family) {
@@ -246,10 +248,23 @@ HFONT make_font(HWND window, int point_size, int weight, const wchar_t* family) 
     if (dc != nullptr) ReleaseDC(window, dc);
 
     const int height = -MulDiv(point_size, dpi, 72);
-    return CreateFontW(height, 0, 0, 0, weight, FALSE, FALSE, FALSE,
-                       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-                       CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
-                       DEFAULT_PITCH | FF_DONTCARE, family);
+    HFONT font = CreateFontW(height, 0, 0, 0, weight, FALSE, FALSE, FALSE,
+                             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                             CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+                             DEFAULT_PITCH | FF_DONTCARE, family);
+    if (font == nullptr) return nullptr;
+    HDC verification = GetDC(nullptr);
+    if (verification == nullptr) { DeleteObject(font); return nullptr; }
+    HGDIOBJ previous = SelectObject(verification, font);
+    wchar_t actual[LF_FACESIZE] = {};
+    GetTextFaceW(verification, LF_FACESIZE, actual);
+    SelectObject(verification, previous);
+    ReleaseDC(nullptr, verification);
+    if (lstrcmpiW(actual, family) != 0) {
+        DeleteObject(font);
+        return nullptr;
+    }
+    return font;
 }
 
 void apply_font(HWND control, HFONT font) {
@@ -272,13 +287,13 @@ void rebuild_fonts(HWND window) {
     delete_font(g_result_font);
     delete_font(g_small_font);
 
-    const wchar_t* ui_family = ui_font_family();
-    const wchar_t* brand_family = brand_font_family();
-    g_ui_font = make_font(window, 10, FW_NORMAL, ui_family);
-    g_ui_bold_font = make_font(window, 10, FW_BOLD, ui_family);
-    g_title_font = make_font(window, 18, FW_NORMAL, brand_family);
-    g_result_font = make_font(window, 32, FW_NORMAL, brand_family);
-    g_small_font = make_font(window, 8, FW_BOLD, ui_family);
+    // InfiltratorOS's verified extended faces are private to the process.
+    // Do not confuse the original Common Title family with its Text roles.
+    g_ui_font = make_font(window, 10, FW_NORMAL, L"MB Corpo S Text WEB");
+    g_ui_bold_font = make_font(window, 10, FW_BOLD, L"MB Corpo S Text WEB");
+    g_title_font = make_font(window, 18, FW_NORMAL, brand_font_family());
+    g_result_font = make_font(window, 32, FW_NORMAL, L"MB Corpo A Screen2 Cond WEB");
+    g_small_font = make_font(window, 8, FW_BOLD, L"MB Corpo S Text WEB Cond");
 }
 
 // Non-client theming is best-effort platform adaptation. Missing DWM entry
