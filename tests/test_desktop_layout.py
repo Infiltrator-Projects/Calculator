@@ -418,6 +418,17 @@ assert "GetTextFaceW" in windows
 assert "AddFontMemResourceEx" in windows
 assert "refusing silent font substitution" in linux
 
+# Screenshot review: guard compact UI text and disabled-key readability.
+for needle in (
+    ".calc-button:disabled{opacity:.56;}",
+    ".compact .calc-button{min-height:30px;font-size:14px;}",
+    ".compact .brand-title{font-size:18px;}",
+    "font-size:34px;font-weight:400;color:",
+    'background:transparent;color:" + summary + ";border:0;',
+):
+    assert needle in linux_main, f"GTK readability contract missing: {needle}"
+
+
 for needle in (
     "DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2",
     "WM_DPICHANGED",

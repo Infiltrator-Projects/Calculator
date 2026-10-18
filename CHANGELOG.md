@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.54 - 2026-10-18
+
+- Improve GTK compact Calculator legibility after reviewing running Linux screenshots: larger MB Corpo Text on controls and clearer mode, memory and status labels.
+- Use existing Common summary/text semantic roles for readable Night/Day contrast rather than private colours; make inactive keys distinguishable without becoming invisible.
+- Slightly enlarge A Screen2 numerical results and A Title Cond branding while preserving layout geometry, arithmetic and verified 23-font packaging.
+
 ## 0.2.53 - 2026-10-18
 
 - Align Calculator's Windows and iPhone font resources with five verified 23-face MB Corpo roles: S Text Regular/Bold, S Text Cond Bold, A Title Cond and A Screen2 Cond.

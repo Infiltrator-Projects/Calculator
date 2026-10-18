@@ -1486,15 +1486,15 @@ void apply_css(GtkWidget* window) {
         ".shell{padding:" + std::to_string(metrics.shell_padding) + "px;}"
         ".calculator-column{background:" + background + ";}"
         ".header{margin-bottom:0;}"
-        ".brand-title{font-family:\"" + brand + "\";font-size:18px;font-weight:400;color:" + heading + ";}"
-        ".toolbar-button{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";background:" + surface + ";color:" + muted + ";border:1px solid " + border + ";"
+        ".brand-title{font-family:\"" + brand + "\";font-size:19px;font-weight:400;color:" + heading + ";}"
+        ".toolbar-button{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";background:" + surface + ";color:" + text + ";border:1px solid " + border + ";"
             "border-radius:" + std::to_string(design.small_radius) + "px;min-height:30px;padding:0 " +
-            std::to_string(design.control_spacing) + "px;font-size:12px;font-weight:700;}"
+            std::to_string(design.control_spacing) + "px;font-size:13px;font-weight:700;}"
         ".toolbar-button:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + ";}"
         ".mode-strip{background:" + surface + ";border:1px solid " + border + ";border-radius:" + std::to_string(design.control_radius) + "px;padding:" +
             std::to_string(design.compact_spacing / 2U) + "px;}"
-        ".mode-tab{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";background:transparent;color:" + kicker + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
-            "min-height:30px;font-size:11px;font-weight:700;padding:0 8px;}"
+        ".mode-tab{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";background:transparent;color:" + summary + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
+            "min-height:30px;font-size:12px;font-weight:700;padding:0 8px;}"
         ".mode-tab:hover{background:" + surface_hover + ";color:" + text + ";}"
         ".mode-tab.selected{background:" + primary + ";color:" + primary_text + ";}"
         ".display{background:" + panel + ";border:1px solid " + status_border + ";border-radius:" +
@@ -1503,22 +1503,22 @@ void apply_css(GtkWidget* window) {
         ".expression{background:" + input + ";color:" + summary + ";border:0;border-radius:" + std::to_string(design.small_radius) + "px;"
             "padding:4px 8px;min-height:20px;font-size:13px;outline:none;box-shadow:none;}"
         ".expression:focus{border:0;outline:none;box-shadow:none;}"
-        ".result{font-family:\"MB Corpo A Screen2 Cond WEB\",\"" + brand + "\";font-size:30px;font-weight:400;color:" + heading + ";padding-top:2px;}"
-        ".status{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";font-size:10px;font-weight:700;letter-spacing:.04em;color:" + note + ";}"
+        ".result{font-family:\"MB Corpo A Screen2 Cond WEB\",\"" + brand + "\";font-size:34px;font-weight:400;color:" + heading + ";padding-top:2px;}"
+        ".status{font-family:\"MB Corpo S Text WEB Cond\",\"" + ui + "\";font-size:11px;font-weight:700;letter-spacing:.04em;color:" + summary + ";}"
         ".status.fault{color:" + fault + ";}"
         ".calc-button{font-family:\"MB Corpo S Text WEB\",\"" + ui + "\";border:1px solid " + border + ";border-radius:" +
             std::to_string(design.control_radius) + "px;min-height:" +
-            std::to_string(metrics.key_min_height) + "px;font-size:13px;font-weight:700;padding:0;}"
-        ".calc-button:disabled{opacity:.38;}"
+            std::to_string(metrics.key_min_height) + "px;font-size:14px;font-weight:700;padding:0;}"
+        ".calc-button:disabled{opacity:.56;}"
         ".calc-button.number{background:" + card + ";color:" + title + ";}"
         ".calc-button.number:hover{background:" + card_hover + ";border-color:" + accent_hover + ";}"
         ".calc-button.operation{background:" + operation + ";color:" + text + ";}"
         ".calc-button.operation:hover{background:" + operation_hover + ";border-color:" + accent_hover + ";}"
-        ".calc-button.utility{background:" + surface + ";color:" + muted + ";font-size:12px;}"
+        ".calc-button.utility{background:" + surface + ";color:" + summary + ";font-size:13px;}"
         ".calc-button.utility:hover{background:" + surface_hover + ";color:" + heading + ";border-color:" + accent_hover + ";}"
         ".calc-button.utility.selected{background:" + selected + ";color:" + selected_summary + ";border-color:" + accent_hover + ";}"
-        ".calc-button.memory-button{background:transparent;color:" + muted + ";border-color:transparent;"
-            "border-radius:" + std::to_string(design.small_radius) + "px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:11px;}"
+        ".calc-button.memory-button{background:transparent;color:" + summary + ";border-color:transparent;"
+            "border-radius:" + std::to_string(design.small_radius) + "px;min-height:" + std::to_string(metrics.memory_height) + "px;font-size:12px;}"
         ".calc-button.memory-button:hover{background:" + surface_hover + ";color:" + title + ";border-color:transparent;}"
         ".calc-button.clear{background:" + card + ";color:" + warning_muted + ";border-color:" + warning_border + ";}"
         ".calc-button.clear:hover{background:" + card_hover + ";color:" + warning + ";border-color:" + warning + ";}"
@@ -1543,9 +1543,9 @@ void apply_css(GtkWidget* window) {
         ".tool-output text selection{background:" + selected + ";color:" + selected_summary + ";}"
         ".calc-button:focus,.toolbar-button:focus,.mode-tab:focus{outline:2px solid " +
             accent_hover + ";outline-offset:1px;}"
-        ".compact .brand-title{font-size:17px;}"
+        ".compact .brand-title{font-size:18px;}"
         ".compact .display{padding:7px;}"
-        ".compact .calc-button{min-height:30px;font-size:13px;}"
+        ".compact .calc-button{min-height:30px;font-size:14px;}"
         ".compact .mode-tab{min-height:25px;}";
 
     if (!css_provider) {

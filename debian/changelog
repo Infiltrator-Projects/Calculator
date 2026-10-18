@@ -1,3 +1,10 @@
+calculator (0.2.54) unstable; urgency=medium
+
+  * Improve compact GTK control legibility and the MB Corpo Screen2 display.
+  * Preserve native layout, shared Day/Night roles and arithmetic behaviour.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 18 Oct 2026 17:20:00 +1100
+
 calculator (0.2.53) unstable; urgency=medium
 
   * Embed five independently verified extended MB Corpo families in the
