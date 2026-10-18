@@ -24,7 +24,7 @@ dpkg-deb -e "$package" "$control_dir"
 required=(
   './Programs/calculator'
   './etc/profile.d/91-infiltrator-calculator-path.sh'
-  './usr/lib/calculator/ensure-native-fonts'
+  './usr/lib/calculator/ensure-extended-fonts'
   './usr/share/applications/net.ssmith.calculator.desktop'
   './usr/share/icons/hicolor/scalable/apps/calculator.svg'
   './usr/share/app-install/icons/calculator.svg'
@@ -72,13 +72,34 @@ if grep -Fqx './System/Programs/' "$listing"; then
   echo "The obsolete /System/Programs split must not return." >&2
   exit 1
 fi
-if grep -Eq 'mb_corpo_.*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf$' "$listing"; then
+if grep -Eq '(mb_corpo_|daimler_).*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf
   echo "Calculator must not package duplicate MB Corpo font binaries." >&2
   exit 1
 fi
 
-grep -Fq '/usr/lib/calculator/ensure-native-fonts' "$control_dir/postinst" || {
-  echo "Calculator postinst must establish the native font cache." >&2
+grep -Fq '/usr/lib/calculator/ensure-extended-fonts' "$control_dir/postinst" || {
+  echo "Calculator postinst must establish the verified 23-face native font cache." >&2
+  exit 1
+}
+if grep -Eq '(rm|rmdir).*System/Resources/Fonts' "$control_dir"/*; then
+  echo "Calculator uninstall scripts must never remove shared native fonts." >&2
+  exit 1
+fi
+
+if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' "$listing"; then
+  echo "Calculator package leaked Common development/runtime payloads." >&2
+  cat "$listing" >&2
+  exit 1
+fi
+
+echo "Debian package contract passed: $package"
+ "$listing"; then
+  echo "Calculator must not package duplicate MB Corpo font binaries." >&2
+  exit 1
+fi
+
+grep -Fq '/usr/lib/calculator/ensure-extended-fonts' "$control_dir/postinst" || {
+  echo "Calculator postinst must establish the verified 23-face native font cache." >&2
   exit 1
 }
 if grep -Eq '(rm|rmdir).*System/Resources/Fonts' "$control_dir"/*; then
