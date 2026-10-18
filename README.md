@@ -12,7 +12,7 @@ The project is deliberately larger in ambition than a four-function calculator, 
 
 **Version authority:** [`VERSION`](VERSION); CI rejects release-metadata drift before any platform build
 **Language:** C++17 shared calculation core, GTK4 Linux shell, native Win32 Windows shell, SwiftUI iPhone shell with Objective-C++ bridge
-**Shared foundation:** Common 1.19.46
+**Shared foundation:** exact pinned [Libraries/Common](https://github.com/Infiltrator-Projects/Libraries) gitlink in `src/infiltratr-common` (version and commit verified by CMake)
 **Design contract:** shared Design v1
 **Licence:** GPL-3.0-or-later
 
