@@ -15,8 +15,6 @@ override_dh_install:
 	dh_install
 	# MB Corpo is a persistent native machine resource, not Calculator payload.
 	rm -rf "$(CURDIR)/debian/calculator/usr/share/fonts/truetype/calculator"
-	install -D -m 0755 src/infiltratr-common/cmake/InfiltratrEnsureNativeFonts.sh \
-		"$(CURDIR)/debian/calculator/usr/lib/calculator/ensure-native-fonts"
 	install -D -m 0755 src/infiltratr-common/cmake/InfiltratrEnsureExtendedFonts.sh \
 		"$(CURDIR)/debian/calculator/usr/lib/calculator/ensure-extended-fonts"
 	install -D -m 0644 debian/calculator.svg \

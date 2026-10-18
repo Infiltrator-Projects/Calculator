@@ -1,8 +1,8 @@
 calculator (0.2.52) unstable; urgency=medium
 
   * Pin Common 1.19.57 for the immutable 23-face shared font catalogue.
-  * Install and invoke its verified extended native font bootstrap after the
-    legacy bootstrap, preserving independently installable typography.
+  * Invoke only the verified extended native font bootstrap, preventing the
+    retired three-face font names being recreated on a new installation.
 
  -- Shannon Smith <infiltratr@yandex.com>  Sun, 18 Oct 2026 16:25:00 +1100
 

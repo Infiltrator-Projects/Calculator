@@ -3,7 +3,6 @@ set -e
 
 case "${1:-}" in
     configure)
-        /usr/lib/calculator/ensure-native-fonts
         /usr/lib/calculator/ensure-extended-fonts
         ;;
 esac
