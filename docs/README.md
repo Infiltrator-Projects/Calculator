@@ -1,5 +1,7 @@
 # Documentation
 
+[InfiltratorOS product-family and UI contract](https://github.com/Infiltrator-Projects/InfiltratorOS/blob/main/docs/PRODUCT-FAMILY.md) governs the shared identity, design roles, typography, native installation and independent operation of Calculator, System Monitor and Files. Calculator's [UI parity contract](UI_PARITY.md) remains authoritative for its own platform-shell composition and controller semantics.
+
 This directory is the canonical documentation entry point for Calculator. The Infiltrator project family uses the same baseline document roles across repositories so readers can move between projects without relearning the structure.
 
 ## Canonical baseline

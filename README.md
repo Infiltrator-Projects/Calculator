@@ -2,6 +2,8 @@
 
 # Calculator
 
+**InfiltratorOS product family:** [InfiltratorOS](https://github.com/Infiltrator-Projects/InfiltratorOS) · [System Monitor](https://github.com/Infiltrator-Projects/System-Monitor) · [Calculator](https://github.com/Infiltrator-Projects/Calculator) · [Files](https://github.com/Infiltrator-Projects/Files). Independently installable components, one [product-family and UI contract](https://github.com/Infiltrator-Projects/InfiltratorOS/blob/main/docs/PRODUCT-FAMILY.md).
+
 **Project copyright:** © 1993-2026 Shannon Smith
 
 Calculator is a native cross-platform calculator for the software family, with first-class Linux, Windows and iPhone interfaces.
