@@ -21,6 +21,8 @@ Supported forms:
 
 Example: `ohm 12 2`.
 
+Operands and final results must fit finite binary64. Derived products/ratios use Scientific arithmetic before checked conversion where needed; overflow and non-zero underflow are explicit errors rather than plausible zero output.
+
 ## Unit conversion
 
 Form: `value FROM TO`.
@@ -65,6 +67,8 @@ The ASCII names are also accepted by the Scientific expression parser.
 
 Enter comma- or space-separated finite values. Output includes count, sum, mean, median, Q1/Q3, min/max/range, population variance/stddev and sample variance/stddev when defined.
 
+Non-finite intermediate accumulators or derived statistics fail explicitly. The tool does not return successful infinity/NaN rows for finite but excessively large input samples.
+
 ## Graphing
 
 Form: `expression ; xmin ; xmax ; samples`.
@@ -75,7 +79,7 @@ Example: `sin(x) ; -6.283185307 ; 6.283185307 ; 241`.
 
 ## Equation solving
 
-Form: `expression ; xmin ; xmax`. The solver finds validated real roots of `expression = 0` using deterministic interval scanning and safeguarded bisection. This is numerical real root solving, not symbolic algebra.
+Form: `expression ; xmin ; xmax`. The solver estimates real roots of `expression = 0` using deterministic interval scanning, safeguarded bisection and stationary-candidate refinement. Residual checks are scale independent: a tiny non-zero constant has no roots, and sampled discontinuities do not qualify as roots. Both endpoints and their span must fit finite binary64. Finite sampling and coordinate precision limit completeness and distinguishability of extremely small minima; this is numerical solving rather than a proof or symbolic algebra.
 
 Example: `x^2-2 ; 0 ; 2`.
 

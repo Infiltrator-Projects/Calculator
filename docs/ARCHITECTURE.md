@@ -38,7 +38,7 @@ Higher layers may adapt lower-layer state for presentation. Lower layers must no
 
 `src/core/scientific.*` owns the arbitrary-precision real/complex expression domain used by Scientific calculations and precise reusable variables. It implements operator precedence, parentheses, constants, mathematical functions, postfix percentage/factorial operations and finite-result validation without routing Scientific intermediates through binary64. `src/core/calculator.*` remains the binary64 foundation used by Standard mode and supporting finite-real facilities.
 
-For the binary64 expression path, Calculator decides where its grammar expects a number and Common 1.19.35 `infiltratr_parse_double_token()` owns locale-independent binary64 token conversion. Scientific decimal literals are parsed directly into the multiprecision domain. This shares conversion mechanics without transferring Calculator grammar into Common or lowering Scientific input through `double`.
+For the binary64 expression path, Calculator decides where its grammar expects a number and Common 1.19.57 `infiltratr_parse_double_token()` owns locale-independent binary64 token conversion. Scientific decimal literals are parsed directly into the multiprecision domain. This shares conversion mechanics without transferring Calculator grammar into Common or lowering Scientific input through `double`.
 
 Elementary unary/scientific operations are exposed once by the calculation core through `apply_real_function()`. The expression parser and interactive controller consume that contract rather than carrying controller/platform copies of square-root, reciprocal, trigonometric and logarithmic semantics.
 
@@ -90,19 +90,21 @@ Scientific live preview, precision and identifier completion are controller-owne
 
 `src/app/main.cpp` owns GTK widget composition, CSS generation, system-theme observation, font discovery and event/window orchestration. `src/app/linux_persistence.*` is the sole Linux storage adapter for XDG locations, compatibility readers and durable writes. The entry point therefore adapts Controller state without also owning persistence mechanics.
 
+The `/cli` entry point uses that same adapter and Controller document for reusable names, angle unit and calculation precision, while evaluation/history remain process-local. Saving holds a stable sidecar lock across read, three-way merge and Common's private atomic publication. Controller merges changed preferences and Session merges named definitions/variables against the process's load/save baseline; unrelated edits survive, conflicting edits fail without replacement, and malformed durable state is preserved. A successful save records the process's own baseline so later saves do not remove concurrent names it has not loaded. Native windows do not live-refresh external definitions; reopening reloads them.
+
 ### Windows
 
 `src/app/windows_main.cpp` owns HWND/GDI composition, native font selection and message/event orchestration. `src/app/windows_platform.*` owns reusable Win32 text/DPI/theme primitives; `src/app/windows_persistence.*` is the sole Calculator Registry-storage adapter. The main translation unit no longer mixes rendering choreography with storage policy and reusable native mechanics.
 
 ### iPhone
 
-The iPhone interface is SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary to the same C++ Controller. SwiftUI owns touch-native composition and platform presentation; expression edits and calculator commands remain shared semantics.
+The iPhone interface is SwiftUI. `ios/Bridge/CalculatorBridge.mm` is the language boundary to the same C++ Controller. SwiftUI owns touch-native composition and platform presentation; expression edits and calculator commands remain shared semantics. The bridge derives key rows from the canonical C++ button arrays and obtains dynamic titles from Controller, so Swift carries no second keypad/label catalogue.
 
 XcodeGen consumes Calculator's own `src/core` and `src/ui` directories as cohesive source trees. This avoids a second per-file Calculator manifest that could drift from the desktop build. Common is intentionally different: only its portable C subset belongs in iOS, and `tests/test_common_contract.py` derives the expected portable list from Common's own CMake contract.
 
 ## Common boundary
 
-Common is an exact git-submodule dependency. The current authority is Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. CMake and `tests/test_common_contract.py` validate both public VERSION and exact gitlink because a different commit carrying the same version text is not an interchangeable release input.
+Common is an exact git-submodule dependency. The current authority is Common 1.19.57 at commit `0cfa4a36cf84034fd77d5c17a59990f068d5c1fb`. CMake and `tests/test_common_contract.py` validate both public VERSION and exact gitlink because a different commit carrying the same version text is not an interchangeable release input.
 
 Common owns product-neutral numeric parsing, deterministic ASCII helpers, checked arithmetic, durable POSIX I/O, Design v1 semantic palette/metrics, typography identity and immutable MB Corpo asset provenance. Calculator consumes only Common's published headers. Private Common headers are forbidden by contract tests.
 
@@ -158,7 +160,7 @@ Common is a build/link dependency only. Calculator adds it with `EXCLUDE_FROM_AL
 
 History is structured domain state rather than a platform-owned text log. Each entry records mode, input, exact rendered output and success state. Programmer entries additionally preserve radix, width and signed-display context so recall is deterministic. Platform shells render/select entries but do not reconstruct mode state or reinterpret history.
 
-## Common 1.19.35 semantic presentation boundary
+## Common semantic presentation boundary
 
 Calculator treats Common's semantic design palette as data, not as a product-specific widget implementation. Native shells map only roles whose semantics apply: headings/results, summaries/input text, kicker/detail/note text, status borders, selected summaries, warnings and focus/hover accents. Connection-specific roles remain unused because Calculator has no connection concept.
 

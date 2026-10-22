@@ -361,7 +361,7 @@ std::string format_programmer(std::uint64_t value,
                               IntegerWidth width,
                               bool signed_display) {
     value &= mask_for(width);
-    if (signed_display) {
+    if (signed_display && base == ProgrammerBase::Decimal) {
         const unsigned bits = static_cast<unsigned>(width);
         std::int64_t signed_value = static_cast<std::int64_t>(value);
         if (bits < 64 && (value & (1ULL << (bits - 1U)))) {

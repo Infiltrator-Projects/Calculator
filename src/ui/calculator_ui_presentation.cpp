@@ -16,11 +16,8 @@ std::vector<AdditionalResult> Controller::additional_results() const {
         // Programmer has a well-defined zero bit-pattern even before the user
         // types an expression. Keep Bases/Bits useful in that initial state and
         // consistent with programmer_bits(), which already exposes zero bits.
-        const std::string expression =
-            state_.expression.empty() ? "0" : state_.expression;
-        const ProgrammerResult result = evaluate_programmer(
-            expression, state_.programmer_base,
-            state_.programmer_width);
+        const ProgrammerResult result = state_.expression.empty()
+            ? ProgrammerResult{true, 0U, {}} : programmer_cache_;
         if (!result.ok) {
             return {{"Error", result.error}};
         }
@@ -43,10 +40,7 @@ std::vector<AdditionalResult> Controller::additional_results() const {
     if (state_.expression.empty()) return {};
 
     if (state_.mode == Mode::Scientific) {
-        const ScientificResult result =
-            session_.preview_scientific(
-                state_.expression, state_.angle_unit,
-                scientific_digits_);
+        const ScientificResult& result = scientific_cache_;
         if (!result.ok) {
             return {{"Error", result.error}};
         }
@@ -63,7 +57,7 @@ std::vector<AdditionalResult> Controller::additional_results() const {
         };
     }
 
-    const Result result = evaluate_standard(state_.expression);
+    const Result& result = real_cache_;
     if (!result.ok) {
         return {{"Error", result.error}};
     }

@@ -89,6 +89,15 @@ int main(){
     const auto graph=evaluate(AdvancedTool::Graph,"sin(x);-3.141592653589793;3.141592653589793;9");
     const auto precise_graph=evaluate(AdvancedTool::Graph,"real(i*x);-1;1;3");
     check(graph.ok&&graph.points.size()==9U,"graph points");
+    const auto wide_graph=evaluate(AdvancedTool::Graph,"x;0;1e308;3");
+    check(wide_graph.ok&&wide_graph.points.size()==3U&&
+          wide_graph.points[1].valid&&wide_graph.points[1].x==5e307&&
+          wide_graph.points[2].valid&&wide_graph.points[2].x==1e308,
+          "graph geometry avoids intermediate coordinate overflow");
+    check(!evaluate(AdvancedTool::Graph,"x;-1e308;1e308;3").ok,
+          "graph rejects unrepresentable interval span");
+    check(!evaluate(AdvancedTool::EquationSolver,"x;-1e308;1e308").ok,
+          "solver rejects unrepresentable interval span");
     check(!evaluate(AdvancedTool::Graph,"x;0;1;1").ok,
           "graph sample lower bound");
     check(!evaluate(AdvancedTool::Graph,"x;0;1;4097").ok,
@@ -104,6 +113,30 @@ int main(){
     check(roots.ok&&roots.output.find("1.414213")!=std::string::npos,"equation root");
     const auto tangent=evaluate(AdvancedTool::EquationSolver,"x^2;-1;2");
     check(tangent.ok&&tangent.output.find("Roots (1)")!=std::string::npos,"equation even root");
+    for(const auto scale:{"1e-20","1e20","1e-4000"}) {
+        check(!evaluate(AdvancedTool::EquationSolver,
+              std::string(scale)+";0;1").ok,"non-zero constant has no roots at any scale");
+        check(contains(evaluate(AdvancedTool::EquationSolver,
+              std::string(scale)+"*(x-0.5);0;1"),"Roots (1)"),"root count is scale independent");
+        check(contains(evaluate(AdvancedTool::EquationSolver,
+              std::string(scale)+"*(x-0.3)^2;0;1"),"Roots (1)"),"scaled stationary root");
+    }
+    check(!evaluate(AdvancedTool::EquationSolver,"(x-0.3)^2+1e-20;0;1").ok,
+          "positive stationary minimum is not a root");
+    check(!evaluate(AdvancedTool::EquationSolver,"1/(x-0.3);0;1").ok,
+          "pole is not a root");
+    check(!evaluate(AdvancedTool::Engineering,"power 1e308 1e308").ok,
+          "engineering overflow cannot become zero watts");
+    check(!evaluate(AdvancedTool::Engineering,"power 1e-308 1e-308").ok,
+          "engineering underflow cannot become zero watts");
+    check(evaluate(AdvancedTool::Engineering,"resonance 1e-308 1e-308").ok,
+          "finite engineering result survives intermediate underflow");
+    check(contains(evaluate(AdvancedTool::Network,"transfer 1e308 1e308"),"8 s"),
+          "transfer ratio survives intermediate overflow");
+    check(!evaluate(AdvancedTool::Statistics,"1e308 1e308").ok,
+          "statistics sum overflow is explicit");
+    check(!evaluate(AdvancedTool::Statistics,"-1e308 1e308").ok,
+          "statistics cannot succeed with infinity or NaN");
 
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"3/10"),"exact decimal fraction");
     check(contains(evaluate(AdvancedTool::ExactDecimal,"0.1+0.2"),"0.3"),"exact decimal presentation");

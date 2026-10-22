@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <string>
 #include <string_view>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
 
 namespace calculator::app {
 namespace {
@@ -105,28 +108,49 @@ void LinuxPersistence::load_legacy_display_preferences() {
     g_key_file_unref(key); g_free(path);
 }
 
-void LinuxPersistence::save_controller_state() const {
+bool LinuxPersistence::save_controller_state() const {
     gchar* directory = g_build_filename(g_get_user_data_dir(), kProductDirectory, nullptr);
-    if (ensure_private_directory(directory)) {
-        gchar* path = g_build_filename(directory, "state-v1", nullptr);
-        const std::string text = controller_.persistent_state_text();
-        if (!write_private_file(path, text)) g_printerr("Calculator could not persist shared state to %s\n", path);
-        g_free(path);
+    if (!ensure_private_directory(directory)) { g_free(directory); return false; }
+    gchar* path = g_build_filename(directory, "state-v1", nullptr);
+    gchar* lock_path = g_build_filename(directory, "state.lock", nullptr);
+    const int lock = ::open(lock_path, O_CREAT|O_RDWR|O_CLOEXEC|O_NOFOLLOW, 0600);
+    g_free(lock_path);
+    std::string latest, merged;
+    bool saved = false;
+    // The stable sidecar lock spans read/merge/atomic publication. Locking the
+    // document inode itself would fail when Common replaces it by rename.
+    if (lock >= 0 && ::flock(lock, LOCK_EX|LOCK_NB) == 0) {
+        const bool read = read_text_file(path, latest);
+        if (((read && !latest.empty()) || !g_file_test(path, G_FILE_TEST_EXISTS)) &&
+            controller_.merge_persistent_state_text(baseline_state_, latest, merged)) {
+            saved = write_private_file(path, merged);
+            if (saved) baseline_state_ = controller_.persistent_state_text();
+        }
+        (void)::flock(lock, LOCK_UN);
     }
+    if (lock >= 0) ::close(lock);
+    if (!saved) g_printerr("Calculator could not save shared state (I/O, busy or concurrent edit conflict): %s\n", path);
+    g_free(path);
     g_free(directory);
+    return saved;
 }
 
 bool LinuxPersistence::load_controller_state() {
-    if (controller_state_loaded_) return true;
+    if (controller_state_loaded_) return shared_semantic_state_;
     controller_state_loaded_ = true;
     gchar* path = g_build_filename(g_get_user_data_dir(), kProductDirectory, "state-v1", nullptr);
     std::string contents;
     const bool found = read_text_file(path, contents);
     g_free(path);
-    if (found && controller_.load_persistent_state_text(contents))
-        return contents.rfind("CALCULATOR_STATE 2\n", 0U) == 0U;
+    if (found && controller_.load_persistent_state_text(contents)) {
+        baseline_state_=controller_.persistent_state_text();
+        shared_semantic_state_=contents.rfind("CALCULATOR_STATE 2\n", 0U)==0U;
+        return shared_semantic_state_;
+    }
     if (found) g_printerr("Calculator ignored malformed shared state document.\n");
     load_legacy_functions(); load_legacy_variables(); load_legacy_display_preferences();
+    // With no durable document the baseline is the default state, so migrated
+    // names/preferences are treated as local additions during the first save.
     return false;
 }
 

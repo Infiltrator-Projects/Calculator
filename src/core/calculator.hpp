@@ -15,6 +15,13 @@ struct FunctionDefinition {
     std::vector<std::string> parameters;
     std::string expression;
     std::string description;
+    bool operator==(const FunctionDefinition& other) const noexcept {
+        return parameters == other.parameters && expression == other.expression &&
+               description == other.description;
+    }
+    bool operator!=(const FunctionDefinition& other) const noexcept {
+        return !(*this == other);
+    }
 };
 using Functions = std::unordered_map<std::string, FunctionDefinition>;
 

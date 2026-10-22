@@ -603,7 +603,7 @@ int main() {
     CHECK(controller.history_count() == 2);
     CHECK(controller.history_entry(0)->kind ==
           calculator::HistoryKind::Programmer);
-    CHECK(controller.history_entry(0)->output == "-1");
+    CHECK(controller.history_entry(0)->output == "FF");
 
     controller.set_mode(Mode::Standard);
     CHECK(controller.recall_history(0));
@@ -614,7 +614,7 @@ int main() {
           calculator::IntegerWidth::Bits8);
     CHECK(controller.state().programmer_signed);
     CHECK(controller.state().expression == "FF");
-    CHECK(controller.state().result == "-1");
+    CHECK(controller.state().result == "FF");
 
     CHECK(controller.recall_history(1));
     CHECK(controller.state().mode == Mode::Standard);
@@ -789,6 +789,64 @@ int main() {
     CHECK(latency_ms < 5.0);
     std::cout << "Average controller keystroke latency: "
               << latency_ms << " ms\n";
+
+    // Result consumers must agree after assignments, '_' updates and native
+    // text synchronisation. Presentation never starts another evaluation.
+    Controller authoritative;
+    authoritative.set_mode(Mode::Scientific);
+    authoritative.set_expression("2");
+    authoritative.dispatch(Command::Equals);
+    authoritative.set_expression("_+1");
+    authoritative.dispatch(Command::Equals);
+    CHECK(authoritative.state().result == "3");
+    CHECK(authoritative.additional_results().front().value == "3");
+    authoritative.set_expression(authoritative.state().expression);
+    authoritative.dispatch(Command::MemoryStore);
+    CHECK(authoritative.memory_entry(0)->scientific.real == "3");
+    authoritative.dispatch(Command::Square);
+    CHECK(authoritative.state().result == "9");
+    CHECK(authoritative.recall_history(0));
+    CHECK(authoritative.state().result == "3");
+    CHECK(authoritative.additional_results().front().value == "3");
+    authoritative.set_expression("x=10");
+    authoritative.dispatch(Command::Equals);
+    authoritative.set_expression("x=x+1");
+    authoritative.dispatch(Command::Equals);
+    CHECK(authoritative.state().result == "11");
+    CHECK(authoritative.additional_results().front().value == "11");
+    authoritative.set_expression("rand");
+    authoritative.dispatch(Command::Equals);
+    const auto random_result = authoritative.state().result;
+    CHECK(authoritative.additional_results().front().value == random_result);
+    CHECK(authoritative.additional_results().front().value == random_result);
+    authoritative.set_expression("rand");
+    authoritative.dispatch(Command::MemoryStore);
+    CHECK(authoritative.memory_entry(0)->scientific.real == random_result);
+
+    Controller angle_refresh;
+    angle_refresh.set_mode(Mode::Scientific);
+    angle_refresh.set_expression("sin(90)");
+    angle_refresh.dispatch(Command::CycleAngleUnit);
+    CHECK(angle_refresh.state().angle_unit == calculator::AngleUnit::Radians);
+    CHECK(angle_refresh.state().result != "1");
+    CHECK(angle_refresh.additional_results().front().value ==
+          angle_refresh.state().result);
+    angle_refresh.dispatch(Command::MemoryStore);
+    CHECK(angle_refresh.memory_entry(0)->scientific.real ==
+          angle_refresh.state().result);
+
+    Controller precision_reload;
+    precision_reload.set_mode(Mode::Scientific);
+    precision_reload.set_scientific_digits(1000);
+    precision_reload.set_expression("retained=1/7");
+    precision_reload.dispatch(Command::Equals);
+    const auto retained_value = precision_reload.state().result;
+    Controller precision_reloaded;
+    CHECK(precision_reloaded.load_persistent_state_text(
+        precision_reload.persistent_state_text()));
+    precision_reloaded.set_expression("retained");
+    CHECK(precision_reloaded.scientific_digits() == 1000U);
+    CHECK(precision_reloaded.state().result == retained_value);
 
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";

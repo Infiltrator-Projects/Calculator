@@ -75,10 +75,9 @@ ThemeMode theme_mode = ThemeMode::System;
 bool effective_dark_theme = true;
 
 
-// The original three pinned Common faces remain the verified minimum.
-// When InfiltratorOS provides the newer 23-face shared cache, GTK selects
-// task-specific Text, Condensed and Screen families for the wider UI.
-// The older verified faces stay as fallback for standalone installations.
+// Package configuration provisions the verified shared 23-face cache on both
+// standalone Linux and InfiltratorOS. Task-specific roles select Text,
+// Condensed and Screen families from that cache.
 std::string hex_colour(std::uint32_t value) {
     char buffer[8] = {};
     std::snprintf(buffer, sizeof(buffer), "#%06X", value & 0xFFFFFFU);
@@ -1850,6 +1849,11 @@ gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
 
 void configure_linux_renderer_for_display();
 
+gboolean finish_profile_training(gpointer application) {
+    g_application_quit(G_APPLICATION(application));
+    return G_SOURCE_REMOVE;
+}
+
 void activate(GtkApplication* app, gpointer) {
     const auto& metrics = calculator::ui::kDesktopMetrics;
 
@@ -2078,6 +2082,15 @@ void activate(GtkApplication* app, gpointer) {
         G_CALLBACK(on_window_default_size_changed), nullptr);
 
     gtk_widget_grab_focus(expression_entry);
+
+    // A one-shot, opt-in installer run must exit normally so GCC can flush
+    // GTK startup/rendering profile counters. No timer runs in normal use.
+    const char* training_seconds=g_getenv("CALCULATOR_TRAINING_SECONDS");
+    std::uint64_t seconds=0;
+    if(training_seconds && infiltratr_parse_u64_range(
+           training_seconds,10U,1U,30U,&seconds)) {
+        g_timeout_add_seconds(static_cast<guint>(seconds),finish_profile_training,app);
+    }
 }
 
 void configure_linux_renderer_for_display() {

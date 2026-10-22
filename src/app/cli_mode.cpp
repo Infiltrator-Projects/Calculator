@@ -1,12 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "cli_mode.hpp"
+#include "linux_persistence.hpp"
 
 #include "../core/session.hpp"
 
-#include <infiltratr/posix.h>
-
-#include <cstdlib>
-#include <filesystem>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -14,61 +11,14 @@
 namespace calculator::app {
 namespace {
 
-std::filesystem::path user_function_path() {
-    if (const char* xdg = std::getenv("XDG_DATA_HOME"); xdg && *xdg) {
-        return std::filesystem::path(xdg) /
-               "calculator" / "custom-functions";
+bool solve(calculator::Session& session, const ui::Controller& settings,
+           const std::string& expression) {
+    if(expression.size()>ui::Controller::kMaxExpressionBytes) {
+        std::cerr << "Error: expression exceeds the input limit\n";
+        return false;
     }
-    if (const char* home = std::getenv("HOME"); home && *home) {
-        return std::filesystem::path(home) /
-               ".local" / "share" / "calculator" /
-               "custom-functions";
-    }
-    return {};
-}
-
-void load_functions(calculator::Session& session) {
-    const auto path = user_function_path();
-    if (path.empty()) return;
-
-    const std::string native_path = path.string();
-    char* contents = nullptr;
-    std::size_t length = 0U;
-    const InfiltratrIoResult status =
-        infiltratr_read_text_file_alloc(
-            native_path.c_str(), &contents, &length);
-    if (status != INFILTRATR_IO_OK) {
-        std::free(contents);
-        return;
-    }
-
-    const bool loaded = session.load_function_definitions_text(
-        std::string_view(contents, length));
-    std::free(contents);
-    if (!loaded) {
-        std::cerr << "Warning: ignored malformed custom-functions file: "
-                  << native_path << '\n';
-    }
-}
-
-void save_functions(const calculator::Session& session) {
-    const auto path = user_function_path();
-    if (path.empty()) return;
-
-    const std::string directory = path.parent_path().string();
-    if (infiltratr_mkdir_parents(directory.c_str(), 0700U) != 0) return;
-
-    const std::string text = session.function_definitions_text();
-    const std::string native_path = path.string();
-    (void)infiltratr_atomic_file_write_bytes(
-        native_path.c_str(), INFILTRATR_ATOMIC_FILE_PRIVATE,
-        text.data(), text.size());
-}
-
-bool solve(calculator::Session& session, const std::string& expression) {
     const auto result = session.evaluate_scientific(
-        expression, calculator::AngleUnit::Degrees,
-        calculator::kScientificDefaultDigits);
+        expression, settings.state().angle_unit, settings.scientific_digits());
     if (!result.ok) {
         std::cerr << "Error: " << result.error << '\n';
         return false;
@@ -76,7 +26,7 @@ bool solve(calculator::Session& session, const std::string& expression) {
     std::cout << (result.display.empty()
                       ? calculator::format_scientific_value(
                             result.value,
-                            calculator::kScientificDefaultDigits)
+                            settings.scientific_digits())
                       : result.display)
               << '\n';
     return true;
@@ -85,17 +35,41 @@ bool solve(calculator::Session& session, const std::string& expression) {
 } // namespace
 
 int run_cli_mode(int argc, char** argv) {
-    calculator::Session session;
-    load_functions(session);
-
-    if (argc == 1) {
-        const bool ok = solve(session, argv[0]);
-        save_functions(session);
-        return ok ? 0 : 1;
-    }
     if (argc > 1) {
         std::cerr << "Usage: calculator /cli [expression]\n";
         return 2;
+    }
+
+    // The CLI has process-local evaluation/history but consumes and updates
+    // the same durable Controller document as GTK. It changes only reusable
+    // names, preserving GUI mode, precision and other semantic preferences.
+    ui::Controller settings;
+    LinuxPersistence persistence(settings);
+    (void)persistence.load_controller_state();
+    calculator::Session session;
+    if(!session.load_function_definitions_text(settings.function_definitions_text()) ||
+       !session.load_variables_text(settings.variables_text())) {
+        std::cerr << "Error: cannot load reusable calculator state\n";
+        return 1;
+    }
+    const std::string original_functions=session.function_definitions_text();
+    const std::string original_variables=session.variables_text();
+    const auto save=[&]() {
+        const std::string functions=session.function_definitions_text();
+        const std::string variables=session.variables_text();
+        if(functions==original_functions && variables==original_variables) return true;
+        if(!settings.load_function_definitions_text(functions) ||
+           !settings.load_variables_text(variables) ||
+           !persistence.save_controller_state()) {
+            std::cerr << "Error: reusable state was not saved (I/O or concurrent edit conflict)\n";
+            return false;
+        }
+        return true;
+    };
+
+    if (argc == 1) {
+        const bool ok = solve(session, settings, argv[0]);
+        return save() && ok ? 0 : 1;
     }
 
     std::string line;
@@ -106,10 +80,9 @@ int run_cli_mode(int argc, char** argv) {
             break;
         }
         if (line.empty() || line == "exit" || line == "quit") break;
-        (void)solve(session, line);
+        (void)solve(session, settings, line);
     }
-    save_functions(session);
-    return 0;
+    return save() ? 0 : 1;
 }
 
 } // namespace calculator::app

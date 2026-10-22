@@ -131,6 +131,12 @@ public:
     // own only where/how the bytes are stored.
     std::string persistent_state_text() const;
     bool load_persistent_state_text(std::string_view text);
+    // Merge this instance's changes since baseline into the latest stored
+    // document. Failure leaves output/live state unchanged, including on a
+    // same-field/name conflict. Native adapters own locking and atomic I/O.
+    bool merge_persistent_state_text(std::string_view baseline,
+                                     std::string_view latest,
+                                     std::string& output) const;
 
     unsigned scientific_digits() const noexcept { return scientific_digits_; }
     void set_scientific_digits(unsigned digits);

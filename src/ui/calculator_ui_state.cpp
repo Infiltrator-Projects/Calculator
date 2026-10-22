@@ -58,7 +58,14 @@ bool Controller::recall_history(std::size_t index_from_newest) {
     }
 
     state_.expression = entry->input;
-    refresh_evaluation_cache();
+    if (entry->ok && entry->kind == HistoryKind::Scientific &&
+        entry->scientific_value) {
+        real_cache_ = {};
+        programmer_cache_ = {};
+        scientific_cache_ = {true, *entry->scientific_value, {}, {}};
+    } else {
+        refresh_evaluation_cache();
+    }
     state_.result = entry->output;
     state_.fault = !entry->ok;
     if (!entry->ok) {
@@ -163,6 +170,38 @@ std::string Controller::persistent_state_text() const {
         << "functions-bytes=" << functions.size() << '\n'
         << functions;
     return out.str();
+}
+
+bool Controller::merge_persistent_state_text(
+    std::string_view baseline, std::string_view latest, std::string& output) const {
+    Controller base, merged;
+    if((!baseline.empty() && !base.load_persistent_state_text(baseline)) ||
+       (!latest.empty() && !merged.load_persistent_state_text(latest))) return false;
+    const auto field=[](const auto& before,const auto& local,auto& remote) {
+        if(local==before) return true;
+        if(remote!=before && remote!=local) return false;
+        remote=local;
+        return true;
+    };
+    if(!field(base.state_.mode,state_.mode,merged.state_.mode) ||
+       !field(base.state_.angle_unit,state_.angle_unit,merged.state_.angle_unit) ||
+       !field(base.state_.programmer_base,state_.programmer_base,merged.state_.programmer_base) ||
+       !field(base.state_.programmer_width,state_.programmer_width,merged.state_.programmer_width) ||
+       !field(base.state_.programmer_signed,state_.programmer_signed,merged.state_.programmer_signed) ||
+       !field(base.scientific_digits_,scientific_digits_,merged.scientific_digits_) ||
+       !field(base.display_preferences_.format,display_preferences_.format,merged.display_preferences_.format) ||
+       !field(base.display_preferences_.decimal_places,display_preferences_.decimal_places,merged.display_preferences_.decimal_places) ||
+       !field(base.display_preferences_.group_thousands,display_preferences_.group_thousands,merged.display_preferences_.group_thousands) ||
+       !field(base.display_preferences_.trailing_zeroes,display_preferences_.trailing_zeroes,merged.display_preferences_.trailing_zeroes))
+        return false;
+    auto merged_history_limit=merged.history_limit();
+    if(!field(base.history_limit(),history_limit(),merged_history_limit) ||
+       !merged.session_.merge_reusable_state(base.session_,session_)) return false;
+    merged.set_history_limit(merged_history_limit);
+    std::string document=merged.persistent_state_text();
+    if(document.size()>kMaxPersistentStateBytes) return false;
+    output=std::move(document);
+    return true;
 }
 
 bool Controller::load_persistent_state_text(std::string_view text) {

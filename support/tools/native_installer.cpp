@@ -183,12 +183,14 @@ bool prerequisites_available()
         "/usr/bin/g++",          "/usr/bin/cmake",        "/usr/bin/ctest",
         "/usr/bin/dpkg",
         "/usr/bin/dpkg-buildpackage", "/usr/bin/dpkg-query", "/usr/bin/apt-get",
+        "/usr/bin/dh",           "/usr/bin/xauth",
         "/usr/bin/tar",          "/usr/bin/gzip",         "/usr/bin/xvfb-run",
-        "/usr/bin/timeout"
+        "/usr/bin/timeout",      "/usr/bin/fc-cache",     "/usr/bin/sha256sum"
     };
     for (const char *path : paths)
         if (!executable(path)) return false;
-    return gtk4_available();
+    return (executable("/usr/bin/curl") || executable("/usr/bin/wget")) &&
+           gtk4_available();
 }
 
 void ensure_prerequisites(bool system_package_mode, bool dry_run)
@@ -206,7 +208,7 @@ void ensure_prerequisites(bool system_package_mode, bool dry_run)
     run_required(privileged(
         { "/usr/bin/apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y",
           "build-essential", "cmake", "debhelper-compat", "dpkg-dev", "libgtk-4-dev",
-          "pkg-config", "xvfb", "tar", "gzip", "ca-certificates" },
+          "pkg-config", "xvfb", "xauth", "tar", "gzip", "ca-certificates", "curl", "fontconfig" },
         system_package_mode));
 
     if (!prerequisites_available())
@@ -348,14 +350,13 @@ fs::path find_debian_package(const fs::path &directory, const std::string &versi
     fail("final Calculator Debian package was not produced");
 }
 
-void write_build_info(const fs::path &source_root, const std::string &profile,
-                      const std::string &flags, bool trained_pgo)
+void write_build_info(const fs::path &source_root, const std::string &flags)
 {
     const fs::path path = source_root / ".calculator-native-build-info";
     std::ofstream output(path, std::ios::trunc);
     if (!output) fail("cannot create native build information");
-    output << "Profile: " << profile << '\n';
-    output << "PGO: " << (trained_pgo ? "trained two-pass profile" : "disabled") << '\n';
+    output << "Profile: aggressive\n";
+    output << "PGO: trained two-pass profile\n";
     output << "C/C++ flags: " << flags << '\n';
     output << "Installed by: Calculator hardware-native installer\n";
     if (!output) fail("cannot write native build information");
@@ -377,9 +378,7 @@ void usage()
         << "Calculator hardware-native installer\n\n"
         << "Usage: calculator-<version>-native-installer.run [options]\n\n"
         << "Options:\n"
-        << "  --profile native|aggressive|portable (default: aggressive)\n"
         << "  --jobs NUMBER\n"
-        << "  --skip-tests\n"
         << "  --no-strip\n"
         << "  --dry-run\n"
         << "  --system-package-mode\n"
@@ -400,9 +399,7 @@ int positive_integer(const std::string &text)
 
 int main(int argc, char **argv)
 {
-    std::string profile = "aggressive";
     int jobs = 0;
-    bool skip_tests = false;
     bool no_strip = false;
     bool dry_run = false;
     bool system_package_mode = false;
@@ -413,20 +410,13 @@ int main(int argc, char **argv)
             usage();
             return EXIT_SUCCESS;
         }
-        if (argument == "--profile") {
-            if (++index >= argc) fail("--profile requires a value");
-            profile = argv[index];
-        } else if (argument.rfind("--profile=", 0) == 0) {
-            profile = argument.substr(10U);
-        } else if (argument == "--jobs") {
+        if (argument == "--jobs") {
             if (++index >= argc) fail("--jobs requires a value");
             jobs = positive_integer(argv[index]);
             if (jobs == 0) fail("--jobs requires a positive integer up to 1024");
         } else if (argument.rfind("--jobs=", 0) == 0) {
             jobs = positive_integer(argument.substr(7U));
             if (jobs == 0) fail("--jobs requires a positive integer up to 1024");
-        } else if (argument == "--skip-tests") {
-            skip_tests = true;
         } else if (argument == "--no-strip") {
             no_strip = true;
         } else if (argument == "--dry-run") {
@@ -438,8 +428,6 @@ int main(int argc, char **argv)
         }
     }
 
-    if (profile != "native" && profile != "aggressive" && profile != "portable")
-        fail("profile must be native, aggressive, or portable");
     if (system_package_mode && ::geteuid() != 0)
         fail("--system-package-mode requires root");
     if (::geteuid() == 0 && !system_package_mode)
@@ -448,8 +436,8 @@ int main(int argc, char **argv)
     ensure_prerequisites(system_package_mode, dry_run);
 
     std::cout << "Calculator native installation plan\n"
-              << "  Profile: " << profile << '\n'
-              << "  Tests:   " << (skip_tests ? "skipped" : "enabled") << '\n'
+              << "  Optimisation: native CPU, LTO and trained two-pass PGO\n"
+              << "  Tests:   enabled\n"
               << "  Strip:   " << (no_strip ? "disabled" : "enabled") << '\n';
     if (jobs > 0) std::cout << "  Jobs:    " << jobs << '\n';
     if (dry_run) {
@@ -492,21 +480,16 @@ int main(int argc, char **argv)
         fail("cannot create PGO profile directory");
 
     std::vector<std::string> build_options;
-    if (skip_tests) build_options.emplace_back("nocheck");
     if (no_strip) build_options.emplace_back("nostrip");
     if (jobs > 0) build_options.emplace_back("parallel=" + std::to_string(jobs));
-    if (!build_options.empty())
-        ::setenv("DEB_BUILD_OPTIONS", join_options(build_options).c_str(), 1);
+    // Inherited nocheck flags/profiles must not defeat mandatory training or
+    // final qualification. This package has no optional build-profile modes.
+    if (::setenv("DEB_BUILD_OPTIONS", join_options(build_options).c_str(), 1) != 0 ||
+        ::unsetenv("DEB_BUILD_PROFILES") != 0)
+        fail("cannot set mandatory native-build test policy");
 
-    const bool aggressive = profile == "aggressive";
-    std::string base_flags;
-    std::string base_ldflags;
-    if (profile == "portable") {
-        base_flags = "-O2";
-    } else {
-        base_flags = "-O3 -march=native -mtune=native -flto=auto";
-        base_ldflags = "-flto=auto";
-    }
+    const std::string base_flags = "-O3 -march=native -mtune=native -flto=auto";
+    const std::string base_ldflags = "-flto=auto";
 
     auto set_build_flags = [](const std::string &flags, const std::string &ldflags) {
         if (::setenv("DEB_CFLAGS_MAINT_APPEND", flags.c_str(), 1) != 0 ||
@@ -520,7 +503,7 @@ int main(int argc, char **argv)
     };
 
     std::string final_flags = base_flags;
-    if (aggressive) {
+    {
         const std::string pgo = pgo_directory.string();
         const std::string generate_flags =
             base_flags + " -fprofile-generate=" + pgo + " -fprofile-update=atomic";
@@ -531,40 +514,38 @@ int main(int argc, char **argv)
         run_required(build_command, source_root);
 
         const fs::path gui = source_root / "build" / "calculator";
-        if (executable(gui.string())) {
-            std::cout << "Exercising Calculator startup and GTK rendering paths...\n";
-            const int result = run_process(
-                { "/usr/bin/xvfb-run", "-a", "/usr/bin/timeout", "5s", gui.string() },
-                source_root, true);
-            if (result != 0 && result != 124)
-                fail("instrumented Calculator GUI training failed");
-        }
-        if (!tree_has_suffix(pgo_directory, ".gcda"))
-            fail("PGO training completed without producing profile data");
+        if (!executable(gui.string())) fail("instrumented Calculator GUI is missing");
+        // Provision the same pinned shared fonts as package configuration
+        // before the first GUI run, including a fresh standalone installation.
+        run_required(privileged(
+            { "/bin/sh", (source_root / "src/infiltratr-common/cmake/InfiltratrEnsureExtendedFonts.sh").string() },
+            system_package_mode));
+        std::cout << "Exercising Calculator startup and GTK rendering paths...\n";
+        const int result = run_process(
+            { "/usr/bin/xvfb-run", "-a", "/usr/bin/timeout", "10s", "/usr/bin/env",
+              "CALCULATOR_NEW_INSTANCE=1", "CALCULATOR_TRAINING_SECONDS=3",
+              "XDG_DATA_HOME=" + (work / "training-data").string(),
+              "XDG_CONFIG_HOME=" + (work / "training-config").string(), gui.string() },
+            source_root);
+        if (result != 0) fail("instrumented Calculator GUI training did not exit cleanly");
+        if (!tree_has_suffix(pgo_directory, "main.cpp.gcda"))
+            fail("PGO training completed without producing GTK profile data");
 
         final_flags = base_flags + " -fprofile-use=" + pgo +
                       " -fprofile-correction -fprofile-partial-training -Wno-missing-profile";
         const std::string use_ldflags =
             base_ldflags + " -fprofile-use=" + pgo +
             " -fprofile-correction -fprofile-partial-training -Wno-missing-profile";
-        write_build_info(source_root, profile, final_flags, true);
+        write_build_info(source_root, final_flags);
         std::cout << "Rebuilding Calculator using the measured PGO profile...\n";
         set_build_flags(final_flags, use_ldflags);
         run_required(build_command, source_root);
-    } else {
-        write_build_info(source_root, profile, final_flags, false);
-        std::cout << "Building Calculator for this computer...\n";
-        set_build_flags(base_flags, base_ldflags);
-        run_required(build_command, source_root);
     }
 
-    if (profile != "portable") {
-        if (!build_tree_contains(source_root / "build", "-march=native") ||
-            !build_tree_contains(source_root / "build", "-flto=auto"))
-            fail("final Calculator build did not retain native CPU/LTO flags");
-    }
-    if (aggressive &&
-        !build_tree_contains(source_root / "build", "-fprofile-use="))
+    if (!build_tree_contains(source_root / "build", "-march=native") ||
+        !build_tree_contains(source_root / "build", "-flto=auto"))
+        fail("final Calculator build did not retain native CPU/LTO flags");
+    if (!build_tree_contains(source_root / "build", "-fprofile-use="))
         fail("final Calculator build did not retain PGO-use flags");
 
     const fs::path package = find_debian_package(work, version);
@@ -577,11 +558,6 @@ int main(int argc, char **argv)
         !fs::exists(kBuildInfo))
         fail("Calculator package, executable or native build metadata is missing after installation");
     std::cout << "\nCalculator " << version << " is installed system-wide.\n";
-    if (profile == "aggressive")
-        std::cout << "The installed package is a measured two-pass PGO, LTO and CPU-native build.\n";
-    else if (profile == "native")
-        std::cout << "The installed package is an LTO and CPU-native build.\n";
-    else
-        std::cout << "The installed package uses the portable optimisation profile.\n";
+    std::cout << "The installed package is a measured two-pass PGO, LTO and CPU-native build.\n";
     return EXIT_SUCCESS;
 }

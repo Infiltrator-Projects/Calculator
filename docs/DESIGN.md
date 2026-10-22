@@ -25,7 +25,7 @@ Those semantics would be incorrect if implemented through the real-number expres
 
 Standard mode deliberately uses IEEE-754 binary64 because it is the compact everyday arithmetic domain; Scientific uses arbitrary precision where its broader mathematical capability justifies it. Within Standard, the binary64 value is authoritative: display formatting may round for readability but is never allowed to feed back into later computation.
 
-Scientific mode is a distinct arbitrary-precision real/complex domain backed by Boost.Multiprecision. The interactive controller uses 50 decimal digits; the core accepts requested precisions from 16 through a maintained ceiling of 1000 digits and is independently oracle-tested across that range. Decimal literals and intermediate Scientific arithmetic remain in that domain; they are not silently routed through binary64. The public Session/Controller boundary carries real and imaginary components as decimal text so platform shells do not acquire a third-party multiprecision ABI. Principal complex branches and exact quadrant/power special cases are Calculator-owned mathematical contracts rather than accidental backend behaviour.
+Scientific mode is a distinct arbitrary-precision real/complex domain backed by Boost.Multiprecision. The interactive controller defaults to 50 decimal digits and accepts requested precisions from 16 through a maintained ceiling of 1000 digits, with independent oracle tests across that range. Decimal literals and intermediate Scientific arithmetic remain in that domain; they are not silently routed through binary64. The public Session/Controller boundary carries real and imaginary components as decimal text so platform shells do not acquire a third-party multiprecision ABI. Principal complex branches and exact quadrant/power special cases are Calculator-owned mathematical contracts rather than accidental backend behaviour.
 
 Exact decimal/rational tools and arbitrary-precision integer tools also use the pinned Boost.Multiprecision mechanism rather than carrying a Calculator-owned big-integer implementation. Their grammar, exact-rational normalization, supported exponent/factorial ranges and product safety ceilings remain Calculator semantics. Programmer fixed-width integers remain a separate domain because wraparound is their contract rather than an arbitrary-precision failure case.
 
@@ -35,7 +35,7 @@ A further representation should be introduced only when a feature has a domain r
 
 ## Shared foundation boundary
 
-Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f` for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
+Common is used for stable, product-neutral facilities. Calculator currently relies on immutable Common 1.19.57 at commit `0cfa4a36cf84034fd77d5c17a59990f068d5c1fb` for locale-independent numeric parsing, deterministic ASCII classification, checked arithmetic, durable POSIX persistence helpers, the canonical Design v1 palette/metrics/typography contract and immutable MB Corpo asset provenance.
 
 The exact Common gitlink is part of the build identity independently of its VERSION text. CI verifies both and rejects private-header use, so an accidental dependency revision cannot silently become part of a Calculator release.
 
@@ -51,7 +51,7 @@ All three shells share the platform-neutral Calculator controller where command/
 
 System, Day and Night are the supported appearance modes. Common owns the Day/Night semantic palette; each operating system owns detection of the current System appearance and the mechanics of rendering it.
 
-Calculator-owned text uses exactly three canonical MB Corpo faces: S Regular, S Bold and A Condensed Regular. Release builds package or embed the exact hash-verified resources on Linux, Windows and iPhone. A missing or mismatched required face is an explicit build/startup failure rather than permission to introduce a fourth fallback family.
+Calculator uses task-specific roles from the canonical, SHA-256-verified 23-face MB Corpo/Daimler inventory. Linux provisions the shared machine cache through pinned Common; Windows and iPhone privately embed the five Calculator faces: S Text Regular/Bold, S Text Cond Bold, A Title Cond and A Screen2 Cond. Reading, compact controls, identity and numerical results have distinct roles. Required embedded faces are verified at build/startup, and Linux package configuration establishes the complete shared cache. The former three-face bootstrap is historical.
 
 ## Evolution criteria
 

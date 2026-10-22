@@ -40,7 +40,7 @@ External or cross-language boundaries should use explicit-width types where bit 
 
 ## Locale and text boundaries
 
-Numeric expression syntax is locale-independent. Common 1.19.35 owns Calculator's binary64 token/whole-value conversion and complete integer parsing, while deterministic ASCII helpers own grammar classification and case folding. Calculator therefore does not carry competing locale-sensitive scanners or identifier classification.
+Numeric expression syntax is locale-independent. Common 1.19.57 owns Calculator's binary64 token/whole-value conversion and complete integer parsing, while deterministic ASCII helpers own grammar classification and case folding. Calculator therefore does not carry competing locale-sensitive scanners or identifier classification.
 
 User-interface text and platform font rendering may vary by locale/platform, but locale must not silently change the meaning of Calculator's decimal grammar, operators or Programmer radices.
 
@@ -76,7 +76,7 @@ Compatibility naming is an explicit migration concern, not an excuse for stale u
 
 ## Dependency boundary
 
-Common is pinned exactly at 1.19.35 commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. Both the version text and exact gitlink are validated because either one alone is insufficient to identify the dependency used for a release.
+Common is pinned exactly at 1.19.57 commit `0cfa4a36cf84034fd77d5c17a59990f068d5c1fb`. Both the version text and exact gitlink are validated because either one alone is insufficient to identify the dependency used for a release.
 
 Common supplies reusable product-neutral primitives whose public contracts match Calculator's needs. Calculator retains expression grammar, Standard capability policy, Programmer policy, Advanced Tools semantics and calculator-specific interaction. Private Common headers are outside the supported dependency boundary.
 

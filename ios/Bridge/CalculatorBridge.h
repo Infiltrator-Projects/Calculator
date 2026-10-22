@@ -24,6 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)selectMode:(NSInteger)mode;
 - (void)pressKey:(NSString *)key;
 - (BOOL)isKeyEnabled:(NSString *)key;
+- (NSArray<NSArray<NSString *> *> *)keyRows;
+- (NSString *)titleForKey:(NSString *)key NS_SWIFT_NAME(title(forKey:));
 - (NSString *)additionalResultsText;
 - (NSString *)programmerRepresentationsText;
 - (BOOL)swapProgrammerEndianness;

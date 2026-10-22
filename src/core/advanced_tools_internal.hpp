@@ -20,7 +20,6 @@ namespace calculator::tools::detail {
 // Product-neutral parsing remains delegated to Common. These adapters preserve
 // Advanced Tools' std::string_view boundary and deterministic ASCII whitespace
 // contract without exposing tool-domain semantics through Common.
-inline constexpr double kPi = 3.141592653589793238462643383279502884;
 inline constexpr unsigned kToolScientificDigits = 100U;
 
 inline ToolResult success(std::string text) {
@@ -103,6 +102,20 @@ inline bool parse_double_range(std::string_view text, double minimum,
 
 inline std::string number(double value) {
     return calculator::format_value(value);
+}
+
+// Evaluate derived finite-real tool quantities before narrowing to binary64.
+// This avoids intermediate overflow/underflow becoming a plausible zero and
+// reuses Scientific arithmetic rather than creating a second wider engine.
+inline bool finite_real_expression(std::string expression, double& value) {
+    const auto result = calculator::evaluate_scientific(
+        expression, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+    return result.ok && result.display.empty() &&
+           calculator::scientific_value_to_double(result.value, value);
+}
+
+inline std::string real_operand(double value) {
+    return "(" + calculator::serialize_value(value) + ")";
 }
 
 inline std::string engineering(double value, std::string_view suffix = {}) {

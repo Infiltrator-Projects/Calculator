@@ -217,6 +217,41 @@ NSInteger angle_value(calculator::AngleUnit unit) {
     return spec != nullptr && controller->command_enabled(spec->command);
 }
 
+- (NSArray<NSArray<NSString *> *> *)keyRows {
+    NSMutableArray<NSArray<NSString *> *> *rows = [NSMutableArray array];
+    const auto append = [&rows](const auto& specs, std::size_t columns) {
+        NSMutableArray<NSString *> *row = [NSMutableArray array];
+        for (const auto& spec : specs) {
+            [row addObject:to_ns(std::string(spec.label))];
+            if ([row count] == columns) {
+                [rows addObject:[row copy]];
+                row = [NSMutableArray array];
+            }
+        }
+        if ([row count] != 0U) [rows addObject:[row copy]];
+    };
+    switch ([self controller]->state().mode) {
+    case Mode::Standard:
+        append(calculator::ui::kStandardMemory, 5U);
+        append(calculator::ui::kStandardKeypad, 4U);
+        break;
+    case Mode::Scientific:
+        append(calculator::ui::kScientificKeypad, 4U);
+        break;
+    case Mode::Programmer:
+        append(calculator::ui::kProgrammerKeypad, 4U);
+        break;
+    }
+    return rows;
+}
+
+- (NSString *)titleForKey:(NSString *)key {
+    Controller *controller = [self controller];
+    const std::string label = key.UTF8String ?: "";
+    const ButtonSpec *spec = find_spec(*controller, label);
+    return spec ? to_ns(controller->button_label(spec->command, spec->label)) : key;
+}
+
 - (NSString *)additionalResultsText {
     return to_ns([self controller]->additional_results_text());
 }

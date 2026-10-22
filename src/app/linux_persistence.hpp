@@ -31,7 +31,7 @@ public:
     ui::ThemeMode load_theme_mode() const;
     void save_theme_mode(ui::ThemeMode mode) const;
     bool load_controller_state();
-    void save_controller_state() const;
+    bool save_controller_state() const;
     LinuxDesktopState load_desktop_state() const;
     void save_desktop_state(int width, int height) const;
     LinuxConversionPreferences load_conversion_preferences() const;
@@ -42,6 +42,8 @@ private:
     void load_legacy_display_preferences();
     ui::Controller& controller_;
     bool controller_state_loaded_ = false;
+    bool shared_semantic_state_ = false;
+    mutable std::string baseline_state_;
 };
 
 } // namespace calculator::app

@@ -160,11 +160,13 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 
 **Consequence.** Calculator inherited the stronger Common persistence implementation without changing Calculator-owned arithmetic, date-tool semantics, session/controller behaviour or native-platform ownership. Scientific engineering-exponent parsing also uses Common's deterministic signed-integer parser. This entry remains dependency provenance only.
 
-## ADR-019 — Common 1.19.35 is the current public shared-foundation boundary
+## ADR-019 — Common 1.19.35 shared-foundation boundary (historical)
 
-**Decision.** Calculator pins immutable Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. The exact gitlink and public VERSION are build- and CI-validated, and Calculator consumes Common only through published interfaces whose contracts are at least as strong as the local behaviour they replace.
+**Status.** Historical; superseded by ADR-021.
 
-**Rationale.** The current Common baseline preserves the product-neutral parsing, checked arithmetic, deterministic ASCII, durable POSIX I/O, design metrics and typography contracts already relied on by Calculator while providing the semantic design-palette fields now consumed by the native shells. Exact dependency identity matters independently of the VERSION text: another commit carrying the same version string is not an interchangeable build input.
+**Decision.** Calculator pinned immutable Common 1.19.35 at commit `7cc5de3de0e94ed2cfcff0840bbb5346eb5c9c9f`. The exact gitlink and public VERSION are build- and CI-validated, and Calculator consumes Common only through published interfaces whose contracts are at least as strong as the local behaviour they replace.
+
+**Rationale.** That Common baseline preserved the product-neutral parsing, checked arithmetic, deterministic ASCII, durable POSIX I/O, design metrics and typography contracts already relied on by Calculator while providing the semantic design-palette fields now consumed by the native shells. Exact dependency identity matters independently of the VERSION text: another commit carrying the same version string is not an interchangeable build input.
 
 **Consequence.** Common is the one authority for those shared mechanisms and design contracts. Calculator retains ownership of expression grammar, numeric-domain policy, session/controller semantics, Advanced Tools behaviour and native shell adaptation. `tests/test_common_contract.py` protects both the exact dependency revision and the public-API boundary so future Common upgrades must be deliberate rather than incidental.
 
@@ -175,3 +177,20 @@ This file records durable architectural choices for Calculator. `docs/DESIGN.md`
 **Rationale.** File size alone is not an architectural defect, and arbitrary splitting merely moves complexity. The reviewed desktop entry points had instead accumulated unrelated authorities: storage policy, compatibility readers, native conversion/DPI utilities and window orchestration. Those are independently cohesive responsibilities with distinct failure and maintenance boundaries.
 
 **Consequence.** Platform mains stay readable as lifecycle/event choreography; storage paths and compatibility readers have one owner per platform; reusable Win32 primitives have one owner; and structural tests reject regression back into monolithic entry points. No new calculator state object or arithmetic abstraction is introduced.
+
+
+## ADR-021 — Common 1.19.57 and the verified extended font catalogue
+
+**Decision.** The active Common dependency is 1.19.57 at immutable commit `0cfa4a36cf84034fd77d5c17a59990f068d5c1fb`, as enforced by CMake and the Common contract tests. Linux package configuration uses its extended-font helper to provision the complete verified 23-face shared catalogue independently of an InfiltratorOS installation. Windows and iPhone embed Calculator's five selected faces from the same pinned inventory.
+
+**Rationale.** Standalone installation must satisfy the same typography contract as the family OS. Exact dependency and font hashes identify the reviewed inputs; version text or a locally available substitute does not. Common remains a build dependency rather than a separately installed Calculator payload.
+
+**Consequence.** The retired three-face bootstrap is historical provenance, not the current provisioning policy. Numeric grammar, Session/Controller state and native adaptation remain Calculator-owned.
+
+## ADR-022 — A committed result and a durable document each have one authority
+
+**Decision.** A successful calculation retains its result in Controller and numeric Scientific history. Additional Results, memory and unary operations consume that retained value. Linux GTK and `/cli` share the versioned Controller document through one storage adapter; save merges changes against the reader's baseline while holding a stable sidecar lock.
+
+**Rationale.** Re-evaluating after `_`, assignment or `rand` changes the calculation. Independent GUI/CLI files and last-writer replacement lose user definitions or preferences. Numerical components therefore survive transport at the supported maximum precision, while persistence distinguishes unchanged fields, unrelated edits and conflicting edits.
+
+**Consequence.** Unrelated named or preference changes merge; a same-field or same-name conflict fails without replacing the durable document. Legacy files remain migration inputs. History and memory remain process-local.

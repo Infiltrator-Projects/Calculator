@@ -88,6 +88,15 @@ int main(){
         fail("hexadecimal digit grouping wrong");
     }
 
+    for (auto width : {IntegerWidth::Bits8, IntegerWidth::Bits16,
+                       IntegerWidth::Bits32, IntegerWidth::Bits64}) {
+        for (auto base : {ProgrammerBase::Binary, ProgrammerBase::Octal,
+                          ProgrammerBase::Hexadecimal}) {
+            if (calculator::format_programmer(~std::uint64_t{0},base,width,true) !=
+                calculator::format_programmer(~std::uint64_t{0},base,width,false))
+                fail("signed display must preserve non-decimal radix");
+        }
+    }
     if(failures){std::cerr<<failures<<" programmer test(s) failed\n";return 1;}
     std::cout<<"programmer tests passed\n";
     return 0;

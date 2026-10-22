@@ -19,6 +19,12 @@ class EvaluationBudget;
 struct ScientificValue {
     std::string real = "0";
     std::string imag = "0";
+    bool operator==(const ScientificValue& other) const noexcept {
+        return real == other.real && imag == other.imag;
+    }
+    bool operator!=(const ScientificValue& other) const noexcept {
+        return !(*this == other);
+    }
 };
 
 using ScientificVariables =
@@ -45,6 +51,10 @@ enum class ScientificDisplayFormat {
 // Process-lifetime catalogue of identifiers accepted as Scientific functions.
 const std::array<std::string_view, 43>&
 scientific_function_catalog() noexcept;
+
+// Includes dynamic logN/rootN names as well as the fixed catalogue. Session
+// admission and Scientific parsing share this reserved-name authority.
+bool is_scientific_function_name(std::string_view name) noexcept;
 
 // Evaluate the Scientific grammar entirely in the maintained multiprecision
 // real/complex domain. decimal_digits is clamped to the supported precision

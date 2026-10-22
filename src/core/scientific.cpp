@@ -341,7 +341,7 @@ constexpr std::array<std::string_view, 43> kScientificFunctions{{
     "conj", "real", "imag"
 }};
 
-bool is_builtin(std::string_view name) {
+bool is_builtin(std::string_view name) noexcept {
     for (const auto candidate : kScientificFunctions) {
         if (candidate == name) return true;
     }
@@ -467,6 +467,20 @@ std::string display_component(
     unsigned precision,
     bool trailing_zeroes,
     bool group_thousands) {
+    // Fixed notation can expand a tiny input such as 1e100000000 into an
+    // enormous allocation. Bound each component before streaming it. General
+    // notation retains the stored precision while making the size transition
+    // explicit through its exponent, without changing the underlying value.
+    precision = std::min(precision, kScientificMaxDigits);
+    if (format == ScientificDisplayFormat::Fixed) {
+        constexpr unsigned overhead = 4U; // sign, point and rounding carry
+        const auto integer_digits = static_cast<unsigned>(
+            kEvaluationMaxOutputDigits) - precision - overhead;
+        const Real threshold = pow(Real(10), integer_digits);
+        if (abs(value) >= threshold) {
+            return component_string(value, kScientificMaxDigits);
+        }
+    }
     if (format == ScientificDisplayFormat::General) {
         std::string text = component_string(
             value, std::max(1U, precision));
@@ -1494,6 +1508,10 @@ scientific_function_catalog() noexcept {
     return kScientificFunctions;
 }
 
+bool is_scientific_function_name(std::string_view name) noexcept {
+    return is_builtin(name);
+}
+
 // This is the only public construction path from expression text into the
 // multiprecision engine: normalize spelling, clamp the requested precision and
 // execute the bounded parser. Ordinary user errors stay in ScientificResult.
@@ -1615,8 +1633,11 @@ bool scientific_value_to_double(
         const Real imaginary(value.imag);
         if (!is_zero(imaginary)) return false;
         const Real parsed(value.real);
-        output = parsed.convert_to<double>();
-        return std::isfinite(output);
+        const double converted = parsed.convert_to<double>();
+        if (!std::isfinite(converted) ||
+            (converted == 0.0 && parsed != 0)) return false;
+        output = converted;
+        return true;
     } catch (...) {
         return false;
     }

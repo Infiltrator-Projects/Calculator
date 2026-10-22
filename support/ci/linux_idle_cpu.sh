@@ -15,6 +15,15 @@ sudo fc-cache -f
 dbus-run-session -- xvfb-run -a bash -s -- <<'INNER'
 set -euo pipefail
 
+# The native installer relies on normal exit to flush instrumented GUI data.
+# Exercise that production lifecycle independently of the later idle probes.
+training_home="$(mktemp -d)"
+trap 'rm -rf "$training_home"' EXIT
+env CALCULATOR_NEW_INSTANCE=1 CALCULATOR_TRAINING_SECONDS=1 \
+  XDG_DATA_HOME="$training_home" XDG_CONFIG_HOME="$training_home" \
+  GTK_A11Y=none G_DEBUG=fatal-warnings \
+  timeout 10s /Programs/calculator
+
 measure_idle_cpu() {
   label="$1"
   shift

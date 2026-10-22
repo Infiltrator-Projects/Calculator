@@ -25,7 +25,7 @@ Calculator provides Standard, Scientific and Programmer calculation modes plus a
 - persistent Cinnamon/GTK desktop mode and window size without forcing legacy absolute window positioning under Wayland;
 - one cross-platform persistent-state document for Scientific precision, display preferences, variables/functions, selected mode, Scientific angle unit, Programmer radix/word-width/signed state and history retention; Linux retains the older desktop semantic fields only as a one-release migration source;
 - persisted user variables under the XDG data directory, alongside the already-persisted reusable function definitions;
-- a dependency-light console calculator, `calculator-cli`, covering the Mint/GNOME `gcalccmd` one-shot and interactive workflows while sharing the same expression/session engine and persisted custom functions;
+- the `/Programs/calculator /cli [expression]` console entry point, covering the Mint/GNOME `gcalccmd` one-shot and interactive workflows while sharing Scientific semantics, reusable variables/functions and the GUI's canonical state document;
 - native GTK expression undo/redo enabled explicitly through the GTK4 editable contract, retaining familiar Ctrl+Z/Ctrl+Shift+Z editing behaviour;
 - Ctrl+N opens a genuinely independent Calculator process/window instead of sharing the GTK shell's global widget/controller state; this preserves the useful GNOME multi-window workflow without introducing cross-window state contamination;
 - a first-class Linux unit-conversion picker with dimension/source/target selectors, live conversion, one-click swapping and persisted pair selection.

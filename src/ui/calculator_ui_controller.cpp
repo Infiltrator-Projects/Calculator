@@ -13,6 +13,10 @@
 namespace calculator::ui {
 
 bool Controller::set_expression(std::string expression) {
+    // Native shells synchronise their text before every command. Identical
+    // text is not an edit: preserve the committed result, including rand and
+    // expressions whose assignment or '_' binding changed at Equals.
+    if (expression == state_.expression) return true;
     if (expression != state_.expression) clear_standard_repeat();
     if (expression.size() > kMaxExpressionBytes) {
         state_.expression.clear();
@@ -35,6 +39,7 @@ bool Controller::set_expression(std::string expression) {
 }
 
 void Controller::set_mode(Mode mode) {
+    if (mode == state_.mode) return;
     if (mode != state_.mode) clear_standard_repeat();
     state_.mode = mode;
     refresh_evaluation_cache();
@@ -50,6 +55,10 @@ void Controller::set_mode(Mode mode) {
 }
 
 void Controller::set_angle_unit(AngleUnit unit) {
+    if (unit == state_.angle_unit) {
+        if (state_.mode == Mode::Scientific) set_status(scientific_status_text());
+        return;
+    }
     state_.angle_unit = unit;
     refresh_evaluation_cache();
     if (state_.mode == Mode::Scientific) {
@@ -503,7 +512,9 @@ void Controller::calculate() {
         session_.evaluate_scientific(
             state_.expression, state_.angle_unit,
             scientific_digits_);
-    refresh_evaluation_cache();
+    // Session has just committed variables and '_'. Re-evaluating the same
+    // text now would describe the next calculation rather than this result.
+    scientific_cache_ = result;
     if (!result.ok) {
         state_.result = "Error: " + result.error;
         set_status("CALCULATION ERROR", true);
@@ -894,13 +905,12 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         switch (command) {
         case Command::CycleAngleUnit:
             if (state_.angle_unit == AngleUnit::Degrees) {
-                state_.angle_unit = AngleUnit::Radians;
+                set_angle_unit(AngleUnit::Radians);
             } else if (state_.angle_unit == AngleUnit::Radians) {
-                state_.angle_unit = AngleUnit::Gradians;
+                set_angle_unit(AngleUnit::Gradians);
             } else {
-                state_.angle_unit = AngleUnit::Degrees;
+                set_angle_unit(AngleUnit::Degrees);
             }
-            set_status(scientific_status_text());
             return {normalized_cursor(cursor), false};
         case Command::ToggleSecond:
             state_.scientific_second = !state_.scientific_second;
@@ -1005,18 +1015,22 @@ DispatchResult Controller::dispatch(Command command, std::size_t cursor) {
         if (state_.mode == Mode::Scientific) {
             ScientificValue value;
             if (current_scientific_value(value)) {
+                bool stored = true;
                 if (effective == Command::MemoryStore) {
                     session_.memory_store_scientific(value);
                 } else if (effective == Command::MemoryAdd) {
-                    session_.memory_add_scientific(
+                    stored = session_.memory_add_scientific(
                         value, scientific_digits_);
                 } else {
-                    session_.memory_subtract_scientific(
+                    stored = session_.memory_subtract_scientific(
                         value, scientific_digits_);
                 }
-                set_status(effective == Command::MemoryStore
-                               ? "MEMORY STORED"
-                               : "MEMORY UPDATED");
+                if (stored) {
+                    set_status(effective == Command::MemoryStore
+                                   ? "MEMORY STORED" : "MEMORY UPDATED");
+                } else {
+                    set_status("MEMORY RANGE ERROR", true);
+                }
             }
         } else {
             double value = 0.0;

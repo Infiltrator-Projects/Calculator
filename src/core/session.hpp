@@ -37,6 +37,9 @@ struct HistoryEntry {
     std::string input;
     std::string output;
     bool ok = false;
+    // Scientific expressions can depend on mutable variables or randomness.
+    // Retain their result so recall does not invent a new historical value.
+    std::optional<ScientificValue> scientific_value;
 };
 
 struct MemoryEntry {
@@ -88,10 +91,10 @@ public:
     double memory_recall() const noexcept;
     bool memory_binary64_available() const noexcept;
     void memory_store_scientific(ScientificValue value);
-    void memory_add_scientific(
+    bool memory_add_scientific(
         const ScientificValue& value,
         unsigned decimal_digits = kScientificDefaultDigits);
-    void memory_subtract_scientific(
+    bool memory_subtract_scientific(
         const ScientificValue& value,
         unsigned decimal_digits = kScientificDefaultDigits);
     ScientificValue memory_recall_scientific() const;
@@ -109,7 +112,8 @@ public:
         HistoryContext context = {});
     void record_history_text(
         std::string input, std::string output, bool ok,
-        HistoryKind kind, HistoryContext context = {});
+        HistoryKind kind, HistoryContext context = {},
+        std::optional<ScientificValue> scientific_value = std::nullopt);
 
     // Variable/function text forms are Calculator-owned persistence formats.
     // Load operations validate into temporary state and commit only a fully
@@ -126,6 +130,11 @@ public:
     bool remove_function(const std::string& name);
     std::string function_definitions_text() const;
     bool load_function_definitions_text(std::string_view text);
+
+    // Three-way merge of reusable named state. Preserve unrelated concurrent
+    // edits; reject conflicting edits to the same name transactionally. The
+    // volatile '_' binding, history and memory are never merged or persisted.
+    bool merge_reusable_state(const Session& baseline, const Session& local);
 
     // History entries retain rendered output plus mode-specific context so
     // recall can restore Programmer radix/width/signed state without re-parsing

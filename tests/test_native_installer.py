@@ -23,6 +23,8 @@ class NativeInstallerVersionTests(unittest.TestCase):
             r'''
 int main(int argc, char **argv)
 {
+    if (argc > 1 && std::string(argv[1]) == "installer")
+        return calculator_native_installer_entrypoint(argc - 1, argv + 1);
     if (argc == 2 && std::string(argv[1]) == "status") {
         auto version = package_version_from_status(std::cin, "calculator");
         std::cout << version.value_or("not-installed") << '\n';
@@ -60,6 +62,17 @@ int main(int argc, char **argv)
         self.assertIn("--reinstall", arguments)
         self.assertIn("--allow-downgrades", arguments)
         self.assertEqual(arguments[-1], "/tmp/calculator rebuilt package.deb")
+
+    def test_installer_has_one_mandatory_qualified_optimisation_policy(self):
+        result = subprocess.run([str(self.program), "installer", "--help"],
+                                text=True, capture_output=True, check=True)
+        self.assertNotIn("--profile", result.stdout)
+        self.assertNotIn("--skip-tests", result.stdout)
+        for option in ("--profile=portable", "--profile=native", "--skip-tests"):
+            result = subprocess.run([str(self.program), "installer", option],
+                                    text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("unknown option", result.stderr)
 
     def test_fresh_install_and_upgrade_keep_normal_apt_policy(self):
         for installed in ("not-installed", "0.2.52", "0.2.53~rc1"):

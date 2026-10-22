@@ -1,3 +1,13 @@
+calculator (0.2.56) unstable; urgency=medium
+
+  * Correct retained Scientific results, angle changes, variable precision,
+    root admission, real-tool range checks and signed radix presentation.
+  * Share GUI/CLI state with locked conflict-aware saves and bounded displays.
+  * Require native LTO, tested two-pass PGO and clean isolated GTK training.
+  * Share iPhone keypad metadata and align the maintained contracts.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 23 Oct 2026 09:00:00 +1100
+
 calculator (0.2.55) unstable; urgency=medium
 
   * Handle APT same-version native rebuilds with a guarded reinstall.

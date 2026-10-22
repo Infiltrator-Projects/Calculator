@@ -34,33 +34,38 @@ ToolResult engineering_tool(std::string_view input) {
 
     double a = 0.0;
     double b = 0.0;
+    const auto calculated = [](std::string label, std::string expression,
+                               std::string_view unit) {
+        double value=0.0;
+        if(!finite_real_expression(std::move(expression),value))
+            return failure("Engineering result is outside the finite real range.");
+        return success(std::move(label)+"  "+engineering(value,unit));
+    };
     if (fields[0] == "ohm") {
         if (!two(a, b) || b == 0.0) return failure("Usage: ohm volts amps; amps must be non-zero.");
-        const double r = a / b;
-        const double p = a * b;
+        const auto resistance=calculated("Resistance",real_operand(a)+"/"+real_operand(b),"ohm");
+        const auto power=calculated("Power",real_operand(a)+"*"+real_operand(b),"W");
+        if(!resistance.ok) return resistance;
+        if(!power.ok) return power;
         return success("Voltage  " + engineering(a, "V") +
                        "\nCurrent  " + engineering(b, "A") +
-                       "\nResistance  " + engineering(r, "ohm") +
-                       "\nPower  " + engineering(p, "W"));
+                       "\n" + resistance.output + "\n" + power.output);
     }
     if (fields[0] == "power") {
         if (!two(a, b)) return failure("Usage: power volts amps");
-        return success("Power  " + engineering(a * b, "W"));
+        return calculated("Power",real_operand(a)+"*"+real_operand(b),"W");
     }
     if (fields[0] == "reactance-c") {
         if (!two(a, b) || a <= 0.0 || b <= 0.0) return failure("Usage: reactance-c frequency_hz capacitance_f; values must be positive.");
-        return success("Capacitive reactance  " +
-                       engineering(1.0 / (2.0 * kPi * a * b), "ohm"));
+        return calculated("Capacitive reactance","1/(2*pi*"+real_operand(a)+"*"+real_operand(b)+")","ohm");
     }
     if (fields[0] == "reactance-l") {
         if (!two(a, b) || a < 0.0 || b < 0.0) return failure("Usage: reactance-l frequency_hz inductance_h");
-        return success("Inductive reactance  " +
-                       engineering(2.0 * kPi * a * b, "ohm"));
+        return calculated("Inductive reactance","2*pi*"+real_operand(a)+"*"+real_operand(b),"ohm");
     }
     if (fields[0] == "resonance") {
         if (!two(a, b) || a <= 0.0 || b <= 0.0) return failure("Usage: resonance inductance_h capacitance_f; values must be positive.");
-        return success("Resonant frequency  " +
-                       engineering(1.0 / (2.0 * kPi * std::sqrt(a * b)), "Hz"));
+        return calculated("Resonant frequency","1/(2*pi*sqrt("+real_operand(a)+"*"+real_operand(b)+"))","Hz");
     }
     if (fields[0] == "three-phase") {
         if (fields.size() != 4U ||
@@ -72,10 +77,12 @@ ToolResult engineering_tool(std::string_view input) {
         if (!parse_double_range(fields[3], 0.0, 1.0, pf)) {
             return failure("Power factor must be between 0 and 1.");
         }
-        return success("Apparent power  " +
-                       engineering(std::sqrt(3.0) * a * b, "VA") +
-                       "\nReal power  " +
-                       engineering(std::sqrt(3.0) * a * b * pf, "W"));
+        const std::string apparent="sqrt(3)*"+real_operand(a)+"*"+real_operand(b);
+        const auto va=calculated("Apparent power",apparent,"VA");
+        const auto watts=calculated("Real power",apparent+"*"+real_operand(pf),"W");
+        if(!va.ok) return va;
+        if(!watts.ok) return watts;
+        return success(va.output+"\n"+watts.output);
     }
     if (fields[0] == "db" || fields[0] == "db-power") {
         if (fields.size() != 2U || !parse_double(fields[1], a) || a <= 0.0) {
@@ -91,14 +98,21 @@ ToolResult engineering_tool(std::string_view input) {
         std::replace(list.begin(), list.end(), ',', ' ');
         const auto values = split_ws(list);
         if (values.empty()) return failure("Provide at least one resistance.");
-        double reciprocal_sum = 0.0;
+        std::vector<double> resistances;
+        double smallest=std::numeric_limits<double>::max();
         for (const auto& item : values) {
             double r = 0.0;
             if (!parse_double(item, r) || r <= 0.0) return failure("Parallel resistances must be positive numbers.");
-            reciprocal_sum += 1.0 / r;
+            resistances.push_back(r);
+            smallest=std::min(smallest,r);
         }
+        double scaled_sum=0.0;
+        for(double r:resistances) scaled_sum+=smallest/r;
+        const double equivalent=smallest/scaled_sum;
+        if(equivalent==0.0||!std::isfinite(equivalent))
+            return failure("Engineering result is outside the finite real range.");
         return success("Equivalent resistance  " +
-                       engineering(1.0 / reciprocal_sum, "ohm"));
+                       engineering(equivalent, "ohm"));
     }
     return failure("Unknown engineering operation. Use the prompt examples.");
 }
@@ -382,7 +396,9 @@ ToolResult network_tool(std::string_view input) {
         if (fields.size()!=3U || !parse_double(fields[1], bytes) ||
             !parse_double(fields[2], bps) || bytes < 0.0 || bps <= 0.0)
             return failure("Usage: transfer bytes bits-per-second");
-        const double seconds = bytes * 8.0 / bps;
+        double seconds=0.0;
+        if(!finite_real_expression(real_operand(bytes)+"*8/"+real_operand(bps),seconds))
+            return failure("Transfer time is outside the finite real range.");
         return success("Transfer time  " + number(seconds) + " s\nRate  " +
                        engineering(bps, "bit/s"));
     }

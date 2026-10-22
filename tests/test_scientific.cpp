@@ -2,6 +2,7 @@
 #include "../src/core/scientific.hpp"
 
 #include <iostream>
+#include <limits>
 #include <string>
 
 namespace {
@@ -91,6 +92,24 @@ int main() {
     check(result.ok, "complex variable evaluates without binary64");
     check(result.value.real == "2.5" && result.value.imag == "-5",
           "complex variable components preserved");
+
+    double binary64=123.0;
+    check(!calculator::scientific_value_to_double({"1e-4000","0"},binary64),
+          "non-zero underflow is unavailable to binary64");
+    check(binary64==123.0,"failed narrowing preserves its output argument");
+    check(calculator::scientific_value_to_double(
+              calculator::scientific_value_from_double(
+                  std::numeric_limits<double>::denorm_min()),binary64) &&
+              binary64==std::numeric_limits<double>::denorm_min(),
+          "representable minimum subnormal survives narrowing");
+    const auto huge=evaluate("1e30000");
+    const auto fixed=calculator::format_scientific_display(
+        huge.value,calculator::ScientificDisplayFormat::Fixed,2,false,false);
+    check(fixed=="1e+30000","oversized Fixed output uses bounded exponent notation");
+    check(calculator::format_scientific_display(
+        {"1.25","0"},calculator::ScientificDisplayFormat::Fixed,
+        std::numeric_limits<unsigned>::max(),false,false).size()<20000U,
+        "caller precision cannot create unbounded formatting output");
 
     if (failures != 0) {
         std::cerr << failures

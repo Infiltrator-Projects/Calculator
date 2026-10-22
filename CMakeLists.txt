@@ -288,6 +288,14 @@ if(CALCULATOR_BUILD_DESKTOP)
         endif()
 
         if(BUILD_TESTING)
+            add_executable(calculator-linux-persistence-test
+                tests/test_linux_persistence.cpp
+                src/app/linux_persistence.cpp
+                src/app/cli_mode.cpp)
+            target_link_libraries(calculator-linux-persistence-test PRIVATE
+                calculator-ui InfiltratrCommon::Common PkgConfig::GTK4)
+            add_test(NAME calculator-linux-persistence
+                COMMAND calculator-linux-persistence-test)
             add_test(
                 NAME calculator-cli-mode
                 COMMAND calculator /cli "2+2"

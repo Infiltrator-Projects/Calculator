@@ -103,50 +103,8 @@ final class CalculatorModel: ObservableObject {
             forKey: Self.persistentStateKey)
     }
 
-    let standardKeys = [
-        ["MC", "MR", "MS", "M+", "M−"],
-        ["%", "CE", "C", "⌫"],
-        ["1/x", "x²", "√", "÷"],
-        ["7", "8", "9", "×"],
-        ["4", "5", "6", "−"],
-        ["1", "2", "3", "+"],
-        ["±", "0", ".", "="]
-    ]
-
-    let scientificKeys = [
-        ["DEG", "π", "e", "C"],
-        ["sin", "cos", "tan", "⌫"],
-        ["2nd", "HYP", "F-E", "^"],
-        ["ln", "log", "exp", "x!"],
-        ["√", "∛", "abs", "%"],
-        ["7", "8", "9", "÷"],
-        ["4", "5", "6", "×"],
-        ["1", "2", "3", "−"],
-        ["(", "0", ")", "+"],
-        ["±", ".", "1/x", "="]
-    ]
-
-    let programmerKeys = [
-        ["BIN", "OCT", "DEC", "HEX"],
-        ["W8", "W16", "W32", "W64"],
-        ["U/S", "~", "&", "|"],
-        ["^", "<<", ">>", "AC"],
-        ["ROL", "ROR", "NAND", "NOR"],
-        ["(", ")", "÷", "×"],
-        ["7", "8", "9", "−"],
-        ["4", "5", "6", "+"],
-        ["1", "2", "3", "="],
-        ["0", "A", "B", "⌫"],
-        ["C", "D", "E", "F"],
-        ["XNOR", "ASR", "BSWAP", "MOD"]
-    ]
-
     var rows: [[String]] {
-        switch mode {
-        case .standard: return standardKeys
-        case .scientific: return scientificKeys
-        case .programmer: return programmerKeys
-        }
+        bridge.keyRows()
     }
 
     func selectMode(_ newMode: CalcMode) {
@@ -318,32 +276,7 @@ final class CalculatorModel: ObservableObject {
     }
 
     func visibleTitle(_ key: String) -> String {
-        switch key {
-        case "DEG":
-            return angleUnit == 0 ? "DEG" : (angleUnit == 1 ? "RAD" : "GRAD")
-        case "sin":
-            if scientificHyperbolic {
-                return scientificSecond ? "asinh" : "sinh"
-            }
-            return scientificSecond ? "asin" : "sin"
-        case "cos":
-            if scientificHyperbolic {
-                return scientificSecond ? "acosh" : "cosh"
-            }
-            return scientificSecond ? "acos" : "cos"
-        case "tan":
-            if scientificHyperbolic {
-                return scientificSecond ? "atanh" : "tanh"
-            }
-            return scientificSecond ? "atan" : "tan"
-        case "√": return scientificSecond ? "x²" : "√"
-        case "∛": return scientificSecond ? "x³" : "∛"
-        case "abs": return scientificSecond ? "floor" : "abs"
-        case "%": return scientificSecond ? "ceil" : "%"
-        case "log": return scientificSecond ? "10ˣ" : "log"
-        case "exp": return scientificSecond ? "2ˣ" : "eˣ"
-        default: return key
-        }
+        bridge.title(forKey: key)
     }
 
     func keyIsSelected(_ key: String) -> Bool {

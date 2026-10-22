@@ -39,8 +39,7 @@ bool valid_identifier(const std::string& name) {
 
 bool reserved_identifier(const std::string& name) {
     if (name == "_" || name == "rand" || name == "i" ||
-        name == "conj" || name == "real" || name == "imag" ||
-        is_builtin_function_name(name)) return true;
+        is_scientific_function_name(name)) return true;
     for (const auto& constant : constant_catalog()) {
         if (constant.name == name || constant.alias == name) return true;
     }
@@ -137,6 +136,42 @@ std::optional<ParsedFunctionDefinition> function_definition(
 }
 
 } // namespace
+
+bool Session::merge_reusable_state(const Session& baseline, const Session& local) {
+    const auto merge = [](const auto& base, const auto& ours, auto& remote) {
+        const auto same = [](const auto& map, const auto& other, const auto& key) {
+            const auto a=map.find(key), b=other.find(key);
+            return a==map.end() ? b==other.end()
+                : b!=other.end() && a->second==b->second;
+        };
+        const auto apply = [&](const auto& key) {
+            if(key=="_" || same(base,ours,key)) return true;
+            if(!same(base,remote,key) && !same(ours,remote,key)) return false;
+            const auto value=ours.find(key);
+            if(value==ours.end()) remote.erase(key);
+            else remote[key]=value->second;
+            return true;
+        };
+        for(const auto& entry:base) if(!apply(entry.first)) return false;
+        for(const auto& entry:ours)
+            if(base.find(entry.first)==base.end() && !apply(entry.first)) return false;
+        return true;
+    };
+    auto functions=functions_;
+    auto scientific=scientific_variables_;
+    if(!merge(baseline.functions_,local.functions_,functions) ||
+       !merge(baseline.scientific_variables_,local.scientific_variables_,scientific))
+        return false;
+    Variables binary64;
+    for(const auto& entry:scientific) {
+        double value=0.0;
+        if(scientific_value_to_double(entry.second,value)) binary64[entry.first]=value;
+    }
+    functions_=std::move(functions);
+    scientific_variables_=std::move(scientific);
+    variables_=std::move(binary64);
+    return true;
+}
 
 Session::Session(std::size_t history_limit) : history_limit_(history_limit) {}
 
@@ -320,7 +355,9 @@ ScientificResult Session::evaluate_scientific(
         : ("Error: " + result.error);
     record_history_text(
         input, output, result.ok,
-        HistoryKind::Scientific, history_context);
+        HistoryKind::Scientific, history_context,
+        result.ok && result.display.empty()
+            ? std::optional<ScientificValue>(result.value) : std::nullopt);
     return result;
 }
 
@@ -337,9 +374,11 @@ void Session::record_history(std::string input, const Result& result,
 
 void Session::record_history_text(std::string input, std::string output,
                                   bool ok, HistoryKind kind,
-                                  HistoryContext context) {
+                                  HistoryContext context,
+                                  std::optional<ScientificValue> scientific_value) {
     history_.push_back(
-        {kind, context, std::move(input), std::move(output), ok});
+        {kind, context, std::move(input), std::move(output), ok,
+         std::move(scientific_value)});
     ++history_revision_;
     if (history_limit_ != 0U) {
         while (history_.size() > history_limit_) history_.pop_front();
@@ -410,7 +449,7 @@ void Session::memory_store_scientific(ScientificValue value) {
     ++memory_revision_;
 }
 
-void Session::memory_add_scientific(
+bool Session::memory_add_scientific(
     const ScientificValue& value, unsigned decimal_digits) {
     const ScientificValue left =
         memory_.empty() ? ScientificValue{} : memory_.front().scientific;
@@ -418,7 +457,7 @@ void Session::memory_add_scientific(
         "(" + scientific_value_expression(left) + ")+(" +
             scientific_value_expression(value) + ")",
         {}, {}, AngleUnit::Radians, decimal_digits);
-    if (!result.ok) return;
+    if (!result.ok) return false;
 
     double approximate = 0.0;
     const bool valid = scientific_value_to_double(result.value, approximate);
@@ -427,9 +466,10 @@ void Session::memory_add_scientific(
     if (memory_.empty()) memory_.push_front(std::move(entry));
     else memory_.front() = std::move(entry);
     ++memory_revision_;
+    return true;
 }
 
-void Session::memory_subtract_scientific(
+bool Session::memory_subtract_scientific(
     const ScientificValue& value, unsigned decimal_digits) {
     const ScientificValue left =
         memory_.empty() ? ScientificValue{} : memory_.front().scientific;
@@ -437,7 +477,7 @@ void Session::memory_subtract_scientific(
         "(" + scientific_value_expression(left) + ")-(" +
             scientific_value_expression(value) + ")",
         {}, {}, AngleUnit::Radians, decimal_digits);
-    if (!result.ok) return;
+    if (!result.ok) return false;
 
     double approximate = 0.0;
     const bool valid = scientific_value_to_double(result.value, approximate);
@@ -446,6 +486,7 @@ void Session::memory_subtract_scientific(
     if (memory_.empty()) memory_.push_front(std::move(entry));
     else memory_.front() = std::move(entry);
     ++memory_revision_;
+    return true;
 }
 
 ScientificValue Session::memory_recall_scientific() const {
@@ -538,7 +579,7 @@ bool Session::load_variables_text(std::string_view text) {
             const ScientificResult parsed =
                 calculator::evaluate_scientific(
                     value_text, loaded_scientific, functions_,
-                    AngleUnit::Radians, kScientificDefaultDigits);
+                    AngleUnit::Radians, kScientificMaxDigits);
             if (!parsed.ok || !parsed.display.empty()) return false;
 
             loaded_scientific[name] = parsed.value;

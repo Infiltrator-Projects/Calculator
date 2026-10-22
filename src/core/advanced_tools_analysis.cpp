@@ -103,18 +103,27 @@ ToolResult statistics_tool(std::string_view input) {
         mean+=delta/static_cast<double>(seen);
         const double delta2=x-mean;
         m2+=delta*delta2;
+        if(!std::isfinite(sum)||!std::isfinite(mean)||!std::isfinite(m2))
+            return failure("Statistics exceed the finite real range.");
     }
     const double pop=m2/static_cast<double>(v.size());
+    const double median=quantile_sorted(v,0.5);
+    const double q1=quantile_sorted(v,0.25);
+    const double q3=quantile_sorted(v,0.75);
+    const double range=v.back()-v.front();
+    if(!std::isfinite(median)||!std::isfinite(q1)||!std::isfinite(q3)||
+       !std::isfinite(range)||!std::isfinite(pop)||pop<0.0)
+        return failure("Statistics exceed the finite real range.");
     std::ostringstream out;
     out<<"Count  "<<v.size()
        <<"\nSum  "<<number(sum)
        <<"\nMean  "<<number(mean)
-       <<"\nMedian  "<<number(quantile_sorted(v,0.5))
-       <<"\nQ1  "<<number(quantile_sorted(v,0.25))
-       <<"\nQ3  "<<number(quantile_sorted(v,0.75))
+       <<"\nMedian  "<<number(median)
+       <<"\nQ1  "<<number(q1)
+       <<"\nQ3  "<<number(q3)
        <<"\nMin  "<<number(v.front())
        <<"\nMax  "<<number(v.back())
-       <<"\nRange  "<<number(v.back()-v.front())
+       <<"\nRange  "<<number(range)
        <<"\nPopulation variance  "<<number(pop)
        <<"\nPopulation stddev  "<<number(std::sqrt(pop));
     if(v.size()>1U) {
@@ -139,6 +148,8 @@ ToolResult graph_tool(
         return failure("Samples must be 2..4096.");
     if(p.size()>4U) return failure("Too many graph fields.");
     if(!(xmin<xmax)) return failure("xmin must be less than xmax.");
+    const double span=xmax-xmin;
+    if(!std::isfinite(span)) return failure("X interval exceeds the finite real range.");
 
     ToolResult result; result.ok=true;
     result.points.reserve(static_cast<std::size_t>(samples));
@@ -147,7 +158,8 @@ ToolResult graph_tool(
     double ymax=-std::numeric_limits<double>::infinity();
     calculator::ScientificVariables vars;
     for(std::uint64_t i=0;i<samples;++i) {
-        const double x=xmin+(xmax-xmin)*static_cast<double>(i)/static_cast<double>(samples-1U);
+        const double fraction=static_cast<double>(i)/static_cast<double>(samples-1U);
+        const double x=i==samples-1U ? xmax : xmin+span*fraction;
         vars["x"]=calculator::scientific_value_from_double(x);
         const auto y=calculator::evaluate_scientific(
             p[0], vars, {}, calculator::AngleUnit::Radians,
@@ -170,52 +182,71 @@ ToolResult graph_tool(
     return result;
 }
 
-double eval_x(
-    std::string_view expr,
-    double x,
-    bool& ok,
-    EvaluationBudget& budget) {
-    calculator::ScientificVariables vars;
-    vars["x"] = calculator::scientific_value_from_double(x);
-    const auto result = calculator::evaluate_scientific(
-        std::string(expr), vars, {}, calculator::AngleUnit::Radians,
-        kToolScientificDigits, &budget);
-    double value = 0.0;
-    ok = result.ok && result.display.empty() &&
-         calculator::scientific_value_to_double(result.value, value) &&
-         std::isfinite(value);
-    return ok ? value : 0.0;
-}
+// Search geometry is binary64, but residuals must be scale independent. Divide
+// Scientific samples by the first non-zero Scientific value before crossing
+// that boundary; even 1e-4000*(x-a) then has ordinary finite search residuals.
+// Exact zero is identified before normalization. A small residual alone never
+// admits an arbitrary scan point as a root.
+class RootFunction {
+public:
+    RootFunction(std::string expression, EvaluationBudget& budget)
+        : expression_(std::move(expression)), budget_(budget) {}
+
+    double evaluate(double x, bool& ok) {
+        variables_["x"] = calculator::scientific_value_from_double(x);
+        const auto result = calculator::evaluate_scientific(
+            expression_, variables_, {}, calculator::AngleUnit::Radians,
+            kToolScientificDigits, &budget_);
+        ok = result.ok && result.display.empty() && result.value.imag == "0";
+        if (!ok || result.value.real == "0") return 0.0;
+        if (scale_.empty()) scale_ = result.value.real;
+        const auto normalized = calculator::evaluate_scientific(
+            "(" + result.value.real + ")/(" + scale_ + ")", {}, {},
+            calculator::AngleUnit::Radians, kToolScientificDigits, &budget_);
+        double value = 0.0;
+        ok = normalized.ok && calculator::scientific_value_to_double(
+            normalized.value, value);
+        return ok ? value : 0.0;
+    }
+
+private:
+    std::string expression_;
+    std::string scale_;
+    calculator::ScientificVariables variables_;
+    EvaluationBudget& budget_;
+};
 void add_root(std::vector<double>& roots,double x) {
     for(double r:roots) if(std::fabs(r-x)<=1e-9*std::max({1.0,std::fabs(r),std::fabs(x)})) return;
     roots.push_back(x);
 }
-bool refine_stationary_root(std::string_view expression,
+bool refine_stationary_root(RootFunction& function,
                             double left, double seed, double right,
                             double& root,
                             EvaluationBudget& budget) {
     double x=seed;
     const double span=std::max(right-left,1e-12);
-    for(int iteration=0;iteration<40;++iteration){
+    for(int iteration=0;iteration<128;++iteration){
         bool ok=false;
-        const double fx=eval_x(expression,x,ok,budget);
+        const double fx=function.evaluate(x,ok);
         if(!ok) return false;
-        if(std::fabs(fx)<=1e-24){root=x;return true;}
+        if(fx==0.0){root=x;return true;}
 
         const double h=std::max(
             span*1e-4,
             std::sqrt(std::numeric_limits<double>::epsilon())*
                 std::max(1.0,std::fabs(x)));
         bool okp=false,okm=false;
-        const double fp=eval_x(expression,std::min(right,x+h),okp,budget);
+        const double xp=std::min(right,x+h);
+        const double xm=std::max(left,x-h);
+        const double fp=function.evaluate(xp,okp);
         if (budget.failed()) return false;
-        const double fm=eval_x(expression,std::max(left,x-h),okm,budget);
+        const double fm=function.evaluate(xm,okm);
         if(!okp||!okm) return false;
         const double denominator=
-            std::min(right,x+h)-std::max(left,x-h);
+            xp-xm;
         if(denominator<=0.0) return false;
         const double derivative=(fp-fm)/denominator;
-        if(!std::isfinite(derivative)||std::fabs(derivative)<1e-15) return false;
+        if(!std::isfinite(derivative)||derivative==0.0) return false;
 
         double next=x-fx/derivative;
         if(!std::isfinite(next)) return false;
@@ -223,14 +254,26 @@ bool refine_stationary_root(std::string_view expression,
         if(std::fabs(next-x)<=
            8.0*std::numeric_limits<double>::epsilon()*
                std::max(1.0,std::fabs(x))){
-            x=next;
-            break;
+            // Even-multiplicity roots lack a sign-changing bracket. Require
+            // residual consistent with coordinate rounding and measured local
+            // curvature; an absolute epsilon would also admit positive minima.
+            const double hp=xp-x;
+            const double hm=x-xm;
+            if(hp<=0.0||hm<=0.0) return false;
+            const double curvature=2.0*((fp-fx)/hp-(fx-fm)/hm)/(hp+hm);
+            const double radius=std::numeric_limits<double>::epsilon()*
+                std::max(1.0,std::fabs(x));
+            bool valid=false;
+            const double residual=function.evaluate(next,valid);
+            const double tolerance=4.0*std::fabs(curvature)*radius*radius;
+            if(valid&&std::isfinite(tolerance)&&std::fabs(residual)<=tolerance){
+                root=next;
+                return true;
+            }
+            if(next==x) return false;
         }
         x=next;
     }
-    bool ok=false;
-    const double value=eval_x(expression,x,ok,budget);
-    if(ok&&std::fabs(value)<=1e-7){root=x;return true;}
     return false;
 }
 
@@ -243,43 +286,52 @@ ToolResult equation_tool(
     if(p.size()>1U&&!p[1].empty()&&!parse_double(p[1],xmin)) return failure("Invalid xmin.");
     if(p.size()>2U&&!p[2].empty()&&!parse_double(p[2],xmax)) return failure("Invalid xmax.");
     if(!(xmin<xmax)) return failure("xmin must be less than xmax.");
+    const double span=xmax-xmin;
+    if(!std::isfinite(span)) return failure("X interval exceeds the finite real range.");
 
     constexpr int segments=2048;
+    RootFunction function(p[0],budget);
     std::vector<double> roots;
     double x_prev2=xmin;
     bool ok_prev2=false;
-    double y_prev2=eval_x(p[0],x_prev2,ok_prev2,budget);
+    double y_prev2=function.evaluate(x_prev2,ok_prev2);
     if (budget.failed()) return failure(budget.error());
-    if(ok_prev2&&std::fabs(y_prev2)<1e-12) add_root(roots,x_prev2);
+    if(ok_prev2&&y_prev2==0.0) add_root(roots,x_prev2);
 
     double x_prev=x_prev2;
     double y_prev=y_prev2;
     bool ok_prev=ok_prev2;
 
     for(int i=1;i<=segments;++i){
-        const double x=xmin+(xmax-xmin)*static_cast<double>(i)/segments;
+        const double fraction=static_cast<double>(i)/segments;
+        const double x=i==segments ? xmax : xmin+span*fraction;
         bool ok=false;
-        const double y=eval_x(p[0],x,ok,budget);
+        const double y=function.evaluate(x,ok);
         if (budget.failed()) return failure(budget.error());
-        if(ok&&std::fabs(y)<1e-12) add_root(roots,x);
+        if(ok&&y==0.0) add_root(roots,x);
 
         if(ok_prev&&ok&&std::signbit(y_prev)!=std::signbit(y)){
             double lo=x_prev,hi=x,flo=y_prev,fhi=y;
+            const double residual_scale=std::max(std::fabs(flo),std::fabs(fhi));
+            bool bracket_valid=true;
             for(int n=0;n<80;++n){
-                const double mid=(lo+hi)/2.0;
+                const double mid=lo+(hi-lo)/2.0;
+                if(mid==lo||mid==hi) break;
                 bool okm=false;
-                const double fm=eval_x(p[0],mid,okm,budget);
+                const double fm=function.evaluate(mid,okm);
                 if (budget.failed()) return failure(budget.error());
-                if(!okm) break;
-                if(std::fabs(fm)<1e-14){lo=hi=mid;flo=fhi=fm;break;}
+                if(!okm){bracket_valid=false;break;}
+                if(fm==0.0){lo=hi=mid;break;}
                 if(std::signbit(flo)!=std::signbit(fm)){hi=mid;fhi=fm;}
                 else{lo=mid;flo=fm;}
             }
-            const double candidate=(lo+hi)/2.0;
+            const double candidate=lo+(hi-lo)/2.0;
             bool okc=false;
-            const double fc=eval_x(p[0],candidate,okc,budget);
+            const double fc=function.evaluate(candidate,okc);
             if (budget.failed()) return failure(budget.error());
-            if(okc&&std::fabs(fc)<=1e-7) add_root(roots,candidate);
+            if(bracket_valid&&okc&&
+               std::fabs(fc)<=std::sqrt(std::numeric_limits<double>::epsilon())*
+                   residual_scale) add_root(roots,candidate);
         }
 
         // Sign-change bracketing cannot see even-multiplicity roots. A local
@@ -290,7 +342,7 @@ ToolResult equation_tool(
            std::fabs(y_prev)<std::fabs(y)){
             double candidate=0.0;
             if(refine_stationary_root(
-                   p[0],x_prev2,x_prev,x,candidate,budget)){
+                   function,x_prev2,x_prev,x,candidate,budget)){
                 add_root(roots,candidate);
             }
             if (budget.failed()) return failure(budget.error());

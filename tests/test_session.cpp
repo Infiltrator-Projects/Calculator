@@ -290,6 +290,20 @@ int main(){
        retained_history.history_count()!=4U)
         fail("unlimited history retention wrong");
 
+    for (const auto name : calculator::scientific_function_catalog()) {
+        calculator::Session reserved_scientific;
+        if (reserved_scientific.evaluate_scientific(std::string(name)+"=2").ok ||
+            reserved_scientific.evaluate_scientific(std::string(name)+"(x)=x").ok)
+            fail("Scientific built-in name must be reserved: "+std::string(name));
+    }
+    for (unsigned digits : {16U, 50U, 100U, 1000U}) {
+        calculator::Session before, after;
+        before.evaluate_scientific("saved=1/7+i/13", calculator::AngleUnit::Radians, digits);
+        if (!after.load_variables_text(before.variables_text()) ||
+            before.variables_text()!=after.variables_text())
+            fail("Scientific persistence must preserve retained real/complex digits");
+    }
+
     if(failures){std::cerr<<failures<<" session test(s) failed\n";return 1;}
     std::cout<<"calculator session tests passed\n";
     return 0;

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.56 - 2026-10-23
+
+- Retain one committed Scientific result for display, Additional Results, memory, unary actions and history; refresh angle changes consistently.
+- Preserve saved real/complex variables through 1000 digits and share GUI/CLI durable state with locked merge and explicit conflict failure. Reserve every Scientific built-in name.
+- Reject scaled non-roots, discontinuity candidates, numerical overflow and non-zero underflow at real-tool boundaries; keep signed Programmer output in the selected radix.
+- Bound huge Fixed Scientific displays with exponent-form fallback without changing retained values.
+- Remove native installer profile/test bypasses; require CPU-native LTO, tests and trained two-pass PGO, with isolated GTK training that exits cleanly.
+- Derive iPhone keys and dynamic labels from the shared C++ contract and align current dependency, typography and numerical documentation.
+
 ## 0.2.55 - 2026-10-18
 
 - Fix hardware-native installation when APT classifies a locally rebuilt package as a downgrade despite matching the installed version.

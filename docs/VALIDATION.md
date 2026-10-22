@@ -12,6 +12,10 @@ The repository uses one cross-platform workflow, `.github/workflows/release.yml`
 
 The `tests/` tree protects expression grammar and nesting, Scientific precision and completion, canonical constant ownership, multiprecision conversion/storage, versioned Controller persistence with transactional malformed-state rejection, calendar arithmetic, graph/root evaluation, Standard precedence/percentage and exact binary64 state round-tripping, memory invariants, Programmer width/radix/logic/shift/modulo behaviour, structured history, Additional Results, engineering notation, controller ownership, desktop contracts, Common integration and source/build ownership.
 
+Scientific regressions cover committed `_`/assignment/random results, same-input synchronization, angle-button cache refresh, real/complex variable round trips through 1000 digits, complete built-in reservation, checked subnormal/underflow conversion and bounded huge Fixed output. Programmer tests cover signed non-decimal presentation at every supported width. Root tests include tiny/large scaling, non-zero constants, stationary roots, positive minima and poles; real-tool tests reject numerical overflow and non-zero underflow.
+
+Linux's `calculator-linux-persistence` target runs the production GUI storage adapter and `/cli` handler against isolated XDG directories. It verifies shared definitions/variables, preserved GUI preferences, unrelated concurrent edits, repeated saves, same-field/name conflicts and malformed-file preservation.
+
 `calculator-evaluation-budget` additionally protects Scientific/Advanced Tools input, cumulative-work, recursion, factorial/exponent, cancellation and hard arbitrary-precision output ceilings. Exact/arbitrary parser recursion is exercised directly so an 8192-byte input ceiling cannot be mistaken for a stack-safety policy.
 
 The dedicated `calculator-standard-math` forensic suite enumerates two-operator `+ - * /` precedence combinations over signed operands, explicit grouping, power/unary/postfix/domain boundaries, and computational-state round trips for curated IEEE-754 boundaries plus 50,000 deterministic finite binary64 patterns. Controller regressions prove fixed-decimal/grouped presentation cannot alter later arithmetic or memory recall and that repeated Equals captures the intended top-level operation.
@@ -59,7 +63,7 @@ Production remains Boost.Multiprecision; MPFR/MPC are validation-only dependenci
 
 ## Semantic appearance and focus regression
 
-The exact pinned Common 1.19.35 public contract is checked for semantic design roles consumed by Calculator. GTK, Win32 and SwiftUI source-contract tests protect use of relevant roles, while desktop focus treatment is checked so keyboard-visible focus cannot disappear during visual refactoring.
+The exact pinned Common 1.19.57 public contract is checked for semantic design roles consumed by Calculator. GTK, Win32 and SwiftUI source-contract tests protect use of relevant roles, while desktop focus treatment is checked so keyboard-visible focus cannot disappear during visual refactoring.
 
 ## Release criterion
 
@@ -76,6 +80,8 @@ Physical-device installation, signing/provisioning, accessibility, visual layout
 ## Release-mechanics regressions
 
 Preflight runs `tests/test_source_bundle.py` against disposable repositories with recursive gitlinks, spaces, dirty/untracked files, mismatched or absent dependencies and concurrent packagers. It checks exact content, repeat bytes, failure preservation and private cleanup. `tests/test_release_metadata.py` exercises the actual decision code against Git history: a forward version, corrective commits, exact-tag retry, maintenance after publication and rejected rollback/reuse. `BUILD_TESTING=OFF` omits Calculator test targets without changing production assertion modes.
+
+Native installer regressions reject retired profile selection and test-bypass options in the production argument handler. Installation mandates CPU-native LTO, tests and two-pass trained PGO, verifies GTK profile output and uses isolated preferences for training. Packaged Linux qualification exercises the same opt-in timed normal-exit path under fatal GTK warnings before its ordinary idle-CPU probes; normal application runs have no training timer.
 
 ## Regression rule
 

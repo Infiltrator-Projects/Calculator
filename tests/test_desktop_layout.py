@@ -260,9 +260,16 @@ for needle in (
 # iPhone owns only SwiftUI adaptation and platform theme preference. The
 # semantic Day/Night values must come from Common through the Objective-C++
 # bridge rather than being mirrored in Swift.
-assert '["%", "CE", "C", "⌫"]' in Path(
-    "ios/Sources/CalculatorModel.swift"
-).read_text(encoding="utf-8"), "iPhone Standard keypad is missing CE"
+phone_model = Path("ios/Sources/CalculatorModel.swift").read_text(encoding="utf-8")
+assert "bridge.keyRows()" in phone_model, "iPhone bypasses the canonical keypad rows"
+assert "bridge.title(forKey: key)" in phone_model, "iPhone duplicates command-label semantics"
+assert "append(calculator::ui::kStandardKeypad, 4U)" in ios_bridge
+assert "append(calculator::ui::kStandardMemory, 5U)" in ios_bridge
+assert "append(calculator::ui::kScientificKeypad, 4U)" in ios_bridge
+assert "append(calculator::ui::kProgrammerKeypad, 4U)" in ios_bridge
+assert "controller->button_label(spec->command, spec->label)" in ios_bridge
+for old_authority in ("let standardKeys", "let scientificKeys", "let programmerKeys"):
+    assert old_authority not in phone_model, "iPhone reintroduced a private keypad catalogue"
 
 for needle in (
     "CalculatorBridge.themePalette(dark: dark)",

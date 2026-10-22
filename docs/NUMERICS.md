@@ -32,7 +32,7 @@ Boost is an implementation mechanism, not a public ABI. Scientific crosses Sessi
 
 Within Standard, the binary64 value is authoritative. `serialize_value()` emits the shortest locale-independent decimal that round-trips to exactly the same finite binary64 value and is used whenever a result must re-enter computational expression state. `format_value()` is presentation and may round or group for a person.
 
-Presentation is never reparsed as computation. A fixed-decimal or grouped display preference may change what is shown without changing subsequent arithmetic. Memory retains a Scientific value plus an optional exact binary64 view; overflow or a Scientific-only out-of-range value cannot silently become a fabricated Standard approximation.
+Presentation is never reparsed as computation. A fixed-decimal or grouped display preference may change what is shown without changing subsequent arithmetic. Memory retains a Scientific value plus an optional finite binary64 view; complex values, overflow and non-zero underflow-to-zero make that view unavailable. Representable subnormals remain valid.
 
 ## Shared constant authority
 
@@ -42,7 +42,7 @@ A new constant must not introduce a second Scientific-only catalogue merely beca
 
 ## Binary64 token conversion
 
-Calculator owns binary64 expression grammar and decides when a number is expected. Common 1.19.35 owns product-neutral locale-independent decimal token conversion through `infiltratr_parse_double_token()` and the related complete numeric parsers.
+Calculator owns binary64 expression grammar and decides when a number is expected. Common 1.19.57 owns product-neutral locale-independent decimal token conversion through `infiltratr_parse_double_token()` and the related complete numeric parsers.
 
 This rejects NaN, infinity, hexadecimal floating-point spelling, malformed exponents, overflow and underflow-to-zero according to the shared conversion contract while keeping precedence and expression structure Calculator-owned. Scientific literals do not pass through binary64; they enter the multiprecision domain directly.
 
@@ -73,6 +73,10 @@ Scientific factorial accepts real, non-negative integral input through the maint
 
 User-defined functions are evaluated in the same active multiprecision domain. Entering a function boundary does not create an additional requested-precision rounding boundary.
 
+Session reserves the Scientific evaluator's complete built-in catalogue, including dynamic `logN`/`rootN` forms, constants, `i`, `rand` and `_`. Reusable variable components reload at the supported maximum precision, preserving values produced at any requested precision through 1000 digits rather than rounding them to the 50-digit default.
+
+After Equals, Controller retains the value returned by that evaluation. Additional Results, memory and subsequent unary operations use it directly; synchronizing unchanged input does not evaluate `_`, assignments or `rand` again. A changed expression, angle unit or calculation precision creates a fresh preview context.
+
 ## Evaluation resource semantics
 
 Multiprecision Scientific and iterative/arbitrary-precision Advanced Tools share `EvaluationBudget`. Its defaults provide:
@@ -92,7 +96,7 @@ Standard's binary64 parser has a separate deliberate depth policy because it is 
 
 ## Programmer domain
 
-Programmer values are masked to the selected 8, 16, 32 or 64-bit width after operations. Wraparound is deliberate domain semantics, not native signed-overflow behaviour. Signed display interprets the same final bit pattern using two's-complement presentation; it does not change the stored value.
+Programmer values are masked to the selected 8, 16, 32 or 64-bit width after operations. Wraparound is deliberate domain semantics, not native signed-overflow behaviour. Signed decimal display interprets the same final bit pattern using two's-complement presentation; hexadecimal, octal and binary always render that pattern in the selected radix. Signedness does not change the stored value.
 
 Numeric literals use the selected radix and optional prefixes must agree with that radix. Shift counts are decimal control quantities and unsafe counts are rejected before native shifting. `>>` is logical right shift; `ashr` is explicit arithmetic-right shift with sign extension from the selected width. NAND, NOR and XNOR are width-masked. Rotates reduce counts modulo width. Byte swap reverses bytes only inside the selected width, so 8-bit values are unchanged. `%` is integer remainder with zero-divisor failure.
 
@@ -114,9 +118,11 @@ The generic big-integer mechanism is Boost.Multiprecision `cpp_int`; Calculator 
 
 Unit conversion evaluates source values, exact decimal/ratio factors and affine offsets in the Scientific multiprecision domain. Definitions such as `5/9` and `pi/180` are therefore not first rounded into binary64.
 
-Graph and real-root expressions use Scientific evaluation with supplied `x`. Samples are evaluated under one cumulative budget. Finite results cross explicitly into binary64 only where native graph geometry and deterministic real-interval search require it. Invalid/non-finite samples remain discontinuity markers rather than being connected through.
+Graph and real-root expressions use Scientific evaluation with supplied `x`. Samples are evaluated under one cumulative budget. Finite results cross explicitly into binary64 only where native graph geometry and deterministic real-interval search require it. Invalid/non-finite samples and non-zero values that underflow to zero remain discontinuity markers rather than fabricated zero points. Intervals whose span is not finite binary64 are rejected; sampling multiplies by a bounded fraction to avoid intermediate coordinate overflow.
 
-Equation solving is a deterministic numerical real-root finder: interval segmentation identifies candidates, sign-changing intervals are refined by safeguarded bisection, stationary candidates are separately refined, results are re-evaluated before admission and duplicates are coalesced. It is not a symbolic algebra system.
+Equation solving is a deterministic numerical real-root finder: interval segmentation identifies candidates, sign-changing intervals are refined by safeguarded bisection, stationary candidates are separately refined, results are re-evaluated before admission and duplicates are coalesced. Scientific residuals are normalized against a non-zero Scientific sample before binary64 search, so multiplying a function by a tiny constant does not turn every scan point into a root. Scan points require exact evaluated zero; bracket admission uses relative residual evidence and stationary admission uses local curvature and coordinate uncertainty. Invalid probes reject a bracket, including sampled poles. This produces numerical estimates within finite precision and sampling limits; it cannot certify all roots or distinguish every near-zero minimum from a root.
+
+Engineering and transfer tools accept finite binary64 operands and require a finite, non-underflowed binary64 result. Derived formulae use Scientific arithmetic before that checked boundary where binary64 intermediate products would overflow or underflow. Statistics reject non-finite accumulators, variances, quantiles or ranges instead of formatting infinity/NaN as success.
 
 Complex Advanced Tools are adapters over the Scientific multiprecision engine rather than a second `std::complex<double>` calculation path. Add/subtract/multiply/divide, conjugate, magnitude, argument and polar results therefore inherit Scientific complex-domain semantics.
 
@@ -132,7 +138,9 @@ Scientific engineering presentation operates on the retained multiprecision valu
 
 Formatting is shared core/controller policy, not a platform-shell calculation. Scientific formats retained multiprecision components directly in General, Fixed, Scientific or Engineering forms without conversion through `double`.
 
-History is structured semantic state. Scientific entries retain the angle unit and calculation precision that produced them; Programmer entries retain radix, width and signed-display context. Recall restores the recorded context rather than reconstructing semantics from display text.
+Fixed output is bounded before streaming: if a component could exceed the 20,000-digit materialisation allowance, including requested fractional places and rounding headroom, it transitions to bounded General/exponent form at retained precision. Decimal-place requests are clamped to the supported maximum. This presentation transition leaves the numeric value unchanged.
+
+History is structured semantic state. Numeric Scientific entries retain their result components, angle unit and calculation precision; recall uses those components so a previous-result reference, assignment or random expression cannot silently produce a different historical value. Programmer entries retain radix, width and signed-display context. Recall restores recorded context rather than reconstructing semantics from display text. History and memory remain process-local rather than part of the durable reusable-state document.
 
 ## Failure model
 
