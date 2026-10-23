@@ -75,7 +75,7 @@ jobs:
 
   linux:
     needs: prepare
-    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-24.04"]' || '["self-hosted","Linux","X64","linux-native"]') }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
