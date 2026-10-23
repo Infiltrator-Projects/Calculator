@@ -179,6 +179,15 @@ void apply_selected(GtkWidget* button, bool selected) {
     else gtk_widget_remove_css_class(button, "selected");
 }
 
+// GTK character positions cross Controller's UTF-8 byte-index boundary here.
+std::size_t expression_cursor() {
+    const char* text = gtk_editable_get_text(GTK_EDITABLE(expression_entry));
+    const int position = gtk_editable_get_position(GTK_EDITABLE(expression_entry));
+    if (!text || position < 0) return Controller::kEnd;
+    const glong bounded = std::min<glong>(position, g_utf8_strlen(text, -1));
+    return static_cast<std::size_t>(g_utf8_offset_to_pointer(text, bounded) - text);
+}
+
 void render_state(std::size_t cursor = Controller::kEnd) {
     const auto& state = controller.state();
 
@@ -192,7 +201,9 @@ void render_state(std::size_t cursor = Controller::kEnd) {
         cursor == Controller::kEnd ? state.expression.size() : cursor;
     gtk_editable_set_position(
         GTK_EDITABLE(expression_entry),
-        static_cast<int>(effective_cursor));
+        static_cast<int>(g_utf8_pointer_to_offset(
+            state.expression.c_str(), state.expression.c_str() +
+                std::min(effective_cursor, state.expression.size()))));
 
     gtk_label_set_text(GTK_LABEL(result_label), state.result.c_str());
     gtk_label_set_text(GTK_LABEL(status_label), state.status.c_str());
@@ -1253,11 +1264,9 @@ void show_advanced_tools(GtkWidget*, gpointer) {
 void on_activate(GtkEntry*) {
     history_navigation_index = -1;
     sync_expression_from_widget();
-    const int position =
-        gtk_editable_get_position(GTK_EDITABLE(expression_entry));
     const auto result = controller.dispatch(
         Command::Equals,
-        position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
+        expression_cursor());
     render_state(result.cursor);
     persistence.save_controller_state();
 }
@@ -1268,11 +1277,9 @@ void on_button_clicked(GtkButton*, gpointer data) {
 
     history_navigation_index = -1;
     sync_expression_from_widget();
-    const int position =
-        gtk_editable_get_position(GTK_EDITABLE(expression_entry));
     const auto result = controller.dispatch(
         spec->command,
-        position < 0 ? Controller::kEnd : static_cast<std::size_t>(position));
+        expression_cursor());
     render_state(result.cursor);
     if (spec->command == Command::Equals ||
         spec->command == Command::CycleAngleUnit ||
@@ -1761,12 +1768,7 @@ gboolean on_window_key_pressed(GtkEventControllerKey*, guint keyval,
     if (keyval == GDK_KEY_Tab &&
         controller.state().mode == Mode::Scientific) {
         sync_expression_from_widget();
-        const int position =
-            gtk_editable_get_position(GTK_EDITABLE(expression_entry));
-        const auto result = controller.complete_expression(
-            position < 0
-                ? Controller::kEnd
-                : static_cast<std::size_t>(position));
+        const auto result = controller.complete_expression(expression_cursor());
         if (result.expression_changed) {
             render_state(result.cursor);
             gtk_widget_grab_focus(expression_entry);

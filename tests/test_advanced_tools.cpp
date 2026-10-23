@@ -133,6 +133,14 @@ int main(){
           "finite engineering result survives intermediate underflow");
     check(contains(evaluate(AdvancedTool::Network,"transfer 1e308 1e308"),"8 s"),
           "transfer ratio survives intermediate overflow");
+    check(!evaluate(AdvancedTool::Statistics,"1e-200 2e-200").ok,
+          "tiny unequal samples cannot become successful zero dispersion");
+    check(!evaluate(AdvancedTool::Statistics,"0 5e-324").ok,
+          "subnormal unequal samples require explicit precision failure");
+    check(contains(evaluate(AdvancedTool::Statistics,"1e-200 1e-200"),
+                   "Population stddev  0"), "tiny constant samples retain genuine zero dispersion");
+    check(contains(evaluate(AdvancedTool::Statistics,"0 2e-150"),
+                   "Population stddev  1e-150"), "representable tiny dispersion remains available");
     check(!evaluate(AdvancedTool::Statistics,"1e308 1e308").ok,
           "statistics sum overflow is explicit");
     check(!evaluate(AdvancedTool::Statistics,"-1e308 1e308").ok,

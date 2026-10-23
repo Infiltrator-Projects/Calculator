@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.58 - 2026-10-23
+
+- Reject precision-lost zero variance for unequal Statistics samples instead of reporting false zero dispersion.
+- Keep Standard CE display, Additional Results and memory consistent when the edited expression remains valid.
+- Preserve Unicode scalar boundaries during editing and convert GTK/Win32 cursor positions to and from shared UTF-8 byte offsets.
+- Add regressions for tiny statistics, CE value authority and Unicode editing.
+
 ## 0.2.57 - 2026-10-23
 
 - Evaluate Financial formulae through the shared Scientific engine before checked binary64 conversion, preserving tiny-rate annuities and finite results across large intermediate values.

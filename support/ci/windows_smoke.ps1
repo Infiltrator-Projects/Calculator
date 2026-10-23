@@ -56,6 +56,9 @@ public static class CalcSmoke {
     [DllImport("user32.dll")]
     public static extern IntPtr SendMessage(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
 
+    [DllImport("user32.dll", EntryPoint = "SendMessageW", CharSet = CharSet.Unicode)]
+    public static extern IntPtr SendMessageText(IntPtr hwnd, uint msg, IntPtr wParam, string lParam);
+
     [DllImport("user32.dll")]
     public static extern IntPtr GetDlgItem(IntPtr hwnd, int id);
 
@@ -240,6 +243,36 @@ try {
     if ($resultClassName.ToString() -ine 'Static') {
         throw "Windows result copy surface regressed: expected clickable Static"
     }
+
+    $entry = [IntPtr]::Zero
+    foreach ($hwnd in $children) {
+        $class = [System.Text.StringBuilder]::new(64)
+        [void][CalcSmoke]::GetClassName($hwnd, $class, $class.Capacity)
+        if ($class.ToString() -ieq 'Edit' -and [CalcSmoke]::IsWindowVisible($hwnd)) { $entry = $hwnd; break }
+    }
+    if ($entry -eq [IntPtr]::Zero) { throw 'Windows expression control was not found' }
+    $four = Get-VisibleButtonByText '4'
+    [void][CalcSmoke]::SendMessageText($entry, 0x000C, [IntPtr]::Zero, "2$([char]0x00D7)3")
+    [void][CalcSmoke]::SendMessage($entry, 0x00B1, [IntPtr]2, [IntPtr]2)
+    [void][CalcSmoke]::SendMessage($four, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+    $edited = [System.Text.StringBuilder]::new(128)
+    [void][CalcSmoke]::GetWindowText($entry, $edited, $edited.Capacity)
+    if ($edited.ToString() -cne "2$([char]0x00D7)43") {
+        throw "Unicode keypad insertion failed: '$($edited.ToString())'"
+    }
+    $five = Get-VisibleButtonByText '5'
+    [void][CalcSmoke]::SendMessage($five, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+    [void][CalcSmoke]::GetWindowText($entry, $edited, $edited.Capacity)
+    if ($edited.ToString() -cne "2$([char]0x00D7)453") { throw 'Unicode caret restoration failed' }
+    [void][CalcSmoke]::SendMessage($equals, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+    [void][CalcSmoke]::GetWindowText($result, $resultText, $resultText.Capacity)
+    if ($resultText.ToString() -cne '906') { throw 'Unicode expression arithmetic failed' }
+    [void][CalcSmoke]::SendMessageText($entry, 0x000C, [IntPtr]::Zero, '2+3')
+    [void][CalcSmoke]::SendMessage($entry, 0x00B1, [IntPtr]::Zero, [IntPtr]::Zero)
+    $ce = Get-VisibleButtonByText 'CE'
+    [void][CalcSmoke]::SendMessage($ce, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+    [void][CalcSmoke]::GetWindowText($result, $resultText, $resultText.Capacity)
+    if ($resultText.ToString() -cne '3') { throw 'CE retained-result display failed' }
 
     $title = [IntPtr]::Zero
     foreach ($hwnd in $children) {

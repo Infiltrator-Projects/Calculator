@@ -1,3 +1,10 @@
+calculator (0.2.58) unstable; urgency=medium
+
+  * Correct Statistics precision failure, CE result authority and Unicode editing.
+  * Add behavioural regressions for the three final release-review findings.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 23 Oct 2026 15:00:00 +1100
+
 calculator (0.2.57) unstable; urgency=medium
 
   * Correct Financial cancellation, intermediate overflow and range handling.

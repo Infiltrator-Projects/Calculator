@@ -345,7 +345,14 @@ std::size_t expression_cursor() {
         g_expression, EM_GETSEL,
         reinterpret_cast<WPARAM>(&start),
         reinterpret_cast<LPARAM>(&end));
-    return static_cast<std::size_t>(start);
+    const std::wstring text = window_text(g_expression);
+    std::size_t point = std::min(static_cast<std::size_t>(start), text.size());
+    // EM_GETSEL uses UTF-16 code units. Do not split a surrogate pair while
+    // converting the prefix into Controller's UTF-8 byte offset.
+    if (point > 0U && point < text.size() &&
+        text[point] >= 0xdc00 && text[point] <= 0xdfff &&
+        text[point - 1U] >= 0xd800 && text[point - 1U] <= 0xdbff) --point;
+    return wide_to_utf8(text.substr(0U, point)).size();
 }
 
 void sync_controller_expression() {
@@ -402,7 +409,8 @@ void render_state(std::size_t cursor = Controller::kEnd) {
     const std::size_t effective_cursor =
         cursor == Controller::kEnd ? state.expression.size() : cursor;
     const LONG caret = static_cast<LONG>(
-        std::min(effective_cursor, state.expression.size()));
+        utf8_to_wide(state.expression.substr(
+            0U, std::min(effective_cursor, state.expression.size()))).size());
     SendMessageW(g_expression, EM_SETSEL, caret, caret);
 
     SetWindowTextW(g_result, utf8_to_wide(state.result).c_str());

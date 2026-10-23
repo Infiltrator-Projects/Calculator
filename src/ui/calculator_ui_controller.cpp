@@ -2,6 +2,7 @@
 #include "calculator_ui_controller.hpp"
 
 #include <infiltratr/core.h>
+#include <infiltratr/utf8.h>
 
 #include <algorithm>
 #include <cctype>
@@ -27,6 +28,18 @@ bool Controller::set_expression(std::string expression) {
             "Error: expression exceeds " +
             std::to_string(kMaxExpressionBytes) + "-byte input limit";
         set_status("INPUT LIMIT", true);
+        return false;
+    }
+
+    if (!infiltratr_utf8_validate(expression.data(), expression.size()) ||
+        expression.find('\0') != std::string::npos) {
+        state_.expression.clear();
+        real_cache_ = {};
+        scientific_cache_ = {};
+        programmer_cache_ = {};
+        clear_standard_repeat();
+        state_.result = "Error: expression must be valid UTF-8 text";
+        set_status("INPUT ERROR", true);
         return false;
     }
 
@@ -224,8 +237,13 @@ void Controller::set_status(std::string text, bool fault) {
 }
 
 std::size_t Controller::normalized_cursor(std::size_t cursor) const noexcept {
-    return cursor == kEnd ? state_.expression.size()
-                          : std::min(cursor, state_.expression.size());
+    std::size_t point = cursor == kEnd ? state_.expression.size()
+                                     : std::min(cursor, state_.expression.size());
+    // Public cursors are UTF-8 byte offsets; edits snap to a scalar boundary.
+    while (point > 0U && point < state_.expression.size() &&
+           (static_cast<unsigned char>(state_.expression[point]) & 0xc0U) == 0x80U)
+        --point;
+    return point;
 }
 
 // Cache one side-effect-free interpretation of the current expression after
@@ -273,12 +291,16 @@ DispatchResult Controller::backspace(std::size_t cursor) {
     const std::size_t position = normalized_cursor(cursor);
     if (position == 0) return {0, false};
 
-    state_.expression.erase(position - 1, 1);
+    std::size_t begin = position - 1U;
+    while (begin > 0U &&
+           (static_cast<unsigned char>(state_.expression[begin]) & 0xc0U) == 0x80U)
+        --begin;
+    state_.expression.erase(begin, position - begin);
     state_.fault = false;
     refresh_evaluation_cache();
     if (state_.mode == Mode::Standard) update_standard_preview();
     else if (state_.mode == Mode::Scientific) update_scientific_preview();
-    return {position - 1, true};
+    return {begin, true};
 }
 
 bool Controller::current_value(double& value) {
@@ -620,7 +642,7 @@ std::size_t Controller::clear_entry(std::size_t cursor) {
     }
 
     refresh_evaluation_cache();
-    state_.result = "0";
+    state_.result = real_cache_.ok ? format_display(real_cache_.value) : "0";
     state_.fault = false;
     set_status("READY");
     return segment_start;

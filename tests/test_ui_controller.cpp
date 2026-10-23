@@ -915,6 +915,38 @@ int main() {
     CHECK(namespace_reload.state().fault);
     CHECK(namespace_reload.state().result.rfind("Error:", 0) == 0U);
 
+    Controller editing;
+    editing.set_expression("2+3");
+    editing.dispatch(Command::ClearEntry, 0U);
+    CHECK(editing.state().expression == "+3");
+    CHECK(editing.state().result == "3");
+    CHECK(editing.additional_results().front().value == "3");
+    editing.dispatch(Command::MemoryStore);
+    CHECK(editing.memory_entry(0)->binary64 == 3.0);
+    editing.set_expression(u8"2×3");
+    editing.dispatch(Command::Digit4, 3U); // byte index after the multiplication scalar
+    CHECK(editing.state().expression == u8"2×43");
+    CHECK(editing.state().result == "86");
+    editing.set_expression(u8"2×3");
+    editing.dispatch(Command::Backspace);
+    CHECK(editing.state().expression == u8"2×");
+    const auto erased_unicode = editing.dispatch(Command::Backspace);
+    CHECK(editing.state().expression == "2");
+    CHECK(erased_unicode.cursor == 1U);
+    editing.set_expression(u8"2×3");
+    editing.dispatch(Command::Digit4, 2U); // invalid byte cursor snaps before the scalar
+    CHECK(editing.state().expression == u8"24×3");
+    editing.set_expression(u8"√9");
+    editing.dispatch(Command::Backspace, 3U);
+    CHECK(editing.state().expression == "9");
+    editing.set_expression(u8"2😀");
+    editing.dispatch(Command::Backspace);
+    CHECK(editing.state().expression == "2");
+    CHECK(!editing.set_expression(std::string("2") + char(0xc3)));
+    CHECK(editing.state().expression.empty());
+    CHECK(editing.state().fault);
+    CHECK(!editing.command_enabled(Command::MemoryStore));
+
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";
         return 1;

@@ -107,6 +107,10 @@ ToolResult statistics_tool(std::string_view input) {
             return failure("Statistics exceed the finite real range.");
     }
     const double pop=m2/static_cast<double>(v.size());
+    // Unequal binary64 samples have strictly positive variance. An underflowed
+    // product or rounded mean must not turn them into a constant population.
+    if(v.front()!=v.back() && pop==0.0)
+        return failure("Statistics require greater precision for these unequal values.");
     const double median=quantile_sorted(v,0.5);
     const double q1=quantile_sorted(v,0.25);
     const double q3=quantile_sorted(v,0.75);
