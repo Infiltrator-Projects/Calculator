@@ -107,6 +107,11 @@ target_include_directories(calculator-core
     PRIVATE "${CALCULATOR_MULTIPRECISION_DIR}/include"
 )
 target_compile_definitions(calculator-core PRIVATE BOOST_MP_STANDALONE)
+if(MSVC)
+    # Unicode grammar spellings and shared UI labels are UTF-8 in every
+    # translation unit, including consumers and regression executables.
+    target_compile_options(calculator-core PUBLIC /utf-8)
+endif()
 
 target_link_libraries(calculator-core PUBLIC
     InfiltratrCommon::Portable
@@ -246,7 +251,7 @@ if(CALCULATOR_BUILD_DESKTOP)
             advapi32
         )
         if(MSVC)
-            target_compile_options(calculator PRIVATE /W4 /utf-8)
+            target_compile_options(calculator PRIVATE /W4)
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(calculator PRIVATE
                 -Wall -Wextra -Wpedantic -Wshadow
