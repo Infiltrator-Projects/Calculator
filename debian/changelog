@@ -1,3 +1,12 @@
+calculator (0.2.59) unstable; urgency=medium
+
+  * Avoid duplicate Programmer expression evaluation when drawing or editing bits.
+  * Coalesce Windows UI painting and skip redundant control updates.
+  * Reduce needless iPhone publications and keypad row rebuilding.
+  * Extend cached Programmer evaluation regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 23 Oct 2026 16:00:00 +1100
+
 calculator (0.2.58) unstable; urgency=medium
 
   * Correct Statistics precision failure, CE result authority and Unicode editing.

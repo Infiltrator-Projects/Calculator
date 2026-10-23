@@ -654,7 +654,19 @@ int main() {
     controller.dispatch(Command::AllClear);
     controller.dispatch(Command::Width8);
     controller.dispatch(Command::BaseHex);
+    // Cached results must still reject malformed expressions, and an empty
+    // expression must continue to expose a zero bit-pattern.
     CHECK(controller.programmer_bits().size() == 8U);
+    controller.set_expression("GG");
+    CHECK(controller.programmer_bits().empty());
+    CHECK(!controller.toggle_programmer_bit(0U));
+    CHECK(!controller.swap_programmer_endianness());
+    controller.set_expression("");
+    CHECK(controller.programmer_bits().size() == 8U);
+    controller.set_expression("80");
+    CHECK(controller.programmer_bits()[7]);
+    CHECK(!controller.programmer_bits()[0]);
+    controller.set_expression("");
     CHECK(controller.toggle_programmer_bit(7U));
     CHECK(controller.state().expression == "80");
     CHECK(controller.programmer_bits()[7]);

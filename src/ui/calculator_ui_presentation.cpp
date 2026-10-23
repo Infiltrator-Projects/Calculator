@@ -90,14 +90,11 @@ std::string Controller::programmer_representations_text() const {
 
 std::vector<bool> Controller::programmer_bits() const {
     const unsigned width = static_cast<unsigned>(state_.programmer_width);
-    std::uint64_t value = 0U;
-    if (!state_.expression.empty()) {
-        const ProgrammerResult result = evaluate_programmer(
-            state_.expression, state_.programmer_base,
-            state_.programmer_width);
-        if (!result.ok) return {};
-        value = result.value;
-    }
+    // The Controller already evaluates the expression on every mutation.
+    // Re-parsing here multiplies the work for the 64 owner-drawn bit controls.
+    if (!state_.expression.empty() && !programmer_cache_.ok) return {};
+    const std::uint64_t value =
+        state_.expression.empty() ? 0U : programmer_cache_.value;
     std::vector<bool> bits(width, false);
     for (unsigned bit = 0; bit < width; ++bit) {
         bits[bit] = ((value >> bit) & 1ULL) != 0U;
@@ -110,14 +107,9 @@ bool Controller::toggle_programmer_bit(unsigned bit) {
     const unsigned width = static_cast<unsigned>(state_.programmer_width);
     if (bit >= width) return false;
 
-    std::uint64_t value = 0U;
-    if (!state_.expression.empty()) {
-        const ProgrammerResult result = evaluate_programmer(
-            state_.expression, state_.programmer_base,
-            state_.programmer_width);
-        if (!result.ok) return false;
-        value = result.value;
-    }
+    if (!state_.expression.empty() && !programmer_cache_.ok) return false;
+    std::uint64_t value =
+        state_.expression.empty() ? 0U : programmer_cache_.value;
     value ^= (1ULL << bit);
     state_.expression = format_programmer(
         value, state_.programmer_base, state_.programmer_width, false);
@@ -134,14 +126,9 @@ bool Controller::toggle_programmer_bit(unsigned bit) {
 bool Controller::swap_programmer_endianness() {
     if (state_.mode != Mode::Programmer) return false;
 
-    std::uint64_t value = 0U;
-    if (!state_.expression.empty()) {
-        const ProgrammerResult result = evaluate_programmer(
-            state_.expression, state_.programmer_base,
-            state_.programmer_width);
-        if (!result.ok) return false;
-        value = result.value;
-    }
+    if (!state_.expression.empty() && !programmer_cache_.ok) return false;
+    std::uint64_t value =
+        state_.expression.empty() ? 0U : programmer_cache_.value;
 
     value = calculator::swap_programmer_endianness(
         value, state_.programmer_width);

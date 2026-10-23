@@ -398,6 +398,21 @@ void redraw_button(HWND button);
 void redraw_active_grid();
 void redraw_mode_buttons();
 
+// Win32 text, visibility and enable operations can trigger synchronous
+// messages and painting. Avoid dispatching them for unchanged controls.
+bool set_text_if_changed(HWND window, const std::wstring& text) {
+    if (window == nullptr || window_text(window) == text) return false;
+    SetWindowTextW(window, text.c_str());
+    return true;
+}
+
+void show_if_changed(HWND window, bool visible) {
+    if (window == nullptr) return;
+    const bool shown =
+        (GetWindowLongPtrW(window, GWL_STYLE) & WS_VISIBLE) != 0;
+    if (shown != visible) ShowWindow(window, visible ? SW_SHOW : SW_HIDE);
+}
+
 void render_state(std::size_t cursor = Controller::kEnd) {
     const auto& state = g_controller.state();
 
@@ -413,36 +428,31 @@ void render_state(std::size_t cursor = Controller::kEnd) {
             0U, std::min(effective_cursor, state.expression.size()))).size());
     SendMessageW(g_expression, EM_SETSEL, caret, caret);
 
-    SetWindowTextW(g_result, utf8_to_wide(state.result).c_str());
-    SetWindowTextW(g_status, utf8_to_wide(state.status).c_str());
+    set_text_if_changed(g_result, utf8_to_wide(state.result));
+    set_text_if_changed(g_status, utf8_to_wide(state.status));
+    const bool fault_changed = g_status_fault != state.fault;
     g_status_fault = state.fault;
     if (g_precision_button != nullptr) {
         const std::wstring precision =
             std::to_wstring(g_controller.scientific_digits()) + L"d";
-        SetWindowTextW(g_precision_button, precision.c_str());
+        set_text_if_changed(g_precision_button, precision);
     }
 
     show_grid(g_standard_buttons, state.mode == Mode::Standard);
     show_grid(g_scientific_buttons, state.mode == Mode::Scientific);
     show_grid(g_programmer_buttons, state.mode == Mode::Programmer);
-    if (g_results_button != nullptr) {
-        ShowWindow(
-            g_results_button,
-            state.mode == Mode::Programmer ? SW_HIDE : SW_SHOW);
-    }
-    if (g_bases_button != nullptr) {
-        ShowWindow(
-            g_bases_button,
-            state.mode == Mode::Programmer ? SW_SHOW : SW_HIDE);
-    }
+    show_if_changed(g_results_button, state.mode != Mode::Programmer);
+    show_if_changed(g_bases_button, state.mode == Mode::Programmer);
 
-    for (HWND button : g_scientific_buttons) {
-        const int id = GetDlgCtrlID(button);
-        const auto it = g_key_specs.find(id);
-        if (it != g_key_specs.end() && it->second != nullptr) {
-            const std::string label = g_controller.button_label(
-                it->second->command, it->second->label);
-            SetWindowTextW(button, utf8_to_wide(label).c_str());
+    if (state.mode == Mode::Scientific) {
+        for (HWND button : g_scientific_buttons) {
+            const int id = GetDlgCtrlID(button);
+            const auto it = g_key_specs.find(id);
+            if (it != g_key_specs.end() && it->second != nullptr) {
+                const std::string label = g_controller.button_label(
+                    it->second->command, it->second->label);
+                set_text_if_changed(button, utf8_to_wide(label));
+            }
         }
     }
 
@@ -456,18 +466,48 @@ void render_state(std::size_t cursor = Controller::kEnd) {
         const int id = GetDlgCtrlID(button);
         const auto it = g_key_specs.find(id);
         if (it != g_key_specs.end() && it->second != nullptr) {
-            EnableWindow(
-                button,
-                g_controller.command_enabled(it->second->command) ? TRUE : FALSE);
+            const bool enabled =
+                g_controller.command_enabled(it->second->command);
+            if ((IsWindowEnabled(button) != FALSE) != enabled) {
+                EnableWindow(button, enabled ? TRUE : FALSE);
+            }
         }
     }
 
+    // Selected state is independent of expression/result text. Only changes
+    // to mode or selector state require repainting the owner-drawn grids.
+    struct Selection {
+        Mode mode;
+        calculator::ProgrammerBase base;
+        calculator::IntegerWidth width;
+        bool signed_display;
+        bool second;
+        bool hyperbolic;
+        bool notation;
+    };
+    static bool rendered = false;
+    static Selection previous{};
+    const Selection current{
+        state.mode, state.programmer_base, state.programmer_width,
+        state.programmer_signed, state.scientific_second,
+        state.scientific_hyperbolic, state.scientific_notation
+    };
+    const bool mode_changed = !rendered || previous.mode != current.mode;
+    const bool selection_changed = mode_changed ||
+        previous.base != current.base || previous.width != current.width ||
+        previous.signed_display != current.signed_display ||
+        previous.second != current.second ||
+        previous.hyperbolic != current.hyperbolic ||
+        previous.notation != current.notation;
+    previous = current;
+    rendered = true;
+
     refresh_history();
     refresh_bases_window();
-    redraw_mode_buttons();
-    redraw_active_grid();
-    InvalidateRect(g_status, nullptr, TRUE);
-    InvalidateRect(g_main, nullptr, TRUE);
+    if (mode_changed) redraw_mode_buttons();
+    if (selection_changed) redraw_active_grid();
+    if (fault_changed) InvalidateRect(g_status, nullptr, TRUE);
+    if (mode_changed) InvalidateRect(g_main, nullptr, TRUE);
 }
 
 void dispatch_command(const ButtonSpec& spec) {
@@ -894,16 +934,13 @@ void create_key_grid(const ButtonSpec* specs, std::size_t count,
 }
 
 void show_grid(std::vector<HWND>& buttons, bool visible) {
-    for (HWND button : buttons) {
-        ShowWindow(button, visible ? SW_SHOW : SW_HIDE);
-    }
+    for (HWND button : buttons) show_if_changed(button, visible);
 }
 
 void redraw_button(HWND button) {
-    if (button != nullptr) {
-        RedrawWindow(button, nullptr, nullptr,
-                     RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
-    }
+    // Coalesce drawing with the next paint cycle instead of synchronously
+    // painting each individual control inside a state update.
+    if (button != nullptr) InvalidateRect(button, nullptr, FALSE);
 }
 
 void redraw_buttons(const std::vector<HWND>& buttons) {
@@ -1976,10 +2013,10 @@ void refresh_bases_window() {
         return;
     }
 
-    SetWindowTextW(
+    set_text_if_changed(
         g_bases_output,
         win32_multiline_text(
-            g_controller.programmer_representations_text()).c_str());
+            g_controller.programmer_representations_text()));
 
     const auto bits = g_controller.programmer_bits();
     const bool programmer_mode =
@@ -1990,9 +2027,10 @@ void refresh_bases_window() {
         const unsigned bit = 63U - display;
         const bool enabled = programmer_mode && bit < bits.size();
         const bool active = enabled && bits[bit];
-        SetWindowTextW(button, active ? L"1" : L"0");
-        EnableWindow(button, enabled ? TRUE : FALSE);
-        redraw_button(button);
+        set_text_if_changed(button, active ? L"1" : L"0");
+        if ((IsWindowEnabled(button) != FALSE) != enabled) {
+            EnableWindow(button, enabled ? TRUE : FALSE);
+        }
     }
 }
 

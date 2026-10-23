@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.59 - 2026-10-23
+
+- Reuse the already-computed Programmer result for bit displays, bit toggles and endianness changes instead of repeatedly evaluating the expression.
+- Avoid unchanged Win32 text, visibility and enabled-state messages, and repaint owner-drawn keypads only when selection state changes; batch remaining invalidations rather than forcing individual synchronous paints.
+- Make iPhone state synchronization publish only changed values and reuse mode-stable keypad row definitions.
+- Extend Programmer invalid-expression and cached-bit regression coverage; retain the same Scientific precision and graph/root semantics.
+
 ## 0.2.58 - 2026-10-23
 
 - Reject precision-lost zero variance for unequal Statistics samples instead of reporting false zero dispersion.

@@ -103,8 +103,16 @@ final class CalculatorModel: ObservableObject {
             forKey: Self.persistentStateKey)
     }
 
+    // Row definitions depend on mode, not on every displayed digit.
+    private var cachedRowsMode: CalcMode?
+    private var cachedRows: [[String]] = []
+
     var rows: [[String]] {
-        bridge.keyRows()
+        if cachedRowsMode != mode {
+            cachedRows = bridge.keyRows()
+            cachedRowsMode = mode
+        }
+        return cachedRows
     }
 
     func selectMode(_ newMode: CalcMode) {
@@ -304,28 +312,46 @@ final class CalculatorModel: ObservableObject {
     private func sync() {
         let state = bridge.snapshot()
 
+        // @Published emits even when assigned the same value. One keypad
+        // press should publish only the fields which actually changed.
         if let rawMode = (state["mode"] as? NSNumber)?.intValue,
-           let resolved = CalcMode(bridgeValue: rawMode) {
+           let resolved = CalcMode(bridgeValue: rawMode), mode != resolved {
             mode = resolved
         }
-        expression = state["expression"] as? String ?? expression
-        display = state["display"] as? String ?? display
-        status = state["status"] as? String ?? status
-        fault = (state["fault"] as? NSNumber)?.boolValue ?? false
-        angleUnit = (state["angleUnit"] as? NSNumber)?.intValue ?? 0
-        scientificSecond =
+        if let value = state["expression"] as? String, expression != value {
+            expression = value
+        }
+        if let value = state["display"] as? String, display != value {
+            display = value
+        }
+        if let value = state["status"] as? String, status != value {
+            status = value
+        }
+        let nextFault = (state["fault"] as? NSNumber)?.boolValue ?? false
+        if fault != nextFault { fault = nextFault }
+        let nextAngle = (state["angleUnit"] as? NSNumber)?.intValue ?? 0
+        if angleUnit != nextAngle { angleUnit = nextAngle }
+        let nextSecond =
             (state["scientificSecond"] as? NSNumber)?.boolValue ?? false
-        scientificHyperbolic =
+        if scientificSecond != nextSecond { scientificSecond = nextSecond }
+        let nextHyperbolic =
             (state["scientificHyperbolic"] as? NSNumber)?.boolValue ?? false
-        scientificNotation =
+        if scientificHyperbolic != nextHyperbolic {
+            scientificHyperbolic = nextHyperbolic
+        }
+        let nextNotation =
             (state["scientificNotation"] as? NSNumber)?.boolValue ?? false
-        scientificDigits =
-            (state["scientificDigits"] as? NSNumber)?.intValue ?? 50
-        historyLimit =
-            (state["historyLimit"] as? NSNumber)?.intValue ?? 0
-        programmerBase = (state["programmerBase"] as? NSNumber)?.intValue ?? 10
-        programmerWidth = (state["programmerWidth"] as? NSNumber)?.intValue ?? 64
-        programmerSigned =
+        if scientificNotation != nextNotation { scientificNotation = nextNotation }
+        let nextDigits = (state["scientificDigits"] as? NSNumber)?.intValue ?? 50
+        if scientificDigits != nextDigits { scientificDigits = nextDigits }
+        let nextHistory = (state["historyLimit"] as? NSNumber)?.intValue ?? 0
+        if historyLimit != nextHistory { historyLimit = nextHistory }
+        let nextBase = (state["programmerBase"] as? NSNumber)?.intValue ?? 10
+        if programmerBase != nextBase { programmerBase = nextBase }
+        let nextWidth = (state["programmerWidth"] as? NSNumber)?.intValue ?? 64
+        if programmerWidth != nextWidth { programmerWidth = nextWidth }
+        let nextSigned =
             (state["programmerSigned"] as? NSNumber)?.boolValue ?? false
+        if programmerSigned != nextSigned { programmerSigned = nextSigned }
     }
 }
