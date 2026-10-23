@@ -121,9 +121,10 @@ std::string Controller::function_definitions_text() const {
 }
 
 bool Controller::load_function_definitions_text(std::string_view text) {
-    const bool loaded = session_.load_function_definitions_text(text);
-    if (loaded) refresh_evaluation_cache();
-    return loaded;
+    const auto before = session_.functions();
+    if (!session_.load_function_definitions_text(text)) return false;
+    if (before != session_.functions()) refresh_scientific_bindings();
+    return true;
 }
 
 std::string Controller::variables_text() const {
@@ -131,9 +132,24 @@ std::string Controller::variables_text() const {
 }
 
 bool Controller::load_variables_text(std::string_view text) {
-    const bool loaded = session_.load_variables_text(text);
-    if (loaded) refresh_evaluation_cache();
-    return loaded;
+    const auto before = session_.scientific_variables();
+    if (!session_.load_variables_text(text)) return false;
+    if (before != session_.scientific_variables()) refresh_scientific_bindings();
+    return true;
+}
+
+void Controller::refresh_scientific_bindings() {
+    if (state_.mode != Mode::Scientific) return;
+    refresh_evaluation_cache();
+    set_status(scientific_status_text());
+    // Import replaces the namespace immediately. A failed lookup must also
+    // invalidate its visible result; a successful one refreshes both views.
+    if (!state_.expression.empty() && !scientific_cache_.ok) {
+        state_.result = "Error: " + scientific_cache_.error;
+        set_status("CALCULATION ERROR", true);
+    } else {
+        update_scientific_preview();
+    }
 }
 
 std::string Controller::persistent_state_text() const {
@@ -206,6 +222,8 @@ bool Controller::merge_persistent_state_text(
 
 bool Controller::load_persistent_state_text(std::string_view text) {
     if (text.size() > kMaxPersistentStateBytes) return false;
+    const std::string before = persistent_state_text();
+    if (text == before) return true;
 
     std::size_t cursor = 0U;
     const auto read_line = [&](std::string_view& line) -> bool {
@@ -371,14 +389,15 @@ bool Controller::load_persistent_state_text(std::string_view text) {
         state_.programmer_signed = programmer_signed != 0U;
     }
 
-    refresh_evaluation_cache();
+    if (persistent_state_text() == before) return true;
     if (state_.mode == Mode::Scientific) {
-        set_status(scientific_status_text());
-        update_scientific_preview();
+        refresh_scientific_bindings();
     } else if (state_.mode == Mode::Programmer) {
+        refresh_evaluation_cache();
         set_status(programmer_status_text());
         if (!state_.expression.empty()) calculate_programmer(false);
     } else {
+        refresh_evaluation_cache();
         set_status("READY");
         update_standard_preview();
     }

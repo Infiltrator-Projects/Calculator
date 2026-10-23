@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../src/core/scientific.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <string>
+#include <utility>
 
 namespace {
 int failures = 0;
@@ -102,6 +104,23 @@ int main() {
                   std::numeric_limits<double>::denorm_min()),binary64) &&
               binary64==std::numeric_limits<double>::denorm_min(),
           "representable minimum subnormal survives narrowing");
+
+    check(calculator::scientific_value_from_double(0.1).real ==
+              "0.1000000000000000055511151231257827021181583404541015625",
+          "binary64 widening preserves the exact value rather than its round-trip spelling");
+    for (const auto& boundary : {
+             std::pair<double, const char*>{std::nextafter(1.0, 2.0), "(1+2^-52)"},
+             {std::numeric_limits<double>::denorm_min(), "2^-1074"},
+             {std::numeric_limits<double>::min(), "2^-1022"},
+             {std::numeric_limits<double>::max(), "(2-2^-52)*2^1023"}}) {
+        variables["wide"] = calculator::scientific_value_from_double(boundary.first);
+        result = calculator::evaluate_scientific(
+            std::string("wide/(") + boundary.second + ")", variables, functions,
+            calculator::AngleUnit::Radians, calculator::kScientificMaxDigits);
+        check(result.ok && result.value.real == "1" && result.value.imag == "0",
+              std::string("exact binary64 widening at ") + boundary.second);
+    }
+
     const auto huge=evaluate("1e30000");
     const auto fixed=calculator::format_scientific_display(
         huge.value,calculator::ScientificDisplayFormat::Fixed,2,false,false);

@@ -78,6 +78,8 @@ The Tools workbench is intentionally on demand. It keeps the primary Standard/Sc
 
 Session delegates mathematical evaluation to the core. It owns no alternate expression grammar. Its history revision allows compact views to update only when history changes. Memory slots retain Scientific values plus an optional exact binary64 view, so Standard recall never fabricates a lossy substitute for a Scientific-only value.
 
+Controller namespace imports compare the loaded bindings with their previous stored values. An unchanged import preserves a committed result, including `_` and `rand`; a changed Scientific namespace refreshes both evaluation cache and visible preview, with an explicit error when an expression loses a binding. Full semantic-state imports follow the same rule, including canonically equivalent documents. Failed imports leave live state unchanged.
+
 ## Shared interaction layer
 
 `src/ui/calculator_ui_contract.hpp` defines the command vocabulary, canonical button specifications and desktop logical layout metrics. `calculator_ui_controller.cpp` owns interaction mutation and command dispatch; `calculator_ui_state.cpp` owns session/history and the versioned semantic-state document; and `calculator_ui_presentation.cpp` owns derived labels, enablement and representations. These are translation-unit boundaries around one `Controller` object, not competing state objects. GTK and Win32 render that controller directly; the iPhone Objective-C++ bridge exposes it to SwiftUI.

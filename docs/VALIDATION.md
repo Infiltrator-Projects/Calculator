@@ -59,6 +59,8 @@ Production remains Boost.Multiprecision; MPFR/MPC are validation-only dependenci
 
 `calculator-advanced-tools-test` exercises every released family: engineering, dimensional/temperature conversion, IPv4/CIDR, RAID/allocation, civil dates, constants, statistics, graphing, real-root solving, exact rational arithmetic, arbitrary-precision powers/factorial, complex operations, financial operations and number utilities. Values beyond binary64 range prove the relevant complex/root paths remain on shared Scientific multiprecision semantics.
 
+`calculator-financial` adds 70 reference cases derived from 800-digit Python Decimal calculations, direct payment sums, declining-book recurrence and exact identities. Coverage includes positive/negative/zero/tiny rates, adjacent binary64 values, subnormals, intermediate overflow, zero identities and periods beyond 64-bit range, plus invalid-domain/range and shared-budget/cancellation checks. Relative tolerances preserve tiny non-zero expectations. Its CTest timeout prevents an accidental return to a per-period loop from indefinitely blocking qualification. Scientific regressions verify exact widening of binary64 boundaries. Controller tests additionally cover unchanged/equivalent imports, changed and removed bindings, malformed imports and agreement between display, Additional Results and memory.
+
 `calculator-evaluation-budget` verifies cumulative resource behaviour across Scientific and Advanced Tools. The exact/integer implementation uses Boost `cpp_int`; tests protect Calculator's grammar, operation bounds, parser recursion and product ceiling rather than coupling to Boost internals.
 
 ## Semantic appearance and focus regression

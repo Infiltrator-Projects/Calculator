@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.57 - 2026-10-23
+
+- Evaluate Financial formulae through the shared Scientific engine before checked binary64 conversion, preserving tiny-rate annuities and finite results across large intermediate values.
+- Replace per-period DDB iteration and unsafe integer conversion with bounded closed-form evaluation that shares the caller's work and cancellation budget.
+- Preserve committed results on unchanged namespace/state imports; refresh Scientific display, cache and memory authority together when bindings change, and show invalidated expressions explicitly.
+- Preserve exact binary64 values when widening formula operands, graph coordinates and memory into Scientific arithmetic.
+- Add 70 independent Financial reference cases, range/domain/budget regressions and Controller import tests across the existing platform qualification gates.
+
 ## 0.2.56 - 2026-10-23
 
 - Retain one committed Scientific result for display, Additional Results, memory, unary actions and history; refresh angle changes consistently.

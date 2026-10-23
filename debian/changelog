@@ -1,3 +1,12 @@
+calculator (0.2.57) unstable; urgency=medium
+
+  * Correct Financial cancellation, intermediate overflow and range handling.
+  * Bound depreciation work and remove unsafe period-to-integer conversion.
+  * Keep Controller imports, displayed results and cached values coherent.
+  * Add independent Financial and transactional import regression coverage.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 23 Oct 2026 13:00:00 +1100
+
 calculator (0.2.56) unstable; urgency=medium
 
   * Correct retained Scientific results, angle changes, variable precision,

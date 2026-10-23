@@ -107,9 +107,11 @@ inline std::string number(double value) {
 // Evaluate derived finite-real tool quantities before narrowing to binary64.
 // This avoids intermediate overflow/underflow becoming a plausible zero and
 // reuses Scientific arithmetic rather than creating a second wider engine.
-inline bool finite_real_expression(std::string expression, double& value) {
+inline bool finite_real_expression(std::string expression, double& value,
+                                   const ScientificVariables& variables = {},
+                                   EvaluationBudget* budget = nullptr) {
     const auto result = calculator::evaluate_scientific(
-        expression, {}, {}, AngleUnit::Radians, kToolScientificDigits);
+        expression, variables, {}, AngleUnit::Radians, kToolScientificDigits, budget);
     return result.ok && result.display.empty() &&
            calculator::scientific_value_to_double(result.value, value);
 }
@@ -138,7 +140,7 @@ ToolResult graph_tool(std::string_view input, EvaluationBudget& budget);
 ToolResult equation_tool(std::string_view input, EvaluationBudget& budget);
 ToolResult exact_decimal_tool(std::string_view input, EvaluationBudget& budget);
 ToolResult arbitrary_precision_tool(std::string_view input, EvaluationBudget& budget);
-ToolResult financial_tool(std::string_view input);
+ToolResult financial_tool(std::string_view input, EvaluationBudget& budget);
 ToolResult number_utilities_tool(std::string_view input);
 ToolResult complex_tool(std::string_view input);
 

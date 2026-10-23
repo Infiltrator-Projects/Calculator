@@ -46,6 +46,7 @@ BUDGETED_HANDLERS = {
     "equation_tool",
     "exact_decimal_tool",
     "arbitrary_precision_tool",
+    "financial_tool",
 }
 for handler in (
     "engineering_tool",

@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.57" date="2026-10-23">
+      <description><p>Correct Financial precision and range handling, bound depreciation calculations, and preserve coherent results when importing variables, functions or settings.</p></description>
+    </release>
     <release version="0.2.56" date="2026-10-23">
       <description><p>Correct Scientific result and precision retention, numerical range and root checks, signed radix output and shared GUI/CLI saves. Require tested native LTO and trained PGO installation.</p></description>
     </release>

@@ -105,7 +105,7 @@ ToolResult evaluate(
     case AdvancedTool::Complex:
         return detail::complex_tool(input);
     case AdvancedTool::Financial:
-        return detail::financial_tool(input);
+        return detail::financial_tool(input, active_budget);
     case AdvancedTool::NumberUtilities:
         return detail::number_utilities_tool(input);
     }

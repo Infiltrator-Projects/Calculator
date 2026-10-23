@@ -46,6 +46,8 @@ Calculator owns binary64 expression grammar and decides when a number is expecte
 
 This rejects NaN, infinity, hexadecimal floating-point spelling, malformed exponents, overflow and underflow-to-zero according to the shared conversion contract while keeping precedence and expression structure Calculator-owned. Scientific literals do not pass through binary64; they enter the multiprecision domain directly.
 
+An existing binary64 value entering Scientific is widened exactly and serialized at the supported maximum precision. A shortest or 17-digit round-trip spelling preserves that value only when reparsed as binary64; reinterpreting that spelling as an exact Scientific decimal would change the value. This distinction matters for adjacent values, subnormals, graph coordinates, memory and finite-real formula operands.
+
 ## Expression grammar and precedence
 
 Standard and Scientific use the same operator meaning for their shared arithmetic grammar:
@@ -123,6 +125,10 @@ Graph and real-root expressions use Scientific evaluation with supplied `x`. Sam
 Equation solving is a deterministic numerical real-root finder: interval segmentation identifies candidates, sign-changing intervals are refined by safeguarded bisection, stationary candidates are separately refined, results are re-evaluated before admission and duplicates are coalesced. Scientific residuals are normalized against a non-zero Scientific sample before binary64 search, so multiplying a function by a tiny constant does not turn every scan point into a root. Scan points require exact evaluated zero; bracket admission uses relative residual evidence and stationary admission uses local curvature and coordinate uncertainty. Invalid probes reject a bracket, including sampled poles. This produces numerical estimates within finite precision and sampling limits; it cannot certify all roots or distinguish every near-zero minimum from a root.
 
 Engineering and transfer tools accept finite binary64 operands and require a finite, non-underflowed binary64 result. Derived formulae use Scientific arithmetic before that checked boundary where binary64 intermediate products would overflow or underflow. Statistics reject non-finite accumulators, variances, quantiles or ranges instead of formatting infinity/NaN as success.
+
+Financial tools retain finite binary64 input/output semantics while evaluating complete formulae through Scientific's 1000-digit working backend and one shared operation budget. This retains small increments inside logarithmic/exponential annuity formulae and avoids intermediate overflow before the single checked binary64 conversion. Genuine zero-payment/zero-period cases are resolved explicitly; non-zero underflow, non-real results and overflow fail rather than becoming successful zero. Output remains the ordinary 15-significant-digit real presentation.
+
+Financial DDB preserves its declining-book recurrence through a closed form rather than iterating once per period. Period must be integral and lie in `1..life`; it is never narrowed to an integer type. Logarithmic/exponential evaluation makes work independent of the period count, including counts larger than `uint64_t`, while the caller's work/cancellation budget still applies.
 
 Complex Advanced Tools are adapters over the Scientific multiprecision engine rather than a second `std::complex<double>` calculation path. Add/subtract/multiply/divide, conjugate, magnitude, argument and polar results therefore inherit Scientific complex-domain semantics.
 

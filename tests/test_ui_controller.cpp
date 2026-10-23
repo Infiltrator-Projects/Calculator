@@ -848,6 +848,73 @@ int main() {
     CHECK(precision_reloaded.scientific_digits() == 1000U);
     CHECK(precision_reloaded.state().result == retained_value);
 
+    Controller namespace_reload;
+    namespace_reload.set_mode(Mode::Scientific);
+    namespace_reload.set_expression("2");
+    namespace_reload.dispatch(Command::Equals);
+    namespace_reload.set_expression("_+1");
+    namespace_reload.dispatch(Command::Equals);
+    CHECK(namespace_reload.load_function_definitions_text("\n"));
+    CHECK(namespace_reload.load_variables_text("\n"));
+    CHECK(namespace_reload.load_persistent_state_text(
+        namespace_reload.persistent_state_text()));
+    std::string equivalent_import = namespace_reload.persistent_state_text();
+    const auto empty_functions = equivalent_import.find("functions-bytes=0\n");
+    CHECK(empty_functions != std::string::npos);
+    equivalent_import.replace(empty_functions, std::strlen("functions-bytes=0\n"),
+                              "functions-bytes=1\n\n");
+    CHECK(namespace_reload.load_persistent_state_text(equivalent_import));
+    CHECK(namespace_reload.state().result == "3");
+    CHECK(namespace_reload.additional_results().front().value == "3");
+    namespace_reload.dispatch(Command::MemoryStore);
+    CHECK(namespace_reload.memory_entry(0)->scientific.real == "3");
+    namespace_reload.set_expression("rand");
+    namespace_reload.dispatch(Command::Equals);
+    const auto imported_random = namespace_reload.state().result;
+    CHECK(namespace_reload.load_function_definitions_text(""));
+    CHECK(namespace_reload.load_variables_text(""));
+    CHECK(namespace_reload.load_persistent_state_text(
+        namespace_reload.persistent_state_text()));
+    CHECK(namespace_reload.state().result == imported_random);
+    CHECK(namespace_reload.additional_results().front().value == imported_random);
+
+    CHECK(namespace_reload.load_function_definitions_text("f(x)=x+1\n"));
+    namespace_reload.set_expression("f(1)");
+    namespace_reload.dispatch(Command::Equals);
+    CHECK(namespace_reload.load_function_definitions_text("f(x)=x+2\n"));
+    CHECK(namespace_reload.state().result == "3");
+    CHECK(namespace_reload.additional_results().front().value == "3");
+    namespace_reload.dispatch(Command::MemoryStore);
+    CHECK(namespace_reload.memory_entry(0)->scientific.real == "3");
+    CHECK(namespace_reload.load_function_definitions_text(""));
+    CHECK(namespace_reload.state().fault);
+    CHECK(namespace_reload.state().result.rfind("Error:", 0) == 0U);
+    CHECK(!namespace_reload.command_enabled(Command::MemoryStore));
+    CHECK(namespace_reload.load_function_definitions_text("f(x)=x+4\n"));
+    CHECK(!namespace_reload.state().fault);
+    CHECK(namespace_reload.state().result == "5");
+
+    CHECK(namespace_reload.load_variables_text("saved=4\n"));
+    namespace_reload.set_expression("saved+1");
+    namespace_reload.dispatch(Command::Equals);
+    CHECK(namespace_reload.load_variables_text("saved=9\n"));
+    CHECK(namespace_reload.state().result == "10");
+    CHECK(namespace_reload.additional_results().front().value == "10");
+    namespace_reload.dispatch(Command::MemoryStore);
+    CHECK(namespace_reload.memory_entry(0)->scientific.real == "10");
+    const auto before_bad_import = namespace_reload.state().result;
+    CHECK(!namespace_reload.load_variables_text("saved=\n"));
+    CHECK(!namespace_reload.load_function_definitions_text("f(=\n"));
+    CHECK(namespace_reload.state().result == before_bad_import);
+    CHECK(namespace_reload.additional_results().front().value == before_bad_import);
+
+    Controller replacement_namespace;
+    replacement_namespace.set_mode(Mode::Scientific);
+    CHECK(namespace_reload.load_persistent_state_text(
+        replacement_namespace.persistent_state_text()));
+    CHECK(namespace_reload.state().fault);
+    CHECK(namespace_reload.state().result.rfind("Error:", 0) == 0U);
+
     if (failures != 0) {
         std::cerr << failures << " UI controller test(s) failed\n";
         return 1;

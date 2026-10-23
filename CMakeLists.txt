@@ -349,6 +349,11 @@ add_executable(calculator-advanced-tools-test
 target_link_libraries(calculator-advanced-tools-test PRIVATE calculator-core)
 add_test(NAME calculator-advanced-tools COMMAND calculator-advanced-tools-test)
 
+add_executable(calculator-financial-test tests/test_financial.cpp)
+target_link_libraries(calculator-financial-test PRIVATE calculator-core)
+add_test(NAME calculator-financial COMMAND calculator-financial-test)
+set_tests_properties(calculator-financial PROPERTIES TIMEOUT 30)
+
 add_executable(calculator-evaluation-budget-test
     tests/test_evaluation_budget.cpp
 )

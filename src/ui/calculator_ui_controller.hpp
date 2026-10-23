@@ -122,6 +122,9 @@ public:
     std::vector<bool> programmer_bits() const;
     bool toggle_programmer_bit(unsigned bit);
     bool swap_programmer_endianness();
+    // Transactional namespace imports preserve committed results when stored
+    // bindings are unchanged. Changed Scientific bindings refresh cache/result
+    // together; an invalidated live expression becomes an explicit error.
     std::string function_definitions_text() const;
     bool load_function_definitions_text(std::string_view text);
     std::string variables_text() const;
@@ -162,6 +165,7 @@ public:
     DispatchResult dispatch(Command command, std::size_t cursor = kEnd);
 
 private:
+    void refresh_scientific_bindings();
     std::size_t normalized_cursor(std::size_t cursor) const noexcept;
     DispatchResult insert(std::string_view text, std::size_t cursor);
     DispatchResult backspace(std::size_t cursor);

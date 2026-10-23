@@ -108,6 +108,8 @@ Example: `mul 1,2 3,-4`.
 
 The Financial tool carries the mature desktop-calculator operations Ctrm, Ddb, Fv, Gpm, Pmt, Pv, Rate, Sln, Syd and Term. Interest rates are entered as decimal periodic rates (for example, 0.005 for 0.5% per period). Zero-rate annuity cases are handled explicitly rather than producing division-by-zero artefacts.
 
+Inputs and final results use finite binary64; formula intermediates use the shared Scientific backend to preserve tiny rates and avoid intermediate overflow. A non-zero result that underflows binary64 is an explicit range error. `ddb cost life period` requires an integral period in `1..life` and evaluates its declining-book recurrence in bounded work, including very large periods. Financial evaluation shares the caller's work and cancellation budget.
+
 Example: `pmt 250000 0.005 360`.
 
 ## Number utilities

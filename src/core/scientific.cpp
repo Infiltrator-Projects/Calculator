@@ -1645,12 +1645,10 @@ bool scientific_value_to_double(
 
 ScientificValue scientific_value_from_double(double value) {
     if (!std::isfinite(value)) return {};
-
-    std::ostringstream out;
-    out.imbue(std::locale::classic());
-    out << std::setprecision(
-        std::numeric_limits<double>::max_digits10) << value;
-    return {out.str(), "0"};
+    // A round-trip decimal spelling identifies a double but is not its exact
+    // real value. Widen first: the backend retains every binary64 bit, and
+    // 1000 decimal digits cover even its longest terminating expansion.
+    return {component_string(Real(value), kScientificMaxDigits), "0"};
 }
 
 } // namespace calculator

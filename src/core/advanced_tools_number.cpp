@@ -23,7 +23,7 @@
 namespace calculator::tools::detail {
 
 // Financial, Unicode/number utilities and explicit complex-pair operations are independent tool domains sharing only the internal parsing/formatting adapters.
-ToolResult financial_tool(std::string_view input) {
+ToolResult financial_tool(std::string_view input, EvaluationBudget& budget) {
     const auto f = split_ws(input);
     if (f.empty()) return failure("Enter a financial operation.");
 
@@ -35,69 +35,70 @@ ToolResult financial_tool(std::string_view input) {
     };
 
     double a = 0.0, b = 0.0, c = 0.0, d = 0.0;
-    double result = 0.0;
+    std::string expression;
+
+    // Finite binary64 operands can lose their entire answer through an
+    // intermediate subtraction/product. Evaluate the complete formula in
+    // Scientific's guarded multiprecision domain, then narrow exactly once.
+    // Its 1000-digit working backend resolves even products of subnormal
+    // inputs inside log(1+x); the tool's public result remains binary64.
 
     if (f[0] == "ctrm") {
         if (!parse3(a, b, c) || a <= -1.0 || a == 0.0 ||
             b <= 0.0 || c <= 0.0) {
             return failure("Usage: ctrm rate future-value present-value; rate must be > -1 and non-zero, values positive.");
         }
-        result = std::log(b / c) / std::log1p(a);
+        expression = "ln(vb/vc)/ln(1+va)";
     } else if (f[0] == "ddb") {
         if (!parse3(a, b, c) || a < 0.0 || b <= 0.0 ||
             c < 1.0 || std::floor(c) != c || c > b) {
             return failure("Usage: ddb cost life period; life positive and period an integer within life.");
         }
-        double book = a;
-        for (std::uint64_t period = 0U;
-             period < static_cast<std::uint64_t>(c); ++period) {
-            result = book * 2.0 / b;
-            book -= result;
+        // The original recurrence has the closed form
+        // cost*(2/life)*(1-2/life)^(period-1). Log/exp keeps its work bounded
+        // independently of period and avoids narrowing that control to an
+        // integer type. Life<=2 permits only the first period or exact zero.
+        if (c == 1.0) {
+            expression = "va*2/vb";
+        } else if (b == 2.0) {
+            expression = "0";
+        } else {
+            expression = "va*2/vb*exp((vc-1)*ln(1-2/vb))";
         }
     } else if (f[0] == "fv") {
         if (!parse3(a, b, c) || c < 0.0 || b <= -1.0) {
             return failure("Usage: fv payment rate periods; periods non-negative and rate > -1.");
         }
-        result = b == 0.0 ? a * c
-                          : a * std::expm1(c * std::log1p(b)) / b;
+        if (a == 0.0 || c == 0.0) expression = "0";
+        else expression = b == 0.0 ? "va*vc" : "va*(exp(vc*ln(1+vb))-1)/vb";
     } else if (f[0] == "gpm") {
         if (f.size() != 3U || !parse_double(f[1], a) ||
             !parse_double(f[2], b) || b >= 1.0) {
             return failure("Usage: gpm cost margin; margin must be less than 1.");
         }
-        result = a / (1.0 - b);
+        expression = "va/(1-vb)";
     } else if (f[0] == "pmt") {
         if (!parse3(a, b, c) || c <= 0.0 || b <= -1.0) {
             return failure("Usage: pmt principal rate periods; periods positive and rate > -1.");
         }
-        if (b == 0.0) {
-            result = a / c;
-        } else {
-            const double discount =
-                std::exp(-c * std::log1p(b));
-            result = a * b / (1.0 - discount);
-        }
+        if (a == 0.0) expression = "0";
+        else expression = b == 0.0 ? "va/vc" : "va*vb/(1-exp(-vc*ln(1+vb)))";
     } else if (f[0] == "pv") {
         if (!parse3(a, b, c) || c < 0.0 || b <= -1.0) {
             return failure("Usage: pv payment rate periods; periods non-negative and rate > -1.");
         }
-        if (b == 0.0) {
-            result = a * c;
-        } else {
-            const double discount =
-                std::exp(-c * std::log1p(b));
-            result = a * (1.0 - discount) / b;
-        }
+        if (a == 0.0 || c == 0.0) expression = "0";
+        else expression = b == 0.0 ? "va*vc" : "va*(1-exp(-vc*ln(1+vb)))/vb";
     } else if (f[0] == "rate") {
         if (!parse3(a, b, c) || a <= 0.0 || b <= 0.0 || c <= 0.0) {
             return failure("Usage: rate future-value present-value periods; values and periods must be positive.");
         }
-        result = std::expm1(std::log(a / b) / c);
+        expression = "exp(ln(va/vb)/vc)-1";
     } else if (f[0] == "sln") {
         if (!parse3(a, b, c) || c <= 0.0) {
             return failure("Usage: sln cost salvage life; life must be positive.");
         }
-        result = (a - b) / c;
+        expression = "(va-vb)/vc";
     } else if (f[0] == "syd") {
         if (f.size() != 5U ||
             !parse_double(f[1], a) || !parse_double(f[2], b) ||
@@ -105,24 +106,24 @@ ToolResult financial_tool(std::string_view input) {
             c <= 0.0 || d < 1.0 || d > c) {
             return failure("Usage: syd cost salvage life period; period must be within positive life.");
         }
-        result = (a - b) * (c - d + 1.0) /
-                 (c * (c + 1.0) / 2.0);
+        expression = "(va-vb)*(vc-vd+1)/(vc*(vc+1)/2)";
     } else if (f[0] == "term") {
         if (!parse3(a, b, c) || a == 0.0 || b < 0.0 || c <= -1.0) {
             return failure("Usage: term payment future-value rate; payment non-zero, future value non-negative, rate > -1.");
         }
-        if (c == 0.0) {
-            result = b / a;
-        } else {
-            const double inside = 1.0 + b * c / a;
-            if (inside <= 0.0) return failure("Financial term has no real solution for those values.");
-            result = std::log(inside) / std::log1p(c);
-        }
+        expression = c == 0.0 ? "vb/va" : "ln(1+vb*vc/va)/ln(1+vc)";
     } else {
         return failure("Unknown financial operation.");
     }
 
-    if (!std::isfinite(result)) return failure("Financial result is non-finite.");
+    double result = 0.0;
+    const ScientificVariables variables{
+        {"va", scientific_value_from_double(a)}, {"vb", scientific_value_from_double(b)},
+        {"vc", scientific_value_from_double(c)}, {"vd", scientific_value_from_double(d)}};
+    if (!finite_real_expression(std::move(expression), result, variables, &budget)) {
+        return failure(budget.failed() ? budget.error()
+            : "Financial result is outside the real domain or finite range.");
+    }
     return success("Result  " + number(result));
 }
 
