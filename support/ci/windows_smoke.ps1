@@ -59,6 +59,9 @@ public static class CalcSmoke {
     [DllImport("user32.dll", EntryPoint = "SendMessageW", CharSet = CharSet.Unicode)]
     public static extern IntPtr SendMessageText(IntPtr hwnd, uint msg, IntPtr wParam, string lParam);
 
+    [DllImport("user32.dll", EntryPoint = "SendMessageW", CharSet = CharSet.Unicode)]
+    public static extern IntPtr SendMessageReadText(IntPtr hwnd, uint msg, IntPtr wParam, StringBuilder lParam);
+
     [DllImport("user32.dll")]
     public static extern IntPtr GetDlgItem(IntPtr hwnd, int id);
 
@@ -139,6 +142,23 @@ try {
             if ([CalcSmoke]::IsWindowVisible($hwnd)) { $count++ }
         }
         return $count
+    }
+
+    function Get-EditText([IntPtr]$hwnd) {
+        # GetWindowText cannot read an Edit control in another process.
+        # WM_GETTEXTLENGTH / WM_GETTEXT use Windows' system marshalling.
+        $length = [CalcSmoke]::SendMessage(
+            $hwnd, 0x000E, [IntPtr]::Zero, [IntPtr]::Zero).ToInt64()
+        if ($length -lt 0 -or $length -gt 8192) {
+            throw "Invalid Windows expression length: $length"
+        }
+        $buffer = [System.Text.StringBuilder]::new([int]($length + 1))
+        $copied = [CalcSmoke]::SendMessageReadText(
+            $hwnd, 0x000D, [IntPtr]$buffer.Capacity, $buffer).ToInt64()
+        if ($copied -ne $length) {
+            throw "Windows expression text changed while reading ($copied/$length)"
+        }
+        return $buffer.ToString()
     }
 
     $theme = Get-ButtonByText 'System'
@@ -252,24 +272,26 @@ try {
     }
     if ($entry -eq [IntPtr]::Zero) { throw 'Windows expression control was not found' }
     $four = Get-VisibleButtonByText '4'
+    $five = Get-VisibleButtonByText '5'
+    $ce = Get-VisibleButtonByText 'CE'
+    if ($four -eq [IntPtr]::Zero -or $five -eq [IntPtr]::Zero -or $ce -eq [IntPtr]::Zero) {
+        throw 'Windows editing controls were not found'
+    }
     [void][CalcSmoke]::SendMessageText($entry, 0x000C, [IntPtr]::Zero, "2$([char]0x00D7)3")
     [void][CalcSmoke]::SendMessage($entry, 0x00B1, [IntPtr]2, [IntPtr]2)
     [void][CalcSmoke]::SendMessage($four, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-    $edited = [System.Text.StringBuilder]::new(128)
-    [void][CalcSmoke]::GetWindowText($entry, $edited, $edited.Capacity)
-    if ($edited.ToString() -cne "2$([char]0x00D7)43") {
-        throw "Unicode keypad insertion failed: '$($edited.ToString())'"
+    $edited = Get-EditText $entry
+    if ($edited -cne "2$([char]0x00D7)43") {
+        throw "Unicode keypad insertion failed: '$edited'"
     }
-    $five = Get-VisibleButtonByText '5'
     [void][CalcSmoke]::SendMessage($five, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
-    [void][CalcSmoke]::GetWindowText($entry, $edited, $edited.Capacity)
-    if ($edited.ToString() -cne "2$([char]0x00D7)453") { throw 'Unicode caret restoration failed' }
+    $edited = Get-EditText $entry
+    if ($edited -cne "2$([char]0x00D7)453") { throw "Unicode caret restoration failed: '$edited'" }
     [void][CalcSmoke]::SendMessage($equals, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
     [void][CalcSmoke]::GetWindowText($result, $resultText, $resultText.Capacity)
     if ($resultText.ToString() -cne '906') { throw 'Unicode expression arithmetic failed' }
     [void][CalcSmoke]::SendMessageText($entry, 0x000C, [IntPtr]::Zero, '2+3')
     [void][CalcSmoke]::SendMessage($entry, 0x00B1, [IntPtr]::Zero, [IntPtr]::Zero)
-    $ce = Get-VisibleButtonByText 'CE'
     [void][CalcSmoke]::SendMessage($ce, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
     [void][CalcSmoke]::GetWindowText($result, $resultText, $resultText.Capacity)
     if ($resultText.ToString() -cne '3') { throw 'CE retained-result display failed' }
