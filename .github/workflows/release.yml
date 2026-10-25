@@ -301,13 +301,37 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Configure Clang ASan and UBSan build
+      - name: Configure ASan and UBSan build with an installed compiler
         run: |
           set -euo pipefail
+          # PRs use hosted Ubuntu's Clang. Self-hosted runners may instead have
+          # GCC; retain the full ASan/UBSan coverage instead of skipping it.
+          compiler_c=""
+          compiler_cxx=""
+          for suffix in "" -20 -19 -18 -17 -16 -15 -14; do
+            if command -v "clang${suffix}" >/dev/null 2>&1 &&
+               command -v "clang++${suffix}" >/dev/null 2>&1; then
+              compiler_c="clang${suffix}"
+              compiler_cxx="clang++${suffix}"
+              break
+            fi
+          done
+          if [[ -z "$compiler_c" ]]; then
+            if command -v gcc >/dev/null 2>&1 &&
+               command -v g++ >/dev/null 2>&1; then
+              compiler_c=gcc
+              compiler_cxx=g++
+              echo "::notice::Clang is unavailable on this runner; using GCC ASan/UBSan. PRs independently qualify Clang."
+            else
+              echo "::error::No installed compiler pair supports the sanitizer gate."
+              exit 1
+            fi
+          fi
+          echo "ASan/UBSan compiler: $compiler_c / $compiler_cxx"
           cmake -S . -B build-sanitizers \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER="$compiler_c" \
+            -DCMAKE_CXX_COMPILER="$compiler_cxx" \
             -DCALCULATOR_BUILD_DESKTOP=OFF \
             -DINFILTRATR_COMMON_BUILD_SHARED=OFF \
             -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" \
