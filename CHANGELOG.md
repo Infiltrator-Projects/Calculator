@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.60 - 2026-10-25
+
+- Place Calculator's private font bootstrap in `/System/Commands/calculator-ensure-fonts`, and BUILD-INFO plus licensing under `/System/Resources/Documentation/Calculator`.
+- Update native packaging, post-install integration and Debian/package smoke tests to reject retired application-owned support paths.
+- Preserve `/Programs/calculator`, shared fonts, desktop/AppStream metadata and existing calculation algorithms.
+- Publish these packaging changes under a new immutable version rather than overwriting 0.2.59.
+
 ## 0.2.59 - 2026-10-23
 
 - Reuse the already-computed Programmer result for bit displays, bit toggles and endianness changes instead of repeatedly evaluating the expression.
