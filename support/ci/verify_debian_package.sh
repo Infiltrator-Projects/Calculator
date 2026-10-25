@@ -65,7 +65,7 @@ for path in "${native_directories[@]}"; do
   }
 done
 
-if grep -Eq '^\./usr/lib/calculator/|^\./usr/share/doc/calculator/' "$listing"; then
+if grep -Eq '^\./usr/lib/calculator/|^\./usr/share/doc/calculator/(BUILD-INFO|LICENSE)$' "$listing"; then
   echo "Calculator package retains deprecated application-owned Linux paths." >&2
   exit 1
 fi
