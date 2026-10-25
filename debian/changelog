@@ -1,3 +1,13 @@
+calculator (0.2.60) unstable; urgency=medium
+
+  * Move package-owned font initialization to /System/Commands.
+  * Install Calculator licensing and build provenance under
+    /System/Resources/Documentation/Calculator.
+  * Keep /Programs/calculator and standard desktop integration unchanged.
+  * Qualify Linux Debian and native installer path contracts.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 25 Oct 2026 16:15:00 +1100
+
 calculator (0.2.59) unstable; urgency=medium
 
   * Avoid duplicate Programmer expression evaluation when drawing or editing bits.
