@@ -28,6 +28,7 @@ required=(
   './usr/share/applications/net.ssmith.calculator.desktop'
   './usr/share/icons/hicolor/scalable/apps/calculator.svg'
   './usr/share/app-install/icons/calculator.svg'
+  './System/Resources/Icons/calculator.svg'
   './usr/share/metainfo/calculator.metainfo.xml'
 )
 for path in "${required[@]}"; do
