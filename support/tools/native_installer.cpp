@@ -26,7 +26,7 @@ constexpr const char *kPayloadMarker =
 constexpr const char *kPackageName = "calculator";
 constexpr const char *kExecutable = "/Programs/calculator";
 constexpr const char *kBuildInfo =
-    "/usr/share/doc/calculator/BUILD-INFO";
+    "/System/Resources/Documentation/Calculator/BUILD-INFO";
 
 [[noreturn]] void fail(const std::string &message)
 {
