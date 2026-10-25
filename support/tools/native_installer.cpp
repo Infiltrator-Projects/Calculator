@@ -488,7 +488,8 @@ int main(int argc, char **argv)
         ::unsetenv("DEB_BUILD_PROFILES") != 0)
         fail("cannot set mandatory native-build test policy");
 
-    const std::string base_flags = "-O3 -march=native -mtune=native -flto=auto";
+    const std::string base_flags =
+        "-O3 -march=native -mtune=native -flto=auto -fno-semantic-interposition -fno-plt";
     const std::string base_ldflags = "-flto=auto";
 
     auto set_build_flags = [](const std::string &flags, const std::string &ldflags) {
@@ -545,8 +546,12 @@ int main(int argc, char **argv)
     if (!build_tree_contains(source_root / "build", "-march=native") ||
         !build_tree_contains(source_root / "build", "-flto=auto"))
         fail("final Calculator build did not retain native CPU/LTO flags");
-    if (!build_tree_contains(source_root / "build", "-fprofile-use="))
+    if (!build_tree_contains(source_root / "build", "-fprofile-use=") ||
+        !build_tree_contains(source_root / "build", "-fprofile-partial-training"))
         fail("final Calculator build did not retain PGO-use flags");
+    if (!build_tree_contains(source_root / "build", "-fno-semantic-interposition") ||
+        !build_tree_contains(source_root / "build", "-fno-plt"))
+        fail("final Calculator build did not retain ELF call/visibility flags");
 
     const fs::path package = find_debian_package(work, version);
     std::cout << "Installing locally built package: " << package << '\n';
