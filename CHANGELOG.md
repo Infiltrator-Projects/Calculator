@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.61 - 2026-10-25
+
+- Package the existing Calculator SVG at `/System/Resources/Icons/calculator.svg` so InfiltratorOS's Cinnamon/Nemo integration can display it on the real `/Programs/calculator` executable.
+- Keep the original Linux Mint menu/AppStream icon registration; assert the native icon in package qualification.
+
+
 ## 0.2.60 - 2026-10-25
 
 - Place Calculator's private font bootstrap in `/System/Commands/calculator-ensure-fonts`, and BUILD-INFO plus licensing under `/System/Resources/Documentation/Calculator`.
