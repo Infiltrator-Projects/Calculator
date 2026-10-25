@@ -1,3 +1,12 @@
+calculator (0.2.61) unstable; urgency=medium
+
+  * Install the existing Calculator SVG in the native
+    /System/Resources/Icons/calculator.svg resource directory.
+  * Preserve the established Linux Mint menu, AppStream and package icons.
+  * Enforce native icon presence in Debian release CI.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Sun, 25 Oct 2026 20:25:00 +1100
+
 calculator (0.2.60) unstable; urgency=medium
 
   * Move package-owned font initialization to /System/Commands.
