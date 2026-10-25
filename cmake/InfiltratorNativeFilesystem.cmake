@@ -20,6 +20,7 @@ function(infiltrator_install_native_filesystem_skeleton)
             "/System/Kernel/Modules"
             "/System/Kernel/Firmware"
             "/System/Resources/Calendars"
+            "/System/Resources/Documentation"
             "/System/Resources/Clocks"
             "/System/Resources/Fonts"
             "/System/Resources/Locales"
