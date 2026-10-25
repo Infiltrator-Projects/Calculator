@@ -349,7 +349,7 @@ jobs:
   publish:
     needs: [prepare, linux, windows, ios, sanitizers]
     if: needs.prepare.outputs.release == 'true'
-    runs-on: [self-hosted, Linux, X64, linux-native]
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
