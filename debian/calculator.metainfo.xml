@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.62" date="2026-10-25">
+      <description><p>Align native ELF call and symbol visibility optimisations with System Monitor, retaining mandatory two-pass PGO and LTO.</p></description>
+    </release>
     <release version="0.2.61" date="2026-10-25">
       <description><p>Install approved Calculator artwork directly under the native system icon resources while retaining desktop registration.</p></description>
     </release>

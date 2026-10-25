@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.62 - 2026-10-25
+
+- Match System Monitor's supported ELF call and symbol-visibility optimisation
+  options in the mandatory hardware-native Calculator build:
+  -fno-semantic-interposition and -fno-plt.
+- Verify the final build actually retains both options as well as its
+  existing two-pass partial-training PGO and native CPU/LTO options.
+
 ## 0.2.61 - 2026-10-25
 
 - Package the existing Calculator SVG at `/System/Resources/Icons/calculator.svg` so InfiltratorOS's Cinnamon/Nemo integration can display it on the real `/Programs/calculator` executable.
