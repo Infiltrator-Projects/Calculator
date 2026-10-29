@@ -16,8 +16,6 @@ Calculator combines a portable C++ calculation core, a shared desktop interactio
 - Add the narrowest useful regression for reproducible behavioural, numerical, platform or packaging defects.
 - Do not create parallel Markdown for a subject already owned by the canonical documentation set.
 
-The shared [engineering philosophy](https://github.com/Infiltrator-Projects/Libraries/blob/main/docs/PHILOSOPHY.md) also governs Calculator. Quality, reliability, clarity, restrained complexity and craftsmanship are engineering goals, not branding or affiliation. Maintain precise postgraduate-level documentation of ownership, assumptions, invariants, failure/recovery and compatibility without narrating obvious syntax.
-
 ## Language and dependency policy
 
 The shared domain is C++17. Linux uses GTK4, Windows uses native Win32/MSVC, and iPhone uses SwiftUI with an Objective-C++ bridge because those are the current native platform boundaries.
