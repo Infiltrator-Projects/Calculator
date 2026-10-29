@@ -65,7 +65,8 @@ jobs:
           bash -n support/release/publish.sh
           python3 -m py_compile \
             support/release/release_metadata.py \
-            support/release/release_assets.py
+            support/release/release_assets.py \
+            support/release/build_manual_pdf.py
 
       - name: Exercise production release and archive contracts
         run: |
