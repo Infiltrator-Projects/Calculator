@@ -2,7 +2,8 @@ calculator (0.2.63) unstable; urgency=medium
 
   * Remove developer-only BUILD-INFO from native Calculator installations.
   * Require an executable and installed package, not an installed build report.
-  * Enforce licence-only Calculator documentation in Linux package qualification.
+  * Remove redundant runtime LICENSE and all Calculator-specific native documentation.
+  * Retain the required Debian copyright metadata for package compliance.
 
  -- Shannon Smith <infiltratr@yandex.com>  Thu, 29 Oct 2026 12:43:00 +1100
 

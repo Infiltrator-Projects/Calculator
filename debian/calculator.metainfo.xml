@@ -33,7 +33,7 @@
 
   <releases>
     <release version="0.2.63" date="2026-10-29">
-      <description><p>Keep developer-only native build reports out of installed Calculator resources and verify the runtime documentation boundary.</p></description>
+      <description><p>Remove redundant native Calculator documentation and build reports while retaining Debian-required licensing metadata.</p></description>
     </release>
     <release version="0.2.62" date="2026-10-25">
       <description><p>Align native ELF call and symbol visibility optimisations with System Monitor, retaining mandatory two-pass PGO and LTO.</p></description>

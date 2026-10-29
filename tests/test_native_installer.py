@@ -62,6 +62,9 @@ int main(int argc, char **argv)
         self.assertNotIn(".calculator-native-build-info", installer)
         self.assertNotIn(".calculator-native-build-info", packaging)
         self.assertNotIn("/Documentation/Calculator/BUILD-INFO", installer)
+        cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+        self.assertNotIn("install(FILES LICENSE", cmake)
+        self.assertNotIn("/System/Resources/Documentation/Calculator", cmake)
 
     def test_same_version_local_rebuild_is_explicitly_reinstalled(self):
         result = self.plan("0.2.53", "0.2.53")

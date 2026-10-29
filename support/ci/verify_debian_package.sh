@@ -70,13 +70,14 @@ if grep -Eq '^\./usr/lib/calculator/|^\./usr/share/doc/calculator/(BUILD-INFO|LI
   echo "Calculator package retains deprecated application-owned Linux paths." >&2
   exit 1
 fi
-# Application documentation may contain the licence, but no build reports,
-# compiler settings, source manuals or generated developer artefacts.
-unexpected_docs="$(grep -E '^\./System/Resources/Documentation/Calculator/' "$listing" |
-  grep -Ev '^\./System/Resources/Documentation/Calculator/(|LICENSE)$' || true)"
-if [[ -n "$unexpected_docs" ]]; then
-  echo "Calculator package leaked developer/build documents:" >&2
-  printf '%s\n' "$unexpected_docs" >&2
+# Calculator has no private native documentation install surface.
+# Debian's mandated copyright metadata is handled separately by debhelper.
+if grep -Eq '^\./System/Resources/Documentation/Calculator(/|$)' "$listing"; then
+  echo "Calculator package must not install native documentation or build reports." >&2
+  exit 1
+fi
+if ! grep -Fqx './usr/share/doc/calculator/copyright' "$listing"; then
+  echo "Debian package is missing its required copyright metadata." >&2
   exit 1
 fi
 if grep -Eq '^\./usr/bin/(calculator|calculator-cli)$' "$listing"; then
