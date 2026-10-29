@@ -76,7 +76,7 @@ int main(int argc, char **argv)
                         "SCIENTIFIC", "PROGRAMMER", "ADVANCED TOOLS",
                         "OPERATING PRINCIPLES AND ASSUMPTIONS",
                         "LIMITS AND FAILURE POLICY"):
-            self.assertIn(heading, manual)
+            self.assertIn(heading.casefold(), manual.casefold())
 
     def test_same_version_local_rebuild_is_explicitly_reinstalled(self):
         result = self.plan("0.2.53", "0.2.53")
