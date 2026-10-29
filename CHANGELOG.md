@@ -106,7 +106,7 @@
 - Keep the original pinned Common three-face font bundle as a safe fallback for standalone installations without the newer machine cache; Windows/iPhone native font registration remains unchanged in this release.
 - Preserve controller, precision, layout/geometry, existing colour/interaction contract and numerical semantics.
 
-This file records the current Calculator release line. The complete pre-0.2.50 release ledger is preserved verbatim in [CHANGELOG_HISTORY.md](CHANGELOG_HISTORY.md); immutable Git tags and GitHub Releases remain the authority for exact historical source and assets.
+This file records the current Calculator release line. The complete pre-0.2.50 release ledger is preserved verbatim in [v0.2.50 archived changelog](https://github.com/Infiltrator-Projects/Calculator/blob/v0.2.50/CHANGELOG_HISTORY.md); immutable Git tags and GitHub Releases remain the authority for exact historical source and assets.
 
 ## 0.2.50 - 2026-10-17
 
@@ -123,4 +123,4 @@ This file records the current Calculator release line. The complete pre-0.2.50 r
 
 ## Recording policy
 
-Record current user-visible, compatibility, architecture and validation changes here. Older entries move to the historical ledger rather than making current release metadata progressively harder to maintain.
+Record current user-visible, compatibility, architecture and validation changes here. Older entries are retained in immutable historical tags rather than added to an extra active ledger.
