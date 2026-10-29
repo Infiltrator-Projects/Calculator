@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.64 - 2026-10-29
+
+- Replace the installed plain-text user manual with one professionally
+  typeset, illustrated PDF: `/System/Resources/Documentation/Calculator/Calculator-Manual.pdf`.
+- Keep the readable Markdown manuscript in the source repository only. Render
+  native vector diagrams directly inside the PDF; ship no image subdirectories,
+  HTML files, extra manuals or build reports.
+- Enforce the single-document packaging contract and provision the PDF build
+  dependency only during development/native builds.
+
+
 ## 0.2.63 - 2026-10-29
 
 - Stop generating and installing native build-provenance documents into

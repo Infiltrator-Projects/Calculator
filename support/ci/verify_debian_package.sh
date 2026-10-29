@@ -50,7 +50,7 @@ native_directories=(
   './System/Resources/Calendars/'
   './System/Resources/Documentation/'
   './System/Resources/Documentation/Calculator/'
-  './System/Resources/Documentation/Calculator/MANUAL.txt'
+  './System/Resources/Documentation/Calculator/Calculator-Manual.pdf'
   './System/Resources/Clocks/'
   './System/Resources/Fonts/'
   './System/Resources/Locales/'
@@ -75,10 +75,17 @@ fi
 # The only Calculator-owned documentation payload is the operator manual.
 # Debian's mandatory copyright metadata is handled separately by debhelper.
 unexpected_docs="$(grep -E '^\./System/Resources/Documentation/Calculator/[^/]' "$listing" |
-  grep -Fvx './System/Resources/Documentation/Calculator/MANUAL.txt' || true)"
+  grep -Fvx './System/Resources/Documentation/Calculator/Calculator-Manual.pdf' || true)"
 if [[ -n "$unexpected_docs" ]]; then
   echo "Calculator package contains unapproved documentation/build artifacts:" >&2
   printf '%s\n' "$unexpected_docs" >&2
+  exit 1
+fi
+# The documented payload must be a real PDF, not merely a renamed text file.
+dpkg-deb --fsys-tarfile "$package" |
+  tar -xOf - './System/Resources/Documentation/Calculator/Calculator-Manual.pdf' > "$control_dir/manual.pdf"
+if [[ "$(head -c 5 "$control_dir/manual.pdf")" != "%PDF-" ]]; then
+  echo "Calculator manual payload is not a PDF document." >&2
   exit 1
 fi
 if ! grep -Fqx './usr/share/doc/calculator/copyright' "$listing"; then

@@ -65,13 +65,18 @@ int main(int argc, char **argv)
         cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
         self.assertNotIn("install(FILES LICENSE", cmake)
         self.assertIn('install(DIRECTORY DESTINATION "/System/Resources/Documentation/Calculator")', cmake)
-        self.assertIn("install(FILES docs/MANUAL.txt", cmake)
-        manual = (ROOT / "docs/MANUAL.txt").read_text(encoding="utf-8")
+        self.assertIn("add_custom_target(calculator-manual ALL", cmake)
+        self.assertIn('install(FILES "${CALCULATOR_MANUAL_PDF}"', cmake)
+        self.assertNotIn("docs/MANUAL.txt", cmake)
+        manual = (ROOT / "docs/MANUAL.md").read_text(encoding="utf-8")
+        generator = (ROOT / "support/release/build_manual_pdf.py").read_text(encoding="utf-8")
+        self.assertIn("ModePicture", generator)
+        self.assertIn("reportlab", generator)
         for heading in ("OPERATING INSTRUCTIONS", "STANDARD",
                         "SCIENTIFIC", "PROGRAMMER", "ADVANCED TOOLS",
                         "OPERATING PRINCIPLES AND ASSUMPTIONS",
                         "LIMITS AND FAILURE POLICY"):
-            self.assertIn(heading, manual)
+            self.assertIn(heading.casefold(), manual.casefold())
 
     def test_same_version_local_rebuild_is_explicitly_reinstalled(self):
         result = self.plan("0.2.53", "0.2.53")

@@ -74,7 +74,7 @@ Scientific results preview live through the same side-effect-free shared Session
 
 Linux and Windows consume the same Calculator-owned UI contract and controller: modes, button order, commands, logical desktop sizing metrics, responsive breakpoints and interaction state are defined once, then rendered through GTK4 or native Win32. iPhone retains native SwiftUI touch composition, but its Objective-C++ bridge routes expression edits and calculator commands through the same C++ controller instead of maintaining a second calculator state machine.
 
-The old-school [user manual](docs/MANUAL.txt) covers operation and the product's governing assumptions. On Linux the package installs it at `/System/Resources/Documentation/Calculator/MANUAL.txt`; it does not install the developer documentation tree.
+The traditional [illustrated user manual](docs/MANUAL.md) covers operation and the product's governing assumptions. On Linux, the package installs **one self-contained PDF** at `/System/Resources/Documentation/Calculator/Calculator-Manual.pdf`; the Markdown source, developer documents and illustrations are not installed separately.
 
 Detailed ownership, numerical, portability and validation contracts are maintained under [docs/](docs/README.md).
 

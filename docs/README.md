@@ -25,7 +25,7 @@ Code and tests remain authoritative for executable behaviour. Immutable tags/rel
 
 ## Specialist documentation
 
-- [Installed user manual](MANUAL.txt) — traditional operator's guide: usage instructions, Tools reference, numeric assumptions, operating principles and limits. The Linux package installs only this manual under /System/Resources/Documentation/Calculator.
+- [User manual manuscript](MANUAL.md) — the maintained source for the illustrated PDF guide. The installed Linux package contains one self-contained `Calculator-Manual.pdf` under `/System/Resources/Documentation/Calculator/`; no HTML, TXT or image folder is installed.
 
 - [Numerical semantics](NUMERICS.md) — evidence hierarchy, numeric representations, expression/Standard/Programmer semantics, display precision and numerical failure contracts.
 - [Portability](PORTABILITY.md) — language, platform, representation, locale, bridge, ABI and compatibility boundaries.

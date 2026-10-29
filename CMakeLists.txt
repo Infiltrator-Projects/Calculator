@@ -313,10 +313,24 @@ if(CALCULATOR_BUILD_DESKTOP)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         infiltrator_install_native_filesystem_skeleton()
-        # Calculator owns an empty documentation namespace, not bundled
-        # developer/build documents. Preserve it as a package-owned directory.
+        # Ship exactly one illustrated operator's manual; source and build
+        # machinery stay in the repository, not in the installed documentation.
+        find_package(Python3 COMPONENTS Interpreter REQUIRED)
+        set(CALCULATOR_MANUAL_PDF "${CMAKE_CURRENT_BINARY_DIR}/Calculator-Manual.pdf")
+        add_custom_command(
+            OUTPUT "${CALCULATOR_MANUAL_PDF}"
+            COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/support/release/build_manual_pdf.py"
+                "${CMAKE_CURRENT_SOURCE_DIR}/docs/MANUAL.md"
+                "${CALCULATOR_MANUAL_PDF}"
+            DEPENDS
+                "${CMAKE_CURRENT_SOURCE_DIR}/docs/MANUAL.md"
+                "${CMAKE_CURRENT_SOURCE_DIR}/support/release/build_manual_pdf.py"
+            VERBATIM
+        )
+        add_custom_target(calculator-manual ALL DEPENDS "${CALCULATOR_MANUAL_PDF}")
         install(DIRECTORY DESTINATION "/System/Resources/Documentation/Calculator")
-        install(FILES docs/MANUAL.txt
+        install(FILES "${CALCULATOR_MANUAL_PDF}"
             DESTINATION "/System/Resources/Documentation/Calculator")
         install(TARGETS calculator RUNTIME DESTINATION "/Programs")
         install(FILES support/resources/infiltrator-native-path.sh
