@@ -70,7 +70,74 @@ if grep -Eq '^\./usr/lib/calculator/|^\./usr/share/doc/calculator/(BUILD-INFO|LI
   echo "Calculator package retains deprecated application-owned Linux paths." >&2
   exit 1
 fi
-if grep -Eq '^\./usr/bin/(calculator|calculator-cli)$' "$listing"; then
+# Application documentation may contain the licence, but no build reports,
+# compiler settings, source manuals or generated developer artefacts.
+unexpected_docs="$(grep -E '^\./System/Resources/Documentation/Calculator/' "$listing" |
+  grep -Ev '^\./System/Resources/Documentation/Calculator/(|LICENSE)
+  echo "Calculator must not install executables under /usr/bin." >&2
+  exit 1
+fi
+if grep -Fqx './System/Programs/' "$listing"; then
+  echo "The obsolete /System/Programs split must not return." >&2
+  exit 1
+fi
+if grep -Eq '(mb_corpo_|daimler_).*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf$' "$listing"; then
+  echo "Calculator must not package duplicate MB Corpo font binaries." >&2
+  exit 1
+fi
+
+grep -Fq '/System/Commands/calculator-ensure-fonts' "$control_dir/postinst" || {
+  echo "Calculator postinst must establish the verified 23-face native font cache." >&2
+  exit 1
+}
+if grep -Eq '(rm|rmdir).*System/Resources/Fonts' "$control_dir"/*; then
+  echo "Calculator uninstall scripts must never remove shared native fonts." >&2
+  exit 1
+fi
+
+if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' "$listing"; then
+  echo "Calculator package leaked Common development/runtime payloads." >&2
+  cat "$listing" >&2
+  exit 1
+fi
+
+echo "Debian package contract passed: $package"
+ || true)"
+if [[ -n "$unexpected_docs" ]]; then
+  echo "Calculator package leaked developer/build documents:" >&2
+  printf '%s\n' "$unexpected_docs" >&2
+  exit 1
+fi
+if grep -Eq '^\./usr/bin/(calculator|calculator-cli)
+  echo "Calculator must not install executables under /usr/bin." >&2
+  exit 1
+fi
+if grep -Fqx './System/Programs/' "$listing"; then
+  echo "The obsolete /System/Programs split must not return." >&2
+  exit 1
+fi
+if grep -Eq '(mb_corpo_|daimler_).*\.ttf$|^\./System/Resources/Fonts/[^/]+\.ttf$' "$listing"; then
+  echo "Calculator must not package duplicate MB Corpo font binaries." >&2
+  exit 1
+fi
+
+grep -Fq '/System/Commands/calculator-ensure-fonts' "$control_dir/postinst" || {
+  echo "Calculator postinst must establish the verified 23-face native font cache." >&2
+  exit 1
+}
+if grep -Eq '(rm|rmdir).*System/Resources/Fonts' "$control_dir"/*; then
+  echo "Calculator uninstall scripts must never remove shared native fonts." >&2
+  exit 1
+fi
+
+if grep -Eq '^\./usr/include/infiltratr/|^\./usr/lib/.*/libinfiltratr|/cmake/InfiltratrCommon/' "$listing"; then
+  echo "Calculator package leaked Common development/runtime payloads." >&2
+  cat "$listing" >&2
+  exit 1
+fi
+
+echo "Debian package contract passed: $package"
+ "$listing"; then
   echo "Calculator must not install executables under /usr/bin." >&2
   exit 1
 fi

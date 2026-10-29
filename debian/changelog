@@ -1,3 +1,11 @@
+calculator (0.2.63) unstable; urgency=medium
+
+  * Remove developer-only BUILD-INFO from native Calculator installations.
+  * Require an executable and installed package, not an installed build report.
+  * Enforce licence-only Calculator documentation in Linux package qualification.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Thu, 29 Oct 2026 12:43:00 +1100
+
 calculator (0.2.62) unstable; urgency=medium
 
   * Align mandatory native ELF optimisation with System Monitor by using

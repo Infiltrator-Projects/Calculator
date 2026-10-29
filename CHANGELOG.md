@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.63 - 2026-10-29
+
+- Stop generating and installing native build-provenance documents into
+  `/System/Resources/Documentation/Calculator`.
+- Treat successful package installation and executable presence, rather than
+  an optional build report, as the native install completion contract.
+- Reject any packaged Calculator developer/build documentation other than
+  the user-facing LICENSE; keep source documentation in the repository.
+
+
 ## 0.2.62 - 2026-10-25
 
 - Match System Monitor's supported ELF call and symbol-visibility optimisation

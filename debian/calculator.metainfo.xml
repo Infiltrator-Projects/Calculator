@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.63" date="2026-10-29">
+      <description><p>Keep developer-only native build reports out of installed Calculator resources and verify the runtime documentation boundary.</p></description>
+    </release>
     <release version="0.2.62" date="2026-10-25">
       <description><p>Align native ELF call and symbol visibility optimisations with System Monitor, retaining mandatory two-pass PGO and LTO.</p></description>
     </release>
