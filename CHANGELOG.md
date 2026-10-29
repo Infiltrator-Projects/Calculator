@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.63 - 2026-10-29
+
+- Stop generating and installing native build-provenance documents into
+  `/System/Resources/Documentation/Calculator`.
+- Treat successful package installation and executable presence, rather than
+  an optional build report, as the native install completion contract.
+- Preserve `/System/Resources/Documentation/Calculator/` with exactly one
+  operator's MANUAL.txt covering usage and governing assumptions; omit redundant
+  LICENSE, compiler/build files and all developer-document copies while retaining
+  Debian-required copyright metadata.
+- Keep developer documentation and build reports in the source/build context.
+
+
 ## 0.2.62 - 2026-10-25
 
 - Match System Monitor's supported ELF call and symbol-visibility optimisation

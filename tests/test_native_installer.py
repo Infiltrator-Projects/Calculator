@@ -55,6 +55,24 @@ int main(int argc, char **argv)
         return subprocess.run([str(self.program), installed, target],
                               text=True, capture_output=True)
 
+    def test_build_provenance_is_not_part_of_installed_runtime(self):
+        installer = (ROOT / "support/tools/native_installer.cpp").read_text(encoding="utf-8")
+        packaging = (ROOT / "debian/rules").read_text(encoding="utf-8")
+        self.assertNotIn("write_build_info(", installer)
+        self.assertNotIn(".calculator-native-build-info", installer)
+        self.assertNotIn(".calculator-native-build-info", packaging)
+        self.assertNotIn("/Documentation/Calculator/BUILD-INFO", installer)
+        cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+        self.assertNotIn("install(FILES LICENSE", cmake)
+        self.assertIn('install(DIRECTORY DESTINATION "/System/Resources/Documentation/Calculator")', cmake)
+        self.assertIn("install(FILES docs/MANUAL.txt", cmake)
+        manual = (ROOT / "docs/MANUAL.txt").read_text(encoding="utf-8")
+        for heading in ("OPERATING INSTRUCTIONS", "STANDARD",
+                        "SCIENTIFIC", "PROGRAMMER", "ADVANCED TOOLS",
+                        "OPERATING PRINCIPLES AND ASSUMPTIONS",
+                        "LIMITS AND FAILURE POLICY"):
+            self.assertIn(heading, manual)
+
     def test_same_version_local_rebuild_is_explicitly_reinstalled(self):
         result = self.plan("0.2.53", "0.2.53")
         self.assertEqual(result.returncode, 0, result.stderr)

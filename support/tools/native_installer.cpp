@@ -25,8 +25,6 @@ constexpr const char *kPayloadMarker =
     "\n__CALCULATOR_NATIVE_PAYLOAD_V1__\n";
 constexpr const char *kPackageName = "calculator";
 constexpr const char *kExecutable = "/Programs/calculator";
-constexpr const char *kBuildInfo =
-    "/System/Resources/Documentation/Calculator/BUILD-INFO";
 
 [[noreturn]] void fail(const std::string &message)
 {
@@ -350,18 +348,6 @@ fs::path find_debian_package(const fs::path &directory, const std::string &versi
     fail("final Calculator Debian package was not produced");
 }
 
-void write_build_info(const fs::path &source_root, const std::string &flags)
-{
-    const fs::path path = source_root / ".calculator-native-build-info";
-    std::ofstream output(path, std::ios::trunc);
-    if (!output) fail("cannot create native build information");
-    output << "Profile: aggressive\n";
-    output << "PGO: trained two-pass profile\n";
-    output << "C/C++ flags: " << flags << '\n';
-    output << "Installed by: Calculator hardware-native installer\n";
-    if (!output) fail("cannot write native build information");
-}
-
 std::string join_options(const std::vector<std::string> &options)
 {
     std::ostringstream text;
@@ -537,7 +523,6 @@ int main(int argc, char **argv)
         const std::string use_ldflags =
             base_ldflags + " -fprofile-use=" + pgo +
             " -fprofile-correction -fprofile-partial-training -Wno-missing-profile";
-        write_build_info(source_root, final_flags);
         std::cout << "Rebuilding Calculator using the measured PGO profile...\n";
         set_build_flags(final_flags, use_ldflags);
         run_required(build_command, source_root);
@@ -559,9 +544,8 @@ int main(int argc, char **argv)
                                 package, version, installed_package_version(kPackageName)),
                             system_package_mode));
 
-    if (!package_installed(kPackageName) || !executable(kExecutable) ||
-        !fs::exists(kBuildInfo))
-        fail("Calculator package, executable or native build metadata is missing after installation");
+    if (!package_installed(kPackageName) || !executable(kExecutable))
+        fail("Calculator package or executable is missing after installation");
     std::cout << "\nCalculator " << version << " is installed system-wide.\n";
     std::cout << "The installed package is a measured two-pass PGO, LTO and CPU-native build.\n";
     return EXIT_SUCCESS;

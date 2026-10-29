@@ -313,17 +313,17 @@ if(CALCULATOR_BUILD_DESKTOP)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         infiltrator_install_native_filesystem_skeleton()
+        # Calculator owns an empty documentation namespace, not bundled
+        # developer/build documents. Preserve it as a package-owned directory.
+        install(DIRECTORY DESTINATION "/System/Resources/Documentation/Calculator")
+        install(FILES docs/MANUAL.txt
+            DESTINATION "/System/Resources/Documentation/Calculator")
         install(TARGETS calculator RUNTIME DESTINATION "/Programs")
         install(FILES support/resources/infiltrator-native-path.sh
             DESTINATION "/etc/profile.d"
             RENAME "91-infiltrator-calculator-path.sh")
     else()
         install(TARGETS calculator RUNTIME DESTINATION bin)
-    endif()
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        install(FILES LICENSE DESTINATION "/System/Resources/Documentation/Calculator" OPTIONAL)
-    else()
-        install(FILES LICENSE DESTINATION share/doc/calculator OPTIONAL)
     endif()
 endif()
 

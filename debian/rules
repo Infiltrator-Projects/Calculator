@@ -21,7 +21,3 @@ override_dh_install:
 		"$(CURDIR)/debian/calculator/usr/share/app-install/icons/calculator.svg"
 	install -D -m 0644 debian/calculator.svg \
 		"$(CURDIR)/debian/calculator/System/Resources/Icons/calculator.svg"
-	if [ -f .calculator-native-build-info ]; then \
-		install -D -m 0644 .calculator-native-build-info \
-			"$(CURDIR)/debian/calculator/System/Resources/Documentation/Calculator/BUILD-INFO"; \
-	fi

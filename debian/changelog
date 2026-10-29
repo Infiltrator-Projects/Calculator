@@ -1,3 +1,13 @@
+calculator (0.2.63) unstable; urgency=medium
+
+  * Remove developer-only BUILD-INFO from native Calculator installations.
+  * Require an executable and installed package, not an installed build report.
+  * Install only the user and operating-principles manual under the native
+    Calculator documentation directory; omit build files and redundant LICENSE.
+  * Retain Debian's required copyright metadata.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Thu, 29 Oct 2026 12:43:00 +1100
+
 calculator (0.2.62) unstable; urgency=medium
 
   * Align mandatory native ELF optimisation with System Monitor by using

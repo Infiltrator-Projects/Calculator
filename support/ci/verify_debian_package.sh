@@ -49,6 +49,8 @@ native_directories=(
   './System/Kernel/Firmware/'
   './System/Resources/Calendars/'
   './System/Resources/Documentation/'
+  './System/Resources/Documentation/Calculator/'
+  './System/Resources/Documentation/Calculator/MANUAL.txt'
   './System/Resources/Clocks/'
   './System/Resources/Fonts/'
   './System/Resources/Locales/'
@@ -68,6 +70,19 @@ done
 
 if grep -Eq '^\./usr/lib/calculator/|^\./usr/share/doc/calculator/(BUILD-INFO|LICENSE)$' "$listing"; then
   echo "Calculator package retains deprecated application-owned Linux paths." >&2
+  exit 1
+fi
+# The only Calculator-owned documentation payload is the operator manual.
+# Debian's mandatory copyright metadata is handled separately by debhelper.
+unexpected_docs="$(grep -E '^\./System/Resources/Documentation/Calculator/[^/]' "$listing" |
+  grep -Fvx './System/Resources/Documentation/Calculator/MANUAL.txt' || true)"
+if [[ -n "$unexpected_docs" ]]; then
+  echo "Calculator package contains unapproved documentation/build artifacts:" >&2
+  printf '%s\n' "$unexpected_docs" >&2
+  exit 1
+fi
+if ! grep -Fqx './usr/share/doc/calculator/copyright' "$listing"; then
+  echo "Debian package is missing its required copyright metadata." >&2
   exit 1
 fi
 if grep -Eq '^\./usr/bin/(calculator|calculator-cli)$' "$listing"; then
