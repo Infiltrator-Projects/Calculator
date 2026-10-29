@@ -316,6 +316,8 @@ if(CALCULATOR_BUILD_DESKTOP)
         # Calculator owns an empty documentation namespace, not bundled
         # developer/build documents. Preserve it as a package-owned directory.
         install(DIRECTORY DESTINATION "/System/Resources/Documentation/Calculator")
+        install(FILES docs/MANUAL.txt
+            DESTINATION "/System/Resources/Documentation/Calculator")
         install(TARGETS calculator RUNTIME DESTINATION "/Programs")
         install(FILES support/resources/infiltrator-native-path.sh
             DESTINATION "/etc/profile.d"
