@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.64" date="2026-10-29">
+      <description><p>Replace the plain-text manual with one self-contained illustrated PDF while keeping developer and build documentation out of installed resources.</p></description>
+    </release>
     <release version="0.2.63" date="2026-10-29">
       <description><p>Install a traditional user and operating-principles manual in Calculator's native documentation directory while excluding build artifacts and duplicate licences.</p></description>
     </release>

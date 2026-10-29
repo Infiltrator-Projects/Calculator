@@ -1,14 +1,8 @@
-CALCULATOR
-USER MANUAL AND OPERATING PRINCIPLES
-====================================
-InfiltratorOS product family
-User edition for the 0.2.63 release line
-29 October 2026
+## About this edition
 
-Copyright (c) 1993-2026 Shannon Smith
+**Calculator 0.2.64** provides this complete user manual as one self-contained, illustrated PDF. The Markdown manuscript is a development source; only the PDF is installed. Its interface diagrams are illustrative rather than screenshots.
 
-ABOUT THIS MANUAL
------------------
+## About this manual
 This is the end-user manual supplied with Calculator. It explains how to use
 the application, what results mean, what is intentionally supported, and the
 assumptions behind its operation. It is not a compiler log, source-tree tour,
@@ -17,8 +11,7 @@ release ledger or installation transcript.
 The first part is written for the operator. The second part records operating
 principles and assumptions useful to experienced users and maintainers.
 
-CONTENTS
---------
+## Contents
 PART I   OPERATING INSTRUCTIONS
   1. Purpose and start-up
   2. Everyday calculations (Standard)
@@ -42,11 +35,9 @@ PART II  OPERATING PRINCIPLES AND ASSUMPTIONS
  18. Glossary and further information
 
 
-PART I - OPERATING INSTRUCTIONS
-===============================
+# Part I - Operating instructions
 
-1. PURPOSE AND START-UP
------------------------
+## 1. Purpose And Start-up
 Calculator is one application with three calculation modes:
 
   Standard     Everyday real-number calculations.
@@ -71,8 +62,7 @@ current mode or expression does not admit that action.
 
 Example: 2 + 3 * 4 = 14 (normal operator precedence).
 
-2. EVERYDAY CALCULATIONS - STANDARD
-------------------------------------
+## 2. Everyday Calculations - Standard
 Standard is intended for ordinary arithmetic. Its numeric domain is finite
 IEEE-754 binary64 ("double"), not arbitrary-precision decimal arithmetic.
 
@@ -96,6 +86,8 @@ right pocket-calculator evaluation. Thus:
   200 + 200 / 2   yields 300
   -2^2            yields -4
 
+> **Percentage rule:** The % key divides by 100; it is not a contextual percentage-of-the-previous-value operation.
+
 Important percentage rule: % is a literal postfix "divide by 100", not a
 contextual "percentage of the first number" operation. Consequently:
 
@@ -109,8 +101,7 @@ CE changes the current entry without wiping the earlier expression.
 For exact decimal fractions such as 0.1 + 0.2, use Tools > Exact decimal.
 A rounded display in Standard does not imply exact decimal representation.
 
-3. SCIENTIFIC CALCULATIONS
---------------------------
+## 3. Scientific Calculations
 Scientific adds mathematical functions, constants, variables, named
 functions, complex numbers and adjustable calculation precision.
 
@@ -164,8 +155,7 @@ Complex operations use the maintained complex mathematical domain. For
 non-integer powers and logarithms, the standard principal complex branch
 is used; consult the numerical semantics when branch selection matters.
 
-4. PROGRAMMER CALCULATIONS
---------------------------
+## 4. Programmer Calculations
 Programmer treats values as bit patterns of a chosen width, rather than
 floating-point values.
 
@@ -207,8 +197,7 @@ settings before copying a bit pattern to another system.
 Use the Bases/Bits representation surface to see BIN, OCT, DEC and HEX
 views together and, where provided, inspect or toggle individual bits.
 
-5. MEMORY, HISTORY AND ADDITIONAL RESULTS
------------------------------------------
+## 5. Memory, History And Additional Results
 Calculator provides a memory stack and calculation history.
 
   MS   Store the current value in a new memory slot.
@@ -233,15 +222,13 @@ Do not assume the current memory stack or result history survives closing
 the process. Reusable variables/functions and selected semantic preferences
 have a separate persistent-storage contract.
 
-6. ADVANCED TOOLS REFERENCE
----------------------------
+## 6. Advanced Tools Reference
 Open Tools to select a specialist calculation. Each command is entered in
 the Tools workbench input, NOT as an operating-system shell command. The
 workbench supplies prompts and examples. Select the tool, enter one
 domain-specific command, and activate Run.
 
 Tool family               Example input
----------------------------------------------------------------
 Engineering               ohm 12 2
 Unit conversion           100 km mi
 ICT/network               subnet 192.168.10.42/24
@@ -257,31 +244,31 @@ Complex numbers           mul 1,2 3,-4
 Financial                 pmt 250000 0.005 360
 Number utilities          factor 360
 
-Engineering:
+### Engineering
   Examples include ohm V I, power V I, reactance-c, reactance-l, resonance,
   parallel resistances, three-phase power and decibel functions. Use
   appropriate SI units and check the requested command's operand order.
 
-Unit conversion:
+### Unit conversion
   Enter "value FROM TO". Units must belong to the same dimension.
   Supported families include length, mass, area, temperature, volume,
   speed, pressure, energy, power, time, frequency and angle.
   Affine conversions (including temperature) are handled explicitly.
 
-ICT/network:
+### ICT/network
   subnet IPv4/prefix reports address, mask, network, broadcast, usable
   range and count. "cidr usable-hosts" selects a conventional IPv4 subnet;
   "transfer bytes bits-per-second" estimates transfer duration. Network
   operations use IPv4 arithmetic, not an IPv6 subnet model.
 
-Storage/filesystem:
+### Storage/filesystem
   "convert value FROM TO" handles bits/bytes, decimal storage units and
   binary KiB-style units. "raid LEVEL disks size-per-disk unit" estimates
   supported RAID 0/1/5/6/10 capacity. "clusters file-bytes cluster-bytes"
   calculates allocation and slack. These are mathematical estimates and
   do not probe a physical filesystem.
 
-Date/time:
+### Date/time
   "diff YYYY-MM-DD YYYY-MM-DD" gives calendar-aware differences.
   "add YYYY-MM-DD days" adds a raw day count.
   "add YYYY-MM-DD N years N months N weeks N days" and "sub ..." perform
@@ -290,43 +277,43 @@ Date/time:
   "unix YYYY-MM-DDTHH:MM:SSZ" interprets the timestamp as UTC.
   The supported Gregorian year range is 1 through 9999.
 
-Constants:
+### Constants
   Enter "list" or a named mathematical/physical constant. Constants are
   also available in Scientific expressions.
 
-Statistics:
+### Statistics
   Enter comma- or space-separated finite samples. Output includes count,
   sum, mean, median, quartiles, spread, population variance and standard
   deviation; sample statistics are shown when defined.
 
-Graphing:
+### Graphing
   "expression ; xmin ; xmax ; samples" samples an expression in x.
   The default is 201 samples; permitted count is 2 through 4096.
   Discontinuities remain gaps instead of false lines between invalid points.
 
-Equation solving:
+### Equation solving
   "expression ; xmin ; xmax" searches for real roots where the expression
   equals zero. This is a bounded numerical estimate, not an exhaustive
   symbolic proof; an interval may contain roots the search cannot certify.
 
-Exact decimal:
+### Exact decimal
   Use ordinary decimal literals and +, -, *, /, parentheses. Values are
   exact rational numbers. "0.1 + 0.2" is exactly 3/10 = 0.3.
 
-Arbitrary precision:
+### Arbitrary precision
   Exact signed integers support +, -, *, powers and factorial.
   Exponents must be non-negative; this tool limits factorial to 1000.
 
-Complex numbers:
+### Complex numbers
   Use real,imaginary pairs, e.g. "mul 1,2 3,-4". Commands include
   add, sub, mul, div, conj, abs, arg and polar.
 
-Financial:
+### Financial
   Available operations include ctrm, ddb, fv, gpm, pmt, pv, rate, sln,
   syd and term. Interest rates are DECIMAL PERIODIC rates: 0.005 is
   0.5 percent per period, not 5 percent. Verify period units.
 
-Number utilities:
+### Number utilities
   Commands include mod, factor, gcd, lcm, perm, comb, root, char, code,
   ones and twos. The workbench prompt specifies argument form.
 
@@ -334,25 +321,23 @@ The Tools workbench reports errors for missing arguments, inconsistent
 units, unsupported forms and mathematical domain failures. Refer to the
 per-tool prompt for complete argument syntax.
 
-7. PREFERENCES AND APPEARANCE
-------------------------------
+## 7. Preferences And Appearance
 System, Day and Night appearance modes are available. System follows the
 host's light/dark preference; Day and Night select the application's
 defined light and dark palettes.
 
 On Linux, Preferences includes:
-  - Result presentation: Automatic, Fixed, Scientific or Engineering.
-  - Number of displayed decimal places.
-  - Scientific calculation precision (16..1000 digits).
-  - History limit (0 means unlimited).
-  - Thousands separators and trailing-zero presentation.
+- Result presentation: Automatic, Fixed, Scientific or Engineering.
+- Number of displayed decimal places.
+- Scientific calculation precision (16..1000 digits).
+- History limit (0 means unlimited).
+- Thousands separators and trailing-zero presentation.
 
 These settings change presentation and/or the chosen calculation context
 as labelled. Changing a display format or enabling grouped digits does
 not silently change the retained underlying value.
 
-8. LINUX KEYBOARD SHORTCUTS
-----------------------------
+## 8. Linux Keyboard Shortcuts
 Linux's built-in F1 shortcut window is the authority if a key mapping
 changes in a later release. Current principal shortcuts are:
 
@@ -380,8 +365,7 @@ changes in a later release. Current principal shortcuts are:
 The Windows and iPhone shells use native control and input conventions;
 the Linux-only key list is not a promise of identical shortcuts elsewhere.
 
-9. LINUX COMMAND-LINE CALCULATOR
----------------------------------
+## 9. Linux Command-line Calculator
 The Linux executable also provides a Scientific expression command line:
 
   /Programs/calculator /cli "2+2"
@@ -398,8 +382,7 @@ subject to conflict-checked persistence. It does not implement a separate
 Programmer or Tools command-line dialect. An erroneous expression produces
 an error rather than an invented value.
 
-10. ERRORS AND TROUBLESHOOTING
--------------------------------
+## 10. Errors And Troubleshooting
   Unexpected result:
     Check Standard versus Scientific versus Programmer, input parentheses,
     the angle unit, Programmer base/width/sign, precision and % semantics.
@@ -429,11 +412,9 @@ an error rather than an invented value.
     History and memory are not part of the saved reusable-name document.
 
 
-PART II - OPERATING PRINCIPLES AND ASSUMPTIONS
-=============================================
+# Part II - Operating principles and assumptions
 
-11. OBJECTIVES, NON-GOALS AND OPERATING ASSUMPTIONS
----------------------------------------------------
+## 11. Objectives, Non-goals And Operating Assumptions
 Calculator is intended to be a native, readable, precise and independently
 installable member of the InfiltratorOS application family.
 
@@ -452,15 +433,14 @@ Core assumptions:
      engineering choice; novelty by itself is not an objective.
 
 Non-goals:
-  - Making Standard behave like a full symbolic algebra system.
-  - Making real floating-point arithmetic exact for every decimal input.
-  - Presenting every Programmer operation as ordinary signed arithmetic.
-  - Treating graph/real-root estimates as formal mathematical proofs.
-  - Forcing Linux, Windows and iPhone to use identical UI toolkits.
-  - Including compiler logs or internal development artifacts at runtime.
+- Making Standard behave like a full symbolic algebra system.
+- Making real floating-point arithmetic exact for every decimal input.
+- Presenting every Programmer operation as ordinary signed arithmetic.
+- Treating graph/real-root estimates as formal mathematical proofs.
+- Forcing Linux, Windows and iPhone to use identical UI toolkits.
+- Including compiler logs or internal development artifacts at runtime.
 
-12. WHAT EACH NUMERIC MODE ACTUALLY REPRESENTS
------------------------------------------------
+## 12. What Each Numeric Mode Actually Represents
 Standard: finite IEEE-754 binary64. Many decimal fractions are only
 approximately representable. The stored binary64 value remains authoritative
 even when displayed with fewer decimals.
@@ -485,8 +465,7 @@ interval endpoints. Certain physical/financial tools also have a checked
 binary64 input/output boundary, even when their intermediate work benefits
 from the Scientific backend.
 
-13. EXPRESSION INTERPRETATION AND RESULT INTEGRITY
---------------------------------------------------
+## 13. Expression Interpretation And Result Integrity
 Shared arithmetic precedence is defined: powers bind tighter than leading
 unary minus, then multiplication/division, then addition/subtraction.
 Parentheses override precedence. Powers associate right-to-left.
@@ -506,8 +485,7 @@ reparsed as a replacement for the retained full-precision value.
 History stores relevant result semantics so recalling earlier expressions
 does not inadvertently re-run a random function or assignment.
 
-14. SHARED ENGINES AND NATIVE INTERFACES
-----------------------------------------
+## 14. Shared Engines And Native Interfaces
 The C++17 calculation core owns mathematical meaning, parsing and
 domain-specific evaluation. The shared Controller owns mode and command
 behaviour, enablement, memory/history and formatting choices.
@@ -521,8 +499,7 @@ Common is an immutable, pinned shared dependency for cross-product utility,
 theme, typography and platform infrastructure. Common does not own
 Calculator-specific expression grammar or Programmer wraparound semantics.
 
-15. STATE, PERSISTENCE AND PRIVACY BOUNDARIES
----------------------------------------------
+## 15. State, Persistence And Privacy Boundaries
 Saved preferences and reusable Scientific variables/functions use a
 versioned shared Controller state format. Linux stores this through XDG
 persistence, Windows through native settings storage, and iPhone through
@@ -538,8 +515,7 @@ than silently overwriting another writer's changes.
 The Tools command input is a domain grammar, not a shell command. No
 advanced-tool command executes an arbitrary operating-system program.
 
-16. RESOURCE LIMITS AND FAILURE POLICY
----------------------------------------
+## 16. Resource Limits And Failure Policy
 The Scientific/Advanced Tool input boundary is 8192 UTF-8 bytes. The
 multiprecision evaluator applies cumulative work and recursion limits,
 including a maintained maximum of 20,000 materialised decimal digits.
@@ -555,15 +531,14 @@ zero, unsupported constants and resource exhaustion must fail explicitly.
 An engine may refuse a computation it cannot justify; this is preferable
 to displaying a mathematically misleading result.
 
-17. INSTALLATION, DOCUMENTATION AND COMPATIBILITY
---------------------------------------------------
+## 17. Installation, Documentation And Compatibility
 On Linux, the Calculator executable resides at /Programs/calculator.
 A standalone Debian/Mint installation can establish the InfiltratorOS
 directory skeleton while retaining normal desktop and package metadata.
 
 This manual is intentionally installed as the user-facing document at:
 
-  /System/Resources/Documentation/Calculator/MANUAL.txt
+  /System/Resources/Documentation/Calculator/Calculator-Manual.pdf
 
 The documentation directory must not contain native compiler profiles,
 development build reports, copied source trees or redundant licence files.
@@ -574,8 +549,7 @@ Some stable application identifiers may retain historical spelling for
 settings and upgrade compatibility. The current application and repository
 identity remains Calculator.
 
-18. GLOSSARY AND FURTHER INFORMATION
--------------------------------------
+## 18. Glossary And Further Information
 Binary64       IEEE-754 double-precision floating-point representation.
 Bit pattern    A fixed number of binary digits interpreted under a width.
 Controller     Shared authority for calculator interaction and state.
@@ -597,4 +571,4 @@ semantics, tool definitions and validation records. Those developer documents
 are deliberately NOT copied into the installed Calculator documentation
 directory.
 
-END OF MANUAL
+

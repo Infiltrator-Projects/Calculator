@@ -1,3 +1,12 @@
+calculator (0.2.64) unstable; urgency=medium
+
+  * Replace MANUAL.txt with a single professionally formatted, illustrated
+    Calculator-Manual.pdf in the native documentation directory.
+  * Keep the Markdown manuscript and PDF generator in source only.
+  * Verify Debian payload contains the PDF and no other Calculator documents.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Thu, 29 Oct 2026 14:37:00 +1100
+
 calculator (0.2.63) unstable; urgency=medium
 
   * Remove developer-only BUILD-INFO from native Calculator installations.

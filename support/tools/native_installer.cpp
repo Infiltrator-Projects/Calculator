@@ -183,12 +183,15 @@ bool prerequisites_available()
         "/usr/bin/dpkg-buildpackage", "/usr/bin/dpkg-query", "/usr/bin/apt-get",
         "/usr/bin/dh",           "/usr/bin/xauth",
         "/usr/bin/tar",          "/usr/bin/gzip",         "/usr/bin/xvfb-run",
-        "/usr/bin/timeout",      "/usr/bin/fc-cache",     "/usr/bin/sha256sum"
+        "/usr/bin/timeout",      "/usr/bin/fc-cache",     "/usr/bin/sha256sum",
+        "/usr/bin/python3"
     };
     for (const char *path : paths)
         if (!executable(path)) return false;
     return (executable("/usr/bin/curl") || executable("/usr/bin/wget")) &&
-           gtk4_available();
+           gtk4_available() &&
+           run_process({ "/usr/bin/python3", "-c", "import reportlab" },
+                       std::nullopt, true) == 0;
 }
 
 void ensure_prerequisites(bool system_package_mode, bool dry_run)
@@ -206,7 +209,8 @@ void ensure_prerequisites(bool system_package_mode, bool dry_run)
     run_required(privileged(
         { "/usr/bin/apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y",
           "build-essential", "cmake", "debhelper-compat", "dpkg-dev", "libgtk-4-dev",
-          "pkg-config", "xvfb", "xauth", "tar", "gzip", "ca-certificates", "curl", "fontconfig" },
+          "pkg-config", "xvfb", "xauth", "tar", "gzip", "ca-certificates", "curl",
+          "fontconfig", "python3", "python3-reportlab" },
         system_package_mode));
 
     if (!prerequisites_available())

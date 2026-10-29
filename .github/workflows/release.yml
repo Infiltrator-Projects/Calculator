@@ -101,6 +101,7 @@ jobs:
             libmpc-dev \
             libmpfr-dev \
             pkg-config \
+            python3-reportlab \
             xvfb
 
       - name: Verify Common integration contract
