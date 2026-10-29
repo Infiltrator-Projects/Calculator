@@ -348,6 +348,34 @@ jobs:
           cmake --build build-sanitizers --parallel
           ctest --test-dir build-sanitizers --output-on-failure
 
+  cleanup_merged_branches:
+    name: Prune already-merged temporary branches
+    needs: [prepare, linux, windows, ios, sanitizers]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.prepare.result == 'success' && needs.linux.result == 'success' && needs.windows.result == 'success' && needs.ios.result == 'success' && needs.sanitizers.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Remove only branch heads identical to merged PR heads
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=closed&per_page=100" \
+            --jq ".[] | select(.merged_at != null and .head.repo.full_name == \"${GITHUB_REPOSITORY}\") | [.head.ref, .head.sha] | @tsv" > "${RUNNER_TEMP}/merged-pr-heads.tsv"
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
+            --jq '.[] | select(.name != "main" and .protected == false) | [.name, .commit.sha] | @tsv' > "${RUNNER_TEMP}/unprotected-branches.tsv"
+          while IFS=$'\t' read -r branch sha; do
+            [[ -n "${branch}" && -n "${sha}" ]] || continue
+            if grep -Fqx -- "${branch}"$'\t'"${sha}" "${RUNNER_TEMP}/merged-pr-heads.tsv"; then
+              echo "Deleting verified merged branch: ${branch}"
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" >/dev/null
+            fi
+          done < "${RUNNER_TEMP}/unprotected-branches.tsv"
+
   publish:
     needs: [prepare, linux, windows, ios, sanitizers]
     if: needs.prepare.outputs.release == 'true'
