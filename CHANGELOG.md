@@ -6,8 +6,8 @@
   `/System/Resources/Documentation/Calculator`.
 - Treat successful package installation and executable presence, rather than
   an optional build report, as the native install completion contract.
-- Install no Calculator-specific files under native /System/Resources/Documentation,
-  including redundant LICENSE; preserve Debian's required package copyright metadata.
+- Preserve the empty `/System/Resources/Documentation/Calculator/` directory
+  without redundant LICENSE or build files; keep Debian-required copyright metadata.
 - Keep developer documentation and build reports in the source/build context.
 
 

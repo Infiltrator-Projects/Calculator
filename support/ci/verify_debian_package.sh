@@ -49,6 +49,7 @@ native_directories=(
   './System/Kernel/Firmware/'
   './System/Resources/Calendars/'
   './System/Resources/Documentation/'
+  './System/Resources/Documentation/Calculator/'
   './System/Resources/Clocks/'
   './System/Resources/Fonts/'
   './System/Resources/Locales/'
@@ -70,10 +71,10 @@ if grep -Eq '^\./usr/lib/calculator/|^\./usr/share/doc/calculator/(BUILD-INFO|LI
   echo "Calculator package retains deprecated application-owned Linux paths." >&2
   exit 1
 fi
-# Calculator has no private native documentation install surface.
+# Keep the Calculator documentation directory, but install no files within it.
 # Debian's mandated copyright metadata is handled separately by debhelper.
-if grep -Eq '^\./System/Resources/Documentation/Calculator(/|$)' "$listing"; then
-  echo "Calculator package must not install native documentation or build reports." >&2
+if grep -Eq '^\./System/Resources/Documentation/Calculator/.+' "$listing"; then
+  echo "Calculator native documentation directory must be empty." >&2
   exit 1
 fi
 if ! grep -Fqx './usr/share/doc/calculator/copyright' "$listing"; then
