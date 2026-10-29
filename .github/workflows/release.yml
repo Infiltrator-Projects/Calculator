@@ -348,6 +348,136 @@ jobs:
           cmake --build build-sanitizers --parallel
           ctest --test-dir build-sanitizers --output-on-failure
 
+  cleanup_merged_branches:
+    name: Prune already-merged temporary branches
+    needs: [prepare, linux, windows, ios, sanitizers]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.prepare.result == 'success' && needs.linux.result == 'success' && needs.windows.result == 'success' && needs.ios.result == 'success' && needs.sanitizers.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Remove only branch heads identical to merged PR heads
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=closed&per_page=100" \
+            --jq ".[] | select(.merged_at != null and .head.repo.full_name == \"${GITHUB_REPOSITORY}\") | [.head.ref, .head.sha] | @tsv" > "${RUNNER_TEMP}/merged-pr-heads.tsv"
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
+            --jq '.[] | select(.name != "main" and .protected == false) | [.name, .commit.sha] | @tsv' > "${RUNNER_TEMP}/unprotected-branches.tsv"
+          while IFS=    needs: [prepare, linux, windows, ios, sanitizers]
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+
+    steps:
+      - name: Checkout exact release metadata
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Download Linux package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: calculator-linux-amd64
+          path: dist
+
+      - name: Download Windows package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: calculator-windows-x64
+          path: dist/windows
+
+      - name: Download iOS package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: calculator-ios
+          path: dist/ios
+
+      - name: Verify exact Linux source and installer candidates
+        run: |
+          set -euo pipefail
+          test "$(cat dist/SOURCE_COMMIT)" = "$GITHUB_SHA"
+          (cd dist && sha256sum -c LINUX_SHA256SUMS)
+          chmod +x "dist/native/calculator-${VERSION}-native-installer.run"
+
+      - name: Validate release asset set
+        run: |
+          set -euo pipefail
+          cp LICENSE dist/LICENSE.txt
+          python3 support/release/release_assets.py --version "$VERSION" --dist dist
+
+      - name: Publish exact qualified release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: bash support/release/publish.sh
+\t' read -r branch sha; do
+            [[ -n "${branch}" && -n "${sha}" ]] || continue
+            if grep -Fqx -- "${branch}"    needs: [prepare, linux, windows, ios, sanitizers]
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+
+    steps:
+      - name: Checkout exact release metadata
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Download Linux package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: calculator-linux-amd64
+          path: dist
+
+      - name: Download Windows package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: calculator-windows-x64
+          path: dist/windows
+
+      - name: Download iOS package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: calculator-ios
+          path: dist/ios
+
+      - name: Verify exact Linux source and installer candidates
+        run: |
+          set -euo pipefail
+          test "$(cat dist/SOURCE_COMMIT)" = "$GITHUB_SHA"
+          (cd dist && sha256sum -c LINUX_SHA256SUMS)
+          chmod +x "dist/native/calculator-${VERSION}-native-installer.run"
+
+      - name: Validate release asset set
+        run: |
+          set -euo pipefail
+          cp LICENSE dist/LICENSE.txt
+          python3 support/release/release_assets.py --version "$VERSION" --dist dist
+
+      - name: Publish exact qualified release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: bash support/release/publish.sh
+\t'"${sha}" "${RUNNER_TEMP}/merged-pr-heads.tsv"; then
+              echo "Deleting verified merged branch: ${branch}"
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" >/dev/null
+            fi
+          done < "${RUNNER_TEMP}/unprotected-branches.tsv"
+
   publish:
     needs: [prepare, linux, windows, ios, sanitizers]
     if: needs.prepare.outputs.release == 'true'
