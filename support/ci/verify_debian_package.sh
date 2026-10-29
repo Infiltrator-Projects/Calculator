@@ -81,6 +81,13 @@ if [[ -n "$unexpected_docs" ]]; then
   printf '%s\n' "$unexpected_docs" >&2
   exit 1
 fi
+# The documented payload must be a real PDF, not merely a renamed text file.
+dpkg-deb --fsys-tarfile "$package" |
+  tar -xOf - './System/Resources/Documentation/Calculator/Calculator-Manual.pdf' > "$control_dir/manual.pdf"
+if [[ "$(head -c 5 "$control_dir/manual.pdf")" != "%PDF-" ]]; then
+  echo "Calculator manual payload is not a PDF document." >&2
+  exit 1
+fi
 if ! grep -Fqx './usr/share/doc/calculator/copyright' "$listing"; then
   echo "Debian package is missing its required copyright metadata." >&2
   exit 1
