@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.65" date="2026-11-05">
+      <description><p>Install the illustrated Calculator manual directly in the shared documentation directory.</p></description>
+    </release>
     <release version="0.2.64" date="2026-10-29">
       <description><p>Replace the plain-text manual with one self-contained illustrated PDF while keeping developer and build documentation out of installed resources.</p></description>
     </release>
