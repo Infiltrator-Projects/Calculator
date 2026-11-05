@@ -137,6 +137,7 @@ jobs:
           package="dist/linux/calculator_${VERSION}_amd64.deb"
           cp "../calculator_${VERSION}_amd64.deb" "$package"
           bash support/ci/verify_debian_package.sh "$package"
+          sudo sh support/ci/test_documentation_upgrade.sh "$package"
 
       - name: Smoke-test packaged Linux idle CPU
         run: bash support/ci/linux_idle_cpu.sh "dist/linux/calculator_${VERSION}_amd64.deb"

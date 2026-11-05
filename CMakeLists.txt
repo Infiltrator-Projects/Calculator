@@ -329,9 +329,8 @@ if(CALCULATOR_BUILD_DESKTOP)
             VERBATIM
         )
         add_custom_target(calculator-manual ALL DEPENDS "${CALCULATOR_MANUAL_PDF}")
-        install(DIRECTORY DESTINATION "/System/Resources/Documentation/Calculator")
         install(FILES "${CALCULATOR_MANUAL_PDF}"
-            DESTINATION "/System/Resources/Documentation/Calculator")
+            DESTINATION "/System/Resources/Documentation" RENAME "Calculator.pdf")
         install(TARGETS calculator RUNTIME DESTINATION "/Programs")
         install(FILES support/resources/infiltrator-native-path.sh
             DESTINATION "/etc/profile.d"

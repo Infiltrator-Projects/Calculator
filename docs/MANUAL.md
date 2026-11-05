@@ -538,7 +538,7 @@ directory skeleton while retaining normal desktop and package metadata.
 
 This manual is intentionally installed as the user-facing document at:
 
-  /System/Resources/Documentation/Calculator/Calculator-Manual.pdf
+  /System/Resources/Documentation/Calculator.pdf
 
 The documentation directory must not contain native compiler profiles,
 development build reports, copied source trees or redundant licence files.

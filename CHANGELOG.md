@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.65 - 2026-11-05
+
+- Install the Calculator manual directly as `/System/Resources/Documentation/Calculator.pdf`.
+- Verify that upgrades remove the old empty Calculator documentation folder and preserve other documents.
+
 ## 0.2.64 - 2026-10-29
 
 - Replace the installed plain-text user manual with one professionally

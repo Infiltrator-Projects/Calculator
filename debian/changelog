@@ -1,3 +1,10 @@
+calculator (0.2.65) unstable; urgency=medium
+
+  * Install the illustrated PDF directly in the shared documentation directory.
+  * Verify the old package-owned folder is removed on upgrade.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Thu, 05 Nov 2026 20:00:00 +1100
+
 calculator (0.2.64) unstable; urgency=medium
 
   * Replace MANUAL.txt with a single professionally formatted, illustrated
