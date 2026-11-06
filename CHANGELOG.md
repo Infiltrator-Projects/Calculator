@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.66 - 2026-11-06
+
+- Add native installer --build-only --output DIRECTORY to build a Debian package without installing Calculator.
+- Require exact output mode and retain the existing mandatory aggressive two-pass PGO/LTO qualification.
+
 ## 0.2.65 - 2026-11-05
 
 - Install the Calculator manual directly as `/System/Resources/Documentation/Calculator.pdf`.

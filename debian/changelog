@@ -1,3 +1,10 @@
+calculator (0.2.66) unstable; urgency=medium
+
+  * Add --build-only --output mode for independently built native Debian packages.
+  * Keep normal Calculator package installation unchanged and qualify CLI misuse.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Fri, 06 Nov 2026 10:30:00 +1100
+
 calculator (0.2.65) unstable; urgency=medium
 
   * Install the illustrated PDF directly in the shared documentation directory.
