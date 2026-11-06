@@ -98,6 +98,18 @@ int main(int argc, char **argv)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("unknown option", result.stderr)
 
+    def test_build_only_output_mode_requires_both_arguments(self):
+        result = subprocess.run([str(self.program), "installer", "--help"],
+                                text=True, capture_output=True, check=True)
+        self.assertIn("--build-only --output DIRECTORY", result.stdout)
+        for options in (["--build-only"], ["--output", "/tmp/calculator-build"],
+                        ["--build-only", "--dry-run", "--output", "/tmp/calculator-build"]):
+            with self.subTest(options=options):
+                result = subprocess.run([str(self.program), "installer", *options],
+                                        text=True, capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("--build-only", result.stderr)
+
     def test_fresh_install_and_upgrade_keep_normal_apt_policy(self):
         for installed in ("not-installed", "0.2.52", "0.2.53~rc1"):
             with self.subTest(installed=installed):

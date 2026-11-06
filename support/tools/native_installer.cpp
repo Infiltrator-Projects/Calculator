@@ -371,6 +371,7 @@ void usage()
         << "  --jobs NUMBER\n"
         << "  --no-strip\n"
         << "  --dry-run\n"
+        << "  --build-only --output DIRECTORY\n"
         << "  --system-package-mode\n"
         << "  -h, --help\n";
 }
@@ -393,6 +394,8 @@ int main(int argc, char **argv)
     bool no_strip = false;
     bool dry_run = false;
     bool system_package_mode = false;
+    bool build_only = false;
+    fs::path output_directory;
 
     for (int index = 1; index < argc; ++index) {
         const std::string argument(argv[index]);
@@ -411,6 +414,11 @@ int main(int argc, char **argv)
             no_strip = true;
         } else if (argument == "--dry-run") {
             dry_run = true;
+        } else if (argument == "--build-only") {
+            build_only = true;
+        } else if (argument == "--output") {
+            if (++index >= argc) fail("--output requires DIRECTORY");
+            output_directory = fs::path(argv[index]);
         } else if (argument == "--system-package-mode") {
             system_package_mode = true;
         } else {
@@ -423,6 +431,12 @@ int main(int argc, char **argv)
     if (::geteuid() == 0 && !system_package_mode)
         fail("do not run this installer as root without --system-package-mode");
 
+    if (build_only != !output_directory.empty())
+        fail("--build-only requires --output DIRECTORY, and --output requires --build-only");
+    if (build_only && dry_run)
+        fail("--build-only and --dry-run cannot be combined");
+    if (build_only && !prerequisites_available())
+        fail("--build-only requires existing native build prerequisites");
     ensure_prerequisites(system_package_mode, dry_run);
 
     std::cout << "Calculator native installation plan\n"
@@ -543,6 +557,19 @@ int main(int argc, char **argv)
         fail("final Calculator build did not retain ELF call/visibility flags");
 
     const fs::path package = find_debian_package(work, version);
+    if (build_only) {
+        std::error_code copy_error;
+        fs::create_directories(output_directory, copy_error);
+        if (copy_error)
+            fail("could not create build-only output directory: " + copy_error.message());
+        const fs::path destination = output_directory / package.filename();
+        fs::copy_file(package, destination, fs::copy_options::overwrite_existing,
+                      copy_error);
+        if (copy_error)
+            fail("could not publish build-only package: " + copy_error.message());
+        std::cout << "Built native Calculator DEB: " << destination << '\n';
+        return EXIT_SUCCESS;
+    }
     std::cout << "Installing locally built package: " << package << '\n';
     run_required(privileged(package_install_arguments(
                                 package, version, installed_package_version(kPackageName)),
