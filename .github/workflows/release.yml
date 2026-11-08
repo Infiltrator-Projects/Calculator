@@ -127,7 +127,12 @@ jobs:
         run: python3 tests/test_common_contract.py
 
       - name: Verify source modularity contract
-        run: python3 tests/test_source_structure.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            tests/test_source_structure.cpp -o "$RUNNER_TEMP/calculator-source-structure"
+          "$RUNNER_TEMP/calculator-source-structure"
 
       - name: Verify compact Linux desktop layout
         run: python3 tests/test_desktop_layout.py
