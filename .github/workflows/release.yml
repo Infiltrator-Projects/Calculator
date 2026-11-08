@@ -65,8 +65,26 @@ jobs:
           bash -n support/release/publish.sh
           python3 -m py_compile \
             support/release/release_metadata.py \
-            support/release/release_assets.py \
             support/release/build_manual_pdf.py
+          c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            support/release/release_assets.cpp -lcrypto \
+            -o "$RUNNER_TEMP/calculator-release-assets"
+          ! "$RUNNER_TEMP/calculator-release-assets" --version invalid --dist "$RUNNER_TEMP"
+          fixture="$RUNNER_TEMP/calculator-assets-test"
+          mkdir -p "$fixture"/{linux,windows,ios,source,native}
+          for path in \
+            "linux/calculator_0.0.1_amd64.deb" \
+            "windows/calculator_0.0.1_windows_x64.exe" \
+            "ios/calculator_0.0.1_ios-device-unsigned.ipa" \
+            "source/calculator_0.0.1_source.tar.gz" \
+            "native/calculator-0.0.1-native-installer.run" "LICENSE.txt"; do
+            printf 'native-release-test\n' > "$fixture/$path"
+          done
+          chmod +x "$fixture/native/calculator-0.0.1-native-installer.run"
+          "$RUNNER_TEMP/calculator-release-assets" --version 0.0.1 --dist "$fixture"
+          test "$(wc -l < "$fixture/SHA256SUMS.txt")" -eq 6
+          test "$(wc -l < "$fixture/release-assets.txt")" -eq 7
+          grep -Fq "$(sha256sum "$fixture/LICENSE.txt" | cut -d' ' -f1)  LICENSE.txt" "$fixture/SHA256SUMS.txt"
 
       - name: Exercise production release and archive contracts
         run: |
@@ -422,7 +440,10 @@ jobs:
         run: |
           set -euo pipefail
           cp LICENSE dist/LICENSE.txt
-          python3 support/release/release_assets.py --version "$VERSION" --dist dist
+          c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            support/release/release_assets.cpp -lcrypto \
+            -o "$RUNNER_TEMP/calculator-release-assets"
+          "$RUNNER_TEMP/calculator-release-assets" --version "$VERSION" --dist dist
 
       - name: Publish exact qualified release assets
         env:
