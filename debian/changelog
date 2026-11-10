@@ -1,3 +1,11 @@
+calculator (0.2.67) unstable; urgency=medium
+
+  * Generate the illustrated Calculator operating manual with native C++17.
+  * Remove Python and ReportLab from the build and package dependencies.
+  * Retain all manual sections, mode schematics and PDF package checks.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 10 Nov 2026 19:00:00 +1100
+
 calculator (0.2.66) unstable; urgency=medium
 
   * Add --build-only --output mode for independently built native Debian packages.
