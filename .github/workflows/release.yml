@@ -93,7 +93,9 @@ jobs:
         run: |
           bash tests/test_source_bundle.sh
           bash tests/test_release_metadata.sh
-          python3 tests/test_native_installer.py
+          c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            tests/test_native_installer.cpp -o "$RUNNER_TEMP/calculator-installer-policy"
+          "$RUNNER_TEMP/calculator-installer-policy"
 
   linux:
     needs: prepare
