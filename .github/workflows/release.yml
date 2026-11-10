@@ -145,9 +145,6 @@ jobs:
             tests/test_source_structure.cpp -o "$RUNNER_TEMP/calculator-source-structure"
           "$RUNNER_TEMP/calculator-source-structure"
 
-      - name: Verify compact Linux desktop layout
-        run: python3 tests/test_desktop_layout.py
-
       - name: Validate AppStream metadata
         run: appstreamcli validate debian/calculator.metainfo.xml
 

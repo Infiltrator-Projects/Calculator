@@ -140,6 +140,59 @@ int main(int argc, char** argv) {
             forbidden(windows_main, api, "Win32 primitive leaked into windows_main.cpp");
             required(windows_platform, api, "Windows platform unit lost Win32 primitive");
         }
+        // Preserve native desktop layout, renderer and shared UI rules.
+        // These assertions replace the retired Python source-layout gate.
+        const std::string layout_contract = read(root / "src/ui/calculator_ui_contract.hpp");
+        const std::string ios_view = read(root / "ios/Sources/ContentView.swift");
+        for (const char* token : {
+                 "calculator::ui::typography().ui_family",
+                 "calculator::ui::typography().brand_family",
+                 "calculator::ui::design_metrics()",
+                 "notify::default-width", "notify::default-height",
+                 "configure_linux_renderer_for_display();",
+                 "gdk_display_is_composited(display)",
+                 "gdk_display_prepare_gl(display, &error)",
+                 "g_setenv(\"GSK_RENDERER\", \"cairo\", FALSE);",
+                 "on_window_default_size_changed"}) {
+            required(linux_main, token, "Linux shared layout/idle renderer contract");
+        }
+        for (const char* token : {
+                 "calculator::ui::typography().ui_family",
+                 "calculator::ui::typography().brand_family",
+                 "calculator::ui::design_metrics()",
+                 "desktop_preferred_height(mode)",
+                 "desktop_minimum_height(",
+                 "resize_main_for_mode(window, Mode::Standard)",
+                 "resize_main_for_mode(window, Mode::Scientific)",
+                 "resize_main_for_mode(window, Mode::Programmer)"}) {
+            required(windows_main, token, "Windows shared layout contract");
+        }
+        for (const char* token : {
+                 "inline constexpr DesktopMetrics kDesktopMetrics",
+                 "desktop_preferred_height(Mode mode)",
+                 "desktop_minimum_height(Mode mode)",
+                 "kStandardMemory", "kStandardKeypad",
+                 "kScientificKeypad", "kProgrammerKeypad",
+                 "responsive_layout(int width, int height)"}) {
+            required(layout_contract, token, "Missing shared layout specification");
+        }
+        for (const char* token : {"CalculatorPalette", "CalculatorModel"}) {
+            required(ios_view, token, "iOS lost shared presentation contract");
+        }
+        for (const char* token : {
+                 "gtk_widget_add_tick_callback", "responsive_tick(",
+                 "kStandardWindowHeight", "kExtendedWindowHeight",
+                 "gtk_widget_set_vexpand(standard_panel, TRUE);",
+                 "gtk_widget_set_vexpand(standard_grid, TRUE);"}) {
+            forbidden(linux_main, token, "Linux idle CPU/geometry regression");
+        }
+        for (const char* token : {
+                 "L\"Segoe UI\"", "kUiFont = \"Sans\"",
+                 "kBrandFont = \"Sans\""}) {
+            forbidden(linux_main + windows_main, token, "Local font bypasses Common");
+        }
+        require(!fs::exists(root / "tests/test_desktop_layout.py"),
+                "retired Python layout test is still present");
         require(!fs::exists(root / "tests/test_source_structure.py"),
                 "retired Python source-structure test is still present");
         std::cout << "Calculator source modularity contract passed (native C++17).\n";
