@@ -32,6 +32,9 @@
   <url type="homepage">https://github.com/Infiltrator-Projects/Calculator</url>
 
   <releases>
+    <release version="0.2.68" date="2026-11-10">
+      <description><p>Replace Python desktop layout checks with native C++ source-contract validation.</p></description>
+    </release>
     <release version="0.2.67" date="2026-11-10">
       <description><p>Render the illustrated Calculator manual with native C++ and remove Python build dependencies.</p></description>
     </release>

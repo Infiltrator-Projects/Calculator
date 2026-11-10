@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.68 - 2026-11-10
+
+- Consolidate desktop layout and renderer source checks in native C++17.
+- Remove the legacy Python desktop layout test and workflow dependency.
+- Retain GTK idle-CPU safeguards and shared Windows/iOS layout contracts.
+
 ## 0.2.67 - 2026-11-10
 
 - Replace the production Python/ReportLab illustrated manual generator with
