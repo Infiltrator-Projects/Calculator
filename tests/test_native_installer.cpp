@@ -135,7 +135,7 @@ int main() {
                   result.output.find("unknown option") != std::string::npos,
                   "Unqualified option must be rejected");
         }
-        for (const std::vector<std::string> args : {
+        for (const std::vector<std::string> &args : {
             std::vector<std::string>{"--build-only"},
             {"--output","/tmp/calculator-build"},
             {"--build-only","--dry-run","--output","/tmp/calculator-build"}}) {
