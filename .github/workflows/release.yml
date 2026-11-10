@@ -67,8 +67,12 @@ jobs:
           bash -n support/release/build_source_bundle.sh
           bash -n support/release/build_native_installer.sh
           bash -n support/release/publish.sh
-          python3 -m py_compile \
-            support/release/build_manual_pdf.py
+          c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            support/release/build_manual_pdf.cpp -o "$RUNNER_TEMP/calculator-manual-builder"
+          "$RUNNER_TEMP/calculator-manual-builder" \
+            docs/MANUAL.md "$RUNNER_TEMP/Calculator-Manual.pdf"
+          test "$(head -c 5 "$RUNNER_TEMP/Calculator-Manual.pdf")" = '%PDF-'
+          test "$(stat -c '%s' "$RUNNER_TEMP/Calculator-Manual.pdf")" -gt 10000
           c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
             support/release/release_assets.cpp -lcrypto \
             -o "$RUNNER_TEMP/calculator-release-assets"
@@ -125,7 +129,6 @@ jobs:
             libmpc-dev \
             libmpfr-dev \
             pkg-config \
-            python3-reportlab \
             xvfb
 
       - name: Verify Common integration contract
