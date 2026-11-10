@@ -1,3 +1,10 @@
+calculator (0.2.68) unstable; urgency=medium
+
+  * Consolidate desktop layout and renderer source-contract checks in C++17.
+  * Remove the last Python-based layout gate from the release workflow.
+
+ -- Shannon Smith <infiltratr@yandex.com>  Tue, 10 Nov 2026 20:26:00 +1100
+
 calculator (0.2.67) unstable; urgency=medium
 
   * Generate the illustrated Calculator operating manual with native C++17.
