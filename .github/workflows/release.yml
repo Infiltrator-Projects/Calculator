@@ -91,7 +91,7 @@ jobs:
 
       - name: Exercise production release and archive contracts
         run: |
-          python3 tests/test_source_bundle.py
+          bash tests/test_source_bundle.sh
           bash tests/test_release_metadata.sh
           python3 tests/test_native_installer.py
 
