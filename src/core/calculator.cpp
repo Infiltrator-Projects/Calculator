@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "calculator.hpp"
+#include "evaluation_budget.hpp"
 
 #include <infiltratr/core.h>
 #include <infiltratr/token.h>
@@ -205,16 +206,24 @@ public:
            const Functions* functions = nullptr,
            std::size_t function_depth = 0,
            AngleUnit angle_unit = AngleUnit::Radians,
-           bool allow_named_terms = true)
+           bool allow_named_terms = true,
+           EvaluationBudget* budget = nullptr)
         : input_(input), variables_(variables), functions_(functions),
           function_depth_(function_depth), angle_unit_(angle_unit),
-          allow_named_terms_(allow_named_terms) {}
+          allow_named_terms_(allow_named_terms), budget_(budget) {}
 
     Result run() {
+        // Charge every nested custom-function body to one shared budget.
+        if (budget_ &&
+            (!budget_->check_input(input_.size()) ||
+             !budget_->charge(static_cast<std::uint64_t>(input_.size()) + 1U)))
+            return fail(budget_->error().c_str());
         skip_space();
         if (input_.empty()) return fail("empty expression");
         const double value = parse_expression();
         skip_space();
+        if (budget_ && !budget_->check())
+            return fail(budget_->error().c_str());
         if (!error_.empty()) return {false, 0.0, error_, {}};
         if (position_ != input_.size()) return fail("unexpected input");
         if (!std::isfinite(value)) return fail("non-finite result");
@@ -228,6 +237,7 @@ private:
     std::size_t function_depth_ = 0;
     AngleUnit angle_unit_ = AngleUnit::Radians;
     bool allow_named_terms_ = true;
+    EvaluationBudget* budget_ = nullptr;
     std::size_t position_ = 0;
     std::size_t recursion_depth_ = 0;
     std::string error_;
@@ -459,7 +469,7 @@ private:
 
         Parser nested(
             definition.expression, scoped, functions_, function_depth_ + 1U,
-            angle_unit_, allow_named_terms_);
+            angle_unit_, allow_named_terms_, budget_);
         const Result result = nested.run();
         if (!result.ok) {
             error_ = result.error;
@@ -941,29 +951,39 @@ std::string format_engineering_value(double value) {
     return formatted;
 }
 
+static Result evaluate_binary64_bounded(
+    const std::string& expression, const Variables& variables,
+    const Functions* functions, AngleUnit angle_unit, bool allow_named_terms) {
+    EvaluationBudget budget;
+    // Reject before UTF-8 normalisation allocates a second expression.
+    if (!budget.check_input(expression.size()))
+        return {false, 0.0, budget.error(), {}};
+    const std::string normalized = normalize_expression_spelling(expression);
+    return Parser(normalized, variables, functions, 0U, angle_unit,
+                  allow_named_terms, &budget).run();
+}
+
 Result evaluate(const std::string& expression) {
     static const Variables empty_variables;
-    const std::string normalized = normalize_expression_spelling(expression);
-    return Parser(normalized, empty_variables).run();
+    return evaluate_binary64_bounded(
+        expression, empty_variables, nullptr, AngleUnit::Radians, true);
 }
 
 Result evaluate(const std::string& expression, const Variables& variables) {
-    const std::string normalized = normalize_expression_spelling(expression);
-    return Parser(normalized, variables).run();
+    return evaluate_binary64_bounded(
+        expression, variables, nullptr, AngleUnit::Radians, true);
 }
 
 Result evaluate(const std::string& expression, const Variables& variables,
                 const Functions& functions, AngleUnit angle_unit) {
-    const std::string normalized = normalize_expression_spelling(expression);
-    return Parser(normalized, variables, &functions, 0U, angle_unit).run();
+    return evaluate_binary64_bounded(
+        expression, variables, &functions, angle_unit, true);
 }
 
 Result evaluate_standard(const std::string& expression) {
     static const Variables empty_variables;
-    const std::string normalized = normalize_expression_spelling(expression);
-    return Parser(
-        normalized, empty_variables, nullptr, 0U,
-        AngleUnit::Radians, false).run();
+    return evaluate_binary64_bounded(
+        expression, empty_variables, nullptr, AngleUnit::Radians, false);
 }
 
 } // namespace calculator
