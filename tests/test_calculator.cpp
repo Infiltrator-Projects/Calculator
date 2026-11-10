@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "../src/core/calculator.hpp"
+#include "../src/core/evaluation_budget.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -161,6 +162,22 @@ int main() {
         calculator::RealFunction::SquareRoot, -1.0);
     if (invalid_root.ok || invalid_root.error != "function domain error") {
         fail("shared square-root domain contract wrong");
+    }
+
+    // Public binary64 entry points must reject oversized input consistently.
+    const std::string excessive_input(
+        calculator::kEvaluationMaxInputBytes + 1U, '1');
+    const auto ordinary_oversize = calculator::evaluate(excessive_input);
+    const auto variables_oversize = calculator::evaluate(
+        excessive_input, calculator::Variables{});
+    const auto functions_oversize = calculator::evaluate(
+        excessive_input, calculator::Variables{}, calculator::Functions{},
+        calculator::AngleUnit::Radians);
+    const auto standard_oversize = calculator::evaluate_standard(excessive_input);
+    if (ordinary_oversize.ok || variables_oversize.ok ||
+        functions_oversize.ok || standard_oversize.ok ||
+        ordinary_oversize.error != "input exceeds evaluation input limit") {
+        fail("all binary64 entry points must reject oversized expressions");
     }
 
     std::string deeply_nested(300, '(');
