@@ -129,7 +129,10 @@ jobs:
             xvfb
 
       - name: Verify Common integration contract
-        run: python3 tests/test_common_contract.py
+        run: |
+          c++ -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror \
+            tests/test_common_contract.cpp -o "$RUNNER_TEMP/calculator-common-contract"
+          "$RUNNER_TEMP/calculator-common-contract"
 
       - name: Verify source modularity contract
         shell: bash
