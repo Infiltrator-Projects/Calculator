@@ -315,17 +315,19 @@ if(CALCULATOR_BUILD_DESKTOP)
         infiltrator_install_native_filesystem_skeleton()
         # Ship exactly one illustrated operator's manual; source and build
         # machinery stay in the repository, not in the installed documentation.
-        find_package(Python3 COMPONENTS Interpreter REQUIRED)
+        add_executable(calculator-manual-builder
+            support/release/build_manual_pdf.cpp)
+        target_compile_features(calculator-manual-builder PRIVATE cxx_std_17)
         set(CALCULATOR_MANUAL_PDF "${CMAKE_CURRENT_BINARY_DIR}/Calculator-Manual.pdf")
         add_custom_command(
             OUTPUT "${CALCULATOR_MANUAL_PDF}"
-            COMMAND "${Python3_EXECUTABLE}"
-                "${CMAKE_CURRENT_SOURCE_DIR}/support/release/build_manual_pdf.py"
+            COMMAND $<TARGET_FILE:calculator-manual-builder>
                 "${CMAKE_CURRENT_SOURCE_DIR}/docs/MANUAL.md"
                 "${CALCULATOR_MANUAL_PDF}"
             DEPENDS
+                calculator-manual-builder
                 "${CMAKE_CURRENT_SOURCE_DIR}/docs/MANUAL.md"
-                "${CMAKE_CURRENT_SOURCE_DIR}/support/release/build_manual_pdf.py"
+                "${CMAKE_CURRENT_SOURCE_DIR}/support/release/build_manual_pdf.cpp"
             VERBATIM
         )
         add_custom_target(calculator-manual ALL DEPENDS "${CALCULATOR_MANUAL_PDF}")
