@@ -114,7 +114,7 @@ int main(int argc,char**argv){
   if(argc!=3)throw std::runtime_error("usage: calculator-manual SOURCE.md OUTPUT.pdf");
   std::ifstream input(argv[1]);if(!input)throw std::runtime_error("Missing manual manuscript");
   string content{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
-  for(const string& key:{"Standard","Programmer","Operating assumptions"})
+  for(const char* key:{"Standard","Programmer","Operating assumptions"})
     if(!contains(content,key))throw std::runtime_error("Missing manual section "+key);
   Manual doc;doc.heading("CALCULATOR",32);
   doc.heading("User Manual and Operating Principles",15);
