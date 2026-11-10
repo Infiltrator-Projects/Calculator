@@ -1,6 +1,6 @@
 ## About this edition
 
-**Calculator 0.2.64** provides this complete user manual as one self-contained, illustrated PDF. The Markdown manuscript is a development source; only the PDF is installed. Its interface diagrams are illustrative rather than screenshots.
+**Calculator 0.2.67** provides this complete user manual as one self-contained, illustrated PDF. The Markdown manuscript is a development source; only the PDF is installed. Its interface diagrams are illustrative rather than screenshots.
 
 ## About this manual
 This is the end-user manual supplied with Calculator. It explains how to use

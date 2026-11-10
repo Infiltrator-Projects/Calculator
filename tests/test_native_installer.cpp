@@ -82,7 +82,7 @@ int main() {
         const auto packaging = read_text(root/"debian/rules");
         const auto cmake = read_text(root/"CMakeLists.txt");
         auto manual = read_text(root/"docs/MANUAL.md");
-        const auto generator = read_text(root/"support/release/build_manual_pdf.py");
+        const auto generator = read_text(root/"support/release/build_manual_pdf.cpp");
         check(native.find("write_build_info(") == std::string::npos &&
               native.find(".calculator-native-build-info") == std::string::npos &&
               packaging.find(".calculator-native-build-info") == std::string::npos &&
@@ -95,9 +95,16 @@ int main() {
               cmake.find("install(FILES \"${CALCULATOR_MANUAL_PDF}\"") != std::string::npos &&
               cmake.find("docs/MANUAL.txt") == std::string::npos,
               "Manual install contract drifted");
-        check(generator.find("ModePicture") != std::string::npos &&
-              generator.find("reportlab") != std::string::npos,
-              "Illustrated manual generator unexpectedly changed");
+        check(generator.find("void diagram(") != std::string::npos &&
+              generator.find("SCIENTIFIC") != std::string::npos &&
+              generator.find("PROGRAMMER") != std::string::npos &&
+              generator.find("%PDF-1.4") != std::string::npos &&
+              generator.find("xref") != std::string::npos &&
+              generator.find("reportlab") == std::string::npos &&
+              cmake.find("add_executable(calculator-manual-builder") != std::string::npos &&
+              cmake.find("support/release/build_manual_pdf.cpp") != std::string::npos &&
+              cmake.find("Python3") == std::string::npos,
+              "Native illustrated manual generator / CMake contract drifted");
         std::transform(manual.begin(), manual.end(), manual.begin(),
             [](unsigned char c){ return static_cast<char>(std::toupper(c)); });
         for (const char *word : {"OPERATING INSTRUCTIONS", "STANDARD", "SCIENTIFIC",

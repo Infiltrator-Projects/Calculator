@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.67 - 2026-11-10
+
+- Replace the production Python/ReportLab illustrated manual generator with
+  native C++17 using the full Markdown manuscript and vector mode schematics.
+- Remove Python dependencies from CMake, Debian packaging and release preflight.
+- Keep the single installed `Calculator.pdf` and native installer upgrade tests.
+
 ## 0.2.66 - 2026-11-06
 
 - Add native installer --build-only --output DIRECTORY to build a Debian package without installing Calculator.
