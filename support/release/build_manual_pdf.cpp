@@ -115,7 +115,7 @@ int main(int argc,char**argv){
   std::ifstream input(argv[1]);if(!input)throw std::runtime_error("Missing manual manuscript");
   string content{std::istreambuf_iterator<char>(input),std::istreambuf_iterator<char>()};
   for(const char* key:{"Standard","Programmer","Operating assumptions"})
-    if(!contains(content,key))throw std::runtime_error("Missing manual section "+key);
+    if(!contains(content,key))throw std::runtime_error(string("Missing manual section ")+key);
   Manual doc;doc.heading("CALCULATOR",32);
   doc.heading("User Manual and Operating Principles",15);
   doc.paragraph("A practical guide to everyday calculations, scientific work, programmer operations, controls, and assumptions.");
