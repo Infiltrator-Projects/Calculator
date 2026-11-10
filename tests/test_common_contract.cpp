@@ -174,7 +174,7 @@ int main() {
         const std::string installer=read(common/"cmake/InfiltratrEnsureExtendedFonts.sh");
         std::smatch revision_match;
         check(std::regex_search(installer,revision_match,
-                  std::regex(R"(SOURCE_COMMIT="([a-f0-9]{40})")")),
+                  std::regex(R"PIN(SOURCE_COMMIT="([a-f0-9]{40})")PIN")),
               "Extended typography source must be pinned to exact commit");
         const std::string revision=revision_match[1].str();
         contains(cmake,"set(CALCULATOR_EXTENDED_FONTS_COMMIT \""+revision+"\")",
